@@ -28,9 +28,17 @@ boundary. “Client stack” is deployment shorthand only; it does not represent
 The client's React site is the visual authority. Puck registrations and all bolt-on pages/components
 must consume an adapter derived from that site's design system.
 
-The public-site origin and dashboard/API origin are separate contract roles even when a pilot initially
-co-locates them. Their exact domain, cookie/CORS, link, preview, and publishing behavior is decided in the
-site integration contract before deployment.
+The public React site owns the client's normal domain. The dashboard uses a protected admin subdomain.
+Where feasible, public browser API requests use the site's same-origin `/api` path, routed to the Core
+Platform backend; the dashboard uses its own same-origin API path. Public and admin cookies remain
+host-only by default, and preview/authentication behavior is defined explicitly rather than relying on a
+shared parent-domain cookie.
+
+Domain onboarding is registrar-agnostic and manual. Core Platform generates exact DNS instructions and
+performs read-only ownership, propagation, certificate, and routing verification. The operator applies
+the records at the chosen provider. Core Platform does not request or store provider credentials and does
+not mutate DNS. Direct provider integrations, including Cloudflare automation, require a future,
+separately approved decision.
 
 ## Consequences
 
@@ -40,6 +48,7 @@ site integration contract before deployment.
 - Shared cross-client administration and reporting are not platform responsibilities in this phase.
 - Provider and restore provenance can be checked against a stable client instance identity.
 - Platform modules must remain presentation-neutral and use site-specific theme adapters.
+- Domain changes add a staged ownership, DNS, certificate, routing, health, approval, and rollback gate.
 
 ## Compatibility Constraint
 

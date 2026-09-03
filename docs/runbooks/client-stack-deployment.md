@@ -11,9 +11,40 @@ Choose one immutable lowercase kebab-case `CLIENT_STACK_ID`, for example `acme-s
 Railway project/environment labels, backup prefix, monitoring labels, and operator records. Never reuse
 another client's database, secrets, storage prefix, Stripe webhook secret, or release/rollback boundary.
 
-Record the application service ID, PostgreSQL service ID, public domain, Stripe account/mode, R2 bucket
-and prefix, email sender, owners, and incident channel in the client operations record. Do not record
-secret values there.
+Record the application service ID, PostgreSQL service ID, public domain, protected admin subdomain,
+routing mode, DNS provider, Stripe account/mode, R2 bucket and prefix, email sender, owners, and incident
+channel in the client operations record. Do not record secret values there.
+
+## Recommended Domain Topology
+
+- Serve the React public site from the client's normal HTTPS domain, with an explicit apex/`www`
+  canonicalization rule.
+- Serve the Core Platform dashboard from a protected admin subdomain such as `admin.example.com`.
+- Route public browser requests from `/api` on the public domain to the Core Platform backend where the
+  hosting/CDN topology supports it. Keep the dashboard's API same-origin on the admin subdomain.
+- Keep authentication cookies host-only by default. Use a reviewed signed preview flow between admin and
+  public origins. Edge access controls may supplement but never replace application authorization.
+- Assign public links, admin links, webhooks, callbacks, CSP, CORS/CSRF, redirects, and email destinations
+  to one named origin in the release manifest.
+
+## Domain Setup Wizard Contract
+
+The admin onboarding wizard is registrar-agnostic. It captures the public domain, apex/`www` preference,
+admin subdomain, site/backend routing targets, same-origin `/api` mode, and DNS/launch owners. It produces
+an exact record plan with record type, host, target/value, TTL, provider proxy mode when applicable,
+purpose, and copyable manual instructions.
+
+The operator enters the records at any registrar/DNS provider, then the wizard verifies ownership,
+authoritative nameservers, propagation, certificate issuance, public and admin routing, `/api` proxy
+behavior, readiness, canonical redirects, and origin policy. Pending propagation is reported separately
+from invalid configuration. Record creation alone never marks the domain ready.
+
+Core Platform never requests or stores registrar/DNS-provider credentials and never creates, updates, or
+deletes DNS records in this workflow. The operator records the prior values before applying the generated
+plan. Regeneration must produce the same instructions, avoid unrelated records, and include a rollback
+plan using those prior values. Direct provider APIs, including Cloudflare automation, are outside the
+near-term scope. Domain cutover remains blocked until ownership, DNS, certificate, routing, `/api`,
+application health, redirect, and rollback gates all pass.
 
 ## Railway Blueprint
 
@@ -22,11 +53,11 @@ secret values there.
    service. Do not reference another client's database variables.
 3. Keep `railway.toml` health checking `/api/health/ready`; use Git-backed builds and immutable commit
    SHAs for release records.
-4. Configure the dashboard/API domain and public-site domain from the approved integration contract.
-   Until that contract introduces distinct runtime variables, `APP_URL` remains the current Core Platform
-   service origin and every browser origin allowed to call its API must appear in `TRUSTED_ORIGINS`.
-   This compatibility rule is not sufficient evidence for cross-origin cookie, email-link, preview, or
-   publishing behavior; those checks remain a launch gate.
+4. Configure the public domain, protected admin subdomain, and same-origin `/api` routing from the approved
+   integration contract and domain wizard record plan. Until that contract introduces distinct runtime
+   variables, `APP_URL` remains the current Core Platform service origin and every browser origin allowed
+   to call its API must appear in `TRUSTED_ORIGINS`. This compatibility rule is not sufficient evidence
+   for public/admin link, preview, cookie, or publishing behavior; those checks remain a launch gate.
 5. Set the variables below through Railway's secret/configuration controls. Never commit real values.
 6. Before deployment, run the same candidate configuration through the preflight:
 
@@ -38,17 +69,17 @@ secret values there.
 
 ## Configuration Inventory
 
-| Area              | Required variables or records                                                                                                                                    |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Identity          | `CLIENT_STACK_ID`                                                                                                                                                |
-| Database          | Dedicated `DATABASE_URL`                                                                                                                                         |
-| Sessions/security | Unique 32+ character `SESSION_SECRET`, optional unique `CMS_PREVIEW_SECRET`, unique `SETUP_TOKEN` for first setup                                                |
-| Domain/origins    | Approved public-site and dashboard/API domains; current canonical `APP_URL`; exact comma-separated `TRUSTED_ORIGINS`                                             |
-| Stripe ecommerce  | Dedicated `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`; record account and test/live mode                                              |
-| Email             | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`; SPF/DKIM/DMARC ownership evidence                                                               |
-| Backups           | `SYSTEM_BACKUPS_ENABLED=true`, interval/retention settings, dedicated R2 credentials/bucket, `BACKUP_R2_PREFIX` containing `CLIENT_STACK_ID` as one path segment |
-| Observability     | `LOG_LEVEL`, `METRICS_ENABLED=true`, uptime/error/log destinations and named responders                                                                          |
-| Railway metadata  | Git commit SHA, project/service/environment IDs are supplied by Railway and included in backup metadata                                                          |
+| Area              | Required variables or records                                                                                                                                        |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identity          | `CLIENT_STACK_ID`                                                                                                                                                    |
+| Database          | Dedicated `DATABASE_URL`                                                                                                                                             |
+| Sessions/security | Unique 32+ character `SESSION_SECRET`, optional unique `CMS_PREVIEW_SECRET`, unique `SETUP_TOKEN` for first setup                                                    |
+| Domain/origins    | Public domain, admin subdomain, same-origin `/api` routing, DNS provider and manual operator, current `APP_URL`, exact `TRUSTED_ORIGINS`, certificate/routing status |
+| Stripe ecommerce  | Dedicated `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`; record account and test/live mode                                                  |
+| Email             | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`; SPF/DKIM/DMARC ownership evidence                                                                   |
+| Backups           | `SYSTEM_BACKUPS_ENABLED=true`, interval/retention settings, dedicated R2 credentials/bucket, `BACKUP_R2_PREFIX` containing `CLIENT_STACK_ID` as one path segment     |
+| Observability     | `LOG_LEVEL`, `METRICS_ENABLED=true`, uptime/error/log destinations and named responders                                                                              |
+| Railway metadata  | Git commit SHA, project/service/environment IDs are supplied by Railway and included in backup metadata                                                              |
 
 Prefer environment-managed provider secrets for deterministic stacks. If an admin UI can persist a
 provider secret in the database, document the precedence and verify that a restored database cannot
@@ -112,20 +143,25 @@ Before each production release record the candidate commit and verify:
 - a current backup exists and restore/rollback procedures are within their rehearsal window;
 - Stripe/email/storage checks use non-production recipients or provider test mode until final approval;
 - `/api/health`, `/api/health/ready`, storefront, login, catalog, cart, and checkout smoke checks pass;
+- domain ownership, authoritative DNS, propagation, certificates, public/admin routing, same-origin
+  `/api`, canonical redirects, and the reviewed DNS rollback plan pass;
 - monitoring is receiving stack-labeled telemetry and responders are available.
 
 ## Rollback
 
-Roll application code back through Railway to the last verified Git-backed deployment. Do not assume a
-code rollback reverses a database migration. If data recovery is required, stop writes, preserve the
-failed state for investigation, restore into a duplicate environment first, reconcile, then execute the
-approved destructive restore. Rotate provider secrets if exposure or cross-client configuration is
-suspected.
+Roll application code back through Railway to the last verified Git-backed deployment. Roll domain
+instructions back only from the approved plan and its captured prior values; do not delete or overwrite
+unrelated DNS records. The authorized operator applies the rollback manually. Account for DNS TTL and
+certificate state in rollback timing. Do not assume a code rollback reverses a database migration. If
+data recovery is required, stop writes, preserve the failed state for investigation, restore into a
+duplicate environment first, reconcile, then execute the approved destructive restore. Revoke or rotate
+non-DNS provider credentials if exposure or cross-client configuration is suspected.
 
 ## Required Better Farms Pilot Intake
 
 - legal client/store name, owner, technical approver, finance approver, and support contacts;
-- desired `CLIENT_STACK_ID`, launch domain, DNS owner, current hosting, and launch window;
+- desired `CLIENT_STACK_ID`, public domain, apex/`www` policy, protected admin subdomain, registrar/DNS
+  and hosting providers, manual DNS/launch owners, and launch window;
 - WooCommerce URL/version, plugins, export/API access, data volumes, custom fields, and retention policy;
 - catalog types, SKU/variant/media counts, digital/physical behavior, stock and oversell policy;
 - currency, selling countries, tax nexus/exemptions/adviser approval;

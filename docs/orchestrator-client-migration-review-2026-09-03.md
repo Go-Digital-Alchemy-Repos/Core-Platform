@@ -49,19 +49,22 @@ pilot gate.
 
 ## Remaining Decisions and Blocking Effect
 
-| Decision                                                                                                                                               | Owner                                                        | Blocks                                                          |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ | --------------------------------------------------------------- |
-| Better Farms enabled modules, Woo history scope, exclusions, success metrics, and rollback triggers                                                    | Project Owner with Better Farms business/technical approvers | Detailed adapter work and pilot acceptance                      |
-| Public-site versus dashboard/API domains, cookie/CORS behavior, API base, email/admin/public link ownership, CSP, webhooks, and preview authentication | Project Owner and Workstream A reviewer                      | Final manifest, site bridge, and deployable preflight           |
-| Puck publish model: runtime content fetch, static rebuild, or reviewed hybrid                                                                          | Project Owner and Workstreams A–C                            | Puck registry, cache/fallback behavior, publishing and rollback |
-| Accepted Woo prototype capabilities and source-of-truth/update policy for imported records                                                             | Project Orchestrator after Workstream A proposal             | Mapping schema and durable adapter                              |
-| Customer/order history retention, account linking, privacy basis, and historical notification/payment suppression                                      | Project Owner, privacy owner, finance/support                | Any customer or order import                                    |
-| RPO/RTO, provider accounts, monitoring responders, release approvers, and DNS authority                                                                | Project Owner                                                | Provisioning and launch                                         |
+| Decision                                                                                                                                | Owner                                                        | Blocks                                                          |
+| --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------- |
+| Better Farms enabled modules, Woo history scope, exclusions, success metrics, and rollback triggers                                     | Project Owner with Better Farms business/technical approvers | Detailed adapter work and pilot acceptance                      |
+| Exact Better Farms domains, apex/`www` policy, DNS/hosting providers, and manual DNS operator                                           | Project Owner                                                | Domain instructions, verification, and launch                   |
+| Cookie/CORS behavior, email/admin/public link ownership, CSP, webhooks, and preview authentication for the approved two-origin topology | Project Owner and Workstream A reviewer                      | Site bridge and deployable preflight                            |
+| Puck publish model: runtime content fetch, static rebuild, or reviewed hybrid                                                           | Project Owner and Workstreams A–C                            | Puck registry, cache/fallback behavior, publishing and rollback |
+| Accepted Woo prototype capabilities and source-of-truth/update policy for imported records                                              | Project Orchestrator after Workstream A proposal             | Mapping schema and durable adapter                              |
+| Customer/order history retention, account linking, privacy basis, and historical notification/payment suppression                       | Project Owner, privacy owner, finance/support                | Any customer or order import                                    |
+| RPO/RTO, provider accounts, monitoring responders, release approvers, and DNS authority                                                 | Project Owner                                                | Provisioning and launch                                         |
 
-The existing `APP_URL` is used for origin validation and a mixture of public, administrative, and email
-links. The preserved preflight validates that current variable and `TRUSTED_ORIGINS`; it does not resolve
-the separate-site topology. Do not interpret a passing preflight as proof that cross-origin login,
-preview, publishing, or generated links work.
+The target topology is resolved: the public site owns the normal domain, the dashboard uses a protected
+admin subdomain, and browser API calls use same-origin `/api` routing. The existing `APP_URL` is still used
+for origin validation and a mixture of public, administrative, and email links. The preserved preflight
+validates that current variable and `TRUSTED_ORIGINS`; it does not implement the required configuration
+split. Do not interpret a passing preflight as proof that login, preview, publishing, or generated links
+work across the two origins.
 
 ## First Bounded Execution Tasks
 
@@ -95,9 +98,10 @@ single write surface and must report the validation it actually ran.
 - **Owner:** Workstream A integration specialist with Workstreams B/C as reviewers.
 - **Writes:** contract/ADR documentation and fixtures only until the Project Orchestrator approves runtime
   changes.
-- **Objective:** decide public and dashboard/API origins, browser credentials, CORS/CSRF, cookies, link
-  generation, webhooks, preview auth, route collision rules, content ownership, Puck publish behavior,
-  cache invalidation, and rollback.
+- **Objective:** freeze the approved public-domain/admin-subdomain topology, named runtime configuration
+  roles, same-origin `/api` behavior, browser credentials, CORS/CSRF, cookies, link generation, webhooks,
+  preview auth, route collision rules, content ownership, Puck publish behavior, cache invalidation, and
+  rollback.
 - **Acceptance:** every public/admin/module route and data source has one owner; authentication and preview
   work for the chosen topology; no unresolved collision remains.
 
@@ -124,6 +128,20 @@ single write surface and must report the validation it actually ran.
 - **Acceptance:** fixtures pass, unsafe/mismatched configurations fail without printing secrets, legacy
   backup behavior is explicit, and all repository quality gates pass.
 
+### CM-006 — Manual Domain Setup Wizard
+
+- **Owner:** Workstream G operations specialist after CM-002/CM-003 contract review.
+- **Writes:** a new isolated domain-onboarding module, fixtures, tests, and runbook updates chosen at
+  kickoff; no admin UI in the first implementation task.
+- **Objective:** accept public/admin domain inputs, produce an exact provider-neutral DNS record plan and
+  manual instructions, and perform read-only ownership, DNS propagation, certificate, routing, `/api`,
+  redirect, and health verification. Preserve workflow evidence and operator-recorded prior values.
+- **Must not:** request or store registrar/DNS-provider credentials, call provider write APIs, change live
+  DNS, provision infrastructure, or perform cutover.
+- **Acceptance:** fixtures produce deterministic instructions; verification retries are read-only and
+  distinguish pending propagation from invalid configuration; cutover remains blocked until every gate
+  passes; rollback instructions restore recorded values without affecting unrelated records.
+
 ## Work That Can Safely Start After Authorization
 
 CM-001 can start immediately as read-heavy evidence capture. CM-002 and CM-003 can start concurrently
@@ -131,7 +149,8 @@ after exact file ownership is assigned because they produce separate contract ar
 joint review before freeze. CM-004 can analyze both Woo branches in parallel with those tasks but cannot
 approve or implement a durable adapter until CM-002/CM-003 establish identity, data ownership, and route
 contracts. CM-005 should retain the reviewed draft and wait for the origin and manifest decisions before
-being declared deployment-ready.
+being declared deployment-ready. CM-006 begins only after those contracts are reviewed and is not part of
+the first CM-002 implementation milestone.
 
 No real import, client-data access, production deployment, Railway provisioning, DNS change, database
 migration, or Stripe/email/R2 configuration is safe to begin under planning authorization alone.

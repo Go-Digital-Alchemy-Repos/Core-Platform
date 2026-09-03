@@ -93,6 +93,8 @@ The machine-validated manifest contains no secrets and includes:
 - `schemaVersion`, immutable client instance ID, display name, source repository/commit, and owners;
 - build command, output directory, supported Node version, entry points, and asset base rules;
 - domain, route inventory, redirects, navigation, 404 behavior, and sitemap ownership;
+- public-site domain, protected admin subdomain, same-origin public `/api` route, DNS provider mode, and
+  certificate/routing status;
 - API base contract, authentication, forms, and preview behavior;
 - token sources for color, typography, spacing, radius, shadow, breakpoints, motion, and z-index;
 - component inventory, semantic roles, variants, assets, accessibility notes, and Puck eligibility;
@@ -119,10 +121,46 @@ The integration contract is repository-layout neutral and defines:
 - loading, empty, offline, unauthorized, and disabled-module states;
 - fixture-based contract tests without production credentials.
 
-The contract must explicitly separate the public-site origin from the dashboard/API origin. The current
-runtime uses `APP_URL` for origin checks and a mixture of public and administrative links, so a separate
-static site cannot launch until link ownership, CORS/cookies, preview authentication, CSP, webhook URLs,
-and email destinations are assigned to named origins.
+The recommended topology resolves the public-site versus dashboard/API split:
+
+- the public React site owns the client's normal HTTPS domain, including the approved apex/`www` policy;
+- the Core Platform dashboard uses a protected admin subdomain such as `admin.example.com`;
+- public browser API traffic uses the site's same-origin `/api` path, reverse-proxied to the Core Platform
+  backend where the hosting topology supports it;
+- the dashboard uses its own same-origin `/api` path;
+- public and admin cookies remain host-only by default, application authorization remains authoritative,
+  and Puck preview uses an approved signed flow rather than a broadly shared parent-domain cookie;
+- public links, administrative links, webhooks, previews, CORS/CSRF, CSP, and email destinations are
+  assigned explicitly to the public or admin origin.
+
+The current runtime uses `APP_URL` for origin checks and a mixture of public and administrative links.
+Milestone 1 must define separate public-site and admin/API configuration roles, plus a backward-compatible
+transition from `APP_URL`, before the topology is implemented.
+
+### Manual Domain Onboarding and Verification Contract
+
+The admin onboarding flow includes a registrar-agnostic domain setup wizard. The core workflow generates
+instructions and performs read-only verification. The operator applies every DNS change directly at the
+registrar or DNS provider.
+
+The wizard must:
+
+- capture the public domain, apex/`www` preference, protected admin subdomain, hosting targets, public
+  same-origin `/api` routing mode, and named DNS/launch owners;
+- generate an exact, copyable record plan with record type, host, target/value, TTL, proxy mode when
+  applicable, purpose, and provider-neutral manual instructions;
+- verify domain ownership, authoritative nameservers, DNS propagation, certificate issuance, public-site
+  routing, admin routing, `/api` proxy behavior, health/readiness, redirects, and origin/security policy;
+- preserve state and evidence for retries, distinguish pending propagation from invalid configuration,
+  and never declare readiness from record creation alone;
+- record the operator's prior values and provide a reviewed rollback plan without changing DNS itself;
+- regenerate the same instructions safely and avoid directing the operator to delete unrelated records.
+
+Core Platform does not request, receive, or store registrar or DNS-provider credentials and does not call
+provider APIs to create, update, or delete records in the near-term scope. Direct provider integrations,
+including Cloudflare automation, are future optional enhancements requiring separate approval. Edge
+access controls may strengthen the admin subdomain but do not replace application authentication and
+authorization.
 
 ### Design-System Extraction and Theme Adapter
 
@@ -182,11 +220,14 @@ pilot inclusions/exclusions are signed off; unresolved decisions are assigned an
 Dependencies: Milestone 0.
 
 Deliverables: manifest schema/example/validator/versioning; React integration and route/data ownership
-matrix; module registry; Puck descriptor/content schemas; Woo target ports and mapping/idempotency proposal.
+matrix; public/admin origin and same-origin `/api` contract; manual DNS instruction and read-only
+verification contract; module registry; Puck descriptor/content schemas; Woo target ports and
+mapping/idempotency proposal.
 
 Acceptance criteria: schemas reject unknown breaking versions and secrets; Better Farms is expressible
-without platform conditionals; route/data ownership has no collision; fixtures pass in both repositories;
-durable Woo work remains blocked until contract approval.
+without platform conditionals; route/data ownership has no collision; domain contracts require no
+registrar master credentials and support the manual path; fixtures pass in both repositories; durable Woo
+work remains blocked until contract approval.
 
 ### Milestone 2 — Better Farms Design and Content Adapter
 
@@ -203,13 +244,18 @@ break fixed layout/business data; last compatible adapter/registry can be restor
 
 Dependencies: Milestone 1 identity/config contract; can parallel Milestone 2 after contract freeze.
 
-Deliverables: reconciled secret-safe preflight; Railway app/Postgres blueprint; domain/origin, storage,
-provider, email, health, and monitoring configuration; backup provenance; release manifest; backup,
-restore-to-duplicate, rollback, and secret-rotation runbooks.
+Deliverables: reconciled secret-safe preflight; Railway app/Postgres blueprint; registrar-agnostic manual
+domain wizard; exact DNS record instructions; read-only ownership, propagation, certificate, routing, and
+cutover verification; domain/origin, storage, email, health, and monitoring configuration; backup
+provenance; release manifest; backup, restore-to-duplicate, and DNS/routing rollback runbooks.
 
-Acceptance criteria: no secret leaks; fixture config passes and unsafe config fails; fresh deployment and
-migration are deterministic/idempotent; backup provenance identifies the client instance; disposable
-restore/rollback meets RPO/RTO. No real infrastructure is created without later authorization.
+Acceptance criteria: no secret leaks or registrar/DNS-provider credentials; fixture config passes and
+unsafe config fails; repeated generation produces the same record plan; read-only verification retries
+are safe; readiness requires ownership, DNS, certificate, routing, same-origin `/api`, and application
+health checks; rollback instructions restore recorded prior values without affecting unrelated records;
+fresh deployment and migration are deterministic/idempotent; backup provenance identifies the client
+instance; disposable restore/rollback meets RPO/RTO. No real infrastructure is created without later
+authorization.
 
 ### Milestone 4 — WooCommerce Adapter and Import Rehearsal
 
@@ -242,6 +288,7 @@ Dependencies: Milestones 2–5 and approved infrastructure intake.
 
 Deliverables: Better Farms integrated with Core Platform/Puck; required modules and themed templates;
 routes/navigation/forms/assets/APIs/SEO/redirects; rehearsed imported data; production-like staging;
+completed manual domain wizard and verification evidence;
 editor/operator/finance/support/accessibility/security/rollback acceptance.
 
 Verification gate: lint, types, tests, migrations, build, and budgets pass; production-like E2E covers
@@ -276,16 +323,16 @@ fixtures contain no Better Farms assumptions.
 
 Parallel work starts only after its shared contract is approved. Each stream owns one write surface.
 
-| Workstream                  | Primary write surface                                | Must not change independently             |
-| --------------------------- | ---------------------------------------------------- | ----------------------------------------- |
-| A. Contracts/governance     | Schemas, ADRs, contract tests, decisions             | Scope, DB schema, public APIs             |
-| B. Better Farms design      | Site inventory, adapter, fixtures, Puck registry     | Core business services/schema             |
-| C. Core Puck/site bridge    | Registry loader, preview/publish compatibility       | Client design/module logic                |
-| D. Modules/templates        | Registry and presentation-neutral template contracts | Theme tokens/import/infrastructure        |
-| E. Woo migration            | Toolkit adapter and approved mapping migrations      | Target contracts before approval          |
-| F. Ecommerce correctness    | Orders, payments, inventory, refunds, jobs, tests    | Puck/theme/client repository              |
-| G. Deployment/operations    | Preflight, releases, Railway/runbooks, recovery      | Real infrastructure without authorization |
-| H. Independent verification | E2E, accessibility, security, performance evidence   | Features except approved fixtures         |
+| Workstream                  | Primary write surface                                                 | Must not change independently             |
+| --------------------------- | --------------------------------------------------------------------- | ----------------------------------------- |
+| A. Contracts/governance     | Schemas, ADRs, contract tests, decisions                              | Scope, DB schema, public APIs             |
+| B. Better Farms design      | Site inventory, adapter, fixtures, Puck registry                      | Core business services/schema             |
+| C. Core Puck/site bridge    | Registry loader, preview/publish compatibility                        | Client design/module logic                |
+| D. Modules/templates        | Registry and presentation-neutral template contracts                  | Theme tokens/import/infrastructure        |
+| E. Woo migration            | Toolkit adapter and approved mapping migrations                       | Target contracts before approval          |
+| F. Ecommerce correctness    | Orders, payments, inventory, refunds, jobs, tests                     | Puck/theme/client repository              |
+| G. Deployment/operations    | Preflight, manual domain wizard, releases, Railway/runbooks, recovery | Real infrastructure without authorization |
+| H. Independent verification | E2E, accessibility, security, performance evidence                    | Features except approved fixtures         |
 
 Order: A → (B, C, G) → (D, E, F) → H/Milestone 6 → launch → playbook. B/C/G may overlap after manifest
 freeze. D/E/F require stable APIs and explicit file ownership. Authors of money, migration, or security
@@ -306,25 +353,29 @@ Later enhancements:
 
 - shared multi-tenancy or cross-client administration/analytics;
 - Neon/Next.js migration without a pilot requirement;
+- direct registrar or DNS-provider integrations, including Cloudflare DNS automation;
 - arbitrary React-to-Puck conversion, a theme marketplace, or autonomous AI publishing;
 - modules Better Farms does not require, such as advanced subscriptions, gift cards, multi-currency,
   marketplaces, complex carrier automation, and advanced promotions.
 
 ## Risks and Controls
 
-| Risk                                      | Control                                                                               |
-| ----------------------------------------- | ------------------------------------------------------------------------------------- |
-| Imported site loses identity              | Source-derived tokens, adapter, visual fixtures, client approval                      |
-| Client forks accumulate                   | Versioned manifests/adapters; no client conditionals in business services             |
-| Puck breaks layout or runs unsafe content | Registered schemas, bounded regions, preview/history, no arbitrary JSX                |
-| Route/API conflicts                       | Ownership matrix and contract tests                                                   |
-| Woo data duplicates or disappears         | Idempotent checkpoints, quarantine, reconciliation, two rehearsals                    |
-| Payment/inventory races                   | Atomic claims, unique keys, durable jobs, concurrency/sandbox E2E                     |
-| Secrets cross deployments                 | Dedicated config, preflight, scoped credentials, restore provenance                   |
-| Code rollback conflicts with schema       | Additive migrations, compatibility window, separate data rollback                     |
-| Site/platform versions drift              | Release manifest and compatibility gate                                               |
-| Parallel streams diverge                  | Contract-first approval, bounded ownership, orchestrator integration                  |
-| Future portability is blocked             | Explicit instance/site identity and presentation-neutral modules, without tenancy now |
+| Risk                                       | Control                                                                                    |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| Imported site loses identity               | Source-derived tokens, adapter, visual fixtures, client approval                           |
+| Client forks accumulate                    | Versioned manifests/adapters; no client conditionals in business services                  |
+| Puck breaks layout or runs unsafe content  | Registered schemas, bounded regions, preview/history, no arbitrary JSX                     |
+| Route/API conflicts                        | Ownership matrix and contract tests                                                        |
+| Operator applies an incorrect DNS record   | Exact generated instructions, review, read-only verification, recorded rollback values     |
+| Provider credentials enter platform scope  | Do not request, receive, store, or use registrar/DNS-provider credentials                  |
+| DNS cutover precedes certificate/readiness | Staged verification gate; cutover blocked until DNS, TLS, routing, `/api`, and health pass |
+| Woo data duplicates or disappears          | Idempotent checkpoints, quarantine, reconciliation, two rehearsals                         |
+| Payment/inventory races                    | Atomic claims, unique keys, durable jobs, concurrency/sandbox E2E                          |
+| Secrets cross deployments                  | Dedicated config, preflight, scoped credentials, restore provenance                        |
+| Code rollback conflicts with schema        | Additive migrations, compatibility window, separate data rollback                          |
+| Site/platform versions drift               | Release manifest and compatibility gate                                                    |
+| Parallel streams diverge                   | Contract-first approval, bounded ownership, orchestrator integration                       |
+| Future portability is blocked              | Explicit instance/site identity and presentation-neutral modules, without tenancy now      |
 
 ## Explicit Out of Scope
 
@@ -333,6 +384,7 @@ Later enhancements:
 - durable Woo adapter/mappings before contract approval;
 - wholesale framework/database-provider/UI-library rewrite;
 - automatic execution of WordPress theme/plugin code;
+- requesting or storing registrar/DNS-provider credentials, or automatically changing DNS records;
 - launch without Project Owner authorization and recorded gate evidence.
 
 ## Planning State and Next Authorization Points
@@ -345,7 +397,8 @@ wave should be limited to Milestone 0 evidence/intake and Milestone 1 contracts.
 Before public-site integration or a Woo adapter begins, the Project Owner must decide:
 
 1. the Better Farms pilot modules, data-history scope, exclusions, success measures, and rollback limits;
-2. the public-site and dashboard/API domain topology and authentication/link ownership;
+2. the exact Better Farms domain names, apex/`www` policy, DNS/hosting providers, and named operator who
+   will apply the generated DNS instructions manually;
 3. whether CMS/Puck publishing updates the public site at runtime, triggers a static rebuild, or uses a
    reviewed hybrid;
 4. which parts of Woo prototypes `325188d` and `ffd11a6` form the accepted import contract;

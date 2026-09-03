@@ -11,6 +11,12 @@ The current repository still bundles its existing public SPA with the dashboard/
 client public site is target architecture and remains behind the manifest, origin, route, authentication,
 publishing, and release contracts in Milestones 1–3.
 
+The target routes the public site's browser API calls through same-origin `/api` to Core Platform where
+feasible, while the dashboard remains on a protected admin subdomain with its own same-origin API path.
+The onboarding domain wizard produces exact provider-neutral DNS instructions and performs read-only
+DNS/TLS/routing verification. An operator applies the records manually at the chosen provider; Core
+Platform neither requests provider credentials nor mutates DNS.
+
 ## Tech Stack
 
 | Layer            | Technology                             | Notes                                                                                          |
