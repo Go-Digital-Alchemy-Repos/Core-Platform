@@ -12,7 +12,9 @@ an approved deployment window.
 4. Verify an authenticated content editor can open
    `/admin/cms/client-sites/better-farms/fund-a-farm`, save a draft, and preview it without publishing.
 5. Set Better Farms `CORE_PLATFORM_API_ORIGIN` to the Core Platform HTTPS origin and
-   `VITE_CORE_PLATFORM_ADMIN_ORIGIN` to the exact Core admin origin, then deploy Better Farms.
+   `VITE_CORE_PLATFORM_ADMIN_ORIGIN` to the exact Core admin origin. When public forms are enabled, set
+   Better Farms `CORE_PLATFORM_FORM_PROXY_TOKEN` and the matching Core
+   `CLIENT_FORM_PROXY_TOKEN` as server-only variables, then deploy Better Farms.
 6. Request `/api/client-site-content/fund-a-farm/fund-a-farm-page` through Better Farms. A `404` before the
    first publish is expected; the page must render its built-in fallback.
 7. Publish the approved draft, verify a `200` response and `ETag`, then reload `/fund-a-farm` and confirm the

@@ -3,7 +3,7 @@
   "status": "draft",
   "clientStackId": "better-farms-foundation",
   "candidate": {
-    "coreRevision": "7438964a3e40ac1f61a1c585cda9b3ed8f94e4c0",
+    "coreRevision": "e00f45de853fb61ab4fa26a8323aa4aac77b4d5a",
     "siteRevision": "f538f2b06c2961cc7bf217c6395cedb3a5bf43cb"
   },
   "origins": {
@@ -14,8 +14,18 @@
     "status": "pending"
   },
   "gates": [
-    { "id": "identity", "required": true, "status": "passed", "evidenceReference": "migration-intake-draft" },
-    { "id": "topology", "required": true, "status": "passed", "evidenceReference": "two-origin-preflight" },
+    {
+      "id": "identity",
+      "required": true,
+      "status": "passed",
+      "evidenceReference": "migration-intake-draft"
+    },
+    {
+      "id": "topology",
+      "required": true,
+      "status": "passed",
+      "evidenceReference": "two-origin-preflight"
+    },
     { "id": "database", "required": true, "status": "pending" },
     { "id": "backup", "required": true, "status": "pending" },
     { "id": "restore", "required": true, "status": "pending" },
