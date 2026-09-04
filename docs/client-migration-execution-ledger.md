@@ -736,3 +736,6 @@ and budgets remain green.
 - **Risk carried forward:** metrics are a process-local signal until a client stack exports them and names
   alert thresholds, responders, error-budget policy, and support timelines. Those operational decisions remain
   required launch evidence.
+- **Evidence update:** hosted GitHub Actions run `33849933505` passed isolated PostgreSQL migration
+  verification, type-check, lint, formatting, 512 tests, production build, and bundle budget for revision
+  `063f20d`.
