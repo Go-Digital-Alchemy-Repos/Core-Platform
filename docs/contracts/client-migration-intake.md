@@ -28,9 +28,11 @@ Validate the intake, manifest, and pinned site checkout as one pilot contract:
 npm run pilot:contract:verify -- \
   docs/pilots/better-farms/client-site-manifest.example.json \
   docs/pilots/better-farms/client-migration-intake.example.json \
+  docs/pilots/better-farms/client-release-manifest.example.json \
   /path/to/Better-Farms
 ```
 
-This gate requires matching client stack IDs, requires every intake route to exist in the manifest, and
-checks the manifest's source references against the site checkout. An approved intake also requires an
-approved manifest.
+This gate requires matching client stack IDs, requires every intake route to exist in the manifest, checks
+the release record's site revision and origins against the site manifest, and checks the manifest's source
+references against the site checkout. An approved intake requires approved site and release manifests; an
+approved release record likewise requires an approved intake and site manifest.

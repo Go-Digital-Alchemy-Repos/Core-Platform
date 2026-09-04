@@ -772,3 +772,13 @@ and budgets remain green.
 - **Evidence update:** hosted GitHub Actions run `33852653975` passed isolated PostgreSQL migration
   verification, type-check, lint, formatting, 516 tests, production build, and bundle budget for revision
   `8874742`.
+
+### 2026-09-04 — Combined pilot release-record verification
+
+- **Implemented:** the combined pilot verifier now validates the site manifest, migration intake, and release
+  manifest together. It requires a shared stack ID, exact site revision and origins in the release record,
+  and coherent approval states across all three records. A release record pinned to a different site revision
+  fails before a pilot can be treated as valid.
+- **Evidence:** focused mismatch coverage and the complete local gate passed with 110 test files / 517 tests,
+  type-check, lint, formatting, production build, bundle budget, and combined Better Farms checkout
+  verification. No client endpoint, provider, or production stack was contacted.

@@ -1,9 +1,9 @@
 import { verifyClientPilotContract } from "../services/client-pilot-contract-verification.service";
 
-const [manifestPath, intakePath, siteRoot] = process.argv.slice(2);
-if (!manifestPath || !intakePath || !siteRoot) {
+const [manifestPath, intakePath, releaseManifestPath, siteRoot] = process.argv.slice(2);
+if (!manifestPath || !intakePath || !releaseManifestPath || !siteRoot) {
   console.error(
-    "Usage: npm run pilot:contract:verify -- <manifest.json> <intake.json> <site-root>",
+    "Usage: npm run pilot:contract:verify -- <site-manifest.json> <intake.json> <release-manifest.json> <site-root>",
   );
   process.exitCode = 1;
 } else {
@@ -11,6 +11,7 @@ if (!manifestPath || !intakePath || !siteRoot) {
     const result = await verifyClientPilotContract({
       manifestPath,
       intakePath,
+      releaseManifestPath,
       siteRoot,
       corePlatformVersion: process.env.CLIENT_SITE_CORE_VERSION || "1.0.0",
     });
