@@ -22,6 +22,7 @@ const MAX_CHECKOUT_TEXT_LENGTH = 160;
 const MAX_CHECKOUT_ADDRESS_LENGTH = 240;
 const MAX_CHECKOUT_URL_LENGTH = 2048;
 const MAX_CHECKOUT_USER_AGENT_LENGTH = 512;
+const CHECKOUT_INVENTORY_RESERVATION_MS = 15 * 60 * 1000;
 const checkoutRequestKeySchema = z.string().trim().uuid();
 
 const addressSchema = z.object({
@@ -525,6 +526,7 @@ export async function createEcommercePaymentIntent(
         fraudSignals: fraudEvaluation.matchedRules,
       },
       pricedLinesToOrderItems(priced.lines),
+      { reservationExpiresAt: new Date(Date.now() + CHECKOUT_INVENTORY_RESERVATION_MS) },
     );
     if (checkoutRequestKey) {
       const attached = await storage.ecommerce.attachCheckoutRequestOrder(

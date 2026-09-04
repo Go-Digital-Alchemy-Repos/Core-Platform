@@ -90,6 +90,7 @@ Ecommerce Stripe webhook events are processed separately from the existing subsc
 Current webhook behavior:
 
 - `payment_intent.succeeded` validates the PaymentIntent identity and amount against the order, then reconciles paid-order effects.
+- `payment_intent.payment_failed` and `payment_intent.canceled` cancel the pending order locally and release its stock reservation.
 - `checkout.session.completed` settles a payment request and its linked order atomically. A linked
   request requires a PaymentIntent; if paid-order settlement cannot complete, neither local record is
   marked paid and the webhook remains retryable.
@@ -97,6 +98,12 @@ Current webhook behavior:
 - A successful handler marks the delivery `processed`; a thrown failure records bounded diagnostic text and returns an error so Stripe can retry.
 
 Paid-order reconciliation locks the order row and commits the paid status, coupon redemption, coupon usage counter, inventory decrements, inventory adjustment records, and a deduplicated order-confirmation outbox record in one database transaction. Reprocessing the same order observes its existing redemption, inventory adjustments, and notification job. A worker reloads the order after commit and sends the receipt with bounded retry and failed-job visibility; refund, shipment, and order-status notifications remain separate delivery work.
+
+Tracked, non-backorder variants receive a database-backed stock reservation when checkout creates its
+PaymentIntent. Reservations use deterministic variant locking and include every active reservation in their
+availability check. They release when payment settles or the order is cancelled. After fifteen minutes, a
+worker first cancels the Stripe PaymentIntent and releases inventory only after Stripe confirms cancellation;
+this keeps a late provider payment from spending stock reserved by a later checkout.
 
 Refund creation locks the order and reserves refundable balance in a local refund row before calling a payment provider. Only one pending refund is allowed per order, and its local ID becomes Stripe's idempotency key and webhook metadata. An ambiguous provider timeout leaves that reservation pending, blocks another refund, and can be reconciled by the signed Stripe webhook through the local ID. Operators must resolve a pending refund before submitting another one.
 

@@ -1457,6 +1457,9 @@ describe("ecommerce services", () => {
       }),
       { idempotencyKey: `ecommerce_order_${order.id}_payment_intent` },
     );
+    expect(mockCreateOrder).toHaveBeenCalledWith(expect.any(Object), expect.any(Array), {
+      reservationExpiresAt: expect.any(Date),
+    });
     expect(mockUpdateOrder).toHaveBeenCalledWith(order.id, { stripePaymentIntentId: "pi_test" });
   });
 

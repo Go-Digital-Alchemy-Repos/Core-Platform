@@ -615,3 +615,19 @@ and budgets remain green.
 - **Risk carried forward:** refund, shipment, and status notifications still use their existing delivery
   paths. Provider sandbox retries, delivery monitoring, and client-specific email acceptance remain release
   gates.
+
+### 2026-09-04 — Checkout inventory reservations
+
+- **Implemented:** checkout now reserves inventory for tracked, non-backorder variants before creating a
+  Stripe PaymentIntent. Variant-row locks serialize competing reservations; paid and cancelled orders release
+  their holds. A fifteen-minute expiry worker asks Stripe to cancel the PaymentIntent and keeps the hold until
+  that cancellation succeeds, preventing a late payment from consuming inventory newly offered to another
+  checkout. Stripe failed and cancelled events also release the pending order immediately.
+- **Evidence:** focused checkout, webhook, migration, and reservation-worker suites passed 77 tests; the full
+  local suite passed 109 files and 503 tests, type-check, lint, formatting, production build, and bundle
+  budgets. A disposable PostgreSQL 16 rehearsal applied the entire migration sequence, ran two concurrent
+  reservations for the sole synthetic unit, accepted one and rejected one, then settled the accepted order and
+  verified both the paid release and inventory decrement. No client, Railway, Neon, Stripe, or production
+  database was contacted.
+- **Risk carried forward:** live Stripe timeout, cancellation, and delayed-event behavior still needs sandbox
+  evidence before a transaction-enabled client launch.

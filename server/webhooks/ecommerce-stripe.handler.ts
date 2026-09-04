@@ -51,6 +51,27 @@ async function reconcileEcommerceStripeEvent(event: Stripe.Event) {
     return;
   }
 
+  if (event.type === "payment_intent.payment_failed" || event.type === "payment_intent.canceled") {
+    const intent = event.data.object as Stripe.PaymentIntent;
+    const orderId = intent.metadata?.orderId;
+    if (!orderId) return;
+    const order = await storage.ecommerce.getOrder(orderId);
+    if (!order || order.status !== "pending" || order.paymentStatus !== "unpaid") return;
+    if (order.stripePaymentIntentId && order.stripePaymentIntentId !== intent.id) {
+      logger.stripe.error("Ecommerce webhook PaymentIntent mismatch", undefined, {
+        orderId,
+        expectedPaymentIntentId: order.stripePaymentIntentId,
+        actualPaymentIntentId: intent.id,
+      });
+      return;
+    }
+    await storage.ecommerce.updateOrder(order.id, {
+      status: "cancelled",
+      paymentStatus: "failed",
+    });
+    return;
+  }
+
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const paymentIntentId =

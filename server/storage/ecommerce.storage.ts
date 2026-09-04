@@ -6,6 +6,7 @@ import { isEcommerceOrderLookupAuthorized } from "../services/ecommerce-order-lo
 import {
   ecommerceCategories,
   ecommerceCheckoutRequests,
+  ecommerceInventoryReservations,
   ecommerceNotificationJobs,
   ecommerceCouponRedemptions,
   ecommerceCoupons,
@@ -94,6 +95,10 @@ export interface EcommerceOrderWithDetails extends EcommerceOrder {
   shipments: EcommerceShipment[];
   fulfillments: EcommerceFulfillment[];
   internalNotes: EcommerceOrderNoteWithAuthor[];
+}
+
+export interface EcommerceOrderReservationOptions {
+  reservationExpiresAt?: Date;
 }
 
 export interface EcommercePaymentRequestWithCustomer extends EcommercePaymentRequest {
@@ -951,6 +956,7 @@ export class EcommerceStorage {
   async createOrder(
     data: InsertEcommerceOrder,
     items: InsertEcommerceOrderItem[],
+    options: EcommerceOrderReservationOptions = {},
   ): Promise<EcommerceOrderWithDetails> {
     return db.transaction(async (tx) => {
       const [order] = await tx
@@ -965,6 +971,14 @@ export class EcommerceStorage {
               typeof ecommerceOrderItems.$inferInsert
             >,
           );
+      }
+      if (options.reservationExpiresAt) {
+        await this.reserveInventoryForCheckoutOrder(
+          tx,
+          order.id,
+          items,
+          options.reservationExpiresAt,
+        );
       }
       const orderItems = await tx
         .select()
@@ -984,6 +998,59 @@ export class EcommerceStorage {
         internalNotes: [],
       };
     });
+  }
+
+  private async reserveInventoryForCheckoutOrder(
+    tx: EcommerceDbTransaction,
+    orderId: string,
+    items: InsertEcommerceOrderItem[],
+    expiresAt: Date,
+  ): Promise<void> {
+    const now = new Date();
+    if (expiresAt <= now) {
+      throw new Error("Inventory reservation expiry must be in the future");
+    }
+
+    const itemsByVariant = new Map<string, InsertEcommerceOrderItem>();
+    for (const item of items) {
+      if (!item.variantId) continue;
+      const prior = itemsByVariant.get(item.variantId);
+      itemsByVariant.set(item.variantId, {
+        ...item,
+        quantity: (prior?.quantity ?? 0) + item.quantity,
+      });
+    }
+
+    for (const [variantId, item] of [...itemsByVariant.entries()].sort(([a], [b]) =>
+      a.localeCompare(b),
+    )) {
+      await tx.execute(
+        sql`SELECT id FROM ecommerce_product_variants WHERE id = ${variantId} FOR UPDATE`,
+      );
+      const [variant] = await tx
+        .select()
+        .from(ecommerceProductVariants)
+        .where(eq(ecommerceProductVariants.id, variantId))
+        .limit(1);
+      if (!variant || !requiresAtomicInventoryStockGuard(variant)) continue;
+
+      const reserved = await tx.execute<{ quantity: number | string }>(sql`
+        SELECT COALESCE(SUM(quantity), 0)::int AS quantity
+        FROM ecommerce_inventory_reservations
+        WHERE variant_id = ${variant.id}
+          AND released_at IS NULL
+      `);
+      const reservedQuantity = Number(reserved.rows[0]?.quantity ?? 0);
+      if (variant.inventoryQuantity - reservedQuantity < item.quantity) {
+        throw new Error(`Insufficient reservable inventory for variant ${variant.id}`);
+      }
+      await tx.insert(ecommerceInventoryReservations).values({
+        orderId,
+        variantId: variant.id,
+        quantity: item.quantity,
+        expiresAt,
+      });
+    }
   }
 
   async getOrders(): Promise<EcommerceOrderWithDetails[]> {
@@ -1237,12 +1304,25 @@ export class EcommerceStorage {
     id: string,
     data: Partial<InsertEcommerceOrder>,
   ): Promise<EcommerceOrder | undefined> {
-    const [order] = await db
-      .update(ecommerceOrders)
-      .set({ ...data, updatedAt: new Date() } as Partial<typeof ecommerceOrders.$inferInsert>)
-      .where(eq(ecommerceOrders.id, id))
-      .returning();
-    return order;
+    return db.transaction(async (tx) => {
+      const [order] = await tx
+        .update(ecommerceOrders)
+        .set({ ...data, updatedAt: new Date() } as Partial<typeof ecommerceOrders.$inferInsert>)
+        .where(eq(ecommerceOrders.id, id))
+        .returning();
+      if (order && data.status === "cancelled") {
+        await tx
+          .update(ecommerceInventoryReservations)
+          .set({ releasedAt: new Date(), releaseReason: "cancelled", updatedAt: new Date() })
+          .where(
+            and(
+              eq(ecommerceInventoryReservations.orderId, id),
+              isNull(ecommerceInventoryReservations.releasedAt),
+            ),
+          );
+      }
+      return order;
+    });
   }
 
   async updateOrderByPaymentIntent(
@@ -1255,6 +1335,24 @@ export class EcommerceStorage {
       .where(eq(ecommerceOrders.stripePaymentIntentId, paymentIntentId))
       .returning();
     return order;
+  }
+
+  async getExpiredEcommerceInventoryReservationOrderIds(
+    now = new Date(),
+    limit = 25,
+  ): Promise<string[]> {
+    const result = await db.execute<{ order_id: string }>(sql`
+      SELECT DISTINCT reservation.order_id
+      FROM ecommerce_inventory_reservations AS reservation
+      INNER JOIN ecommerce_orders AS ecommerce_order ON ecommerce_order.id = reservation.order_id
+      WHERE reservation.released_at IS NULL
+        AND reservation.expires_at <= ${now}
+        AND ecommerce_order.status = 'pending'
+        AND ecommerce_order.payment_status = 'unpaid'
+      ORDER BY reservation.order_id ASC
+      LIMIT ${limit}
+    `);
+    return result.rows.map((row) => row.order_id);
   }
 
   private async settlePaidOrderInTransaction(
@@ -1402,6 +1500,16 @@ export class EcommerceStorage {
         })
         .onConflictDoNothing({ target: ecommerceNotificationJobs.deduplicationKey });
     }
+
+    await tx
+      .update(ecommerceInventoryReservations)
+      .set({ releasedAt: new Date(), releaseReason: "paid", updatedAt: new Date() })
+      .where(
+        and(
+          eq(ecommerceInventoryReservations.orderId, orderId),
+          isNull(ecommerceInventoryReservations.releasedAt),
+        ),
+      );
 
     return { order, transitioned };
   }

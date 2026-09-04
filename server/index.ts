@@ -18,6 +18,7 @@ import { startEventReminderService } from "./services/event-reminder.service";
 import { startSystemBackupService } from "./services/system-backup.service";
 import { startDirectoryMembershipLifecycleService } from "./services/directory-membership-lifecycle.service";
 import { startEcommerceNotificationJobService } from "./services/ecommerce-notification-jobs.service";
+import { startEcommerceInventoryReservationService } from "./services/ecommerce-inventory-reservations.service";
 
 declare const __APP_VERSION__: string;
 const pkgVersion = typeof __APP_VERSION__ === "string" ? __APP_VERSION__ : "unknown";
@@ -286,6 +287,7 @@ app.use((req, res, next) => {
   startSystemBackupService();
   startDirectoryMembershipLifecycleService();
   startEcommerceNotificationJobService();
+  startEcommerceInventoryReservationService();
 
   const port = parseInt(process.env.PORT || "5000", 10);
   httpServer.listen(

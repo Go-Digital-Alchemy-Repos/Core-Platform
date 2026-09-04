@@ -3,6 +3,7 @@ import type { EcommerceOrder } from "@shared/schema";
 
 const mocks = vi.hoisted(() => ({
   getOrder: vi.fn(),
+  updateOrder: vi.fn(),
   claim: vi.fn(),
   complete: vi.fn(),
   fail: vi.fn(),
@@ -20,6 +21,7 @@ vi.mock("../storage/index", () => ({
   storage: {
     ecommerce: {
       getOrder: mocks.getOrder,
+      updateOrder: mocks.updateOrder,
       claimWebhookProcessing: mocks.claim,
       completeWebhookProcessing: mocks.complete,
       failWebhookProcessing: mocks.fail,
@@ -141,6 +143,29 @@ describe("processEcommerceStripeWebhook", () => {
       "attempt-token-1",
       "temporary inventory lock",
     );
+  });
+
+  it("releases a pending checkout reservation when Stripe cancels its PaymentIntent", async () => {
+    const { processEcommerceStripeWebhook } = await import("../webhooks/ecommerce-stripe.handler");
+    mocks.getOrder.mockResolvedValue({
+      id: "order-1",
+      status: "pending",
+      paymentStatus: "unpaid",
+      stripePaymentIntentId: "pi_123",
+    } as EcommerceOrder);
+    mocks.updateOrder.mockResolvedValue({ id: "order-1", status: "cancelled" });
+
+    await processEcommerceStripeWebhook(
+      eventPayload("payment_intent.canceled", {
+        id: "pi_123",
+        metadata: { orderId: "order-1" },
+      }),
+    );
+
+    expect(mocks.updateOrder).toHaveBeenCalledWith("order-1", {
+      status: "cancelled",
+      paymentStatus: "failed",
+    });
   });
 
   it("completes refund delivery only after refund reconciliation succeeds", async () => {

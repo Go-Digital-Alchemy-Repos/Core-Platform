@@ -601,6 +601,43 @@ export const ecommerceCheckoutRequests = pgTable(
 );
 
 /**
+ * Short-lived stock holds for checkout payment intents. A reservation is
+ * released by paid/cancelled settlement. Expiry schedules payment cancellation;
+ * capacity remains protected until that cancellation is confirmed.
+ */
+export const ecommerceInventoryReservations = pgTable(
+  "ecommerce_inventory_reservations",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    orderId: varchar("order_id")
+      .notNull()
+      .references(() => ecommerceOrders.id, { onDelete: "cascade" }),
+    variantId: varchar("variant_id")
+      .notNull()
+      .references(() => ecommerceProductVariants.id, { onDelete: "cascade" }),
+    quantity: integer("quantity").notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    releasedAt: timestamp("released_at"),
+    releaseReason: varchar("release_reason", { length: 40 }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_ecommerce_inventory_reservations_order_variant").on(
+      table.orderId,
+      table.variantId,
+    ),
+    index("idx_ecommerce_inventory_reservations_variant_expiry").on(
+      table.variantId,
+      table.expiresAt,
+    ),
+    index("idx_ecommerce_inventory_reservations_order").on(table.orderId),
+  ],
+);
+
+/**
  * Transactional outbox for payment-adjacent notifications. Payloads carry only
  * stable internal identifiers; a worker reloads current order details at send time.
  */
@@ -1367,6 +1404,7 @@ export type InsertEcommerceCustomerAddress = z.infer<typeof insertEcommerceCusto
 export type EcommerceOrder = typeof ecommerceOrders.$inferSelect;
 export type InsertEcommerceOrder = z.infer<typeof insertEcommerceOrderSchema>;
 export type EcommerceCheckoutRequest = typeof ecommerceCheckoutRequests.$inferSelect;
+export type EcommerceInventoryReservation = typeof ecommerceInventoryReservations.$inferSelect;
 export type EcommerceNotificationJob = typeof ecommerceNotificationJobs.$inferSelect;
 export type EcommerceProcessedWebhookEvent = typeof ecommerceProcessedWebhookEvents.$inferSelect;
 export type EcommerceOrderItem = typeof ecommerceOrderItems.$inferSelect;

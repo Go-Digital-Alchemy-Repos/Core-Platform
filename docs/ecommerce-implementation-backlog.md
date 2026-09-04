@@ -31,9 +31,9 @@ checks, and domain/origin checks pass for that client's isolated environment.
 - [x] Move paid-order receipt delivery to a durable, idempotent job with retry and dead-letter visibility.
 - Move refund, shipment, and order-status notifications to the same durable delivery model.
 - [x] Add Stripe webhook reconciliation, delivery inspection, and explicit replay tooling.
-- Make checkout creation idempotent for client retries.
-- Add inventory reservation/expiry or document and enforce a client-approved oversell policy.
-- Serialize inventory and coupon effects by order; add database-enforced side-effect keys and database-backed concurrency coverage.
+- [x] Make checkout creation idempotent for client retries.
+- [x] Add inventory reservation/expiry or document and enforce a client-approved oversell policy.
+- [x] Serialize inventory and coupon effects by order; add database-enforced side-effect keys and database-backed concurrency coverage.
 - [x] Serialize refundable-balance reservations and use the local refund ID as the provider idempotency key.
 - Define compensated order transitions for paid-but-unfulfilled and failed side effects.
 
