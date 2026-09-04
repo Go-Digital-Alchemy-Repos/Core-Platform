@@ -237,6 +237,17 @@ and budgets remain green.
 - **Risk carried forward:** source-file presence does not replace visual, responsive, accessibility, SEO,
   form, API, or production-like acceptance evidence for the full pilot.
 
+### 2026-09-04 — Better Farms combined pilot contract verification
+
+- **Implemented:** a combined pilot verifier validates the migration intake, client-site manifest, and site
+  checkout together. It requires matching stack IDs, requires every scoped intake route to be manifest
+  declared, carries forward source-reference verification, and prevents an approved intake from pairing
+  with a draft manifest.
+- **Evidence:** the Better Farms draft intake, manifest, and source revision `0f0ddde` passed as one
+  contract with no mismatch or missing reference.
+- **Risk carried forward:** both records intentionally remain draft/blocked until the client provides the
+  operational and migration decisions captured by the intake. The verifier does not authorize deployment.
+
 ### 2026-09-04 — Ecommerce stock-boundary review
 
 - **Verified:** cart pricing aggregates duplicate product/variant lines before order creation. Paid-order

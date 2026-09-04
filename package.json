@@ -15,6 +15,7 @@
     "deploy:check": "tsx server/scripts/validate-client-stack.ts",
     "manifest:validate": "tsx server/scripts/validate-client-site-manifest.ts",
     "site:contract:verify": "tsx server/scripts/verify-client-site-contract.ts",
+    "pilot:contract:verify": "tsx server/scripts/verify-client-pilot-contract.ts",
     "migration:intake:validate": "tsx server/scripts/validate-client-migration-intake.ts",
     "migration:woocommerce:validate": "tsx server/scripts/validate-woocommerce-import.ts",
     "migration:woocommerce:apply": "tsx server/scripts/apply-woocommerce-import.ts",

@@ -21,3 +21,16 @@ npm run migration:intake:validate -- docs/pilots/better-farms/client-migration-i
 The [Better Farms draft](../pilots/better-farms/client-migration-intake.example.json) deliberately remains
 blocked. It documents the specific inputs still required without treating placeholders as approval or
 authorizing a source import, DNS change, or deployment.
+
+Validate the intake, manifest, and pinned site checkout as one pilot contract:
+
+```sh
+npm run pilot:contract:verify -- \
+  docs/pilots/better-farms/client-site-manifest.example.json \
+  docs/pilots/better-farms/client-migration-intake.example.json \
+  /path/to/Better-Farms
+```
+
+This gate requires matching client stack IDs, requires every intake route to exist in the manifest, and
+checks the manifest's source references against the site checkout. An approved intake also requires an
+approved manifest.

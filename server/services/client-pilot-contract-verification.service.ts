@@ -1,0 +1,68 @@
+import { readFile } from "node:fs/promises";
+import {
+  type ClientMigrationIntake,
+  validateClientMigrationIntake,
+} from "../../shared/client-migration-intake";
+import { loadClientSiteManifest } from "./client-site-manifest.service";
+import { verifyClientSiteContract } from "./client-site-contract-verification.service";
+
+export type ClientPilotContractVerification = {
+  valid: boolean;
+  stackId?: string;
+  errors: Array<{ path: string; message: string }>;
+};
+
+async function loadIntake(intakePath: string): Promise<ClientMigrationIntake> {
+  let input: unknown;
+  try {
+    input = JSON.parse(await readFile(intakePath, "utf8"));
+  } catch {
+    throw new Error("Client migration intake could not be read or parsed.");
+  }
+  const result = validateClientMigrationIntake(input);
+  if (!result.success) throw new Error("Client migration intake failed validation.");
+  return result.data;
+}
+
+export async function verifyClientPilotContract(params: {
+  manifestPath: string;
+  intakePath: string;
+  siteRoot: string;
+  corePlatformVersion: string;
+}): Promise<ClientPilotContractVerification> {
+  const [manifest, intake, site] = await Promise.all([
+    loadClientSiteManifest(params.manifestPath, params.corePlatformVersion),
+    loadIntake(params.intakePath),
+    verifyClientSiteContract({
+      manifestPath: params.manifestPath,
+      siteRoot: params.siteRoot,
+      corePlatformVersion: params.corePlatformVersion,
+    }),
+  ]);
+  const errors: ClientPilotContractVerification["errors"] = site.errors.map((error) => ({
+    path: `site.${error.ref}`,
+    message: error.message,
+  }));
+  if (manifest.client.stackId !== intake.client.stackId) {
+    errors.push({
+      path: "client.stackId",
+      message: "must match the client-site manifest stack ID",
+    });
+  }
+  const manifestRouteIds = new Set(manifest.routes.map((route) => route.id));
+  intake.pilotScope.routeIds.forEach((routeId, index) => {
+    if (!manifestRouteIds.has(routeId)) {
+      errors.push({
+        path: `pilotScope.routeIds.${index}`,
+        message: "must reference a route declared by the client-site manifest",
+      });
+    }
+  });
+  if (intake.status === "approved" && manifest.status !== "approved") {
+    errors.push({
+      path: "status",
+      message: "an approved intake requires an approved client-site manifest",
+    });
+  }
+  return { valid: errors.length === 0, stackId: manifest.client.stackId, errors };
+}
