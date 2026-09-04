@@ -222,3 +222,17 @@ and budgets remain green.
 - **Safety boundary:** the workflow does not persist registrar credentials, call provider APIs, change DNS,
   create Railway infrastructure, or authorize cutover. The generated plan and observed verification evidence
   must be preserved in the client operations record before release review.
+
+### 2026-09-04 — WooCommerce isolated PostgreSQL rehearsal
+
+- **Environment:** disposable local PostgreSQL 16 container, created only for this rehearsal. Core's complete
+  migration sequence and the additive WooCommerce lifecycle migration completed against an empty database.
+  The source was a synthetic category and simple-product envelope; no client export, Railway service, or
+  production credential was used.
+- **Evidence:** the Drizzle repository completed a two-operation catalog run with two durable audit records;
+  exact replay of the category batch returned its existing result without another target write; concurrent
+  active-run claims for the same source/target produced exactly one success and one database rejection.
+- **Risk carried forward:** this proves the durable Phase 1 behavior on an isolated database, but does not
+  authorize a client import, cutover, customer/order history, or a production migration. A protected source
+  export, two full clean-target rehearsals, reconciliation approval, and restore/rollback evidence remain
+  required release gates.
