@@ -216,6 +216,41 @@ export const clientReleaseManifestSchema = clientReleaseManifestBaseSchema.super
 
 export type ClientReleaseManifest = z.infer<typeof clientReleaseManifestSchema>;
 
+export const CLIENT_RELEASE_APPROVAL_ROLES = ["business", "technical", "operations"] as const;
+
+export type ClientReleaseReadiness = {
+  ready: boolean;
+  pendingRequiredGates: string[];
+  missingApprovalRoles: string[];
+  backupStatus: "pending" | "verified";
+  blockers: string[];
+};
+
+export function evaluateClientReleaseReadiness(
+  manifest: ClientReleaseManifest,
+): ClientReleaseReadiness {
+  const pendingRequiredGates = manifest.gates
+    .filter((gate) => gate.required && gate.status !== "passed")
+    .map((gate) => gate.id);
+  const missingApprovalRoles = CLIENT_RELEASE_APPROVAL_ROLES.filter(
+    (role) => !manifest.approvals.some((approval) => approval.role === role),
+  );
+  const blockers = [
+    ...(manifest.status === "approved" ? [] : ["manifest-status-draft"]),
+    ...(manifest.backup.status === "verified" ? [] : ["backup-provenance-pending"]),
+    ...pendingRequiredGates.map((gate) => `required-gate-${gate}-pending`),
+    ...missingApprovalRoles.map((role) => `approval-${role}-missing`),
+  ];
+
+  return {
+    ready: blockers.length === 0,
+    pendingRequiredGates,
+    missingApprovalRoles,
+    backupStatus: manifest.backup.status,
+    blockers,
+  };
+}
+
 export function validateClientReleaseManifest(input: unknown) {
   const result = clientReleaseManifestSchema.safeParse(input);
   if (result.success) return { success: true as const, data: result.data };

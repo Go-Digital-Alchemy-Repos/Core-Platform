@@ -898,12 +898,24 @@ and budgets remain green.
   schema-validated bundled-content fallback. Actual configured-upstream failures remain `503`; public-form
   submissions without configuration remain unavailable and are unchanged.
 - **Evidence:** the exact site revision `ee14d67` passed TypeScript, all 22 site contract/security tests, and
-  a production build. A fresh local production browser visit to Fund a Farm rendered the fallback content,
-  exposed its donation controls with accessible names and expected pressed state, and reported zero console
-  errors or warnings.
+  a production build locally and in hosted GitHub Actions run `33863786090`. A fresh local production browser
+  visit to Fund a Farm rendered the fallback content, exposed its donation controls with accessible names and
+  expected pressed state, and reported zero console errors or warnings.
 - **Content review:** the same rendered-route audit found generic image alternatives such as `Rectangle`,
   `Group`, and `Img` on Home. The secret-free content-review record now requires client-approved alternative
   text or a documented decorative designation for each retained image; the `content` gate remains pending.
 - **Safety boundary:** no Core origin, form submission, client data, Railway resource, DNS record, or
   production configuration was used. This local fallback behavior is not configured-Core integration or
   production-health evidence.
+
+### 2026-09-04 — Fail-closed client release readiness gate
+
+- **Implemented:** `npm run release:readiness -- <release-manifest.json>` evaluates a schema-valid release
+  record for actual go/no-go eligibility. It reports pending required gates, backup state, missing business,
+  technical, and operations approvals, and stable blocker identifiers; it exits nonzero until every release
+  condition is present. Structural manifest validation remains available for transparent draft records.
+- **Evidence:** the Better Farms draft produced its exact required evidence list—database, backup, restore,
+  health, security, monitoring, content, and import gates; backup provenance; and all three approval roles—
+  then exited `1`. Focused manifest/readiness coverage (7 tests), TypeScript, lint, and formatting passed.
+- **Safety boundary:** the command reads a local secret-free manifest only. It does not approve a release,
+  access a Railway service, contact a client, alter DNS, restore data, or deploy.

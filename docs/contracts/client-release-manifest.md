@@ -10,6 +10,13 @@ Validate a record before release review:
 npm run release:manifest:validate -- docs/pilots/<client>/client-release-manifest.example.json
 ```
 
+To enforce the go/no-go outcome, use the readiness command. It prints the exact pending required gates,
+backup state, and missing approval roles, then exits nonzero until the record is eligible for release:
+
+```bash
+npm run release:readiness -- docs/pilots/<client>/client-release-manifest.example.json
+```
+
 Version `3.0` is the only accepted schema version. It adds the required `content` release gate: a release
 cannot be approved until the client has approved representative or actual copy, identities and rights claims,
 and the visual and accessibility review with evidence. Versions `1.0` and `2.0` records must be migrated by

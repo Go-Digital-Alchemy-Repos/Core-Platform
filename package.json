@@ -16,6 +16,7 @@
     "deploy:check": "tsx server/scripts/validate-client-stack.ts",
     "manifest:validate": "tsx server/scripts/validate-client-site-manifest.ts",
     "release:manifest:validate": "tsx server/scripts/validate-client-release-manifest.ts",
+    "release:readiness": "tsx server/scripts/check-client-release-readiness.ts",
     "site:contract:verify": "tsx server/scripts/verify-client-site-contract.ts",
     "pilot:contract:verify": "tsx server/scripts/verify-client-pilot-contract.ts",
     "migration:intake:validate": "tsx server/scripts/validate-client-migration-intake.ts",
