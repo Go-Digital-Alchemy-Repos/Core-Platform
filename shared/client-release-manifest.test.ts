@@ -3,7 +3,7 @@ import { validateClientReleaseManifest } from "./client-release-manifest";
 
 const sha = "a".repeat(40);
 const release = {
-  schemaVersion: "1.0",
+  schemaVersion: "2.0",
   status: "draft",
   clientStackId: "better-farms-foundation",
   candidate: { coreRevision: sha, siteRevision: sha },
@@ -20,6 +20,7 @@ const release = {
     { id: "restore", required: true, status: "pending" },
     { id: "health", required: true, status: "pending" },
     { id: "security", required: true, status: "pending" },
+    { id: "monitoring", required: true, status: "pending" },
     { id: "transactions", required: false, status: "not-required" },
     { id: "import", required: true, status: "pending" },
   ],
@@ -47,6 +48,13 @@ describe("client release manifest", () => {
         gates: release.gates.filter((gate) => gate.id !== "import"),
       }),
     ).toMatchObject({ success: false, errors: expect.arrayContaining([expect.any(Object)]) });
+  });
+
+  it("fails closed on the pre-monitoring release-manifest schema", () => {
+    expect(validateClientReleaseManifest({ ...release, schemaVersion: "1.0" })).toMatchObject({
+      success: false,
+      errors: expect.arrayContaining([expect.any(Object)]),
+    });
   });
 
   it("requires verified provenance, passed gates, and three approvals for approval", () => {

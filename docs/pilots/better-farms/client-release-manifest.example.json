@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0",
+  "schemaVersion": "2.0",
   "status": "draft",
   "clientStackId": "better-farms-foundation",
   "candidate": {
@@ -31,6 +31,7 @@
     { "id": "restore", "required": true, "status": "pending" },
     { "id": "health", "required": true, "status": "pending" },
     { "id": "security", "required": true, "status": "pending" },
+    { "id": "monitoring", "required": true, "status": "pending" },
     { "id": "transactions", "required": false, "status": "not-required" },
     { "id": "import", "required": true, "status": "pending" }
   ],

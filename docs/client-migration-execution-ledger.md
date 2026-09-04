@@ -757,3 +757,15 @@ and budgets remain green.
 - **Evidence update:** hosted GitHub Actions run `33851430774` passed isolated PostgreSQL migration
   verification, type-check, lint, formatting, 515 tests, production build, and bundle budget for revision
   `e2df227`.
+
+### 2026-09-04 — Release-contract monitoring gate
+
+- **Implemented:** release-manifest schema v2.0 adds a required `monitoring` gate. A prior v1.0 record fails
+  closed, so an omitted monitoring review cannot be read as an optional requirement. Better Farms' draft is
+  migrated with that gate explicitly pending.
+- **Evidence boundary:** passing the schema confirms the release record includes monitoring review; it does
+  not establish telemetry delivery, alert thresholds, error budgets, or named responders. Those client
+  operating facts remain required before approval.
+- **Evidence:** release-manifest schema tests, Better Farms manifest validation, and the combined
+  cross-repository pilot-contract verification passed. The full local gate passed with 110 test files /
+  516 tests, type-check, lint, formatting, production build, and bundle budget.

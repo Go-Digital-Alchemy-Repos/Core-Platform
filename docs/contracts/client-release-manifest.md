@@ -1,4 +1,4 @@
-# Client Release Manifest
+# Client Release Manifest v2.0
 
 The client release manifest is a versioned, secret-free release record. It ties one client stack to its
 candidate Core and site revisions, the distinct public and administrative origins, backup provenance,
@@ -9,6 +9,11 @@ Validate a record before release review:
 ```bash
 npm run release:manifest:validate -- docs/pilots/<client>/client-release-manifest.example.json
 ```
+
+Version `2.0` is the only accepted schema version. It adds the required `monitoring` release gate: a release
+cannot be approved until telemetry delivery, alert thresholds, error-budget policy, and named responders have
+evidence. Version `1.0` records must be migrated by adding that gate before validation; the validator fails
+closed instead of interpreting an omitted monitoring gate as optional.
 
 Every record lists the complete standard gate set. `draft` records can accurately show pending gates. An
 `approved` record must have an exact-match verified backup whose manifest stack ID matches `clientStackId`, a
