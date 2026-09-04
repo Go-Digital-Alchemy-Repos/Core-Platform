@@ -35,6 +35,7 @@
 | `SETUP_TOKEN`                 | Security | Optional token required for first admin setup    |
 | `CMS_PREVIEW_SECRET`          | CMS      | Optional signing secret for CMS preview links    |
 | `METRICS_ENABLED`             | Metrics  | Set to "true" to enable metrics endpoint         |
+| `METRICS_BEARER_TOKEN`        | Metrics  | Unique 32+ character bearer token for production metrics scrapes |
 | `LOG_LEVEL`                   | Logging  | Pino log level (default: "info")                 |
 | `SYSTEM_BACKUPS_ENABLED`      | Backups  | Set to "true" to enable scheduled system backups |
 | `BACKUP_R2_ACCOUNT_ID`        | Backups  | Cloudflare R2 account ID for backup storage      |

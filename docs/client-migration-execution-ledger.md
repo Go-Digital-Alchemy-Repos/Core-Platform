@@ -739,3 +739,18 @@ and budgets remain green.
 - **Evidence update:** hosted GitHub Actions run `33849933505` passed isolated PostgreSQL migration
   verification, type-check, lint, formatting, 512 tests, production build, and bundle budget for revision
   `063f20d`.
+
+### 2026-09-04 — Authenticated stack-labeled monitoring scrape
+
+- **Implemented:** production metrics now fail closed without both explicit opt-in and a dedicated bearer
+  token. Monitoring can scrape a bounded Prometheus view labeled with the client stack ID. That view exports
+  only aggregate process, database, email, HTTP-error, and operational-domain counters; it excludes route
+  labels, identifiers, provider payloads, and money values.
+- **Implemented:** deployment preflight now supports `--require-observability`, requiring the production
+  opt-in and a unique 32+ character metrics token before a stack can claim observability readiness.
+- **Risk carried forward:** a client still must configure the external monitoring system, test delivery,
+  set thresholds and error budgets, and name responders before this gate may pass.
+- **Evidence:** metrics and client-stack configuration tests passed; a synthetic isolated-stack
+  `--require-observability` preflight passed. The full local gate passed with 110 test files / 515 tests,
+  type-check, lint, formatting, production build, and bundle budget. No client telemetry endpoint,
+  monitoring provider, or production stack was contacted.

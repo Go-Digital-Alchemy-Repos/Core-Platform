@@ -23,6 +23,8 @@ function completeEnvironment(): NodeJS.ProcessEnv {
     BACKUP_R2_SECRET_ACCESS_KEY: "secret",
     BACKUP_R2_BUCKET_NAME: "client-backups",
     BACKUP_R2_PREFIX: "production/pilot-acme",
+    METRICS_ENABLED: "true",
+    METRICS_BEARER_TOKEN: "a-dedicated-metrics-token-that-is-long-enough",
     CLIENT_FORM_PROXY_TOKEN: "client-form-proxy-token-placeholder",
   };
 }
@@ -33,6 +35,7 @@ describe("validateClientStackEnvironment", () => {
       ecommerce: true,
       email: true,
       backups: true,
+      observability: true,
     });
 
     expect(result).toEqual({
@@ -67,6 +70,7 @@ describe("validateClientStackEnvironment", () => {
     delete env.STRIPE_WEBHOOK_SECRET;
     delete env.SMTP_PASS;
     delete env.BACKUP_R2_BUCKET_NAME;
+    delete env.METRICS_BEARER_TOKEN;
     delete env.CLIENT_FORM_PROXY_TOKEN;
     env.SYSTEM_BACKUPS_ENABLED = "false";
 
@@ -76,6 +80,7 @@ describe("validateClientStackEnvironment", () => {
         ecommerce: true,
         email: true,
         backups: true,
+        observability: true,
         clientFormProxy: true,
       }).errors,
     ).toEqual(
@@ -84,7 +89,21 @@ describe("validateClientStackEnvironment", () => {
         "SMTP_PASS is required",
         "SYSTEM_BACKUPS_ENABLED must be true",
         "BACKUP_R2_BUCKET_NAME is required",
+        "METRICS_BEARER_TOKEN is required",
         "CLIENT_FORM_PROXY_TOKEN is required",
+      ]),
+    );
+  });
+
+  it("requires explicit opt-in and a sufficiently strong metrics credential", () => {
+    const env = completeEnvironment();
+    env.METRICS_ENABLED = "false";
+    env.METRICS_BEARER_TOKEN = "too-short";
+
+    expect(validateClientStackEnvironment(env, { observability: true }).errors).toEqual(
+      expect.arrayContaining([
+        "METRICS_ENABLED must be true",
+        "METRICS_BEARER_TOKEN must be at least 32 characters",
       ]),
     );
   });

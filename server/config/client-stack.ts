@@ -2,6 +2,7 @@ export interface ClientStackRequirements {
   ecommerce?: boolean;
   email?: boolean;
   backups?: boolean;
+  observability?: boolean;
   clientFormProxy?: boolean;
   separatePublicAndAdminOrigins?: boolean;
 }
@@ -161,6 +162,17 @@ export function validateClientStackEnvironment(
     const prefix = env.BACKUP_R2_PREFIX?.trim();
     if (stackId && prefix && !prefix.split("/").includes(stackId)) {
       errors.push("BACKUP_R2_PREFIX must contain CLIENT_STACK_ID as a complete path segment");
+    }
+  }
+
+  if (requirements.observability) {
+    if (env.METRICS_ENABLED !== "true") {
+      errors.push("METRICS_ENABLED must be true");
+    }
+    requireVariables(env, ["METRICS_BEARER_TOKEN"], errors);
+    const metricsToken = env.METRICS_BEARER_TOKEN?.trim();
+    if (metricsToken && metricsToken.length < 32) {
+      errors.push("METRICS_BEARER_TOKEN must be at least 32 characters");
     }
   }
 

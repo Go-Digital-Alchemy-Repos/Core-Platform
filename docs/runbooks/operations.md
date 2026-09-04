@@ -36,13 +36,27 @@ Returns **503** if the database is unreachable. Use this for readiness probes â€
 GET /api/health/metrics
 ```
 
-Available in development or when `METRICS_ENABLED=true`. Returns in-memory request metrics (method, path, duration, status code aggregates).
+Available without authentication in development. In production it returns `404` unless both
+`METRICS_ENABLED=true` and a matching `Authorization: Bearer <METRICS_BEARER_TOKEN>` header are present.
+The JSON response contains in-memory request metrics (method, path, duration, status-code aggregates).
 
 It also returns aggregate `domains` outcome counters for checkout creation, payment-webhook processing,
 refunds, expired inventory reservations, transactional notifications, backups, and restores. These counters
 contain no order IDs, customer data, provider payloads, or money values. Treat them as a process-local signal:
 export or scrape them at the configured interval, and define client-approved alert thresholds and responders
 before a transaction-enabled launch.
+
+Monitoring systems should scrape the bounded Prometheus transport rather than the JSON detail view:
+
+```bash
+curl --fail --silent --show-error \
+  -H "Authorization: Bearer $METRICS_BEARER_TOKEN" \
+  'https://admin.example.com/api/health/metrics?format=prometheus'
+```
+
+The Prometheus response is labeled with `client_stack_id` and intentionally excludes request paths. It
+contains process uptime, database query counts, email outcomes, aggregate HTTP errors, and domain outcomes.
+It contains no account IDs, order IDs, payloads, amounts, or customer data.
 
 ## Logging
 

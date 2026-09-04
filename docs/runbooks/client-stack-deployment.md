@@ -68,7 +68,7 @@ observed evidence in the client operations record before a release review.
 6. Before deployment, run the same candidate configuration through the preflight:
 
    ```bash
-   npm run deploy:check -- --require-ecommerce --require-email --require-backups --require-client-form-proxy --require-separate-origins
+   npm run deploy:check -- --require-ecommerce --require-email --require-backups --require-observability --require-client-form-proxy --require-separate-origins
    ```
 
    The command reports only missing or invalid variable names and non-secret identity/origin values.
@@ -85,7 +85,7 @@ observed evidence in the client operations record before a release review.
 | Email             | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`; SPF/DKIM/DMARC ownership evidence                                                                   |
 | Site form proxy   | Matching `CLIENT_FORM_PROXY_TOKEN` on Core Platform and `CORE_PLATFORM_FORM_PROXY_TOKEN` only in the client's site server environment; never expose either to browser code |
 | Backups           | `SYSTEM_BACKUPS_ENABLED=true`, interval/retention settings, dedicated R2 credentials/bucket, `BACKUP_R2_PREFIX` containing `CLIENT_STACK_ID` as one path segment     |
-| Observability     | `LOG_LEVEL`, `METRICS_ENABLED=true`, uptime/error/log destinations and named responders                                                                              |
+| Observability     | `LOG_LEVEL`, `METRICS_ENABLED=true`, a unique 32+ character `METRICS_BEARER_TOKEN`, uptime/error/log destinations, and named responders                                |
 | Railway metadata  | Git commit SHA, project/service/environment IDs are supplied by Railway and included in backup metadata                                                              |
 
 Prefer environment-managed provider secrets for deterministic stacks. If an admin UI can persist a
@@ -154,7 +154,7 @@ Before each production release record the candidate commit and verify:
 - `/api/health`, `/api/health/ready`, storefront, login, catalog, cart, and checkout smoke checks pass;
 - domain ownership, authoritative DNS, propagation, certificates, public/admin routing, same-origin
   `/api`, canonical redirects, and the reviewed DNS rollback plan pass;
-- monitoring is receiving stack-labeled telemetry and responders are available.
+- monitoring is receiving stack-labeled telemetry from the authenticated Prometheus scrape and responders are available.
 
 ## Rollback
 

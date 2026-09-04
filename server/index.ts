@@ -12,7 +12,12 @@ import {
   originCheck,
 } from "./middleware/security";
 import { logger, requestIdMiddleware } from "./utils/logger";
-import { recordRequest, getMetricsSnapshot } from "./utils/metrics";
+import {
+  getMetricsSnapshot,
+  getPrometheusMetricsSnapshot,
+  isMetricsRequestAuthorized,
+  recordRequest,
+} from "./utils/metrics";
 import { startScheduledPublishService } from "./services/scheduled-publish.service";
 import { startEventReminderService } from "./services/event-reminder.service";
 import { startSystemBackupService } from "./services/system-backup.service";
@@ -133,8 +138,12 @@ app.get("/api/health/ready", async (_req, res) => {
 });
 
 app.get("/api/health/metrics", (req, res) => {
-  if (process.env.NODE_ENV === "production" && process.env.METRICS_ENABLED !== "true") {
+  if (!isMetricsRequestAuthorized(req.get("authorization"))) {
     return res.status(404).json({ message: "Not found" });
+  }
+  if (req.query.format === "prometheus") {
+    res.type("text/plain; version=0.0.4; charset=utf-8");
+    return res.send(getPrometheusMetricsSnapshot(process.env.CLIENT_STACK_ID));
   }
   res.json(getMetricsSnapshot());
 });
