@@ -754,3 +754,6 @@ and budgets remain green.
   `--require-observability` preflight passed. The full local gate passed with 110 test files / 515 tests,
   type-check, lint, formatting, production build, and bundle budget. No client telemetry endpoint,
   monitoring provider, or production stack was contacted.
+- **Evidence update:** hosted GitHub Actions run `33851430774` passed isolated PostgreSQL migration
+  verification, type-check, lint, formatting, 515 tests, production build, and bundle budget for revision
+  `e2df227`.
