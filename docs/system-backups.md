@@ -87,7 +87,11 @@ npm run backup:restore -- --file "./backup.json.gz" --yes
 ## Important restore notes
 
 - Restore is destructive and replaces live database contents.
-- For isolated client stacks, verify the manifest `clientStackId` matches the target before approving a restore.
+- Restore requires `CLIENT_STACK_ID` in the target environment. A snapshot with a `clientStackId` must
+  match it exactly; a mismatch is always rejected.
+- Snapshots created before stack provenance was added have no `clientStackId`. They are rejected by default.
+  After a duplicate-environment review, use `--allow-legacy-backup` with `--yes` to acknowledge that limited
+  provenance. This flag never overrides an identified stack mismatch.
 - Use a duplicate Railway environment first whenever possible.
 - After restore, verify logins, CMS pages, menus, events, media references, and email settings.
 - If the failure also affects app code, use Railway deployment rollback in addition to database restore.

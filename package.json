@@ -14,6 +14,7 @@
     "backup:restore": "tsx server/scripts/restore-system-backup.ts",
     "deploy:check": "tsx server/scripts/validate-client-stack.ts",
     "manifest:validate": "tsx server/scripts/validate-client-site-manifest.ts",
+    "release:manifest:validate": "tsx server/scripts/validate-client-release-manifest.ts",
     "site:contract:verify": "tsx server/scripts/verify-client-site-contract.ts",
     "pilot:contract:verify": "tsx server/scripts/verify-client-pilot-contract.ts",
     "migration:intake:validate": "tsx server/scripts/validate-client-migration-intake.ts",

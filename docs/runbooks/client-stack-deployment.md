@@ -103,8 +103,10 @@ silently point to another client's provider account.
   metadata, bucket/prefix, table counts, representative records, login, media references, and order
   totals before declaring restore readiness.
 
-Never restore into production first. The restore command is destructive and requires the explicit
-`--yes` flag described in [System Backups](../system-backups.md).
+Never restore into production first. The restore command is destructive, requires `--yes`, and refuses a
+snapshot whose `clientStackId` does not exactly match the target `CLIENT_STACK_ID`. A legacy snapshot without
+stack provenance requires the separate `--allow-legacy-backup` acknowledgement after duplicate-environment
+review; that acknowledgement cannot override a mismatched identified stack. See [System Backups](../system-backups.md).
 
 ## Stripe and Webhooks
 

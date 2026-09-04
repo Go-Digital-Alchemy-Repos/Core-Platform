@@ -9,6 +9,7 @@ import {
   listBackupObjects,
   uploadBackupObject,
 } from "./backup-storage.service";
+import { assertBackupRestoreIdentity } from "./backup-restore-identity";
 
 declare const __APP_VERSION__: string;
 
@@ -51,6 +52,10 @@ interface DatabaseBackupSnapshot {
   manifest: BackupManifest;
   sequences: BackupSequenceSnapshot[];
   tables: BackupTableSnapshot[];
+}
+
+interface RestoreBackupSnapshotOptions {
+  allowLegacyBackup?: boolean;
 }
 
 interface BackupStatus {
@@ -401,7 +406,14 @@ export async function loadBackupSnapshotFromKey(key: string): Promise<DatabaseBa
   return JSON.parse(gunzipSync(buffer).toString("utf8")) as DatabaseBackupSnapshot;
 }
 
-export async function restoreBackupSnapshot(snapshot: DatabaseBackupSnapshot) {
+export async function restoreBackupSnapshot(
+  snapshot: DatabaseBackupSnapshot,
+  options: RestoreBackupSnapshotOptions = {},
+) {
+  const identity = assertBackupRestoreIdentity(snapshot.manifest, {
+    targetStackId: process.env.CLIENT_STACK_ID,
+    allowLegacyBackup: options.allowLegacyBackup,
+  });
   const client = await pool.connect();
 
   try {
@@ -452,6 +464,7 @@ export async function restoreBackupSnapshot(snapshot: DatabaseBackupSnapshot) {
       key: snapshot.manifest.key,
       createdAt: snapshot.manifest.createdAt,
       tableCount: snapshot.manifest.tableCount,
+      identity: identity.kind,
     });
   } catch (error) {
     await client.query("ROLLBACK");

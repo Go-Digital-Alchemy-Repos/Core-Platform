@@ -414,3 +414,20 @@ and budgets remain green.
   authorize a client import, cutover, customer/order history, or a production migration. A protected source
   export, two full clean-target rehearsals, reconciliation approval, and restore/rollback evidence remain
   required release gates.
+
+### 2026-09-04 — Client-stack restore identity and release record
+
+- **Implemented:** every application-level restore now requires a target `CLIENT_STACK_ID` and accepts an
+  identified backup only when its manifest stack ID is an exact match. A snapshot created before provenance
+  was recorded is rejected by default and requires the CLI-only `--allow-legacy-backup` acknowledgement
+  after duplicate-environment review. That acknowledgement cannot override an identified mismatch.
+- **Release control:** added a versioned, secret-free client release manifest and validator that bind the
+  Core and site revisions, distinct public/admin origins, backup provenance, complete standard gate set, and
+  business/technical/operations evidence. The Better Farms record is deliberately a draft with pending
+  database, backup, restore, health, security, and import gates.
+- **Evidence:** exact match, missing target, mismatch, and legacy restore-policy tests pass; release-manifest
+  schema tests and Better Farms draft validation pass. No restore, deployment, Railway configuration, DNS
+  mutation, provider call, or client-data access occurred.
+- **Risk carried forward:** a client-approved duplicate-environment restore drill, actual stack origins,
+  browser/routing evidence, backup provenance, remaining operational gates, and named approvals are still
+  required before the manifest can be approved or a release considered.
