@@ -28,6 +28,7 @@ import careersRoutes from "./careers.routes";
 import portfolioRoutes from "./portfolio.routes";
 import membershipRoutes from "./membership.routes";
 import clientSiteContentRoutes from "./client-site-content.routes";
+import clientFormsRoutes from "./client-forms.routes";
 import {
   requireBlogEnabled,
   requireCareersEnabled,
@@ -87,6 +88,7 @@ export function registerApiRoutes(app: Express) {
   app.use("/api/events", requireEventsEnabled, registrationRoutes);
   app.use("/api/cms", requireCmsEnabled, cmsPublicRoutes);
   app.use("/api/client-site-content", requireCmsEnabled, clientSiteContentRoutes);
+  app.use("/api/client-forms", clientFormsRoutes);
   app.use("/api/contact-professional", requireDirectoryEnabled, contactProfessionalRoutes);
   app.use("/api/setup", setupRoutes);
   app.use("/api/therapist/application", requireDirectoryEnabled, applicationRoutes);

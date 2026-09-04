@@ -6,7 +6,7 @@
     "displayName": "Better Farms Foundation",
     "source": {
       "repository": "https://github.com/Go-Digital-Alchemy-Repos/Better-Farms.git",
-      "revision": "46dfc5402885f331ac6eff444c63f8c0107028fe"
+      "revision": "f538f2b06c2961cc7bf217c6395cedb3a5bf43cb"
     },
     "owners": [
       {
@@ -294,8 +294,16 @@
       "basePath": "/api",
       "direction": "site-to-platform",
       "authentication": "none",
-      "capabilities": ["contact-messages", "newsletter-signups", "cms-content"],
+      "capabilities": ["cms-content"],
       "secretRefs": []
+    },
+    {
+      "id": "server-form-proxy",
+      "basePath": "/api",
+      "direction": "site-to-platform",
+      "authentication": "signed",
+      "capabilities": ["contact-messages", "newsletter-signups"],
+      "secretRefs": ["client-form-proxy-token"]
     }
   ],
   "modules": [
@@ -318,5 +326,12 @@
       "secretRefs": []
     }
   ],
-  "secretReferences": []
+  "secretReferences": [
+    {
+      "id": "client-form-proxy-token",
+      "environmentVariable": "CORE_PLATFORM_FORM_PROXY_TOKEN",
+      "purpose": "Authenticates the Better Farms server-to-server form proxy to its isolated Core Platform stack.",
+      "required": true
+    }
+  ]
 }

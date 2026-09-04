@@ -431,3 +431,16 @@ and budgets remain green.
 - **Risk carried forward:** a client-approved duplicate-environment restore drill, actual stack origins,
   browser/routing evidence, backup provenance, remaining operational gates, and named approvals are still
   required before the manifest can be approved or a release considered.
+
+### 2026-09-04 — Better Farms authenticated form handoff
+
+- **Implemented:** Better Farms public forms retain same-origin browser endpoints, but its site server now
+  forwards only to an explicit `better-farms-foundation` Core Platform client-form route using a server-only
+  token. Core verifies the requested stack ID and token in constant time before submitting its managed
+  contact or newsletter form. The existing generic public form routes are unchanged.
+- **Fail-closed behavior:** an absent site token prevents any upstream request; an absent Core configuration
+  returns unavailable; an incorrect stack ID or token is rejected without revealing which value failed.
+  The client-site contract records the proxy token as a required server secret reference without its value.
+- **Risk carried forward:** no token has been generated or configured, and no server-to-server request has
+  been made outside tests. The release still requires isolated-stack configuration, deployed-origin browser
+  evidence, and approval before the route may be enabled.
