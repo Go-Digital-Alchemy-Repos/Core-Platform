@@ -45,6 +45,7 @@ import {
   updateAdminEcommerceOrder,
 } from "../../services/ecommerce-order.service";
 import { sendEcommerceShipmentEmail } from "../../services/ecommerce-email.service";
+import { replayEcommerceStripeWebhook } from "../../webhooks/ecommerce-stripe.handler";
 import {
   ECOMMERCE_SHIPPING_PROVIDER_REGISTRY,
   getMissingShippingProviderCredentialLabels,
@@ -84,6 +85,28 @@ const router = Router();
 
 router.use(requireEcommerceEnabled);
 router.use(noStorePrivateResponse);
+
+function toWebhookDeliverySummary(delivery: {
+  eventId: string;
+  eventType: string;
+  status: string;
+  attemptCount: number;
+  startedAt: Date;
+  completedAt: Date | null;
+  processedAt: Date | null;
+  lastError: string | null;
+}) {
+  return {
+    eventId: delivery.eventId,
+    eventType: delivery.eventType,
+    status: delivery.status,
+    attemptCount: delivery.attemptCount,
+    startedAt: delivery.startedAt,
+    completedAt: delivery.completedAt,
+    processedAt: delivery.processedAt,
+    hasFailure: Boolean(delivery.lastError),
+  };
+}
 
 const productPayloadSchema = insertEcommerceProductSchema.extend({
   categoryIds: z.array(z.string()).default([]),
@@ -510,6 +533,37 @@ router.post(
   "/refunds/:id/reconcile",
   asyncHandler(async (req, res) => {
     res.json(await reconcileEcommerceRefund(paramString(req.params.id)));
+  }),
+);
+
+router.get(
+  "/webhooks/stripe",
+  asyncHandler(async (req, res) => {
+    const query = z
+      .object({
+        status: z.enum(["processing", "processed", "failed"]).optional(),
+        limit: z.coerce.number().int().min(1).max(100).optional(),
+      })
+      .parse(req.query);
+    const deliveries = await storage.ecommerce.listWebhookProcessing({
+      provider: "stripe",
+      status: query.status,
+      limit: query.limit,
+    });
+    res.json(deliveries.map(toWebhookDeliverySummary));
+  }),
+);
+
+router.post(
+  "/webhooks/stripe/:eventId/replay",
+  asyncHandler(async (req, res) => {
+    const eventId = z
+      .string()
+      .trim()
+      .regex(/^evt_[A-Za-z0-9]+$/)
+      .max(255)
+      .parse(req.params.eventId);
+    res.json(await replayEcommerceStripeWebhook(eventId));
   }),
 );
 

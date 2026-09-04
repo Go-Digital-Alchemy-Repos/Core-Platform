@@ -45,6 +45,7 @@ import {
   type EcommerceOrderItem,
   type EcommerceOrderNote,
   type EcommercePaymentRequest,
+  type EcommerceProcessedWebhookEvent,
   type EcommerceProduct,
   type EcommerceProductMedia,
   type EcommerceProductVariant,
@@ -1872,6 +1873,43 @@ export class EcommerceStorage {
       RETURNING processing_token
     `);
     return (result.rows[0] as { processing_token?: string } | undefined)?.processing_token ?? null;
+  }
+
+  async getWebhookProcessing(
+    provider: string,
+    eventId: string,
+  ): Promise<EcommerceProcessedWebhookEvent | undefined> {
+    const [event] = await db
+      .select()
+      .from(ecommerceProcessedWebhookEvents)
+      .where(
+        and(
+          eq(ecommerceProcessedWebhookEvents.provider, provider),
+          eq(ecommerceProcessedWebhookEvents.eventId, eventId),
+        ),
+      );
+    return event;
+  }
+
+  async listWebhookProcessing(params: {
+    provider: string;
+    status?: "processing" | "processed" | "failed";
+    limit?: number;
+  }): Promise<EcommerceProcessedWebhookEvent[]> {
+    const limit = Math.min(Math.max(params.limit ?? 50, 1), 100);
+    return db
+      .select()
+      .from(ecommerceProcessedWebhookEvents)
+      .where(
+        params.status
+          ? and(
+              eq(ecommerceProcessedWebhookEvents.provider, params.provider),
+              eq(ecommerceProcessedWebhookEvents.status, params.status),
+            )
+          : eq(ecommerceProcessedWebhookEvents.provider, params.provider),
+      )
+      .orderBy(desc(ecommerceProcessedWebhookEvents.startedAt))
+      .limit(limit);
   }
 
   async completeWebhookProcessing(

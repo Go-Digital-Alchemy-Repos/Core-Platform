@@ -29,7 +29,7 @@ checks, and domain/origin checks pass for that client's isolated environment.
 - [x] Atomically claim Stripe webhook events before side effects, with retryable failure and stale-claim recovery state.
 - [x] Commit Stripe paid-order status, coupon redemption, and inventory deduction in one order-locked database transaction.
 - Move payment side effects to durable, idempotent jobs with retry and dead-letter visibility.
-- Add payment-provider reconciliation and replay tooling.
+- [x] Add Stripe webhook reconciliation, delivery inspection, and explicit replay tooling.
 - Make checkout creation idempotent for client retries.
 - Add inventory reservation/expiry or document and enforce a client-approved oversell policy.
 - Serialize inventory and coupon effects by order; add database-enforced side-effect keys and database-backed concurrency coverage.

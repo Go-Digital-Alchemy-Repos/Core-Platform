@@ -1320,6 +1320,7 @@ export type InsertEcommerceCustomerAddress = z.infer<typeof insertEcommerceCusto
 export type EcommerceOrder = typeof ecommerceOrders.$inferSelect;
 export type InsertEcommerceOrder = z.infer<typeof insertEcommerceOrderSchema>;
 export type EcommerceCheckoutRequest = typeof ecommerceCheckoutRequests.$inferSelect;
+export type EcommerceProcessedWebhookEvent = typeof ecommerceProcessedWebhookEvents.$inferSelect;
 export type EcommerceOrderItem = typeof ecommerceOrderItems.$inferSelect;
 export type InsertEcommerceOrderItem = z.infer<typeof insertEcommerceOrderItemSchema>;
 export type EcommerceOrderNote = typeof ecommerceOrderNotes.$inferSelect;

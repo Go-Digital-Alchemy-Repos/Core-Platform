@@ -513,3 +513,13 @@ and budgets remain green.
   lead remained `new` with no client or notes. No client, Railway, or production database was contacted.
 - **Risk carried forward:** lead-intake duplicate identity, retention/export policy, and operational audit
   coverage remain client-release review items.
+
+### 2026-09-04 — Stripe webhook recovery controls
+
+- **Implemented:** administrators can list sanitized Stripe webhook delivery evidence and explicitly replay a
+  failed delivery by its Stripe event ID. Replay fetches the event from Stripe's authenticated API, reuses the
+  existing durable claim/attempt lifecycle, and never accepts an operator-supplied webhook payload. Events
+  already processed or currently owned by another worker cannot be replayed.
+- **Safety boundary:** the delivery list excludes processing tokens and raw error text. A replay requires the
+  existing admin authorization plus configured Stripe credentials; no replay, provider call, database change,
+  or deployment was performed while implementing this control.

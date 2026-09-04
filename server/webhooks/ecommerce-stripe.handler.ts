@@ -81,6 +81,38 @@ async function reconcileEcommerceStripeEvent(event: Stripe.Event) {
   }
 }
 
+async function processVerifiedEcommerceStripeEvent(event: Stripe.Event) {
+  const processingToken = await storage.ecommerce.claimWebhookProcessing(
+    "stripe",
+    event.id,
+    event.type,
+  );
+  if (!processingToken) {
+    logger.stripe.info("Duplicate ecommerce webhook already claimed or reconciled", {
+      eventId: event.id,
+      eventType: event.type,
+    });
+    return { status: "already_claimed" as const, eventId: event.id, eventType: event.type };
+  }
+
+  try {
+    await reconcileEcommerceStripeEvent(event);
+    await storage.ecommerce.completeWebhookProcessing("stripe", event.id, processingToken);
+    return { status: "processed" as const, eventId: event.id, eventType: event.type };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message.slice(0, 1000) : "Unknown webhook processing failure";
+    try {
+      await storage.ecommerce.failWebhookProcessing("stripe", event.id, processingToken, message);
+    } catch (statusError) {
+      logger.stripe.error("Failed to record ecommerce webhook failure", statusError, {
+        eventId: event.id,
+      });
+    }
+    throw error;
+  }
+}
+
 export async function processEcommerceStripeWebhook(payload: Buffer, signature?: string) {
   const stripe = await getEcommerceStripeClient();
   const secret = await getEcommerceStripeWebhookSecret();
@@ -95,32 +127,28 @@ export async function processEcommerceStripeWebhook(payload: Buffer, signature?:
     event = JSON.parse(payload.toString()) as Stripe.Event;
   }
 
-  const processingToken = await storage.ecommerce.claimWebhookProcessing(
-    "stripe",
-    event.id,
-    event.type,
-  );
-  if (!processingToken) {
-    logger.stripe.info("Duplicate ecommerce webhook already claimed or reconciled", {
-      eventId: event.id,
-      eventType: event.type,
+  return processVerifiedEcommerceStripeEvent(event);
+}
+
+export async function replayEcommerceStripeWebhook(eventId: string) {
+  const existing = await storage.ecommerce.getWebhookProcessing("stripe", eventId);
+  if (existing?.status === "processed") {
+    return { status: "already_processed" as const, eventId, eventType: existing.eventType };
+  }
+  if (existing?.status === "processing") {
+    throw Object.assign(new Error("This ecommerce webhook is already being processed."), {
+      statusCode: 409,
     });
-    return;
   }
 
-  try {
-    await reconcileEcommerceStripeEvent(event);
-    await storage.ecommerce.completeWebhookProcessing("stripe", event.id, processingToken);
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message.slice(0, 1000) : "Unknown webhook processing failure";
-    try {
-      await storage.ecommerce.failWebhookProcessing("stripe", event.id, processingToken, message);
-    } catch (statusError) {
-      logger.stripe.error("Failed to record ecommerce webhook failure", statusError, {
-        eventId: event.id,
-      });
-    }
-    throw error;
+  const stripe = await getEcommerceStripeClient();
+  const event = await stripe.events.retrieve(eventId);
+  if (event.id !== eventId) {
+    throw new Error("Stripe returned an unexpected ecommerce webhook event.");
   }
+  const result = await processVerifiedEcommerceStripeEvent(event);
+  return {
+    ...result,
+    status: result.status === "processed" ? ("replayed" as const) : result.status,
+  };
 }

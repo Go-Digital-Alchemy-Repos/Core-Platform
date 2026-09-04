@@ -11,6 +11,9 @@ const mocks = vi.hoisted(() => ({
   recordRisk: vi.fn(),
   recordRefund: vi.fn(),
   getWebhookSecret: vi.fn(),
+  getWebhookProcessing: vi.fn(),
+  getStripeClient: vi.fn(),
+  retrieveStripeEvent: vi.fn(),
 }));
 
 vi.mock("../storage/index", () => ({
@@ -20,14 +23,13 @@ vi.mock("../storage/index", () => ({
       claimWebhookProcessing: mocks.claim,
       completeWebhookProcessing: mocks.complete,
       failWebhookProcessing: mocks.fail,
+      getWebhookProcessing: mocks.getWebhookProcessing,
     },
   },
 }));
 
 vi.mock("../services/ecommerce-stripe.service", () => ({
-  getEcommerceStripeClient: vi.fn(async () => ({
-    webhooks: { constructEvent: vi.fn() },
-  })),
+  getEcommerceStripeClient: mocks.getStripeClient,
   getEcommerceStripeWebhookSecret: mocks.getWebhookSecret,
 }));
 
@@ -55,6 +57,11 @@ describe("processEcommerceStripeWebhook", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getWebhookSecret.mockResolvedValue(null);
+    mocks.getWebhookProcessing.mockResolvedValue(undefined);
+    mocks.getStripeClient.mockResolvedValue({
+      webhooks: { constructEvent: vi.fn() },
+      events: { retrieve: mocks.retrieveStripeEvent },
+    });
     mocks.claim.mockResolvedValue("attempt-token-1");
     mocks.complete.mockResolvedValue(undefined);
     mocks.fail.mockResolvedValue(undefined);
@@ -180,5 +187,52 @@ describe("processEcommerceStripeWebhook", () => {
       "attempt-token-1",
       "temporary refund lock",
     );
+  });
+
+  it("replays a failed delivery from Stripe without accepting a raw webhook payload", async () => {
+    const { replayEcommerceStripeWebhook } = await import("../webhooks/ecommerce-stripe.handler");
+    mocks.getWebhookProcessing.mockResolvedValue({
+      status: "failed",
+      eventType: "payment_intent.succeeded",
+    });
+    mocks.retrieveStripeEvent.mockResolvedValue({
+      id: "evt_replay_123",
+      type: "payment_intent.succeeded",
+      data: { object: { id: "pi_123", amount: 5000, metadata: { orderId: "order-1" } } },
+    });
+    mocks.getOrder.mockResolvedValue({
+      id: "order-1",
+      totalAmount: 5000,
+      stripePaymentIntentId: "pi_123",
+    } as EcommerceOrder);
+    mocks.markOrderPaid.mockResolvedValue({ id: "order-1" });
+
+    await expect(replayEcommerceStripeWebhook("evt_replay_123")).resolves.toMatchObject({
+      status: "replayed",
+      eventId: "evt_replay_123",
+    });
+    expect(mocks.retrieveStripeEvent).toHaveBeenCalledWith("evt_replay_123");
+    expect(mocks.claim).toHaveBeenCalledWith(
+      "stripe",
+      "evt_replay_123",
+      "payment_intent.succeeded",
+    );
+    expect(mocks.markOrderPaid).toHaveBeenCalledWith("order-1", "pi_123");
+  });
+
+  it("does not call Stripe again for an already processed delivery", async () => {
+    const { replayEcommerceStripeWebhook } = await import("../webhooks/ecommerce-stripe.handler");
+    mocks.getWebhookProcessing.mockResolvedValue({
+      status: "processed",
+      eventType: "refund.updated",
+    });
+
+    await expect(replayEcommerceStripeWebhook("evt_done_123")).resolves.toEqual({
+      status: "already_processed",
+      eventId: "evt_done_123",
+      eventType: "refund.updated",
+    });
+    expect(mocks.retrieveStripeEvent).not.toHaveBeenCalled();
+    expect(mocks.claim).not.toHaveBeenCalled();
   });
 });
