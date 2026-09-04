@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isIP } from "node:net";
 
 const stackIdSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 const hostnameSchema = z
@@ -10,6 +11,38 @@ const hostnameSchema = z
     "must be a public DNS hostname",
   );
 const recordValueSchema = z.string().trim().min(1).max(255);
+const dnsRecordFields = {
+  type: z.enum(["A", "AAAA", "ALIAS", "ANAME", "CNAME"]),
+  value: recordValueSchema,
+  ttl: z.number().int().min(60).max(86400),
+  proxyMode: z.enum(["dns-only", "provider-managed", "not-applicable"]),
+};
+
+type DnsRecord = z.infer<z.ZodObject<typeof dnsRecordFields>>;
+
+function validateDnsRecord(record: DnsRecord, context: z.RefinementCtx) {
+  const expectedIpVersion = record.type === "A" ? 4 : record.type === "AAAA" ? 6 : null;
+  if (expectedIpVersion && isIP(record.value) !== expectedIpVersion) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["value"],
+      message: `${record.type} records require a literal IPv${expectedIpVersion} address`,
+    });
+  }
+  if (!expectedIpVersion && !hostnameSchema.safeParse(record.value).success) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["value"],
+      message: `${record.type} records require a public DNS hostname target`,
+    });
+  }
+}
+
+const dnsRecordSchema = z.object(dnsRecordFields).strict().superRefine(validateDnsRecord);
+const publicDnsRecordSchema = z
+  .object({ host: z.enum(["@", "www"]), ...dnsRecordFields })
+  .strict()
+  .superRefine(validateDnsRecord);
 
 export const clientStackDomainPlanSchema = z
   .object({
@@ -17,27 +50,8 @@ export const clientStackDomainPlanSchema = z
     publicDomain: hostnameSchema,
     adminDomain: hostnameSchema,
     canonicalHost: z.enum(["apex", "www"]),
-    publicRecords: z
-      .array(
-        z
-          .object({
-            host: z.enum(["@", "www"]),
-            type: z.enum(["A", "AAAA", "ALIAS", "ANAME", "CNAME"]),
-            value: recordValueSchema,
-            ttl: z.number().int().min(60).max(86400),
-            proxyMode: z.enum(["dns-only", "provider-managed", "not-applicable"]),
-          })
-          .strict(),
-      )
-      .min(2),
-    adminRecord: z
-      .object({
-        type: z.enum(["A", "AAAA", "ALIAS", "ANAME", "CNAME"]),
-        value: recordValueSchema,
-        ttl: z.number().int().min(60).max(86400),
-        proxyMode: z.enum(["dns-only", "provider-managed", "not-applicable"]),
-      })
-      .strict(),
+    publicRecords: z.array(publicDnsRecordSchema).min(2),
+    adminRecord: dnsRecordSchema,
     dnsOperator: z.string().trim().min(1).max(160),
     launchOwner: z.string().trim().min(1).max(160),
     routingMode: z.literal("same-origin-proxy"),
@@ -104,7 +118,7 @@ export interface ClientStackReadinessResult {
 export function createClientStackDomainPlan(input: ClientStackDomainPlanInput) {
   const plan = clientStackDomainPlanSchema.parse(input);
   const adminLabel = plan.adminDomain.slice(0, -(plan.publicDomain.length + 1));
-  const records = [
+  const records: Array<DnsRecord & { host: string; fqdn: string; purpose: string }> = [
     ...plan.publicRecords.map((record) => ({
       ...record,
       fqdn: record.host === "@" ? plan.publicDomain : `${record.host}.${plan.publicDomain}`,

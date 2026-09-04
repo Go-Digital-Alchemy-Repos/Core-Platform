@@ -64,6 +64,24 @@ describe("client stack onboarding", () => {
     ).toThrow();
   });
 
+  it("requires literal addresses for A and AAAA records and hostnames for aliases", () => {
+    expect(() =>
+      createClientStackDomainPlan({
+        ...input,
+        publicRecords: [{ ...input.publicRecords[0], type: "A" }, input.publicRecords[1]],
+      }),
+    ).toThrow(/A records require a literal IPv4 address/);
+    expect(() =>
+      createClientStackDomainPlan({
+        ...input,
+        publicRecords: [
+          { ...input.publicRecords[0], type: "A", value: "203.0.113.10" },
+          { ...input.publicRecords[1], type: "CNAME", value: "203.0.113.11" },
+        ],
+      }),
+    ).toThrow(/CNAME records require a public DNS hostname target/);
+  });
+
   it("keeps pending propagation distinct from a failed release gate", () => {
     expect(
       evaluateClientStackReadiness({

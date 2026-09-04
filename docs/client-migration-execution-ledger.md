@@ -710,3 +710,15 @@ and budgets remain green.
   database, or deployment was contacted.
 - **Risk carried forward:** the feature provides a controlled rehearsal record; Better Farms still needs a
   real source inventory and owner-approved field exclusions before any client data can be planned or applied.
+- **Evidence update:** hosted GitHub Actions run `33847976083` passed its isolated PostgreSQL migration
+  verification, type-check, lint, formatting, 510 tests, production build, and bundle budget for revision
+  `bcc3282`.
+
+### 2026-09-04 — Manual DNS record-type validation
+
+- **Implemented:** the registrar-neutral onboarding plan now requires literal IPv4/IPv6 values for `A` and
+  `AAAA` records, while `ALIAS`, `ANAME`, and `CNAME` records require a public DNS hostname. This prevents
+  the wizard from presenting a hostname as an invalid address-record target.
+- **Evidence:** onboarding service tests cover valid record plans and both invalid address/alias inputs.
+  TypeScript, lint, and formatting passed. The workflow remains deterministic, credential-free, and does not
+  read or mutate any DNS provider.
