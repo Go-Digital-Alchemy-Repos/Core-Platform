@@ -5,8 +5,8 @@ const mocks = vi.hoisted(() => ({
   complete: vi.fn(),
   fail: vi.fn(),
   getSubscription: vi.fn(),
-  updateSubscription: vi.fn(),
-  createAuditEvent: vi.fn(),
+  upsertStripeWebhookSubscriptionWithAudit: vi.fn(),
+  updateStripeWebhookSubscriptionStatusWithAudit: vi.fn(),
   getClient: vi.fn(),
   getSecret: vi.fn(),
 }));
@@ -18,8 +18,9 @@ vi.mock("../storage/index", () => ({
       completeWebhookProcessing: mocks.complete,
       failWebhookProcessing: mocks.fail,
       getSubscriptionByProviderSubscriptionId: mocks.getSubscription,
-      updateSubscription: mocks.updateSubscription,
-      createAuditEvent: mocks.createAuditEvent,
+      upsertStripeWebhookSubscriptionWithAudit: mocks.upsertStripeWebhookSubscriptionWithAudit,
+      updateStripeWebhookSubscriptionStatusWithAudit:
+        mocks.updateStripeWebhookSubscriptionStatusWithAudit,
     },
   },
 }));
@@ -47,6 +48,8 @@ describe("membership webhook delivery lifecycle", () => {
     mocks.claim.mockResolvedValue("attempt-token-1");
     mocks.complete.mockResolvedValue(undefined);
     mocks.fail.mockResolvedValue(undefined);
+    mocks.upsertStripeWebhookSubscriptionWithAudit.mockResolvedValue({ id: "membership-1" });
+    mocks.updateStripeWebhookSubscriptionStatusWithAudit.mockResolvedValue({ id: "membership-1" });
   });
 
   it("completes a claimed delivery after its handler succeeds", async () => {
@@ -73,8 +76,55 @@ describe("membership webhook delivery lifecycle", () => {
     expect(mocks.fail).not.toHaveBeenCalled();
   });
 
+  it("uses one atomic storage operation for a completed Stripe checkout and its audit event", async () => {
+    const { handleMembershipStripeWebhook } =
+      await import("../services/membership-webhook.service");
+
+    await handleMembershipStripeWebhook(
+      eventPayload("checkout.session.completed", {
+        mode: "subscription",
+        customer: "cus_1",
+        subscription: "sub_1",
+        metadata: { userId: "user_1", planId: "plan_1", priceId: "price_1" },
+      }),
+      undefined,
+    );
+
+    expect(mocks.upsertStripeWebhookSubscriptionWithAudit).toHaveBeenCalledWith({
+      userId: "user_1",
+      data: expect.objectContaining({
+        status: "active",
+        providerSubscriptionId: "sub_1",
+        providerCheckoutSessionId: "obj_1",
+      }),
+      action: "stripe_checkout_completed",
+      metadata: { sessionId: "obj_1" },
+    });
+    expect(mocks.complete).toHaveBeenCalledWith("stripe", "evt_membership_1", "attempt-token-1");
+  });
+
+  it("uses one atomic storage operation for an invoice status and its audit event", async () => {
+    const { handleMembershipStripeWebhook } =
+      await import("../services/membership-webhook.service");
+
+    await handleMembershipStripeWebhook(
+      eventPayload("invoice.payment_succeeded", { subscription: "sub_1" }),
+      undefined,
+    );
+
+    expect(mocks.updateStripeWebhookSubscriptionStatusWithAudit).toHaveBeenCalledWith({
+      providerSubscriptionId: "sub_1",
+      status: "active",
+      lastPaymentFailedAt: null,
+      action: "stripe_invoice_paid",
+      metadata: { invoiceId: "obj_1" },
+    });
+  });
+
   it("records a failed delivery and rethrows so Stripe can retry it", async () => {
-    mocks.getSubscription.mockRejectedValue(new Error("temporary database failure"));
+    mocks.updateStripeWebhookSubscriptionStatusWithAudit.mockRejectedValue(
+      new Error("temporary database failure"),
+    );
     const { handleMembershipStripeWebhook } =
       await import("../services/membership-webhook.service");
 

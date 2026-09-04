@@ -271,6 +271,88 @@ export class MembershipStorage {
     } as InsertMembershipSubscription);
   }
 
+  async upsertStripeWebhookSubscriptionWithAudit(params: {
+    userId: string;
+    data: Partial<InsertMembershipSubscription>;
+    action: string;
+    metadata: Record<string, unknown>;
+  }): Promise<MembershipSubscription> {
+    return db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT id FROM users WHERE id = ${params.userId} FOR UPDATE`);
+      const providerSubscriptionId = params.data.providerSubscriptionId;
+      const [byProviderSubscription] = providerSubscriptionId
+        ? await tx
+            .select()
+            .from(membershipSubscriptions)
+            .where(eq(membershipSubscriptions.providerSubscriptionId, providerSubscriptionId))
+            .limit(1)
+        : [];
+      const [latestForUser] = byProviderSubscription
+        ? []
+        : await tx
+            .select()
+            .from(membershipSubscriptions)
+            .where(eq(membershipSubscriptions.userId, params.userId))
+            .orderBy(desc(membershipSubscriptions.updatedAt))
+            .limit(1);
+      const existing = byProviderSubscription ?? latestForUser;
+      const [subscription] = existing
+        ? await tx
+            .update(membershipSubscriptions)
+            .set({ ...params.data, updatedAt: new Date() })
+            .where(eq(membershipSubscriptions.id, existing.id))
+            .returning()
+        : await tx
+            .insert(membershipSubscriptions)
+            .values({
+              userId: params.userId,
+              status: "incomplete",
+              source: "stripe",
+              ...params.data,
+            } as typeof membershipSubscriptions.$inferInsert)
+            .returning();
+      await tx.insert(membershipAuditEvents).values({
+        userId: subscription.userId,
+        subscriptionId: subscription.id,
+        action: params.action,
+        metadata: params.metadata,
+      });
+      return subscription;
+    });
+  }
+
+  async updateStripeWebhookSubscriptionStatusWithAudit(params: {
+    providerSubscriptionId: string;
+    status: string;
+    lastPaymentFailedAt: Date | null;
+    action: string;
+    metadata: Record<string, unknown>;
+  }): Promise<MembershipSubscription | undefined> {
+    return db.transaction(async (tx) => {
+      const locked = await tx.execute<{ id: string }>(
+        sql`SELECT id FROM membership_subscriptions WHERE provider_subscription_id = ${params.providerSubscriptionId} FOR UPDATE`,
+      );
+      const subscriptionId = locked.rows[0]?.id;
+      if (!subscriptionId) return undefined;
+      const [subscription] = await tx
+        .update(membershipSubscriptions)
+        .set({
+          status: params.status,
+          lastPaymentFailedAt: params.lastPaymentFailedAt,
+          updatedAt: new Date(),
+        })
+        .where(eq(membershipSubscriptions.id, subscriptionId))
+        .returning();
+      await tx.insert(membershipAuditEvents).values({
+        userId: subscription.userId,
+        subscriptionId: subscription.id,
+        action: params.action,
+        metadata: params.metadata,
+      });
+      return subscription;
+    });
+  }
+
   async getAccessRule(
     resourceType: string,
     resourceId: string,

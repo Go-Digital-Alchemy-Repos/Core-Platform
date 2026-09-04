@@ -227,6 +227,19 @@ and budgets remain green.
   checkout remains blocked pending Stripe sandbox concurrency and production-like end-to-end evidence,
   reconciliation procedures, and the client release approval.
 
+### 2026-09-04 — Membership webhook-effect atomicity
+
+- **Implemented:** each accepted Stripe membership checkout or subscription event now applies its subscription
+  write and audit record in one database transaction. Invoice paid and failed events likewise lock the linked
+  subscription and commit its status, payment-failure timestamp, and audit event together. Webhook delivery
+  claim and completion remain separate durable lifecycle operations so failed effects stay retryable.
+- **Concurrency boundary:** the checkout/subscription path locks the user row before finding or creating the
+  target subscription. Existing Stripe subscription metadata remains the fallback when a later provider event
+  omits it. Focused lifecycle tests cover checkout, invoice, duplicate, and retry behavior.
+- **Risk carried forward:** this does not establish Stripe sandbox concurrency or production-like end-to-end
+  evidence. Manual membership changes and free-membership provisioning remain separate operator/application
+  flows and require their own transaction review before live transactions are enabled.
+
 ### 2026-09-04 — Registrar-neutral client stack onboarding
 
 - **Implemented:** an admin-only, credential-free domain onboarding workflow that validates client stack and

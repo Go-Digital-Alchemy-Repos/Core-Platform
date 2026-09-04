@@ -57,18 +57,13 @@ async function syncStripeSubscription(subscription: Stripe.Subscription) {
     return null;
   }
 
-  const synced = existing
-    ? await storage.membership.updateSubscription(existing.id, data)
-    : await storage.membership.createSubscription(data);
-  if (synced) {
-    await storage.membership.createAuditEvent({
-      userId: synced.userId,
-      subscriptionId: synced.id,
-      action: "stripe_subscription_synced",
-      metadata: { stripeSubscriptionId: subscription.id, status: subscription.status },
-    });
-  }
-  return synced;
+  const { userId, ...subscriptionData } = data;
+  return storage.membership.upsertStripeWebhookSubscriptionWithAudit({
+    userId,
+    data: subscriptionData,
+    action: "stripe_subscription_synced",
+    metadata: { stripeSubscriptionId: subscription.id, status: subscription.status },
+  });
 }
 
 export async function handleMembershipStripeWebhook(
@@ -106,22 +101,21 @@ export async function handleMembershipStripeWebhook(
         const session = event.data.object as Stripe.Checkout.Session;
         const metadata = metadataFromStripeObject(session);
         if (session.mode === "subscription" && session.subscription && metadata.userId) {
-          const subscription = await storage.membership.upsertSubscriptionForUser(metadata.userId, {
-            planId: metadata.planId || null,
-            priceId: metadata.priceId || null,
-            status: "active",
-            source: "stripe",
-            provider: "stripe",
-            providerCustomerId: typeof session.customer === "string" ? session.customer : null,
-            providerSubscriptionId:
-              typeof session.subscription === "string"
-                ? session.subscription
-                : session.subscription.id,
-            providerCheckoutSessionId: session.id,
-          });
-          await storage.membership.createAuditEvent({
+          await storage.membership.upsertStripeWebhookSubscriptionWithAudit({
             userId: metadata.userId,
-            subscriptionId: subscription.id,
+            data: {
+              planId: metadata.planId || null,
+              priceId: metadata.priceId || null,
+              status: "active",
+              source: "stripe",
+              provider: "stripe",
+              providerCustomerId: typeof session.customer === "string" ? session.customer : null,
+              providerSubscriptionId:
+                typeof session.subscription === "string"
+                  ? session.subscription
+                  : session.subscription.id,
+              providerCheckoutSessionId: session.id,
+            },
             action: "stripe_checkout_completed",
             metadata: { sessionId: session.id },
           });
@@ -139,20 +133,13 @@ export async function handleMembershipStripeWebhook(
         const subscriptionId =
           typeof invoiceSubscription === "string" ? invoiceSubscription : invoiceSubscription?.id;
         if (subscriptionId) {
-          const subscription =
-            await storage.membership.getSubscriptionByProviderSubscriptionId(subscriptionId);
-          if (subscription) {
-            await storage.membership.updateSubscription(subscription.id, {
-              status: "active",
-              lastPaymentFailedAt: null,
-            });
-            await storage.membership.createAuditEvent({
-              userId: subscription.userId,
-              subscriptionId: subscription.id,
-              action: "stripe_invoice_paid",
-              metadata: { invoiceId: invoice.id },
-            });
-          }
+          await storage.membership.updateStripeWebhookSubscriptionStatusWithAudit({
+            providerSubscriptionId: subscriptionId,
+            status: "active",
+            lastPaymentFailedAt: null,
+            action: "stripe_invoice_paid",
+            metadata: { invoiceId: invoice.id },
+          });
         }
         break;
       }
@@ -162,20 +149,13 @@ export async function handleMembershipStripeWebhook(
         const subscriptionId =
           typeof invoiceSubscription === "string" ? invoiceSubscription : invoiceSubscription?.id;
         if (subscriptionId) {
-          const subscription =
-            await storage.membership.getSubscriptionByProviderSubscriptionId(subscriptionId);
-          if (subscription) {
-            await storage.membership.updateSubscription(subscription.id, {
-              status: "past_due",
-              lastPaymentFailedAt: new Date(),
-            });
-            await storage.membership.createAuditEvent({
-              userId: subscription.userId,
-              subscriptionId: subscription.id,
-              action: "stripe_invoice_failed",
-              metadata: { invoiceId: invoice.id },
-            });
-          }
+          await storage.membership.updateStripeWebhookSubscriptionStatusWithAudit({
+            providerSubscriptionId: subscriptionId,
+            status: "past_due",
+            lastPaymentFailedAt: new Date(),
+            action: "stripe_invoice_failed",
+            metadata: { invoiceId: invoice.id },
+          });
         }
         break;
       }
