@@ -609,6 +609,9 @@ and budgets remain green.
   observed one queued confirmation job and one inventory decrement. The full local suite passed 108 test
   files and 500 tests, type-check, lint, formatting, production build, and bundle budgets. No client,
   Railway, Neon, Stripe, email provider, or production database was contacted.
+- **Evidence update:** hosted GitHub Actions run `33844150498` passed the isolated PostgreSQL migration
+  verification, type-check, lint, formatting, tests, production build, and bundle budgets for the pinned
+  candidate revision.
 - **Risk carried forward:** refund, shipment, and status notifications still use their existing delivery
   paths. Provider sandbox retries, delivery monitoring, and client-specific email acceptance remain release
   gates.
