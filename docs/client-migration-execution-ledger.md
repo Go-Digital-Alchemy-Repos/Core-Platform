@@ -769,3 +769,6 @@ and budgets remain green.
 - **Evidence:** release-manifest schema tests, Better Farms manifest validation, and the combined
   cross-repository pilot-contract verification passed. The full local gate passed with 110 test files /
   516 tests, type-check, lint, formatting, production build, and bundle budget.
+- **Evidence update:** hosted GitHub Actions run `33852653975` passed isolated PostgreSQL migration
+  verification, type-check, lint, formatting, 516 tests, production build, and bundle budget for revision
+  `8874742`.
