@@ -115,21 +115,19 @@ router.post(
 router.put(
   "/members/:id",
   asyncHandler(async (req, res) => {
-    const subscription = await storage.membership.updateSubscription(
-      paramString(req.params.id),
-      insertMembershipSubscriptionSchema.partial().parse(req.body),
-    );
+    const subscription = await storage.membership.updateSubscriptionWithAudit({
+      subscriptionId: paramString(req.params.id),
+      data: insertMembershipSubscriptionSchema.partial().parse(req.body),
+      audit: {
+        actorUserId: req.user?.id ?? null,
+        action: "membership_updated",
+        metadata: req.body,
+      },
+    });
     if (!subscription) {
       res.status(404).json({ message: "Membership subscription not found" });
       return;
     }
-    await storage.membership.createAuditEvent({
-      userId: subscription.userId,
-      actorUserId: req.user?.id ?? null,
-      subscriptionId: subscription.id,
-      action: "membership_updated",
-      metadata: req.body,
-    });
     res.json(subscription);
   }),
 );

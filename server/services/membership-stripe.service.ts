@@ -206,18 +206,19 @@ export async function createMembershipCheckoutSession(params: {
     throw Object.assign(new Error("Membership price is not available"), { statusCode: 400 });
 
   if (plan.isFree || price.amount === 0) {
-    const subscription = await storage.membership.upsertSubscriptionForUser(params.userId, {
-      planId: plan.id,
-      priceId: price.id,
-      status: "active",
-      source: "free",
-      currentPeriodStart: new Date(),
-    });
-    await storage.membership.createAuditEvent({
+    const subscription = await storage.membership.upsertSubscriptionForUserWithAudit({
       userId: params.userId,
-      subscriptionId: subscription.id,
-      action: "free_membership_started",
-      metadata: { planId: plan.id, priceId: price.id },
+      data: {
+        planId: plan.id,
+        priceId: price.id,
+        status: "active",
+        source: "free",
+        currentPeriodStart: new Date(),
+      },
+      audit: {
+        action: "free_membership_started",
+        metadata: { planId: plan.id, priceId: price.id },
+      },
     });
     return { free: true, subscription, url: params.successUrl };
   }

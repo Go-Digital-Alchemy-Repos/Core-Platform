@@ -271,6 +271,68 @@ export class MembershipStorage {
     } as InsertMembershipSubscription);
   }
 
+  async upsertSubscriptionForUserWithAudit(params: {
+    userId: string;
+    data: Partial<InsertMembershipSubscription>;
+    audit: Omit<InsertMembershipAuditEvent, "userId" | "subscriptionId">;
+  }): Promise<MembershipSubscription> {
+    return db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT id FROM users WHERE id = ${params.userId} FOR UPDATE`);
+      const [existing] = await tx
+        .select()
+        .from(membershipSubscriptions)
+        .where(eq(membershipSubscriptions.userId, params.userId))
+        .orderBy(desc(membershipSubscriptions.updatedAt))
+        .limit(1);
+      const [subscription] = existing
+        ? await tx
+            .update(membershipSubscriptions)
+            .set({ ...params.data, updatedAt: new Date() })
+            .where(eq(membershipSubscriptions.id, existing.id))
+            .returning()
+        : await tx
+            .insert(membershipSubscriptions)
+            .values({
+              userId: params.userId,
+              status: "manual",
+              source: "manual",
+              ...params.data,
+            } as typeof membershipSubscriptions.$inferInsert)
+            .returning();
+      await tx.insert(membershipAuditEvents).values({
+        ...params.audit,
+        userId: subscription.userId,
+        subscriptionId: subscription.id,
+      });
+      return subscription;
+    });
+  }
+
+  async updateSubscriptionWithAudit(params: {
+    subscriptionId: string;
+    data: Partial<InsertMembershipSubscription>;
+    audit: Omit<InsertMembershipAuditEvent, "userId" | "subscriptionId">;
+  }): Promise<MembershipSubscription | undefined> {
+    return db.transaction(async (tx) => {
+      const locked = await tx.execute<{ id: string }>(
+        sql`SELECT id FROM membership_subscriptions WHERE id = ${params.subscriptionId} FOR UPDATE`,
+      );
+      const subscriptionId = locked.rows[0]?.id;
+      if (!subscriptionId) return undefined;
+      const [subscription] = await tx
+        .update(membershipSubscriptions)
+        .set({ ...params.data, updatedAt: new Date() })
+        .where(eq(membershipSubscriptions.id, subscriptionId))
+        .returning();
+      await tx.insert(membershipAuditEvents).values({
+        ...params.audit,
+        userId: subscription.userId,
+        subscriptionId: subscription.id,
+      });
+      return subscription;
+    });
+  }
+
   async upsertStripeWebhookSubscriptionWithAudit(params: {
     userId: string;
     data: Partial<InsertMembershipSubscription>;

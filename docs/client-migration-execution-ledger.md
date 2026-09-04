@@ -237,8 +237,18 @@ and budgets remain green.
   target subscription. Existing Stripe subscription metadata remains the fallback when a later provider event
   omits it. Focused lifecycle tests cover checkout, invoice, duplicate, and retry behavior.
 - **Risk carried forward:** this does not establish Stripe sandbox concurrency or production-like end-to-end
-  evidence. Manual membership changes and free-membership provisioning remain separate operator/application
-  flows and require their own transaction review before live transactions are enabled.
+  evidence. The external Stripe session-creation flow still needs sandbox reconciliation and retry evidence
+  before live transactions are enabled.
+
+### 2026-09-04 — Membership operator-effect atomicity
+
+- **Implemented:** manual membership assignment, manual status changes, direct admin edits, and free-plan
+  activation now each write their subscription change and audit event in one transaction. User-scoped writes
+  serialize on the user row; direct subscription edits lock the subscription row before changing it.
+- **Validation:** focused membership service and webhook lifecycle suites pass. The project type check, lint,
+  and formatting checks remain green.
+- **Risk carried forward:** no live Stripe session, customer, or subscription was created. Stripe sandbox
+  reconciliation, concurrency, and the client release approval remain required gates.
 
 ### 2026-09-04 — Registrar-neutral client stack onboarding
 
