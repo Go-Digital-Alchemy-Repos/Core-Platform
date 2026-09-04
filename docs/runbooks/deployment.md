@@ -48,8 +48,8 @@
 
 For client deployments, follow the dedicated
 [single-client deployment runbook](client-stack-deployment.md) and the canonical
-[Client Migration Master Plan](../core-project-plan.md). Run release readiness before the deployment preflight;
-the record must be approved and report ready before building or releasing. The public React site uses the normal
+[Client Migration Master Plan](../core-project-plan.md). Pass the approved release record to the deployment
+preflight; it must report ready before building or releasing. The public React site uses the normal
 client domain, the dashboard uses a protected admin
 subdomain, and public browser API traffic should use the site's same-origin `/api` route where feasible.
 Domain changes remain gated by ownership, DNS, certificate, routing, health, and rollback validation.

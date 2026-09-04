@@ -929,3 +929,14 @@ and budgets remain green.
 - **Safety boundary:** this changes the operator sequence only. The Better Farms example remains a draft and
   continues to fail readiness; no Railway resource, deployment variable, DNS record, backup, restore, or
   client service was accessed.
+
+### 2026-09-04 — Combined deployment preflight and release gate
+
+- **Implemented:** `npm run deploy:check` now accepts `--release-manifest <path>`. It validates the
+  secret-safe environment as before, requires the manifest's `clientStackId` to equal `CLIENT_STACK_ID`, and
+  fails with the stable release-readiness blockers unless the exact record is eligible for deployment.
+- **Evidence:** TypeScript and lint passed. A complete synthetic non-production environment paired with the
+  Better Farms draft failed only on its known release blockers; pairing that record with another stack ID
+  also failed on the identity mismatch. Neither check reads a secret value in its output.
+- **Safety boundary:** this is a local preflight change only. It does not load deployment secrets into the
+  repository, contact Railway, create infrastructure, update DNS, restore data, or deploy.
