@@ -582,3 +582,16 @@ and budgets remain green.
   credential-free and does not run migrations against, deploy to, or contact any client environment.
 - **Risk carried forward:** GitHub-hosted execution results will appear after the workflow is pushed; browser,
   sandbox-provider, and client-specific production evidence remain separate release gates.
+
+### 2026-09-04 — Isolated database migration CI gate
+
+- **Implemented:** the tracked quality workflow now provisions a disposable PostgreSQL 16 service and runs
+  `npm run db:verify` before the application quality checks. The verification command applies the complete
+  migration and reconciliation sequence, then closes its connection pool.
+- **Evidence:** a fresh local PostgreSQL 16 container, published only on a non-default local port, completed
+  the verification successfully. The full release suite then passed: 107 test files, 497 tests, type-check,
+  lint, formatting, production build, and bundle budgets. No client, Railway, Neon, Stripe, or production
+  database was contacted.
+- **Risk carried forward:** the hosted run for this revised workflow must pass before it can be considered
+  independently verified. Client backup, restore, security, health, import, browser, and provider-sandbox
+  evidence remain separate required release gates.

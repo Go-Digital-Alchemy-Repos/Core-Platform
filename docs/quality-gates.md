@@ -4,20 +4,22 @@ This document describes the quality checks available in the Core Platform codeba
 
 ## Available Scripts
 
-| Script         | Command          | Purpose                                            |
-| -------------- | ---------------- | -------------------------------------------------- |
-| Type-check     | `npm run check`  | Runs `tsc` to validate TypeScript types            |
-| Lint           | `npm run lint`   | Runs ESLint across client, server, and shared code |
-| Format (check) | `npm run format` | Runs Prettier in check mode (reports issues only)  |
-| Test           | `npm test`       | Runs Vitest unit tests                             |
-| Build          | `npm run build`  | Builds the production client and server bundles    |
-| Bundle budget  | `npm run budget` | Checks production asset sizes after a build        |
+| Script           | Command             | Purpose                                               |
+| ---------------- | ------------------- | ----------------------------------------------------- |
+| Migration verify | `npm run db:verify` | Applies migrations to an isolated PostgreSQL database |
+| Type-check       | `npm run check`     | Runs `tsc` to validate TypeScript types               |
+| Lint             | `npm run lint`      | Runs ESLint across client, server, and shared code    |
+| Format (check)   | `npm run format`    | Runs Prettier in check mode (reports issues only)     |
+| Test             | `npm test`          | Runs Vitest unit tests                                |
+| Build            | `npm run build`     | Builds the production client and server bundles       |
+| Bundle budget    | `npm run budget`    | Checks production asset sizes after a build           |
 
 ## Running Checks Locally
 
 Before pushing code, run the full quality suite:
 
 ```bash
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/core_platform npm run db:verify
 npm run check
 npm run lint
 npm run format
@@ -85,12 +87,13 @@ Current guardrails expect app-level routes such as CRM and ecommerce to stay laz
 The tracked GitHub Actions quality workflow runs automatically on every push and pull request. It executes:
 
 1. `npm ci` — clean install of dependencies
-2. `npm run check` — type-checking
-3. `npm run lint` — linting
-4. `npm run format` — formatting check
-5. `npm test` — unit tests
-6. `npm run build` — production bundle verification
-7. `npm run budget` — production asset size budget
+2. `npm run db:verify` — applies migrations to the workflow's isolated PostgreSQL 16 service
+3. `npm run check` — type-checking
+4. `npm run lint` — linting
+5. `npm run format` — formatting check
+6. `npm test` — unit tests
+7. `npm run build` — production bundle verification
+8. `npm run budget` — production asset size budget
 
 All steps must pass for the CI run to be green. The workflow uses Node.js 20 and npm's lockfile cache; it does not use production credentials or contact client services.
 
