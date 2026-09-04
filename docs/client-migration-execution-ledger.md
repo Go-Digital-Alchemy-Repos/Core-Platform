@@ -572,3 +572,13 @@ and budgets remain green.
   release/site/pilot checks passed.
 - **Risk carried forward:** no inventory reservation is held during an unpaid checkout, and live Stripe
   concurrency behavior still requires sandbox evidence before a transaction-enabled client launch.
+
+### 2026-09-04 — Tracked CI quality gate
+
+- **Implemented:** added the repository-owned GitHub Actions quality workflow for every push and pull
+  request. It installs from the lockfile and blocks on types, lint, formatting, tests, production build, and
+  bundle budgets using Node.js 20.
+- **Evidence:** the workflow mirrors the documented local gate sequence, which is currently green. It is
+  credential-free and does not run migrations against, deploy to, or contact any client environment.
+- **Risk carried forward:** GitHub-hosted execution results will appear after the workflow is pushed; browser,
+  sandbox-provider, and client-specific production evidence remain separate release gates.

@@ -26,7 +26,7 @@ npm run build
 npm run budget
 ```
 
-All commands must pass cleanly before a pull request is ready to merge. The format check currently remains advisory in CI until the repository has a formatting baseline.
+All commands must pass cleanly before a pull request is ready to merge.
 
 ## Lint
 
@@ -82,19 +82,17 @@ Current guardrails expect app-level routes such as CRM and ecommerce to stay laz
 
 ## CI Workflow
 
-The CI quality workflow should run automatically on every push to `main` and on every pull request targeting `main`. It should execute:
+The tracked GitHub Actions quality workflow runs automatically on every push and pull request. It executes:
 
 1. `npm ci` — clean install of dependencies
 2. `npm run check` — type-checking
 3. `npm run lint` — linting
-4. `npm run format` — formatting check (non-blocking, see note below)
+4. `npm run format` — formatting check
 5. `npm test` — unit tests
 6. `npm run build` — production bundle verification
 7. `npm run budget` — production asset size budget
 
-All steps must pass for the CI run to be green.
-
-**Note:** The format check runs with `continue-on-error: true` in CI because the existing codebase has not yet been mass-formatted. It reports formatting issues without blocking the pipeline. Once a baseline format pass is applied, the `continue-on-error` flag can be removed to enforce formatting strictly.
+All steps must pass for the CI run to be green. The workflow uses Node.js 20 and npm's lockfile cache; it does not use production credentials or contact client services.
 
 ## Conventions
 
