@@ -996,3 +996,11 @@ and budgets remain green.
   omits import but remains fail-closed on the remaining infrastructure, content, and approval evidence.
 - **Safety boundary:** no WooCommerce endpoint, export, client data, Railway service, DNS record, backup,
   restore, or production operation was accessed.
+
+### 2026-09-04 — Better Farms release-role authorization
+
+- **Decision recorded:** the user authorized the business, technical, and operations release roles in this
+  Codex thread. The draft release manifest records those three references while remaining unapproved until
+  its required operational and content evidence is present.
+- **Safety boundary:** recording authorization does not create infrastructure, provide a release window,
+  satisfy any pending gate, authorize a deployment, or access client or production systems.

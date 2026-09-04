@@ -41,5 +41,18 @@
       "evidenceReference": "better-farms-no-woocommerce-source-2026-09-04"
     }
   ],
-  "approvals": []
+  "approvals": [
+    {
+      "role": "business",
+      "reference": "user authorization in Codex thread, 2026-09-04"
+    },
+    {
+      "role": "technical",
+      "reference": "user authorization in Codex thread, 2026-09-04"
+    },
+    {
+      "role": "operations",
+      "reference": "user authorization in Codex thread, 2026-09-04"
+    }
+  ]
 }
