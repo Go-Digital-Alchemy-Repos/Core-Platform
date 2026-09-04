@@ -74,7 +74,7 @@ not evidence that its adapter is implemented.
 
 ## Phase 4 — Quality and Operations
 
-- Add CI gates for lint, types, unit/integration tests, migrations, build, and bundle budgets.
+- [x] Add CI gates for lint, types, unit/integration tests, migrations, build, and bundle budgets.
 - Add Stripe sandbox checkout/refund/webhook E2E and concurrency coverage.
 - Add WCAG 2.2 AA keyboard, screen-reader, contrast, zoom, and mobile checkout verification.
 - Add domain metrics and alerts for checkout, payment, webhook lag/failures, refunds, inventory, email,
