@@ -963,3 +963,11 @@ and budgets remain green.
   argument without exposing source records.
 - **Safety boundary:** no source envelope, client data, database, Railway service, DNS record, or deployment
   was used. Customer, order, delta, and cutover modes remain unavailable.
+
+### 2026-09-04 — Hosted Core quality-gate confirmation
+
+- **Evidence:** the complete hosted Core quality workflow for the latest rehearsal-command change passed in
+  GitHub Actions run `33865146130`: PostgreSQL migration verification, TypeScript, lint, formatting, tests,
+  production build, and bundle-budget enforcement all completed successfully.
+- **Safety boundary:** this was CI verification of the pushed repository revision only. It did not access a
+  client source, Railway service, production configuration, DNS, backups, or data.
