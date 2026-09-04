@@ -99,6 +99,8 @@ Current webhook behavior:
 
 Paid-order reconciliation locks the order row and commits the paid status, coupon redemption, coupon usage counter, inventory decrements, inventory adjustment records, and a deduplicated order-confirmation outbox record in one database transaction. Reprocessing the same order observes its existing redemption, inventory adjustments, and notification job. A worker reloads the order after commit and sends the receipt with bounded retry and failed-job visibility. Processed refunds queue a refund-confirmation job in their own create/update transaction; shipment creation and administrative order-status changes each queue their own durable notification job in the transaction that changes the corresponding record.
 
+A captured order remains payable to fulfillment or refund reconciliation. Administrative cancellation is allowed only before capture or after the payment status is `refunded`; a paid, partially refunded, pending-refund, or failed-refund order cannot be marked cancelled as a shortcut around the refund lifecycle.
+
 Tracked, non-backorder variants receive a database-backed stock reservation when checkout creates its
 PaymentIntent. Reservations use deterministic variant locking and include every active reservation in their
 availability check. They release when payment settles or the order is cancelled. After fifteen minutes, a

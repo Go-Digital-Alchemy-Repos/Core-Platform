@@ -37,7 +37,7 @@ checks, and domain/origin checks pass for that client's isolated environment.
 - [x] Add inventory reservation/expiry or document and enforce a client-approved oversell policy.
 - [x] Serialize inventory and coupon effects by order; add database-enforced side-effect keys and database-backed concurrency coverage.
 - [x] Serialize refundable-balance reservations and use the local refund ID as the provider idempotency key.
-- Define compensated order transitions for paid-but-unfulfilled and failed side effects.
+- [x] Require captured payments to be fully refunded before cancellation; retain paid orders for fulfillment or explicit refund reconciliation.
 
 Launch gate: production-like tests prove duplicate, reordered, delayed, and concurrent requests cannot
 double-charge, double-refund, double-deduct, over-redeem, or silently strand paid orders.

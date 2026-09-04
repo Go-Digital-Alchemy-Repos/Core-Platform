@@ -2655,6 +2655,34 @@ describe("ecommerce services", () => {
     expect(mockUpdateOrder).not.toHaveBeenCalled();
   });
 
+  it("requires a captured payment to be fully refunded before cancellation", async () => {
+    const { updateAdminEcommerceOrder } = await import("../services/ecommerce-order.service");
+    mockGetOrder
+      .mockResolvedValueOnce({
+        id: "order-admin-paid-cancel",
+        status: "paid",
+        paymentStatus: "paid",
+      } as EcommerceOrder)
+      .mockResolvedValueOnce({
+        id: "order-admin-refunded-cancel",
+        status: "paid",
+        paymentStatus: "refunded",
+      } as EcommerceOrder);
+    mockUpdateOrder.mockResolvedValue({
+      id: "order-admin-refunded-cancel",
+      status: "cancelled",
+      paymentStatus: "refunded",
+    } as EcommerceOrder);
+
+    await expect(
+      updateAdminEcommerceOrder("order-admin-paid-cancel", { status: "cancelled" }),
+    ).rejects.toThrow(/fully refunded/);
+    await expect(
+      updateAdminEcommerceOrder("order-admin-refunded-cancel", { status: "cancelled" }),
+    ).resolves.toMatchObject({ status: "cancelled", paymentStatus: "refunded" });
+    expect(mockUpdateOrder).toHaveBeenCalledTimes(1);
+  });
+
   it("allows admin shipped transitions for paid active orders", async () => {
     const { updateAdminEcommerceOrder } = await import("../services/ecommerce-order.service");
     mockGetOrder.mockResolvedValue({

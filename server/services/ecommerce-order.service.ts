@@ -157,6 +157,13 @@ function assertAdminOrderStatusTransition(
   if (nextStatus === "pending" && shippablePaymentStatuses.has(previous.paymentStatus)) {
     throw httpError("Paid orders cannot be moved back to pending", 400);
   }
+  if (
+    nextStatus === "cancelled" &&
+    previous.paymentStatus !== "unpaid" &&
+    previous.paymentStatus !== "refunded"
+  ) {
+    throw httpError("Captured payments must be fully refunded before an order is cancelled", 400);
+  }
   if (!fulfillmentCompleteStatuses.has(nextStatus)) return;
   if (!shippablePaymentStatuses.has(previous.paymentStatus)) {
     throw httpError("Only paid orders can be marked shipped or delivered", 400);
