@@ -84,6 +84,9 @@ health, redirect, and rollback checks.
    npm run deploy:check -- --release-manifest docs/pilots/<client>/client-release-manifest.json --require-ecommerce --require-email --require-backups --require-observability --require-client-form-proxy --require-separate-origins
    ```
 
+   Each switch may appear only once. The preflight rejects unknown, incomplete, or duplicate options before
+   it reads deployment configuration or a release record.
+
    The command reports only missing or invalid variable names and non-secret identity/origin values. It does
    not replace client approvals, backup/restore evidence, or deployment-window authorization.
 

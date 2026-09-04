@@ -4,50 +4,20 @@ import {
   evaluateClientReleaseReadiness,
   validateClientReleaseManifest,
 } from "../../shared/client-release-manifest";
+import { parseClientStackDeploymentArguments } from "./client-stack-deployment-arguments";
 
-const arguments_ = process.argv.slice(2);
-const allowedFlags = new Set([
-  "--require-ecommerce",
-  "--require-email",
-  "--require-backups",
-  "--require-observability",
-  "--require-client-form-proxy",
-  "--require-separate-origins",
-  "--release-manifest",
-]);
-const flags = new Set<string>();
-let releaseManifestPath: string | undefined;
-const argumentErrors: string[] = [];
-
-for (let index = 0; index < arguments_.length; index += 1) {
-  const argument = arguments_[index];
-  if (argument === "--release-manifest") {
-    const candidate = arguments_[index + 1];
-    if (!candidate || candidate.startsWith("--")) {
-      argumentErrors.push("--release-manifest requires a file path");
-    } else if (releaseManifestPath) {
-      argumentErrors.push("--release-manifest may be provided only once");
-    } else {
-      releaseManifestPath = candidate;
-      index += 1;
-    }
-    continue;
-  }
-  if (allowedFlags.has(argument)) flags.add(argument);
-  else argumentErrors.push(`Unknown option: ${argument}`);
-}
+const {
+  errors: argumentErrors,
+  releaseManifestPath,
+  requirements,
+} = parseClientStackDeploymentArguments(process.argv.slice(2));
 
 if (argumentErrors.length > 0) {
   for (const error of argumentErrors) console.error(error);
   process.exitCode = 2;
 } else {
   const result = validateClientStackEnvironment(process.env, {
-    ecommerce: flags.has("--require-ecommerce"),
-    email: flags.has("--require-email"),
-    backups: flags.has("--require-backups"),
-    observability: flags.has("--require-observability"),
-    clientFormProxy: flags.has("--require-client-form-proxy"),
-    separatePublicAndAdminOrigins: flags.has("--require-separate-origins"),
+    ...requirements,
   });
 
   if (releaseManifestPath) {

@@ -971,3 +971,14 @@ and budgets remain green.
   production build, and bundle-budget enforcement all completed successfully.
 - **Safety boundary:** this was CI verification of the pushed repository revision only. It did not access a
   client source, Railway service, production configuration, DNS, backups, or data.
+
+### 2026-09-04 — Deployment preflight argument strictness
+
+- **Implemented:** the deployment preflight now parses its supported capability switches and
+  `--release-manifest` path through a tested, fail-closed parser. It rejects unknown, incomplete, and
+  duplicate options before it reads environment configuration or a release record.
+- **Evidence:** focused deployment-argument, stack-identity, and release-manifest coverage passed 16 tests;
+  TypeScript, lint, and code formatting passed. A direct command with repeated
+  `--require-ecommerce` exited `2` with only the duplicate-option error.
+- **Safety boundary:** validation used no deployment environment, manifest, client system, Railway service,
+  DNS record, backup, restore, or production operation.
