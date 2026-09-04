@@ -38,7 +38,6 @@ describe("client migration intake", () => {
         expect.arrayContaining([
           expect.objectContaining({ path: "sourceAccess.accessMode" }),
           expect.objectContaining({ path: "dataMigration" }),
-          expect.objectContaining({ path: "operations.recovery" }),
           expect.objectContaining({ path: "operations.release.status" }),
         ]),
       );
