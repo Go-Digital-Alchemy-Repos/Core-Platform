@@ -248,6 +248,17 @@ and budgets remain green.
 - **Risk carried forward:** both records intentionally remain draft/blocked until the client provides the
   operational and migration decisions captured by the intake. The verifier does not authorize deployment.
 
+### 2026-09-04 — Better Farms pinned-source build evidence
+
+- **Evidence:** the clean Better Farms checkout at `0f0ddde40ed91f2cfa2182eb3627b51c85ec0c9c` passed its
+  TypeScript check, all 11 site-contract tests, and its production build. The build emitted the expected
+  static client artifact and server bundle without production credentials.
+- **Coverage:** the source suite verifies the Fund a Farm editable-content contract and behavior locks,
+  trusted preview origin/component checks, published-content fallback behavior, and safe Core API origin
+  parsing. This confirms the source revision used by the combined pilot verifier remains buildable.
+- **Risk carried forward:** this is source-build evidence only. It does not constitute a visual/
+  accessibility/SEO acceptance review, live API integration, client content approval, or deployment.
+
 ### 2026-09-04 — Ecommerce stock-boundary review
 
 - **Verified:** cart pricing aggregates duplicate product/variant lines before order creation. Paid-order
