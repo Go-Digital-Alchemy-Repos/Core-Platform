@@ -13,7 +13,7 @@ export interface ClientStackValidationResult {
   errors: string[];
 }
 
-const STACK_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const STACK_ID_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 
 function present(env: NodeJS.ProcessEnv, key: string) {
   return Boolean(env[key]?.trim());

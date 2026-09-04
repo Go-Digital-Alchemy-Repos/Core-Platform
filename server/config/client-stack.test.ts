@@ -65,6 +65,15 @@ describe("validateClientStackEnvironment", () => {
     );
   });
 
+  it("uses the same lowercase kebab-case stack identifier as release records", () => {
+    const env = completeEnvironment();
+    env.CLIENT_STACK_ID = "9-invalid-stack";
+
+    expect(validateClientStackEnvironment(env).errors).toContain(
+      "CLIENT_STACK_ID must be a lowercase kebab-case identifier",
+    );
+  });
+
   it("requires feature credentials only when their launch gates are selected", () => {
     const env = completeEnvironment();
     delete env.STRIPE_WEBHOOK_SECRET;

@@ -940,3 +940,14 @@ and budgets remain green.
   also failed on the identity mismatch. Neither check reads a secret value in its output.
 - **Safety boundary:** this is a local preflight change only. It does not load deployment secrets into the
   repository, contact Railway, create infrastructure, update DNS, restore data, or deploy.
+
+### 2026-09-04 — Client-stack identity contract alignment
+
+- **Implemented:** environment preflight now requires the same stack-ID form as the release manifest: a
+  lowercase kebab-case identifier beginning with a letter. This prevents a configuration from passing with
+  an identity that no valid manifest can represent.
+- **Evidence:** focused client-stack and release-manifest coverage passed 14 tests; TypeScript, lint, and
+  formatting passed. A stack ID beginning with a digit is rejected with the existing non-secret validation
+  message.
+- **Safety boundary:** no environment value, Railway service, client data, DNS record, backup, restore, or
+  deployment was accessed.
