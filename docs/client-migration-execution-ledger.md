@@ -270,6 +270,21 @@ and budgets remain green.
 - **Risk carried forward:** this does not test a configured Core API, authenticated preview, live browser
   rendering, or a deployed origin. No external request, client data, DNS, or Railway service was used.
 
+### 2026-09-04 — Better Farms public-form proxy slice
+
+- **Implemented:** Better Farms source revision `f14318e` replaces contact and newsletter success placeholders
+  with the public same-origin API routes declared in its manifest. The server accepts only the managed Core
+  contact (`name`, `email`, `subject`, `message`) and newsletter (`email`) payload contracts, forwards them
+  to the credential-free configured Core origin, applies a five-second upstream limit, and returns a clear
+  unavailable response when no origin is configured. Browser code remains same-origin under the existing CSP.
+- **Evidence:** Better Farms TypeScript check, 14 site-contract/security tests, and the production build
+  passed. A local production server returned HTTP 200 for `/contact` with its CSP and returned the intended
+  HTTP 503 JSON response for a form attempt without an upstream Core origin. No upstream service or visitor
+  data was contacted.
+- **Risk carried forward:** enabling `CORE_PLATFORM_API_ORIGIN` requires client-specific Core form routing,
+  data-handling approval, and a configured-environment rehearsal. The current generic Core system forms must
+  not be assumed to establish client-scoped mailing-list or contact-message ownership.
+
 ### 2026-09-04 — Ecommerce stock-boundary review
 
 - **Verified:** cart pricing aggregates duplicate product/variant lines before order creation. Paid-order
