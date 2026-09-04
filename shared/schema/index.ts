@@ -337,3 +337,5 @@ export {
   type ProviderInterview,
   type ProviderApplicationDecision,
 } from "./provider-applications";
+
+export * from "./client-stack-onboarding";

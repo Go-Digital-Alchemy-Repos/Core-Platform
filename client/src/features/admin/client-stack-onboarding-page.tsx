@@ -20,6 +20,7 @@ type RecordType = "A" | "AAAA" | "ALIAS" | "ANAME" | "CNAME";
 type ReadinessState = "pass" | "pending" | "fail";
 
 interface DomainPlan {
+  stackId: string;
   publicOrigin: string;
   adminOrigin: string;
   records: Array<{ fqdn: string; type: RecordType; value: string }>;
@@ -71,6 +72,9 @@ export default function ClientStackOnboardingPage() {
       message: string;
     }>;
   } | null>(null);
+  const [evidenceRecords, setEvidenceRecords] = useState<
+    Array<{ id: string; kind: string; recordedAt: string; recordedByUserId: string | null }>
+  >([]);
 
   const planMutation = useMutation({
     mutationFn: async () => {
@@ -106,6 +110,7 @@ export default function ClientStackOnboardingPage() {
       setPlan(result);
       setReadinessResult(null);
       setDnsVerification(null);
+      setEvidenceRecords([]);
     },
     onError: (error: Error) =>
       toast({
@@ -117,11 +122,11 @@ export default function ClientStackOnboardingPage() {
 
   const readinessMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest(
-        "POST",
-        "/api/admin/client-stack-onboarding/readiness",
-        readiness,
-      );
+      if (!plan) throw new Error("Generate the domain plan before evaluating readiness.");
+      const response = await apiRequest("POST", "/api/admin/client-stack-onboarding/readiness", {
+        stackId: plan.stackId,
+        checks: readiness,
+      });
       return response.json() as Promise<{ status: string; pending: string[]; failed: string[] }>;
     },
     onSuccess: setReadinessResult,
@@ -140,6 +145,7 @@ export default function ClientStackOnboardingPage() {
         "POST",
         "/api/admin/client-stack-onboarding/dns-verification",
         {
+          stackId: plan.stackId,
           records: plan.records,
         },
       );
@@ -149,6 +155,24 @@ export default function ClientStackOnboardingPage() {
     onError: (error: Error) =>
       toast({
         title: "Could not verify DNS propagation",
+        description: error.message,
+        variant: "destructive",
+      }),
+  });
+
+  const evidenceMutation = useMutation({
+    mutationFn: async () => {
+      if (!plan) throw new Error("Generate the domain plan before loading saved evidence.");
+      const response = await apiRequest(
+        "GET",
+        `/api/admin/client-stack-onboarding/${encodeURIComponent(plan.stackId)}/evidence`,
+      );
+      return response.json() as Promise<typeof evidenceRecords>;
+    },
+    onSuccess: setEvidenceRecords,
+    onError: (error: Error) =>
+      toast({
+        title: "Could not load onboarding evidence",
         description: error.message,
         variant: "destructive",
       }),
@@ -293,6 +317,13 @@ export default function ClientStackOnboardingPage() {
               >
                 {dnsVerificationMutation.isPending ? "Verifying DNS…" : "Verify published DNS"}
               </Button>
+              <Button
+                variant="outline"
+                onClick={() => evidenceMutation.mutate()}
+                disabled={evidenceMutation.isPending}
+              >
+                {evidenceMutation.isPending ? "Loading evidence…" : "View recorded evidence"}
+              </Button>
               {dnsVerification && (
                 <div className="space-y-2">
                   <p className="font-medium">
@@ -311,6 +342,17 @@ export default function ClientStackOnboardingPage() {
                         </p>
                       )}
                     </div>
+                  ))}
+                </div>
+              )}
+              {evidenceRecords.length > 0 && (
+                <div className="space-y-1 text-sm text-muted-foreground">
+                  <p className="font-medium text-foreground">Recorded evidence</p>
+                  {evidenceRecords.map((record) => (
+                    <p key={record.id}>
+                      {record.kind.replaceAll("_", " ")} —{" "}
+                      {new Date(record.recordedAt).toLocaleString()}
+                    </p>
                   ))}
                 </div>
               )}

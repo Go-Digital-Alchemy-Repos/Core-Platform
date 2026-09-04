@@ -52,6 +52,10 @@ from approved values and records the operator's read-only verification outcome. 
 domain, save registrar credentials, mutate DNS, or authorize a cutover. Preserve the generated plan and
 observed evidence in the client operations record before a release review.
 
+Every generated plan, public-DNS observation, and readiness evaluation is retained as an append-only,
+credential-free evidence record with its stack ID, authenticated administrator, and timestamp. Review that
+history from the onboarding screen before release; it records observations, not approval or cutover.
+
 After the operator publishes a plan, **Verify published DNS** performs public DNS reads only. It checks A,
 AAAA, and CNAME answers against the exact planned value. An absent answer is reported as pending propagation;
 an answer that does not include the planned value is blocked as a mismatch. ALIAS and ANAME are

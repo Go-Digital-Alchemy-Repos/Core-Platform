@@ -802,3 +802,12 @@ and budgets remain green.
 - **Evidence update:** hosted GitHub Actions run `33856073524` passed isolated PostgreSQL migration
   verification, type-check, lint, formatting, 519 tests, production build, and bundle budget for revision
   `78b254b`.
+
+### 2026-09-04 — Durable client-stack onboarding evidence
+
+- **Implemented:** generated domain plans, public DNS verification results, and readiness evaluations now
+  create append-only, stack-scoped database evidence records. The admin screen can retrieve the retained
+  history for release review; each record includes the authenticated administrator and timestamp.
+- **Safety boundary:** the evidence stores planned targets and observed public answers, never provider
+  credentials. It does not mark a release approved, provision Railway, alter DNS, or bypass the remaining
+  client-owned certificate, routing, health, restore, and approval gates.

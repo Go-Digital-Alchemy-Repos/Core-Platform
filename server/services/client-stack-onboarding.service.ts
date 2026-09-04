@@ -2,7 +2,7 @@ import { z } from "zod";
 import { resolve4, resolve6, resolveCname } from "node:dns/promises";
 import { isIP } from "node:net";
 
-const stackIdSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+export const clientStackIdSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 const hostnameSchema = z
   .string()
   .trim()
@@ -48,7 +48,7 @@ const publicDnsRecordSchema = z
 
 export const clientStackDomainPlanSchema = z
   .object({
-    stackId: stackIdSchema,
+    stackId: clientStackIdSchema,
     publicDomain: hostnameSchema,
     adminDomain: hostnameSchema,
     canonicalHost: z.enum(["apex", "www"]),
@@ -102,6 +102,10 @@ const dnsVerificationRecordSchema = z
 export const clientStackDnsVerificationSchema = z
   .object({ records: z.array(dnsVerificationRecordSchema).min(1).max(8) })
   .strict();
+
+export const clientStackDnsVerificationEvidenceSchema = clientStackDnsVerificationSchema.extend({
+  stackId: clientStackIdSchema,
+});
 
 export type ClientStackDnsVerificationInput = z.infer<typeof clientStackDnsVerificationSchema>;
 export type DnsRecordVerificationStatus = "passed" | "pending" | "failed" | "manual-review";
@@ -229,6 +233,10 @@ export const clientStackReadinessSchema = z
     canonicalRedirect: readinessStateSchema,
     rollbackPlan: readinessStateSchema,
   })
+  .strict();
+
+export const clientStackReadinessEvidenceSchema = z
+  .object({ stackId: clientStackIdSchema, checks: clientStackReadinessSchema })
   .strict();
 
 export type ClientStackReadinessInput = z.infer<typeof clientStackReadinessSchema>;

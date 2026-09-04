@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   createClientStackDomainPlan,
+  clientStackDnsVerificationEvidenceSchema,
+  clientStackReadinessEvidenceSchema,
   evaluateClientStackReadiness,
   verifyClientStackDnsRecords,
 } from "./client-stack-onboarding.service";
@@ -129,6 +131,31 @@ describe("client stack onboarding", () => {
 
     expect(result.status).toBe("ready");
     expect(result.records.map((record) => record.status)).toEqual(["passed", "passed"]);
+  });
+
+  it("binds persisted verification evidence to a validated client stack", () => {
+    expect(
+      clientStackDnsVerificationEvidenceSchema.parse({
+        stackId: input.stackId,
+        records: [{ fqdn: "www.betterfarms.org", type: "A", value: "203.0.113.10" }],
+      }),
+    ).toMatchObject({ stackId: input.stackId });
+    expect(() =>
+      clientStackReadinessEvidenceSchema.parse({
+        stackId: "not a stack id",
+        checks: {
+          ownership: "pass",
+          authoritativeDns: "pass",
+          certificate: "pass",
+          publicRouting: "pass",
+          adminRouting: "pass",
+          sameOriginApi: "pass",
+          applicationHealth: "pass",
+          canonicalRedirect: "pass",
+          rollbackPlan: "pass",
+        },
+      }),
+    ).toThrow();
   });
 
   it("keeps unresolved and provider-specific DNS records pending while flagging mismatches", async () => {

@@ -535,6 +535,7 @@ async function ensureWooImportLifecycleTables(migrationsFolder: string) {
     await runSqlMigrationFile(migrationsFolder, "0047_woocommerce_import_lifecycle.sql");
   }
   await runSqlMigrationFile(migrationsFolder, "0055_woo_import_disposition_evidence.sql");
+  await runSqlMigrationFile(migrationsFolder, "0056_client_stack_onboarding_evidence.sql");
 }
 
 async function reconcileSchema(migrationsFolder: string) {
