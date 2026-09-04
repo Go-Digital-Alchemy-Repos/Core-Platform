@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   sendConfirmation: vi.fn(),
   sendRefund: vi.fn(),
   sendShipment: vi.fn(),
+  sendStatus: vi.fn(),
 }));
 
 vi.mock("../storage", () => ({
@@ -29,6 +30,7 @@ vi.mock("./ecommerce-email.service", () => ({
   sendEcommerceOrderConfirmation: mocks.sendConfirmation,
   sendEcommerceRefundEmail: mocks.sendRefund,
   sendEcommerceShipmentEmail: mocks.sendShipment,
+  sendEcommerceOrderStatusEmail: mocks.sendStatus,
 }));
 
 vi.mock("../utils/logger", () => ({
@@ -58,6 +60,7 @@ describe("ecommerce notification jobs", () => {
     mocks.sendRefund.mockResolvedValue(true);
     mocks.getShipment.mockResolvedValue({ id: "shipment-1", orderId: "order-1" });
     mocks.sendShipment.mockResolvedValue(true);
+    mocks.sendStatus.mockResolvedValue(true);
   });
 
   it("delivers an atomically queued receipt and marks the claimed job sent", async () => {
@@ -153,6 +156,32 @@ describe("ecommerce notification jobs", () => {
       expect.objectContaining({ id: "order-1" }),
       expect.objectContaining({ id: "shipment-1" }),
     );
+  });
+
+  it("delivers an order status change through the durable notification worker", async () => {
+    mocks.claim
+      .mockResolvedValueOnce({
+        id: "job-status-1",
+        type: "order_status",
+        orderId: "order-1",
+        statusValue: "shipped",
+        processingToken: "claim-status-1",
+        attemptCount: 1,
+      })
+      .mockResolvedValueOnce(undefined);
+
+    const { runEcommerceNotificationJobs } = await import("./ecommerce-notification-jobs.service");
+    const now = new Date("2026-09-04T00:00:00.000Z");
+    await expect(runEcommerceNotificationJobs(now)).resolves.toEqual({
+      completed: 1,
+      retried: 0,
+      failed: 0,
+    });
+    expect(mocks.sendStatus).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "order-1" }),
+      "shipped",
+    );
+    expect(mocks.complete).toHaveBeenCalledWith("job-status-1", "claim-status-1", now);
   });
 
   it("reports a dead-lettered job after the final attempt", async () => {

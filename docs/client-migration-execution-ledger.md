@@ -612,9 +612,8 @@ and budgets remain green.
 - **Evidence update:** hosted GitHub Actions run `33844150498` passed the isolated PostgreSQL migration
   verification, type-check, lint, formatting, tests, production build, and bundle budgets for the pinned
   candidate revision.
-- **Risk carried forward:** refund, shipment, and status notifications still use their existing delivery
-  paths. Provider sandbox retries, delivery monitoring, and client-specific email acceptance remain release
-  gates.
+- **Risk carried forward:** provider sandbox retries, delivery monitoring, and client-specific email
+  acceptance remain release gates.
 
 ### 2026-09-04 — Checkout inventory reservations
 
@@ -645,8 +644,7 @@ and budgets remain green.
   PostgreSQL 16 rehearsal applied all migrations, created a processed synthetic refund, claimed the queued
   job with the correct order and refund IDs, and marked it sent. No client, Railway, Neon, Stripe, email
   provider, or production database was contacted.
-- **Risk carried forward:** shipment and order-status notifications still need the durable delivery model;
-  provider sandbox evidence and delivery monitoring remain client-release gates.
+- **Risk carried forward:** provider sandbox evidence and delivery monitoring remain client-release gates.
 - **Evidence update:** hosted GitHub Actions run `33845562745` passed the isolated PostgreSQL migration
   verification, type-check, lint, formatting, tests, production build, and bundle budgets for the refund
   notification candidate. The Better Farms draft manifest pin passed the same hosted gate in `33845577943`.
@@ -658,3 +656,15 @@ and budgets remain green.
 - **Evidence:** focused worker and migration suites passed. A disposable PostgreSQL 16 rehearsal applied the
   migration sequence, created a synthetic shipment, verified the order became shipped, and claimed the
   matching notification job. No client or production provider was contacted.
+
+### 2026-09-04 — Durable order-status notifications
+
+- **Implemented:** an administrative order-status transition now updates the order and queues a deduplicated
+  `order_status` notification job in the same transaction. The durable worker reloads the order, sends the
+  recorded status, and uses the established retry and dead-letter lifecycle when delivery fails.
+- **Evidence:** focused admin-route, storage, migration, and worker suites passed, including dispatch of a
+  queued `shipped` status. A disposable PostgreSQL 16 rehearsal applied the full migration sequence, changed
+  a synthetic order to `shipped`, and claimed the matching status job with its recorded status value. No
+  client, Railway, Neon, Stripe, email provider, or production database was contacted.
+- **Risk carried forward:** provider sandbox retries, delivery monitoring, and client-specific email
+  acceptance remain release gates. The Better Farms manifest remains draft pending the approved client gates.

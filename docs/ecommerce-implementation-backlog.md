@@ -31,7 +31,7 @@ checks, and domain/origin checks pass for that client's isolated environment.
 - [x] Move paid-order receipt delivery to a durable, idempotent job with retry and dead-letter visibility.
 - [x] Move refund notifications to the durable delivery model.
 - [x] Move shipment notifications to the durable delivery model.
-- Move order-status notifications to the durable delivery model.
+- [x] Move order-status notifications to the durable delivery model.
 - [x] Add Stripe webhook reconciliation, delivery inspection, and explicit replay tooling.
 - [x] Make checkout creation idempotent for client retries.
 - [x] Add inventory reservation/expiry or document and enforce a client-approved oversell policy.
