@@ -1,4 +1,5 @@
 import { storage } from "../storage/index";
+import { recordDomainOutcome } from "../utils/metrics";
 import {
   assertPaymentGatewayRefundReady,
   createPaymentGatewayRefund,
@@ -151,6 +152,7 @@ export async function createEcommerceRefund(params: {
       paymentStatus: deriveRefundPaymentStatus(order, refundsForStatus),
     });
   }
+  recordDomainOutcome("refund", refund.status);
   return refund;
 }
 

@@ -1,6 +1,7 @@
 import { gzipSync, gunzipSync } from "zlib";
 import { pool } from "../db";
 import { logger } from "../utils/logger";
+import { recordDomainOutcome } from "../utils/metrics";
 import {
   deleteBackupObject,
   downloadBackupObject,
@@ -354,8 +355,12 @@ export async function runSystemBackup(reason: BackupRunReason = "manual") {
       tableCount: manifest.tableCount,
       reason,
     });
+    recordDomainOutcome("backup", "completed");
 
     return manifest;
+  } catch (error) {
+    recordDomainOutcome("backup", "failed");
+    throw error;
   } finally {
     await releaseBackupLock();
   }
@@ -486,8 +491,10 @@ export async function restoreBackupSnapshot(
       tableCount: snapshot.manifest.tableCount,
       identity: identity.kind,
     });
+    recordDomainOutcome("restore", "completed");
   } catch (error) {
     await client.query("ROLLBACK");
+    recordDomainOutcome("restore", "failed");
     throw error;
   } finally {
     client.release();

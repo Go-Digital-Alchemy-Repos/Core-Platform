@@ -1,6 +1,7 @@
 import type Stripe from "stripe";
 import { storage } from "../storage/index";
 import { logger } from "../utils/logger";
+import { recordDomainOutcome } from "../utils/metrics";
 import {
   getEcommerceStripeClient,
   getEcommerceStripeWebhookSecret,
@@ -148,7 +149,14 @@ export async function processEcommerceStripeWebhook(payload: Buffer, signature?:
     event = JSON.parse(payload.toString()) as Stripe.Event;
   }
 
-  return processVerifiedEcommerceStripeEvent(event);
+  try {
+    const result = await processVerifiedEcommerceStripeEvent(event);
+    recordDomainOutcome("webhook", result.status);
+    return result;
+  } catch (error) {
+    recordDomainOutcome("webhook", "failed");
+    throw error;
+  }
 }
 
 export async function replayEcommerceStripeWebhook(eventId: string) {

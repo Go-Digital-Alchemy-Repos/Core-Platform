@@ -38,6 +38,12 @@ GET /api/health/metrics
 
 Available in development or when `METRICS_ENABLED=true`. Returns in-memory request metrics (method, path, duration, status code aggregates).
 
+It also returns aggregate `domains` outcome counters for checkout creation, payment-webhook processing,
+refunds, expired inventory reservations, transactional notifications, backups, and restores. These counters
+contain no order IDs, customer data, provider payloads, or money values. Treat them as a process-local signal:
+export or scrape them at the configured interval, and define client-approved alert thresholds and responders
+before a transaction-enabled launch.
+
 ## Logging
 
 ### Logger Architecture

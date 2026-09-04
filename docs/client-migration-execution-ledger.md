@@ -725,3 +725,14 @@ and budgets remain green.
 - **Evidence update:** hosted GitHub Actions run `33848841230` passed isolated PostgreSQL migration
   verification, type-check, lint, formatting, 511 tests, production build, and bundle budget for revision
   `ad8b5fc`.
+
+### 2026-09-04 — Ecommerce and recovery domain metrics
+
+- **Implemented:** the existing secret-free metrics endpoint now reports aggregate outcome counters for
+  checkout, payment webhooks, refunds, expired inventory reservations, transactional notifications, backups,
+  and restores. Counters contain no identifiers, payloads, amounts, or customer data.
+- **Evidence:** focused observability and affected service tests passed; the complete local release gate
+  passed with 110 test files / 512 tests, type-check, lint, formatting, production build, and bundle budget.
+- **Risk carried forward:** metrics are a process-local signal until a client stack exports them and names
+  alert thresholds, responders, error-budget policy, and support timelines. Those operational decisions remain
+  required launch evidence.

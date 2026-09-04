@@ -1,5 +1,6 @@
 import { storage } from "../storage";
 import { logger } from "../utils/logger";
+import { recordDomainOutcome } from "../utils/metrics";
 import {
   sendEcommerceOrderConfirmation,
   sendEcommerceOrderStatusEmail,
@@ -95,6 +96,9 @@ export async function runEcommerceNotificationJobs(now = new Date(), maxJobs = M
     }
   }
 
+  if (completed) recordDomainOutcome("notification", "completed", completed);
+  if (retried) recordDomainOutcome("notification", "retried", retried);
+  if (failed) recordDomainOutcome("notification", "failed", failed);
   return { completed, retried, failed };
 }
 

@@ -10,6 +10,7 @@ interface MetricsStore {
   errors: Map<number, number>;
   dbQueries: { count: number; totalMs: number; minMs: number; maxMs: number };
   emailOutcomes: { success: number; failure: number };
+  domainOutcomes: Map<string, Map<string, number>>;
   startedAt: number;
 }
 
@@ -18,6 +19,7 @@ const store: MetricsStore = {
   errors: new Map(),
   dbQueries: { count: 0, totalMs: 0, minMs: Infinity, maxMs: 0 },
   emailOutcomes: { success: 0, failure: 0 },
+  domainOutcomes: new Map(),
   startedAt: Date.now(),
 };
 
@@ -62,6 +64,16 @@ export function recordEmailOutcome(success: boolean) {
   }
 }
 
+/** Records aggregate operational outcomes without IDs, amounts, or customer data. */
+export function recordDomainOutcome(domain: string, outcome: string, count = 1) {
+  if (!/^[a-z][a-z0-9_]{0,63}$/.test(domain)) return;
+  if (!/^[a-z][a-z0-9_]{0,63}$/.test(outcome)) return;
+  if (!Number.isSafeInteger(count) || count < 1) return;
+  const outcomes = store.domainOutcomes.get(domain) ?? new Map<string, number>();
+  outcomes.set(outcome, (outcomes.get(outcome) ?? 0) + count);
+  store.domainOutcomes.set(domain, outcomes);
+}
+
 export function getMetricsSnapshot() {
   const routes: Record<string, { count: number; avgMs: number; minMs: number; maxMs: number }> = {};
   store.requests.forEach((stat, key) => {
@@ -78,6 +90,11 @@ export function getMetricsSnapshot() {
     errors[String(code)] = count;
   });
 
+  const domains: Record<string, Record<string, number>> = {};
+  store.domainOutcomes.forEach((outcomes, domain) => {
+    domains[domain] = Object.fromEntries(outcomes.entries());
+  });
+
   return {
     uptimeSeconds: Math.floor((Date.now() - store.startedAt) / 1000),
     requests: routes,
@@ -90,5 +107,6 @@ export function getMetricsSnapshot() {
       maxMs: store.dbQueries.maxMs,
     },
     email: { ...store.emailOutcomes },
+    domains,
   };
 }

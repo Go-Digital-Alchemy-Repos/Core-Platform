@@ -1,5 +1,6 @@
 import { storage } from "../storage";
 import { logger } from "../utils/logger";
+import { recordDomainOutcome } from "../utils/metrics";
 import { getEcommerceStripeClient } from "./ecommerce-stripe.service";
 
 const CHECK_INTERVAL_MS = 30_000;
@@ -48,6 +49,8 @@ export async function expireEcommerceInventoryReservations(
       });
     }
   }
+  if (cancelled) recordDomainOutcome("inventory_reservation", "expired_cancelled", cancelled);
+  if (pending) recordDomainOutcome("inventory_reservation", "cancellation_pending", pending);
   return { cancelled, pending };
 }
 

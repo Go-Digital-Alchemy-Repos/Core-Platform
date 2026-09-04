@@ -14,6 +14,7 @@ import { getEcommerceCustomerAccountSettings } from "./ecommerce-customer-accoun
 import { assertEcommerceShippingDestinationAllowed } from "./ecommerce-store-settings.service";
 import { evaluateEcommerceFraud, recordEcommerceFraudEvent } from "./ecommerce-fraud.service";
 import { logger } from "../utils/logger";
+import { recordDomainOutcome } from "../utils/metrics";
 import { hashPassword } from "../middleware/auth";
 import type { User } from "@shared/schema";
 
@@ -647,6 +648,7 @@ export async function createEcommercePaymentIntent(
       if (!completed) throw new Error("Failed to complete checkout request");
     }
 
+    recordDomainOutcome("checkout", "created");
     return {
       clientSecret: intent.client_secret,
       paymentIntentId: intent.id,
@@ -657,6 +659,7 @@ export async function createEcommercePaymentIntent(
       accountUser: accountCreated ? accountUser : null,
     };
   } catch (err) {
+    recordDomainOutcome("checkout", "failed");
     if (checkoutRequestKey) {
       try {
         await storage.ecommerce.failCheckoutRequest(
