@@ -259,6 +259,17 @@ and budgets remain green.
 - **Risk carried forward:** this is source-build evidence only. It does not constitute a visual/
   accessibility/SEO acceptance review, live API integration, client content approval, or deployment.
 
+### 2026-09-04 — Better Farms local production-route smoke check
+
+- **Evidence:** the built Better Farms server ran locally in production mode. Each seven manifest-declared
+  public route returned the static application shell with HTTP 200. Responses carried the expected production
+  Content Security Policy and `X-Frame-Options: DENY` when no trusted Core admin origin was configured.
+- **Content fallback:** the Fund a Farm runtime-content endpoint returned its intentional HTTP 503
+  `Published content is temporarily unavailable` response because no Core API origin was configured locally.
+  The pinned source's contract suite separately verifies the client fallback for that outcome.
+- **Risk carried forward:** this does not test a configured Core API, authenticated preview, live browser
+  rendering, or a deployed origin. No external request, client data, DNS, or Railway service was used.
+
 ### 2026-09-04 — Ecommerce stock-boundary review
 
 - **Verified:** cart pricing aggregates duplicate product/variant lines before order creation. Paid-order
