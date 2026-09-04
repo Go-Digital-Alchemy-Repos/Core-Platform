@@ -647,6 +647,9 @@ and budgets remain green.
   provider, or production database was contacted.
 - **Risk carried forward:** shipment and order-status notifications still need the durable delivery model;
   provider sandbox evidence and delivery monitoring remain client-release gates.
+- **Evidence update:** hosted GitHub Actions run `33845562745` passed the isolated PostgreSQL migration
+  verification, type-check, lint, formatting, tests, production build, and bundle budgets for the refund
+  notification candidate. The Better Farms draft manifest pin passed the same hosted gate in `33845577943`.
 
 ### 2026-09-04 — Durable shipment notifications
 
