@@ -951,3 +951,15 @@ and budgets remain green.
   message.
 - **Safety boundary:** no environment value, Railway service, client data, DNS record, backup, restore, or
   deployment was accessed.
+
+### 2026-09-04 — WooCommerce rehearsal command strictness
+
+- **Implemented:** the durable WooCommerce rehearsal command now rejects unknown, duplicate, and misplaced
+  arguments before it reads an envelope or dynamically loads the database repository. The existing
+  rehearsal-only mode, fingerprint confirmation, bounded batch size, and explicit `--apply` confirmation
+  remain required.
+- **Evidence:** focused command, lifecycle, and repository coverage passed 19 tests; TypeScript, lint, and
+  formatting passed. The command rejects a misspelled flag, conflicting `--mode`, and an extra positional
+  argument without exposing source records.
+- **Safety boundary:** no source envelope, client data, database, Railway service, DNS record, or deployment
+  was used. Customer, order, delta, and cutover modes remain unavailable.

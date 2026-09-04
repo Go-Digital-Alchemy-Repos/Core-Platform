@@ -18,6 +18,43 @@ export interface WooImportApplyCommand {
   dispositionPath?: string;
 }
 
+const valueFlags = new Set([
+  "--target-stack",
+  "--operator",
+  "--mode",
+  "--confirm-fingerprint",
+  "--batch-size",
+  "--resume-run",
+  "--dispositions",
+]);
+
+function assertStrictCommandArguments(args: string[]) {
+  const seen = new Set<string>();
+  for (let index = 1; index < args.length; index += 1) {
+    const argument = args[index];
+    if (argument === "--apply") {
+      if (seen.has(argument)) {
+        throw new WooImportCommandError("duplicate_flag", "--apply may be supplied only once");
+      }
+      seen.add(argument);
+      continue;
+    }
+    if (!valueFlags.has(argument)) {
+      const code = argument.startsWith("--") ? "unknown_flag" : "unexpected_argument";
+      throw new WooImportCommandError(code, `Unsupported command argument: ${argument}`);
+    }
+    if (seen.has(argument)) {
+      throw new WooImportCommandError("duplicate_flag", `${argument} may be supplied only once`);
+    }
+    seen.add(argument);
+    const value = args[index + 1];
+    if (!value || value.startsWith("--")) {
+      throw new WooImportCommandError("missing_flag_value", `${argument} requires a value`);
+    }
+    index += 1;
+  }
+}
+
 function valueAfter(args: string[], flag: string) {
   const index = args.indexOf(flag);
   if (index < 0) return undefined;
@@ -56,6 +93,7 @@ export function parseWooImportApplyCommand(args: string[]): WooImportApplyComman
       "Usage: migration:woocommerce:apply <envelope.json> --target-stack <id> --operator <ref> --mode rehearsal --confirm-fingerprint <sha256> --apply",
     );
   }
+  assertStrictCommandArguments(args);
   if (!args.includes("--apply")) {
     throw new WooImportCommandError(
       "apply_not_confirmed",

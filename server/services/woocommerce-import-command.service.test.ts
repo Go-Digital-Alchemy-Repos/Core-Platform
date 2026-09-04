@@ -79,4 +79,16 @@ describe("WooCommerce durable apply command", () => {
       parseWooImportApplyCommand([...validArgs(), "--resume-run", "a".repeat(201)]),
     ).toThrow(/at most 200 characters/);
   });
+
+  it("rejects unknown, duplicate, and misplaced command arguments", () => {
+    expect(() => parseWooImportApplyCommand([...validArgs(), "--typo"])).toThrow(
+      /Unsupported command argument/,
+    );
+    expect(() => parseWooImportApplyCommand([...validArgs(), "--mode", "cutover"])).toThrow(
+      /may be supplied only once/,
+    );
+    expect(() => parseWooImportApplyCommand([...validArgs(), "unexpected.json"])).toThrow(
+      /Unsupported command argument/,
+    );
+  });
 });

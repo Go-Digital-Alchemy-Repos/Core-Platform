@@ -299,6 +299,8 @@ npm run migration:woocommerce:apply -- /secure/path/woocommerce-envelope.json \
 To resume a failed rehearsal, repeat the same command with the original `--target-stack`, source envelope,
 and fingerprint plus `--resume-run <run-id>`. The runner accepts only the same failed run, verifies its
 contract/source/target/fingerprint/high-water-mark identity, and continues after its committed checkpoint.
+It rejects unknown, duplicate, and misplaced arguments so the reviewed command line cannot be silently
+changed by a typo or conflicting option.
 
 ## 10. Rollback and reconciliation
 
