@@ -22,6 +22,7 @@ type ReadinessState = "pass" | "pending" | "fail";
 interface DomainPlan {
   publicOrigin: string;
   adminOrigin: string;
+  records: Array<{ fqdn: string; type: RecordType; value: string }>;
   manualInstructions: string[];
   rollbackInstructions: string[];
   requiredVerification: string[];
@@ -59,6 +60,17 @@ export default function ClientStackOnboardingPage() {
     pending: string[];
     failed: string[];
   } | null>(null);
+  const [dnsVerification, setDnsVerification] = useState<{
+    status: string;
+    records: Array<{
+      fqdn: string;
+      type: RecordType;
+      expectedValue: string;
+      status: "passed" | "pending" | "failed" | "manual-review";
+      observedValues: string[];
+      message: string;
+    }>;
+  } | null>(null);
 
   const planMutation = useMutation({
     mutationFn: async () => {
@@ -93,6 +105,7 @@ export default function ClientStackOnboardingPage() {
     onSuccess: (result) => {
       setPlan(result);
       setReadinessResult(null);
+      setDnsVerification(null);
     },
     onError: (error: Error) =>
       toast({
@@ -115,6 +128,27 @@ export default function ClientStackOnboardingPage() {
     onError: (error: Error) =>
       toast({
         title: "Could not evaluate readiness",
+        description: error.message,
+        variant: "destructive",
+      }),
+  });
+
+  const dnsVerificationMutation = useMutation({
+    mutationFn: async () => {
+      if (!plan) throw new Error("Generate the domain plan before verification.");
+      const response = await apiRequest(
+        "POST",
+        "/api/admin/client-stack-onboarding/dns-verification",
+        {
+          records: plan.records,
+        },
+      );
+      return response.json() as Promise<NonNullable<typeof dnsVerification>>;
+    },
+    onSuccess: setDnsVerification,
+    onError: (error: Error) =>
+      toast({
+        title: "Could not verify DNS propagation",
         description: error.message,
         variant: "destructive",
       }),
@@ -243,6 +277,44 @@ export default function ClientStackOnboardingPage() {
             <InstructionList title="Manual DNS instructions" items={plan.manualInstructions} />
             <InstructionList title="Rollback preparation" items={plan.rollbackInstructions} />
             <InstructionList title="Required verification" items={plan.requiredVerification} />
+            <div className="space-y-3 rounded-md border p-4">
+              <div>
+                <h3 className="font-medium">Read-only DNS propagation check</h3>
+                <p className="mt-1 text-muted-foreground">
+                  Queries public DNS only. It never sends provider credentials or changes records.
+                  ALIAS and ANAME records require provider read-only evidence because they are not
+                  standard DNS types.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => dnsVerificationMutation.mutate()}
+                disabled={dnsVerificationMutation.isPending}
+              >
+                {dnsVerificationMutation.isPending ? "Verifying DNS…" : "Verify published DNS"}
+              </Button>
+              {dnsVerification && (
+                <div className="space-y-2">
+                  <p className="font-medium">
+                    DNS status:{" "}
+                    {dnsVerification.status === "ready" ? "ready" : dnsVerification.status}
+                  </p>
+                  {dnsVerification.records.map((record) => (
+                    <div className="rounded border p-3" key={`${record.fqdn}-${record.type}`}>
+                      <p className="font-medium">
+                        {record.fqdn} {record.type}: {record.status}
+                      </p>
+                      <p className="text-muted-foreground">{record.message}</p>
+                      {record.observedValues.length > 0 && (
+                        <p className="text-muted-foreground">
+                          Observed: {record.observedValues.join(", ")}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}

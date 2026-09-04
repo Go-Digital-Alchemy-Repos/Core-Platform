@@ -785,3 +785,17 @@ and budgets remain green.
 - **Evidence update:** hosted GitHub Actions run `33854154794` passed isolated PostgreSQL migration
   verification, type-check, lint, formatting, 517 tests, production build, and bundle budget for revision
   `6d32456`.
+
+### 2026-09-04 — Read-only DNS propagation verification
+
+- **Implemented:** client-stack onboarding can now query public DNS for planned A, AAAA, and CNAME records
+  without registrar credentials or any provider write operation. Missing answers remain pending; a returned
+  nonmatching answer is blocked. ALIAS and ANAME remain manual-review evidence because they are
+  provider-specific extensions, never inferred as passed.
+- **Safety boundary:** the verifier has no DNS write capability and does not change release readiness by
+  itself. Certificate, ownership, routing, API, health, redirect, rollback, and provider-specific record
+  evidence remain separate required checks.
+- **Evidence:** injected-resolver tests cover matching A/CNAME answers, absent DNS answers, mismatches, and
+  ALIAS/ANAME manual review. The full local gate passed with 110 test files / 519 tests, type-check, lint,
+  formatting, production build, bundle budget, and diff validation. No client endpoint, provider, or
+  production stack was contacted.

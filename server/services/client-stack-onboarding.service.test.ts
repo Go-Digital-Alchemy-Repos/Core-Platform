@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createClientStackDomainPlan,
   evaluateClientStackReadiness,
+  verifyClientStackDnsRecords,
 } from "./client-stack-onboarding.service";
 
 const input = {
@@ -109,5 +110,49 @@ describe("client stack onboarding", () => {
         rollbackPlan: "pass",
       }),
     ).toMatchObject({ status: "blocked", failed: ["Same-origin /api behavior"] });
+  });
+
+  it("checks standard DNS records through an injected read-only resolver", async () => {
+    const result = await verifyClientStackDnsRecords(
+      {
+        records: [
+          { fqdn: "www.betterfarms.org", type: "A", value: "203.0.113.10" },
+          { fqdn: "admin.betterfarms.org", type: "CNAME", value: "core.railway.app" },
+        ],
+      },
+      {
+        resolve4: async () => ["203.0.113.10"],
+        resolve6: async () => [],
+        resolveCname: async () => ["core.railway.app."],
+      },
+    );
+
+    expect(result.status).toBe("ready");
+    expect(result.records.map((record) => record.status)).toEqual(["passed", "passed"]);
+  });
+
+  it("keeps unresolved and provider-specific DNS records pending while flagging mismatches", async () => {
+    const pendingError = Object.assign(new Error("not found"), { code: "ENOTFOUND" });
+    const result = await verifyClientStackDnsRecords(
+      {
+        records: [
+          { fqdn: "www.betterfarms.org", type: "AAAA", value: "2001:db8::10" },
+          { fqdn: "betterfarms.org", type: "ALIAS", value: "public.host.example" },
+          { fqdn: "admin.betterfarms.org", type: "CNAME", value: "core.railway.app" },
+        ],
+      },
+      {
+        resolve4: async () => [],
+        resolve6: async () => Promise.reject(pendingError),
+        resolveCname: async () => ["unexpected.example"],
+      },
+    );
+
+    expect(result.status).toBe("blocked");
+    expect(result.records.map((record) => record.status)).toEqual([
+      "pending",
+      "manual-review",
+      "failed",
+    ]);
   });
 });

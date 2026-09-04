@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { resolve4, resolve6, resolveCname } from "node:dns/promises";
 import { isIP } from "node:net";
 
 const stackIdSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
@@ -19,8 +20,9 @@ const dnsRecordFields = {
 };
 
 type DnsRecord = z.infer<z.ZodObject<typeof dnsRecordFields>>;
+type DnsRecordValue = Pick<DnsRecord, "type" | "value">;
 
-function validateDnsRecord(record: DnsRecord, context: z.RefinementCtx) {
+function validateDnsRecord(record: DnsRecordValue, context: z.RefinementCtx) {
   const expectedIpVersion = record.type === "A" ? 4 : record.type === "AAAA" ? 6 : null;
   if (expectedIpVersion && isIP(record.value) !== expectedIpVersion) {
     context.addIssue({
@@ -87,6 +89,129 @@ export const clientStackDomainPlanSchema = z
   });
 
 export type ClientStackDomainPlanInput = z.infer<typeof clientStackDomainPlanSchema>;
+
+const dnsVerificationRecordSchema = z
+  .object({
+    fqdn: hostnameSchema,
+    type: z.enum(["A", "AAAA", "ALIAS", "ANAME", "CNAME"]),
+    value: recordValueSchema,
+  })
+  .strict()
+  .superRefine(validateDnsRecord);
+
+export const clientStackDnsVerificationSchema = z
+  .object({ records: z.array(dnsVerificationRecordSchema).min(1).max(8) })
+  .strict();
+
+export type ClientStackDnsVerificationInput = z.infer<typeof clientStackDnsVerificationSchema>;
+export type DnsRecordVerificationStatus = "passed" | "pending" | "failed" | "manual-review";
+
+export interface ClientStackDnsRecordVerification {
+  fqdn: string;
+  type: DnsRecord["type"];
+  expectedValue: string;
+  status: DnsRecordVerificationStatus;
+  observedValues: string[];
+  message: string;
+}
+
+export interface ClientStackDnsVerificationResult {
+  status: "ready" | "pending" | "blocked";
+  records: ClientStackDnsRecordVerification[];
+}
+
+export interface DnsReadResolver {
+  resolve4(hostname: string): Promise<string[]>;
+  resolve6(hostname: string): Promise<string[]>;
+  resolveCname(hostname: string): Promise<string[]>;
+}
+
+const dnsReadResolver: DnsReadResolver = { resolve4, resolve6, resolveCname };
+
+function normalizedDnsValue(value: string) {
+  return value.trim().toLowerCase().replace(/\.$/, "");
+}
+
+function isPendingDnsLookupError(error: unknown) {
+  const code = (error as NodeJS.ErrnoException | undefined)?.code;
+  return code === "ENOTFOUND" || code === "ENODATA" || code === "ETIMEOUT" || code === "ESERVFAIL";
+}
+
+async function verifyStandardDnsRecord(
+  record: z.infer<typeof dnsVerificationRecordSchema>,
+  resolver: DnsReadResolver,
+): Promise<ClientStackDnsRecordVerification> {
+  if (record.type === "ALIAS" || record.type === "ANAME") {
+    return {
+      fqdn: record.fqdn,
+      type: record.type,
+      expectedValue: record.value,
+      status: "manual-review",
+      observedValues: [],
+      message:
+        "ALIAS and ANAME are provider-specific record types; capture provider read-only evidence before marking propagation passed.",
+    };
+  }
+
+  try {
+    const observedValues =
+      record.type === "A"
+        ? await resolver.resolve4(record.fqdn)
+        : record.type === "AAAA"
+          ? await resolver.resolve6(record.fqdn)
+          : await resolver.resolveCname(record.fqdn);
+    const expected = normalizedDnsValue(record.value);
+    const matched = observedValues.some((value) => normalizedDnsValue(value) === expected);
+    return {
+      fqdn: record.fqdn,
+      type: record.type,
+      expectedValue: record.value,
+      status: matched ? "passed" : "failed",
+      observedValues,
+      message: matched
+        ? "Observed DNS answer matches the planned record."
+        : "DNS answered, but no observed value matches the planned record.",
+    };
+  } catch (error) {
+    if (isPendingDnsLookupError(error)) {
+      return {
+        fqdn: record.fqdn,
+        type: record.type,
+        expectedValue: record.value,
+        status: "pending",
+        observedValues: [],
+        message: "No usable DNS answer is visible yet; propagation may still be pending.",
+      };
+    }
+    return {
+      fqdn: record.fqdn,
+      type: record.type,
+      expectedValue: record.value,
+      status: "failed",
+      observedValues: [],
+      message: "DNS lookup could not be completed; inspect the operator evidence and retry.",
+    };
+  }
+}
+
+/** Performs credential-free DNS reads only; it never calls a DNS provider write API. */
+export async function verifyClientStackDnsRecords(
+  input: ClientStackDnsVerificationInput,
+  resolver: DnsReadResolver = dnsReadResolver,
+): Promise<ClientStackDnsVerificationResult> {
+  const parsed = clientStackDnsVerificationSchema.parse(input);
+  const records = await Promise.all(
+    parsed.records.map((record) => verifyStandardDnsRecord(record, resolver)),
+  );
+  return {
+    status: records.some((record) => record.status === "failed")
+      ? "blocked"
+      : records.every((record) => record.status === "passed")
+        ? "ready"
+        : "pending",
+    records,
+  };
+}
 
 export type DomainReadinessStatus = "ready" | "pending" | "blocked";
 

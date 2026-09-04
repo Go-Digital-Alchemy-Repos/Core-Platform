@@ -52,6 +52,14 @@ from approved values and records the operator's read-only verification outcome. 
 domain, save registrar credentials, mutate DNS, or authorize a cutover. Preserve the generated plan and
 observed evidence in the client operations record before a release review.
 
+After the operator publishes a plan, **Verify published DNS** performs public DNS reads only. It checks A,
+AAAA, and CNAME answers against the exact planned value. An absent answer is reported as pending propagation;
+an answer that does not include the planned value is blocked as a mismatch. ALIAS and ANAME are
+provider-specific, so the application leaves them pending for the operator's provider read-only evidence
+rather than claiming they passed. This check never changes the overall release-readiness result on its own:
+the operator must retain the observed evidence and complete the remaining ownership, certificate, routing,
+health, redirect, and rollback checks.
+
 ## Railway Blueprint
 
 1. Create a dedicated Railway project or an equivalently isolated project boundary for the client.
