@@ -3,6 +3,7 @@ import { sendEcommerceRefundEmail } from "./ecommerce-email.service";
 import {
   assertPaymentGatewayRefundReady,
   createPaymentGatewayRefund,
+  findPaymentGatewayRefund,
   getRefundProviderDisplayName,
   isEcommerceRefundProvider,
   type EcommerceRefundProvider,
@@ -198,4 +199,32 @@ export async function recordStripeRefundWebhook(params: {
   });
   await syncOrderRefundPaymentStatus(order.id);
   return refund;
+}
+
+export async function reconcileEcommerceRefund(refundId: string) {
+  const refund = await storage.ecommerce.getRefund(refundId);
+  if (!refund) throw refundError("Refund not found", 404);
+  if (refund.source !== "stripe") {
+    throw refundError("Only Stripe refunds can be reconciled automatically", 400);
+  }
+  if (refund.status === "processed") return refund;
+
+  const order = await storage.ecommerce.getOrderWithDetails(refund.orderId);
+  if (!order) throw refundError("Order not found", 404);
+
+  const gatewayRefund = await findPaymentGatewayRefund({
+    provider: "stripe",
+    order,
+    idempotencyKey: refund.id,
+  });
+  if (!gatewayRefund) return refund;
+
+  const updated =
+    (await storage.ecommerce.updateRefund(refund.id, {
+      stripeRefundId: gatewayRefund.providerRefundId,
+      status: gatewayRefund.status,
+      processedAt: gatewayRefund.status === "processed" ? new Date() : undefined,
+    })) ?? refund;
+  await syncOrderRefundPaymentStatus(refund.orderId);
+  return updated;
 }

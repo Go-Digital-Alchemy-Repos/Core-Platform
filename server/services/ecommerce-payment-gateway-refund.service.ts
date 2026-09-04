@@ -31,9 +31,21 @@ interface GatewayRefundParams {
   idempotencyKey: string;
 }
 
+interface GatewayRefundLookupParams {
+  provider: EcommerceRefundProvider;
+  order: GatewayRefundOrder;
+  idempotencyKey: string;
+}
+
 export interface GatewayRefundResult {
   providerRefundId?: string;
   status: "pending" | "processed" | "failed";
+}
+
+function mapGatewayRefundStatus(status: string | null | undefined): GatewayRefundResult["status"] {
+  if (status === "succeeded") return "processed";
+  if (status === "failed" || status === "canceled") return "failed";
+  return "pending";
 }
 
 export function isEcommerceRefundProvider(provider: string): provider is EcommerceRefundProvider {
@@ -86,7 +98,31 @@ export async function createPaymentGatewayRefund(
     );
     return {
       providerRefundId: refund.id,
-      status: refund.status === "succeeded" ? "processed" : "pending",
+      status: mapGatewayRefundStatus(refund.status),
+    };
+  }
+
+  throw new Error(`${getRefundProviderDisplayName(params.provider)} refund adapter is unavailable`);
+}
+
+export async function findPaymentGatewayRefund(
+  params: GatewayRefundLookupParams,
+): Promise<GatewayRefundResult | null> {
+  assertPaymentGatewayRefundReady(params.provider, params.order);
+
+  if (params.provider === "stripe") {
+    const stripe = await getEcommerceStripeClient();
+    const results = await stripe.refunds.list({
+      payment_intent: params.order.stripePaymentIntentId!,
+      limit: 100,
+    });
+    const refund = results.data.find(
+      (candidate) => candidate.metadata?.localRefundId === params.idempotencyKey,
+    );
+    if (!refund) return null;
+    return {
+      providerRefundId: refund.id,
+      status: mapGatewayRefundStatus(refund.status),
     };
   }
 

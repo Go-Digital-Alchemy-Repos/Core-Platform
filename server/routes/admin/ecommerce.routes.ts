@@ -24,7 +24,10 @@ import {
   validateStripeSettingsKeyModes,
   type EcommerceStripeMode,
 } from "../../services/ecommerce-stripe.service";
-import { createEcommerceRefund } from "../../services/ecommerce-refund.service";
+import {
+  createEcommerceRefund,
+  reconcileEcommerceRefund,
+} from "../../services/ecommerce-refund.service";
 import { ECOMMERCE_REFUND_PROVIDERS } from "../../services/ecommerce-payment-gateway-refund.service";
 import {
   adminOrderUpdateSchema,
@@ -500,6 +503,13 @@ router.post(
       })
       .parse(req.body);
     res.status(201).json(await createEcommerceRefund({ ...data, processedBy: req.user?.id }));
+  }),
+);
+
+router.post(
+  "/refunds/:id/reconcile",
+  asyncHandler(async (req, res) => {
+    res.json(await reconcileEcommerceRefund(paramString(req.params.id)));
   }),
 );
 

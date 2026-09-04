@@ -324,6 +324,22 @@ and budgets remain green.
   checkout remains blocked pending Stripe sandbox concurrency and production-like end-to-end evidence,
   reconciliation procedures, and the client release approval.
 
+### 2026-09-04 — Ecommerce refund outcome and reconciliation hardening
+
+- **Implemented:** a Stripe refund returned immediately as `failed` or `canceled` now records as failed
+  instead of remaining falsely pending. The admin refund API now provides a reconciliation action that lists
+  refunds for the original PaymentIntent and matches only the durable local refund ID recorded in Stripe
+  metadata. It never reissues a provider refund; a pending local reservation remains in place when no match
+  is found.
+- **Concurrency boundary:** the existing refundable-balance reservation locks the order and prohibits a
+  second pending refund. Reconciliation updates the same durable refund record and recalculates the order
+  payment status from current refund records. The provider request uses no user-controlled identifier.
+- **Validation:** focused ecommerce suites passed 66 tests. The full Core gate passed: 98 test files/458
+  tests, TypeScript, lint, formatting, production build, and bundle budgets. No Stripe API request, migration,
+  or production data change was made.
+- **Risk carried forward:** this needs Stripe sandbox evidence for delayed/failed/listed refunds and operator
+  runbook/reconciliation acceptance before live refunds are enabled.
+
 ### 2026-09-04 — Membership webhook-effect atomicity
 
 - **Implemented:** each accepted Stripe membership checkout or subscription event now applies its subscription
