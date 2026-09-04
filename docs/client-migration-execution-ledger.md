@@ -876,3 +876,17 @@ and budgets remain green.
   draft and does not change the pending Better Farms `content` gate or approve publication.
 - **Safety boundary:** this inventory reads the pinned local site source only. It does not modify the client
   site, contact a client, access customer data, or change Railway, DNS, or production configuration.
+
+### 2026-09-04 — Better Farms Contact accessible names
+
+- **Implemented:** the Contact form now uses programmatic labels for full name, email address, and
+  organization while preserving its existing visual input hints and custom validation. This repairs the
+  prior reliance on placeholder text for those three controls.
+- **Evidence:** the exact site revision `cfd8576` passed TypeScript, all 21 site contract/security tests,
+  and a production build. A real mobile browser exposed the three names in its accessibility tree, rendered
+  the existing layout without a visual regression, and reported no console messages.
+- **CI maintenance:** the pinned source then moved its workflow and declared build runtime to Node 24. The
+  final `cee3a0e` source gate passed TypeScript, its 21 site contract/security tests, and production build
+  without the prior deprecated-action-runtime annotation.
+- **Safety boundary:** no upstream form request, Core service, client data, Railway resource, DNS record, or
+  production configuration was used. The local site server and browser were closed after review.

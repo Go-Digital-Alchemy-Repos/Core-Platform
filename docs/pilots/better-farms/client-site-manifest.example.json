@@ -6,7 +6,7 @@
     "displayName": "Better Farms Foundation",
     "source": {
       "repository": "https://github.com/Go-Digital-Alchemy-Repos/Better-Farms.git",
-      "revision": "31deb36e3fb13e29b1cab557dccd070c9e3fdf81"
+      "revision": "cee3a0e5b83966e7d1cbe0153fa1e2e555d594d9"
     },
     "owners": [
       {
@@ -33,7 +33,7 @@
   },
   "build": {
     "packageManager": "npm",
-    "nodeVersion": "20",
+    "nodeVersion": "24",
     "installCommand": "npm ci",
     "buildCommand": "npm run build",
     "startCommand": "npm start",

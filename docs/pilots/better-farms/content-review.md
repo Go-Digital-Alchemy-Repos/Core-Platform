@@ -7,6 +7,11 @@
 This is a secret-free working record for the Better Farms `content` release gate. It identifies content
 that needs client evidence; it does not approve copy, identities, media, or publication.
 
+The current integration candidate `cee3a0e5b83966e7d1cbe0153fa1e2e555d594d9` carries the programmatic
+Contact labels introduced in `cfd8576` and runs its quality workflow on Node 24. The focused mobile browser
+review confirms the Contact accessible names without changing rendered content or layout, so the content
+findings below remain applicable.
+
 ## Required approval evidence
 
 Before the content gate can pass, the client must provide a dated approval record that identifies:
@@ -40,4 +45,3 @@ The client-approved record must cover every retained item above and the represen
 scope. After the source is updated, repeat the production build, rendered-route review, and accessibility
 review against the exact release candidate. Only then may the release manifest's `content` gate be changed
 from `pending` to `passed` with a reference to that approval record.
-
