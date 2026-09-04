@@ -212,3 +212,13 @@ and budgets remain green.
 - **Safety boundary:** an in-progress or failed request cannot create another order. The browser keeps the key
   for an unchanged checkout payload and changes it when the payload changes. The migration remains unapplied;
   this does not authorize a production deployment.
+
+### 2026-09-04 — Registrar-neutral client stack onboarding
+
+- **Implemented:** an admin-only, credential-free domain onboarding workflow that validates client stack and
+  domain topology, generates deterministic manual apex, `www`, and admin record instructions, and records
+  rollback preparation. Its readiness evaluator distinguishes failed gates from DNS/certificate propagation
+  that is still pending.
+- **Safety boundary:** the workflow does not persist registrar credentials, call provider APIs, change DNS,
+  create Railway infrastructure, or authorize cutover. The generated plan and observed verification evidence
+  must be preserved in the client operations record before release review.

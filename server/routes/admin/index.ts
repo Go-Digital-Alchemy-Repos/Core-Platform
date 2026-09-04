@@ -26,6 +26,7 @@ import careersRoutes from "./careers.routes";
 import portfolioRoutes from "./portfolio.routes";
 import membershipRoutes from "./membership.routes";
 import clientSiteContentRoutes from "./client-site-content.routes";
+import clientStackOnboardingRoutes from "./client-stack-onboarding.routes";
 import {
   requireBlogEnabled,
   requireCareersEnabled,
@@ -65,6 +66,7 @@ router.use(
   requireAdminPermission("content"),
   clientSiteContentRoutes,
 );
+router.use("/client-stack-onboarding", requireRole("admin"), clientStackOnboardingRoutes);
 router.use(
   "/cms",
   requireCmsEnabled,

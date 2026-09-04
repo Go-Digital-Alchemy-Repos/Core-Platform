@@ -46,6 +46,12 @@ plan using those prior values. Direct provider APIs, including Cloudflare automa
 near-term scope. Domain cutover remains blocked until ownership, DNS, certificate, routing, `/api`,
 application health, redirect, and rollback gates all pass.
 
+In Core Platform, administrators open **System → Client Stack Onboarding** to generate the manual plan.
+The workflow is intentionally non-persistent and credential-free: it produces a deterministic record plan
+from approved values and records the operator's read-only verification outcome. It does not provision a
+domain, save registrar credentials, mutate DNS, or authorize a cutover. Preserve the generated plan and
+observed evidence in the client operations record before a release review.
+
 ## Railway Blueprint
 
 1. Create a dedicated Railway project or an equivalently isolated project boundary for the client.
