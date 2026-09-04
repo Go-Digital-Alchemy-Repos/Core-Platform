@@ -592,6 +592,7 @@ and budgets remain green.
   the verification successfully. The full release suite then passed: 107 test files, 497 tests, type-check,
   lint, formatting, production build, and bundle budgets. No client, Railway, Neon, Stripe, or production
   database was contacted.
-- **Risk carried forward:** the hosted run for this revised workflow must pass before it can be considered
-  independently verified. Client backup, restore, security, health, import, browser, and provider-sandbox
+- **Evidence update:** hosted run `33843014549` passed the PostgreSQL migration check, type-check, lint,
+  formatting, tests, production build, and bundle budgets for the pinned candidate revision.
+- **Risk carried forward:** client backup, restore, security, health, import, browser, and provider-sandbox
   evidence remain separate required release gates.
