@@ -77,13 +77,22 @@ health, redirect, and rollback checks.
    admin origin for legacy Core Platform services. Both exact origins must appear once in `TRUSTED_ORIGINS`.
    The preflight rejects missing, non-canonical, identical, mismatched, or untrusted origins.
 5. Set the variables below through Railway's secret/configuration controls. Never commit real values.
-6. Before deployment, run the same candidate configuration through the preflight:
+6. Before deployment, evaluate the exact approved release record. This must report `ready: true`; a valid
+   draft is not a deployment authorization:
+
+   ```bash
+   npm run release:readiness -- docs/pilots/<client>/client-release-manifest.json
+   ```
+
+7. Run the same candidate configuration through the preflight:
 
    ```bash
    npm run deploy:check -- --require-ecommerce --require-email --require-backups --require-observability --require-client-form-proxy --require-separate-origins
    ```
 
-   The command reports only missing or invalid variable names and non-secret identity/origin values.
+   The command reports only missing or invalid variable names and non-secret identity/origin values. It does
+   not replace the release-readiness command, client approvals, backup/restore evidence, or deployment-window
+   authorization.
 
 ## Configuration Inventory
 

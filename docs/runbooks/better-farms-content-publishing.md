@@ -5,21 +5,23 @@ an approved deployment window.
 
 ## Deployment order
 
-1. Back up the Railway PostgreSQL database and verify the restore artifact.
-2. Deploy Core Platform with `CLIENT_SITE_MANIFEST_PATH` pointing to the approved production manifest and
+1. Run `npm run release:readiness -- docs/pilots/better-farms/client-release-manifest.json`. Proceed only
+   when it reports `ready: true`; the repository example is intentionally a draft and must fail this check.
+2. Back up the Railway PostgreSQL database and verify the restore artifact.
+3. Deploy Core Platform with `CLIENT_SITE_MANIFEST_PATH` pointing to the approved production manifest and
    `CLIENT_SITE_CORE_VERSION` matching the release.
-3. Confirm startup created `client_site_content` and `client_site_content_revisions`; both changes are additive.
-4. Verify an authenticated content editor can open
+4. Confirm startup created `client_site_content` and `client_site_content_revisions`; both changes are additive.
+5. Verify an authenticated content editor can open
    `/admin/cms/client-sites/better-farms/fund-a-farm`, save a draft, and preview it without publishing.
-5. Set Better Farms `CORE_PLATFORM_API_ORIGIN` to the Core Platform HTTPS origin and
+6. Set Better Farms `CORE_PLATFORM_API_ORIGIN` to the Core Platform HTTPS origin and
    `VITE_CORE_PLATFORM_ADMIN_ORIGIN` to the exact Core admin origin. When public forms are enabled, set
    Better Farms `CORE_PLATFORM_FORM_PROXY_TOKEN` and the matching Core
    `CLIENT_FORM_PROXY_TOKEN` as server-only variables, then deploy Better Farms.
-6. Request `/api/client-site-content/fund-a-farm/fund-a-farm-page` through Better Farms. A `404` before the
+7. Request `/api/client-site-content/fund-a-farm/fund-a-farm-page` through Better Farms. A `404` before the
    first publish is expected; the page must render its built-in fallback.
-7. Publish the approved draft, verify a `200` response and `ETag`, then reload `/fund-a-farm` and confirm the
+8. Publish the approved draft, verify a `200` response and `ETag`, then reload `/fund-a-farm` and confirm the
    published content appears.
-8. Send `If-None-Match` with the returned ETag and confirm `304`. Restore an earlier revision as a draft and
+9. Send `If-None-Match` with the returned ETag and confirm `304`. Restore an earlier revision as a draft and
    confirm the public response stays unchanged until that restored draft is published.
 
 ## Rollback

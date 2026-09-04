@@ -919,3 +919,13 @@ and budgets remain green.
   then exited `1`. Focused manifest/readiness coverage (7 tests), TypeScript, lint, and formatting passed.
 - **Safety boundary:** the command reads a local secret-free manifest only. It does not approve a release,
   access a Railway service, contact a client, alter DNS, restore data, or deploy.
+
+### 2026-09-04 — Deployment runbook release-readiness handoff
+
+- **Implemented:** the Railway and Better Farms publishing runbooks now require the exact release record to
+  report `ready: true` before environment preflight or any deployment action. They explicitly distinguish
+  secret-safe configuration validation from release authorization, backup/restore proof, and the approved
+  deployment window.
+- **Safety boundary:** this changes the operator sequence only. The Better Farms example remains a draft and
+  continues to fail readiness; no Railway resource, deployment variable, DNS record, backup, restore, or
+  client service was accessed.
