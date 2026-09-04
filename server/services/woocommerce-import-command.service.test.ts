@@ -30,6 +30,7 @@ describe("WooCommerce durable apply command", () => {
       confirmedFingerprint: fingerprint,
       batchSize: 25,
       resumeRunId: undefined,
+      dispositionPath: undefined,
     });
   });
 
@@ -59,6 +60,15 @@ describe("WooCommerce durable apply command", () => {
       targetStackId: "isolated-rehearsal",
       confirmedFingerprint: fingerprint,
     });
+  });
+
+  it("accepts a disposition schedule only as an explicit file argument", () => {
+    expect(
+      parseWooImportApplyCommand([...validArgs(), "--dispositions", "schedule.json"]),
+    ).toMatchObject({ dispositionPath: "schedule.json" });
+    expect(() => parseWooImportApplyCommand([...validArgs(), "--dispositions"])).toThrow(
+      /requires a value/,
+    );
   });
 
   it("rejects an empty or oversized resume-run identifier", () => {

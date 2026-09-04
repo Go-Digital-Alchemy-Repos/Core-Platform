@@ -26,6 +26,22 @@ describe("WooCommerce import lifecycle contract", () => {
     });
   });
 
+  it("binds a disposition approval reference to its schedule fingerprint", () => {
+    expect(
+      validateBeginWooImportRun({
+        ...validRun,
+        dispositionFingerprint: "b".repeat(64),
+        dispositionApprovalReference: "BF-IMPORT-REHEARSAL-01",
+      }),
+    ).toMatchObject({
+      dispositionFingerprint: "b".repeat(64),
+      dispositionApprovalReference: "BF-IMPORT-REHEARSAL-01",
+    });
+    expect(() =>
+      validateBeginWooImportRun({ ...validRun, dispositionFingerprint: "b".repeat(64) }),
+    ).toThrow(/must be supplied together/);
+  });
+
   it("blocks durable customer, order, delta, and unknown contract requests", () => {
     expect(() => validateBeginWooImportRun({ ...validRun, enabledPhases: [1, 3] })).toThrow(
       /phase 3 is not enabled/,

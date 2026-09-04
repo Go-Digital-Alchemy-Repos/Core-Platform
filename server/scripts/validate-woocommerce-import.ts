@@ -4,6 +4,7 @@ import {
   buildWooCommerceCatalogPlan,
   buildWooCommerceDryRunReport,
 } from "../services/woocommerce-import.service";
+import { applyWooImportDispositionSchedule } from "../services/woocommerce-import-disposition.service";
 
 class WooImportValidationError extends Error {
   constructor(
@@ -17,6 +18,18 @@ class WooImportValidationError extends Error {
 function valueAfter(flag: string) {
   const index = process.argv.indexOf(flag);
   return index >= 0 ? process.argv[index + 1] : undefined;
+}
+
+async function readDispositionSchedule(value: string | undefined) {
+  if (!value) return undefined;
+  try {
+    return JSON.parse(await readFile(path.resolve(value), "utf8")) as unknown;
+  } catch {
+    throw new WooImportValidationError(
+      "invalid_dispositions",
+      "The WooCommerce disposition schedule could not be read as JSON.",
+    );
+  }
 }
 
 async function main() {
@@ -38,7 +51,13 @@ async function main() {
     );
   }
 
-  const report = buildWooCommerceDryRunReport(buildWooCommerceCatalogPlan(input));
+  const plan = buildWooCommerceCatalogPlan(input);
+  const schedule = await readDispositionSchedule(valueAfter("--dispositions"));
+  const dispositioned = schedule ? applyWooImportDispositionSchedule(plan, schedule) : undefined;
+  const report = {
+    ...buildWooCommerceDryRunReport(dispositioned?.plan ?? plan),
+    ...(dispositioned ? { dispositionEvidence: dispositioned.evidence } : {}),
+  };
   const output = `${JSON.stringify(report, null, 2)}\n`;
   process.stdout.write(output);
 

@@ -697,3 +697,16 @@ and budgets remain green.
 - **Safety boundary:** the site and Core manifests remain draft. The check uses only local source and
   credentials-free fixtures; it does not contact Core, Railway, WooCommerce, client data, a form destination,
   DNS, or a payment provider.
+
+### 2026-09-04 — WooCommerce approved-warning evidence
+
+- **Implemented:** the Phase 1 catalog planner now accepts a separate, non-secret disposition schedule only
+  when it exactly matches the dry-run source fingerprint and its sanitized warning references. The schedule
+  can record an owner-approved exclusion, never suppress an error or override a mapped value. Its fingerprint
+  and approval reference persist with a rehearsal run and must remain unchanged for resume.
+- **Evidence:** focused planner, command, lifecycle, repository, and migration tests passed (30 tests).
+  TypeScript, lint, formatting, and a synthetic offline catalog dry-run passed. The legacy schema
+  reconciliation path applies the same additive evidence migration. No WooCommerce endpoint, client export,
+  database, or deployment was contacted.
+- **Risk carried forward:** the feature provides a controlled rehearsal record; Better Farms still needs a
+  real source inventory and owner-approved field exclusions before any client data can be planned or applied.

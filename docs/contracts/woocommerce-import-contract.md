@@ -94,6 +94,14 @@ Apply is blocked by any error, undispositioned field, record from a disabled pha
 conflict, count or monetary mismatch, or invalid dependency graph. Warnings require a recorded disposition
 before the relevant phase can pass its launch gate.
 
+An operator may supply a separate, non-secret disposition schedule for **exactly matched warnings** in a
+reviewed dry-run report. The schedule is bound to the source fingerprint and contains only the warning code,
+entity, hashed source reference, field, `excluded-approved` disposition, and an approval-record reference.
+It cannot approve validation errors, alter mapped values, or match warnings from a different source
+fingerprint. The schedule fingerprint and approval reference are retained with a durable rehearsal run and
+must match when that run is resumed. Raw source values, names, addresses, credentials, and payment data are
+never included in the schedule.
+
 ## 4. Target port
 
 The importer depends on a repository port, not Drizzle or global database state:
@@ -246,6 +254,34 @@ npm run migration:woocommerce:validate -- /secure/path/woocommerce-envelope.json
 The command writes no database state. A ready report exits `0`; a blocked plan exits `2`. Report files are
 created with owner-only permissions and contain aggregate evidence and sanitized issue references only.
 
+When the report has a warning the approved scope intentionally excludes, the owner-approved schedule is
+supplied to both the dry-run and matching rehearsal command. It must use the report's exact fingerprint and
+hashed issue references:
+
+```json
+{
+  "contract": "core.woocommerce-import-dispositions",
+  "contractVersion": "1.0.0",
+  "sourceFingerprint": "<sha256-from-dry-run>",
+  "approvalReference": "approved-change-record",
+  "entries": [
+    {
+      "code": "unsupported_field",
+      "entity": "product",
+      "sourceRef": "product:<hashed-reference>",
+      "field": "legacy_plugin_field",
+      "disposition": "excluded-approved"
+    }
+  ]
+}
+```
+
+```bash
+npm run migration:woocommerce:validate -- /secure/path/woocommerce-envelope.json \
+  --dispositions /secure/path/approved-dispositions.json \
+  --report /secure/path/woocommerce-dry-run-report.json
+```
+
 After the offline report has been reviewed, an operator may apply a **synthetic or isolated rehearsal** only
 through the explicit durable command below. It rejects cutover mode and requires the exact planned fingerprint;
 it must never be pointed at a production target.
@@ -256,6 +292,7 @@ npm run migration:woocommerce:apply -- /secure/path/woocommerce-envelope.json \
   --operator approved-operator-reference \
   --mode rehearsal \
   --confirm-fingerprint <sha256-from-dry-run> \
+  --dispositions /secure/path/approved-dispositions.json \
   --apply
 ```
 

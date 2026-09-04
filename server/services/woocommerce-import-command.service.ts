@@ -15,6 +15,7 @@ export interface WooImportApplyCommand {
   confirmedFingerprint: string;
   batchSize: number;
   resumeRunId?: string;
+  dispositionPath?: string;
 }
 
 function valueAfter(args: string[], flag: string) {
@@ -90,5 +91,6 @@ export function parseWooImportApplyCommand(args: string[]): WooImportApplyComman
     confirmedFingerprint,
     batchSize,
     resumeRunId: optionalIdentifier(args, "--resume-run"),
+    dispositionPath: valueAfter(args, "--dispositions"),
   };
 }

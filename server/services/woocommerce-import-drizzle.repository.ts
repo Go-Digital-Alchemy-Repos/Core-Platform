@@ -260,6 +260,8 @@ export class DrizzleWooImportRepository implements WooImportRepositoryV1 {
         run.sourceFingerprint === valid.sourceFingerprint &&
         run.highWaterMark === valid.highWaterMark &&
         run.mode === valid.mode &&
+        run.dispositionFingerprint === (valid.dispositionFingerprint ?? null) &&
+        run.dispositionApprovalReference === (valid.dispositionApprovalReference ?? null) &&
         JSON.stringify([...run.enabledPhases].sort()) === JSON.stringify(valid.enabledPhases);
       if (!matchesIdentity) {
         throw new Error("WooCommerce resume request does not match the original run identity");

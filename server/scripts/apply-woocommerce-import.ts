@@ -6,6 +6,19 @@ import {
 } from "../services/woocommerce-import-command.service";
 import { applyWooCommercePlan } from "../services/woocommerce-import-repository.service";
 import { buildWooCommerceCatalogPlan } from "../services/woocommerce-import.service";
+import { applyWooImportDispositionSchedule } from "../services/woocommerce-import-disposition.service";
+
+async function readDispositionSchedule(value: string | undefined) {
+  if (!value) return undefined;
+  try {
+    return JSON.parse(await readFile(path.resolve(value), "utf8")) as unknown;
+  } catch {
+    throw new WooImportCommandError(
+      "invalid_dispositions",
+      "The WooCommerce disposition schedule could not be read as JSON.",
+    );
+  }
+}
 
 async function main() {
   const command = parseWooImportApplyCommand(process.argv.slice(2));
@@ -19,7 +32,12 @@ async function main() {
     );
   }
 
-  const plan = buildWooCommerceCatalogPlan(input);
+  const sourcePlan = buildWooCommerceCatalogPlan(input);
+  const schedule = await readDispositionSchedule(command.dispositionPath);
+  const dispositioned = schedule
+    ? applyWooImportDispositionSchedule(sourcePlan, schedule)
+    : undefined;
+  const plan = dispositioned?.plan ?? sourcePlan;
   if (!plan.sourceStoreId || !plan.highWaterMark) {
     throw new WooImportCommandError(
       "invalid_plan",
@@ -46,6 +64,8 @@ async function main() {
       mode: "rehearsal",
       enabledPhases: [1],
       operatorReference: command.operatorReference,
+      dispositionFingerprint: dispositioned?.evidence.fingerprint,
+      dispositionApprovalReference: dispositioned?.evidence.approvalReference,
     },
     batchSize: command.batchSize,
     resumeRunId: command.resumeRunId,
@@ -57,6 +77,7 @@ async function main() {
       contractVersion: plan.contractVersion,
       runId: result.runId,
       fingerprint: plan.fingerprint,
+      dispositionEvidence: dispositioned?.evidence,
       reconciliation: result.reconciliation,
     })}\n`,
   );

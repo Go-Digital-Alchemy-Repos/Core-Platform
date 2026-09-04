@@ -6,6 +6,7 @@ import {
   deterministicWooCommerceId,
   inspectWooCommerceTarget,
 } from "../services/woocommerce-import.service";
+import { applyWooImportDispositionSchedule } from "../services/woocommerce-import-disposition.service";
 
 function product(overrides: Record<string, unknown> = {}) {
   return {
@@ -123,6 +124,55 @@ describe("WooCommerce catalog import planning", () => {
       planned: { categories: 1, products: 1, productPriceTotal: 1500 },
       unsupported: { customers: 0, orders: 0 },
     });
+  });
+
+  it("permits only an exact, fingerprint-bound approved exclusion schedule", () => {
+    const plan = buildWooCommerceCatalogPlan(envelope());
+    const warning = plan.issues.find(
+      (issue) => issue.code === "backorder_notification_not_imported",
+    )!;
+    const schedule = {
+      contract: "core.woocommerce-import-dispositions",
+      contractVersion: "1.0.0",
+      sourceFingerprint: plan.fingerprint,
+      approvalReference: "BF-IMPORT-REHEARSAL-01",
+      entries: [
+        {
+          code: warning.code,
+          entity: warning.entity,
+          sourceRef: warning.sourceRef ?? null,
+          field: warning.field ?? null,
+          disposition: "excluded-approved",
+        },
+      ],
+    };
+
+    const dispositioned = applyWooImportDispositionSchedule(plan, schedule);
+    expect(() => assertWooCommercePlanCanApply(dispositioned.plan)).not.toThrow();
+    expect(dispositioned.evidence).toMatchObject({
+      approvalReference: "BF-IMPORT-REHEARSAL-01",
+      appliedIssueCount: 1,
+      fingerprint: expect.stringMatching(/^[a-f0-9]{64}$/),
+    });
+    expect(dispositioned.plan.issues).toContainEqual(
+      expect.objectContaining({
+        code: "backorder_notification_not_imported",
+        disposition: "excluded-approved",
+      }),
+    );
+
+    expect(() =>
+      applyWooImportDispositionSchedule(plan, {
+        ...schedule,
+        sourceFingerprint: "b".repeat(64),
+      }),
+    ).toThrow(/does not match the source fingerprint/);
+    expect(() =>
+      applyWooImportDispositionSchedule(plan, {
+        ...schedule,
+        entries: [...schedule.entries, schedule.entries[0]],
+      }),
+    ).toThrow(/duplicate issue entry/);
   });
 
   it("produces the same ids and fingerprint for semantically identical key ordering", () => {

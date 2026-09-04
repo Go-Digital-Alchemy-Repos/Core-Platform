@@ -16,6 +16,8 @@ export interface BeginWooImportRun {
   mode: WooImportRunMode;
   enabledPhases: number[];
   operatorReference: string;
+  dispositionFingerprint?: string;
+  dispositionApprovalReference?: string;
 }
 
 export interface WooImportReconciliationSummary {
@@ -74,6 +76,14 @@ export function validateBeginWooImportRun(input: BeginWooImportRun): BeginWooImp
     );
   }
 
+  const hasDispositionFingerprint = Boolean(input.dispositionFingerprint?.trim());
+  const hasDispositionApprovalReference = Boolean(input.dispositionApprovalReference?.trim());
+  if (hasDispositionFingerprint !== hasDispositionApprovalReference) {
+    throw new Error(
+      "WooCommerce disposition fingerprint and approval reference must be supplied together",
+    );
+  }
+
   return {
     ...input,
     sourceStoreId: requireIdentifier(input.sourceStoreId, "sourceStoreId"),
@@ -81,6 +91,15 @@ export function validateBeginWooImportRun(input: BeginWooImportRun): BeginWooImp
     sourceFingerprint: requireSha256(input.sourceFingerprint),
     highWaterMark: requireIdentifier(input.highWaterMark, "highWaterMark"),
     operatorReference: requireIdentifier(input.operatorReference, "operatorReference"),
+    ...(hasDispositionFingerprint
+      ? {
+          dispositionFingerprint: requireSha256(input.dispositionFingerprint!),
+          dispositionApprovalReference: requireIdentifier(
+            input.dispositionApprovalReference!,
+            "dispositionApprovalReference",
+          ),
+        }
+      : {}),
     enabledPhases,
   };
 }

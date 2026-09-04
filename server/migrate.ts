@@ -534,6 +534,7 @@ async function ensureWooImportLifecycleTables(migrationsFolder: string) {
     logger.app.info("Applying WooCommerce import lifecycle migration");
     await runSqlMigrationFile(migrationsFolder, "0047_woocommerce_import_lifecycle.sql");
   }
+  await runSqlMigrationFile(migrationsFolder, "0055_woo_import_disposition_evidence.sql");
 }
 
 async function reconcileSchema(migrationsFolder: string) {

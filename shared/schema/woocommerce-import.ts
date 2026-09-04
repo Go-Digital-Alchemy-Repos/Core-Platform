@@ -40,6 +40,8 @@ export const wooImportRuns = pgTable(
       .notNull()
       .default(sql`ARRAY[]::integer[]`),
     operatorReference: text("operator_reference").notNull(),
+    dispositionFingerprint: text("disposition_fingerprint"),
+    dispositionApprovalReference: text("disposition_approval_reference"),
     latestCheckpoint: jsonb("latest_checkpoint").notNull().default({}),
     reconciliation: jsonb("reconciliation").notNull().default({}),
     failureCode: text("failure_code"),
