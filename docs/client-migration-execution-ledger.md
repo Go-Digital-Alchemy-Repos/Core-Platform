@@ -474,3 +474,14 @@ and budgets remain green.
   Stripe, or production database was contacted.
 - **Risk carried forward:** live provider retries, durable confirmation-email delivery, customer
   reconciliation, and Stripe sandbox concurrency evidence remain release gates.
+
+### 2026-09-04 — Public managed-form HTML boundary
+
+- **Implemented:** all public form reads now pass through the shared public rich-HTML sanitizer at the
+  public-form storage boundary. This covers the ordinary `/api/forms/:slug` route and the event-registration
+  form route that supplies a form override directly to the browser renderer.
+- **Evidence:** focused storage tests verify that iframe, event-handler, and JavaScript-URL payloads are
+  removed before a public form is returned, while supported paragraph, formatting, image, and HTTPS link
+  content remains renderable. The existing shared sanitization regression suite and form service tests pass.
+- **Risk carried forward:** other public rich-HTML renderers have separate content contracts and remain
+  subject to their own sanitizer and release-gate review.

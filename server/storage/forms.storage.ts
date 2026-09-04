@@ -8,6 +8,7 @@ import {
   type InsertCmsForm,
   type InsertCmsFormSubmission,
 } from "@shared/schema";
+import { sanitizePublicCmsContent } from "../utils/sanitize-rich-html";
 
 function normalizeForm<T extends CmsForm | undefined>(form: T): T {
   if (!form) return form;
@@ -16,6 +17,10 @@ function normalizeForm<T extends CmsForm | undefined>(form: T): T {
     fields: Array.isArray(form.fields) ? form.fields : [],
     settings: typeof form.settings === "object" && form.settings ? form.settings : {},
   } as T;
+}
+
+function sanitizePublicForm<T extends CmsForm | undefined>(form: T): T {
+  return sanitizePublicCmsContent(normalizeForm(form));
 }
 
 export class FormsStorage {
@@ -34,7 +39,7 @@ export class FormsStorage {
       .where(eq(cmsForms.isActive, true))
       .orderBy(cmsForms.name);
     return rows
-      .map((row) => normalizeForm(row))
+      .map((row) => sanitizePublicForm(row))
       .filter((row): row is CmsForm => Boolean(row && row.kind !== "application"));
   }
 
@@ -49,7 +54,7 @@ export class FormsStorage {
       .from(cmsForms)
       .where(and(eq(cmsForms.id, id), eq(cmsForms.isActive, true)))
       .limit(1);
-    const normalized = normalizeForm(form);
+    const normalized = sanitizePublicForm(form);
     if (!normalized || normalized.kind === "application") return undefined;
     return normalized;
   }
@@ -65,7 +70,7 @@ export class FormsStorage {
       .from(cmsForms)
       .where(and(eq(cmsForms.slug, slug), eq(cmsForms.isActive, true)))
       .limit(1);
-    const normalized = normalizeForm(form);
+    const normalized = sanitizePublicForm(form);
     if (!normalized || normalized.kind === "application") return undefined;
     return normalized;
   }
