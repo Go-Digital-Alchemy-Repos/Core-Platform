@@ -43,7 +43,7 @@ double-charge, double-refund, double-deduct, over-redeem, or silently strand pai
 
 - [x] Freeze the versioned WooCommerce source, planner, target-port, mapping/run/checkpoint/audit/quarantine,
       authority, reconciliation, and rollback contract.
-- Build an idempotent WooCommerce importer with dry-run and resumable execution.
+- [x] Build the Phase 1 catalog importer with dry-run and resumable rehearsal execution.
 - Define source-to-target mappings for products, variants, media, customers, orders, coupons, taxes,
   stock, and statuses.
 - Define which historical sensitive data will not be imported.

@@ -29,6 +29,7 @@ describe("WooCommerce durable apply command", () => {
       operatorReference: "synthetic-operator",
       confirmedFingerprint: fingerprint,
       batchSize: 25,
+      resumeRunId: undefined,
     });
   });
 
@@ -48,5 +49,24 @@ describe("WooCommerce durable apply command", () => {
     expect(() => parseWooImportApplyCommand([...validArgs(), "--batch-size", "1001"])).toThrow(
       /between 1 and 1000/,
     );
+  });
+
+  it("accepts an explicit failed-run identifier only alongside the normal rehearsal guards", () => {
+    expect(
+      parseWooImportApplyCommand([...validArgs(), "--resume-run", "run-failed-1"]),
+    ).toMatchObject({
+      resumeRunId: "run-failed-1",
+      targetStackId: "isolated-rehearsal",
+      confirmedFingerprint: fingerprint,
+    });
+  });
+
+  it("rejects an empty or oversized resume-run identifier", () => {
+    expect(() => parseWooImportApplyCommand([...validArgs(), "--resume-run", "   "])).toThrow(
+      /non-empty value/,
+    );
+    expect(() =>
+      parseWooImportApplyCommand([...validArgs(), "--resume-run", "a".repeat(201)]),
+    ).toThrow(/at most 200 characters/);
   });
 });

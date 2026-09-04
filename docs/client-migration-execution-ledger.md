@@ -11,7 +11,7 @@ Statuses describe repository evidence and do not imply production release approv
 | 1. Manifest and integration contracts | In progress | Manifest v1.0, compatibility validation, exact-origin preview, runtime publication ADR, Better Farms fixture, and WooCommerce import contract v1.0.0                                     | Freeze manual DNS, module registry, and remaining route/data ownership contracts                                                                                                          |
 | 2. Better Farms adapter               | In progress | Better Farms branch `codex/site-shell-fund-a-farm` through `0f0ddde`; locked shell, theme adapter, bounded Fund a Farm registry/content, preview, runtime API fallback                   | Complete site inventory and expand page, form, SEO, accessibility, responsive, and asset coverage incrementally                                                                           |
 | 3. Railway deployment foundation      | In progress | Client-stack preflight, stack identity, Railway/manual-domain runbook, backup provenance, runtime publishing rollback runbook                                                            | Implement the registrar-neutral onboarding wizard and read-only readiness verification; rehearse restore in a disposable environment before release                                       |
-| 4. WooCommerce adapter                | In progress | Both prototype branches remain preserved; `core.woocommerce-import` v1.0.0 reconciles their catalog, port, mapping, run, checkpoint, audit, quarantine, authority, and rollback behavior | Implement contract tests and additive durable lifecycle models behind the accepted port; customer/order apply remains disabled and no client data may be used                             |
+| 4. WooCommerce adapter                | In progress | Phase 1 catalog rehearsal has planner, atomic durable batches, target ownership checks, replay, and checkpointed failed-run resume evidence on disposable PostgreSQL; both prototype branches remain preserved | Map and approve the remaining client scope; customer/order apply remains disabled and no client data may be used                                                                     |
 | 5. Transaction correctness            | In progress | Membership credentials preserve-on-blank policy, trusted Stripe return URLs, and token-owned webhook delivery lifecycle implemented                                                      | Close membership effect atomicity and then audit and close ecommerce inventory, coupon, refund, reconciliation, and operator-support blockers                                             |
 | 6. Integrated pilot                   | Blocked     | Depends on Milestones 2–5 and approved infrastructure intake                                                                                                                             | Production-like integration and acceptance suite                                                                                                                                          |
 | 7. Launch and hypercare               | Blocked     | Production release requires all prior gates and current backup/rollback evidence                                                                                                         | Explicit go/no-go evidence, approved domains/operators, and successful post-deploy verification                                                                                           |
@@ -414,6 +414,19 @@ and budgets remain green.
   authorize a client import, cutover, customer/order history, or a production migration. A protected source
   export, two full clean-target rehearsals, reconciliation approval, and restore/rollback evidence remain
   required release gates.
+
+### 2026-09-04 — WooCommerce failed-run resume rehearsal
+
+- **Implemented:** rehearsal-only `--resume-run` reclaims only the same failed run after verifying its
+  contract, source, target, fingerprint, high-water mark, mode, and enabled phases. It resumes strictly
+  after the atomically persisted checkpoint; replayed or inconsistent checkpoint/audit evidence moves the
+  run to manual review. Resume identifiers are bounded command inputs.
+- **Evidence:** a fresh disposable local PostgreSQL 16 database with a synthetic category and product applied
+  the first batch, recorded a simulated failure, rejected a different-target resume, then resumed the same
+  run at batch two. The completed run had exactly two applied audit entries, one category, and one product.
+  Focused command, lifecycle, and repository tests also cover normal resume and inconsistent-evidence review.
+- **Safety boundary:** no client export, Railway resource, production credential, or deployment was used.
+  Customer/order phases and production cutover remain disabled.
 
 ### 2026-09-04 — Client-stack restore identity and release record
 

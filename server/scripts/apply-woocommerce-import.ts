@@ -48,6 +48,7 @@ async function main() {
       operatorReference: command.operatorReference,
     },
     batchSize: command.batchSize,
+    resumeRunId: command.resumeRunId,
   });
 
   process.stdout.write(

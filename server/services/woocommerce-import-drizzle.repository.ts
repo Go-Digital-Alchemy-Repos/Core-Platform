@@ -244,6 +244,40 @@ export class DrizzleWooImportRepository implements WooImportRepositoryV1 {
     return run;
   }
 
+  async resumeRun(runId: string, request: BeginWooImportRun): Promise<WooImportRun> {
+    const valid = validateBeginWooImportRun(request);
+    return db.transaction(async (tx) => {
+      const [run] = await tx
+        .select()
+        .from(wooImportRuns)
+        .where(eq(wooImportRuns.id, runId))
+        .for("update");
+      if (!run) throw new Error("WooCommerce import run was not found");
+      const matchesIdentity =
+        run.contractVersion === valid.contractVersion &&
+        run.sourceStoreId === valid.sourceStoreId &&
+        run.targetStackId === valid.targetStackId &&
+        run.sourceFingerprint === valid.sourceFingerprint &&
+        run.highWaterMark === valid.highWaterMark &&
+        run.mode === valid.mode &&
+        JSON.stringify([...run.enabledPhases].sort()) === JSON.stringify(valid.enabledPhases);
+      if (!matchesIdentity) {
+        throw new Error("WooCommerce resume request does not match the original run identity");
+      }
+      assertRunStatus(run.status);
+      if (run.status !== "failed") {
+        throw new Error("Only failed WooCommerce import runs may be resumed");
+      }
+      assertWooImportRunTransition(run.status, "applying");
+      const [resumed] = await tx
+        .update(wooImportRuns)
+        .set({ status: "applying", failureCode: null, updatedAt: new Date() })
+        .where(eq(wooImportRuns.id, run.id))
+        .returning();
+      return resumed;
+    });
+  }
+
   async inspect(request: {
     sourceStoreId: string;
     operations: WooImportOperation[];
@@ -907,12 +941,24 @@ export class DrizzleWooImportRepository implements WooImportRepositoryV1 {
   }
 
   async inspectRun(runId: string): Promise<WooImportRunEvidence | undefined> {
-    const [run, audit, quarantine] = await Promise.all([
+    const [run, audit, applied, matched, quarantine] = await Promise.all([
       db.select().from(wooImportRuns).where(eq(wooImportRuns.id, runId)).limit(1),
       db
         .select({ total: count() })
         .from(wooImportAuditEntries)
         .where(eq(wooImportAuditEntries.runId, runId)),
+      db
+        .select({ total: count() })
+        .from(wooImportAuditEntries)
+        .where(
+          and(eq(wooImportAuditEntries.runId, runId), eq(wooImportAuditEntries.outcome, "applied")),
+        ),
+      db
+        .select({ total: count() })
+        .from(wooImportAuditEntries)
+        .where(
+          and(eq(wooImportAuditEntries.runId, runId), eq(wooImportAuditEntries.outcome, "matched")),
+        ),
       db
         .select({ total: count() })
         .from(wooImportQuarantineRecords)
@@ -927,6 +973,8 @@ export class DrizzleWooImportRepository implements WooImportRepositoryV1 {
     return {
       run: run[0],
       auditCount: audit[0]?.total ?? 0,
+      appliedCount: applied[0]?.total ?? 0,
+      matchedCount: matched[0]?.total ?? 0,
       unresolvedQuarantineCount: quarantine[0]?.total ?? 0,
     };
   }

@@ -53,9 +53,21 @@ class RecordingRepository implements WooImportRepositoryV1 {
   readonly batches: WooImportBatchRequest[] = [];
   completed = false;
   failed = false;
+  manualReview = false;
+  began = false;
+  resumedRunId: string | undefined;
 
   async beginRun(_request: BeginWooImportRun) {
+    this.began = true;
     return { id: "run-1" } as WooImportRun;
+  }
+
+  async resumeRun(runId: string, _request: BeginWooImportRun) {
+    this.resumedRunId = runId;
+    return {
+      id: runId,
+      latestCheckpoint: { phase: 1, batchKey: "phase-1-1", appliedOperationCount: 1 },
+    } as WooImportRun;
   }
 
   async inspect() {
@@ -79,14 +91,25 @@ class RecordingRepository implements WooImportRepositoryV1 {
     this.failed = true;
   }
 
-  async markRunManualReview() {}
+  async markRunManualReview() {
+    this.manualReview = true;
+  }
 
   async quarantine(_records: WooImportQuarantineRequest[]) {}
 
   async rollbackRun() {}
 
-  async inspectRun(): Promise<WooImportRunEvidence | undefined> {
-    return undefined;
+  async inspectRun(runId: string): Promise<WooImportRunEvidence | undefined> {
+    return {
+      run: {
+        id: runId,
+        latestCheckpoint: { phase: 1, batchKey: "phase-1-1", appliedOperationCount: 1 },
+      } as WooImportRun,
+      auditCount: 1,
+      appliedCount: 1,
+      matchedCount: 0,
+      unresolvedQuarantineCount: 0,
+    };
   }
 }
 
@@ -165,5 +188,80 @@ describe("WooCommerce durable apply coordinator", () => {
     );
     expect(repository.failed).toBe(true);
     expect(repository.completed).toBe(false);
+  });
+
+  it("resumes only the batches after a durable checkpoint on the original run", async () => {
+    const plan = readyPlan();
+    const repository = new RecordingRepository();
+
+    const result = await applyWooCommercePlan(repository, {
+      plan,
+      run: runFor(plan),
+      batchSize: 1,
+      resumeRunId: "run-failed-1",
+    });
+
+    expect(repository.began).toBe(false);
+    expect(repository.resumedRunId).toBe("run-failed-1");
+    expect(repository.batches).toHaveLength(1);
+    expect(repository.batches[0]).toMatchObject({
+      runId: "run-failed-1",
+      batchKey: "phase-1-2",
+      nextCheckpoint: { appliedOperationCount: 2 },
+    });
+    expect(result).toMatchObject({ applied: 2, matched: 0 });
+  });
+
+  it("moves a resume with inconsistent checkpoint evidence to manual review", async () => {
+    const plan = readyPlan();
+    const repository = new RecordingRepository();
+    repository.inspectRun = async (runId) => ({
+      run: {
+        id: runId,
+        latestCheckpoint: { phase: 1, batchKey: "phase-1-1", appliedOperationCount: 1 },
+      } as WooImportRun,
+      auditCount: 0,
+      appliedCount: 0,
+      matchedCount: 0,
+      unresolvedQuarantineCount: 0,
+    });
+
+    await expect(
+      applyWooCommercePlan(repository, {
+        plan,
+        run: runFor(plan),
+        batchSize: 1,
+        resumeRunId: "run-failed-1",
+      }),
+    ).rejects.toMatchObject({ reasonCode: "resume_checkpoint_audit_mismatch" });
+    expect(repository.batches).toHaveLength(0);
+    expect(repository.manualReview).toBe(true);
+  });
+
+  it("moves a resume with a target conflict to manual review", async () => {
+    const plan = readyPlan();
+    const repository = new RecordingRepository();
+    repository.inspect = async () => ({
+      mappings: [],
+      categories: [
+        {
+          id: plan.categories[0].targetId,
+          slug: plan.categories[0].slug,
+          targetHash: "a".repeat(64),
+        },
+      ],
+      products: [],
+    });
+
+    await expect(
+      applyWooCommercePlan(repository, {
+        plan,
+        run: runFor(plan),
+        batchSize: 1,
+        resumeRunId: "run-failed-1",
+      }),
+    ).rejects.toMatchObject({ reasonCode: "resume_target_inspection_conflict" });
+    expect(repository.batches).toHaveLength(0);
+    expect(repository.manualReview).toBe(true);
   });
 });

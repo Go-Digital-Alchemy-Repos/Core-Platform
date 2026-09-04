@@ -45,6 +45,8 @@ export interface WooImportQuarantineRequest {
 export interface WooImportRunEvidence {
   run: WooImportRun;
   auditCount: number;
+  appliedCount: number;
+  matchedCount: number;
   unresolvedQuarantineCount: number;
 }
 
@@ -61,6 +63,7 @@ export class WooImportManualReviewError extends Error {
  */
 export interface WooImportRepositoryV1 {
   beginRun(request: BeginWooImportRun): Promise<WooImportRun>;
+  resumeRun(runId: string, request: BeginWooImportRun): Promise<WooImportRun>;
   inspect(request: {
     sourceStoreId: string;
     operations: WooImportOperation[];
@@ -78,6 +81,7 @@ export interface ApplyWooCommercePlanRequest {
   plan: WooImportPlan;
   run: BeginWooImportRun;
   batchSize?: number;
+  resumeRunId?: string;
 }
 
 export interface ApplyWooCommercePlanResult {
@@ -93,6 +97,51 @@ function batches<T>(items: T[], size: number) {
     result.push(items.slice(offset, offset + size));
   }
   return result;
+}
+
+function resumeProgress(evidence: WooImportRunEvidence, batchesToApply: WooImportOperation[][]) {
+  const checkpoint = evidence.run.latestCheckpoint;
+  if (!checkpoint || typeof checkpoint !== "object" || Array.isArray(checkpoint)) {
+    throw new WooImportManualReviewError("invalid_resume_checkpoint");
+  }
+  const record = checkpoint as Record<string, unknown>;
+  if (Object.keys(record).length === 0) {
+    if (evidence.auditCount !== 0 || evidence.appliedCount !== 0 || evidence.matchedCount !== 0) {
+      throw new WooImportManualReviewError("resume_checkpoint_audit_mismatch");
+    }
+    return { completedBatches: 0, applied: 0, matched: 0, completedOperations: 0 };
+  }
+  const batchKey = typeof record.batchKey === "string" ? record.batchKey : "";
+  const batchMatch = /^phase-1-(\d+)$/.exec(batchKey);
+  const completedBatches = batchMatch ? Number(batchMatch[1]) : NaN;
+  const completedOperations = record.appliedOperationCount;
+  if (
+    record.phase !== 1 ||
+    !Number.isSafeInteger(completedBatches) ||
+    completedBatches < 1 ||
+    completedBatches > batchesToApply.length ||
+    typeof completedOperations !== "number" ||
+    !Number.isSafeInteger(completedOperations) ||
+    completedOperations < 1
+  ) {
+    throw new WooImportManualReviewError("invalid_resume_checkpoint");
+  }
+  const expectedOperations = batchesToApply
+    .slice(0, completedBatches)
+    .reduce((total, batch) => total + batch.length, 0);
+  if (
+    completedOperations !== expectedOperations ||
+    evidence.auditCount !== expectedOperations ||
+    evidence.appliedCount + evidence.matchedCount !== expectedOperations
+  ) {
+    throw new WooImportManualReviewError("resume_checkpoint_audit_mismatch");
+  }
+  return {
+    completedBatches,
+    applied: evidence.appliedCount,
+    matched: evidence.matchedCount,
+    completedOperations: expectedOperations,
+  };
 }
 
 /**
@@ -111,18 +160,6 @@ export async function applyWooCommercePlan(
     throw new Error("WooCommerce run source fingerprint must match the plan fingerprint");
   }
 
-  const target = await repository.inspect({
-    sourceStoreId: request.plan.sourceStoreId,
-    operations: request.plan.operations,
-  });
-  const inspection = inspectWooCommerceTarget(request.plan, target);
-  if (inspection.issues.length) {
-    throw new Error(
-      `WooCommerce target inspection blocked by ${inspection.issues.length} conflict(s)`,
-    );
-  }
-
-  const run = await repository.beginRun(request.run);
   const batchSize = request.batchSize ?? 100;
   if (!Number.isSafeInteger(batchSize) || batchSize < 1 || batchSize > 1_000) {
     throw new Error("WooCommerce batchSize must be an integer between 1 and 1000");
@@ -132,20 +169,50 @@ export async function applyWooCommercePlan(
     ...request.plan.operations.filter((operation) => operation.entityType === "category"),
     ...request.plan.operations.filter((operation) => operation.entityType === "product"),
   ];
-
+  const plannedBatches = batches(orderedOperations, batchSize);
+  let run: WooImportRun | undefined;
   let applied = 0;
   let matched = 0;
   try {
-    for (const [index, operations] of batches(orderedOperations, batchSize).entries()) {
+    if (request.resumeRunId) {
+      run = await repository.resumeRun(request.resumeRunId, request.run);
+    }
+    const target = await repository.inspect({
+      sourceStoreId: request.plan.sourceStoreId,
+      operations: request.plan.operations,
+    });
+    const inspection = inspectWooCommerceTarget(request.plan, target);
+    if (inspection.issues.length) {
+      if (run) throw new WooImportManualReviewError("resume_target_inspection_conflict");
+      throw new Error(
+        `WooCommerce target inspection blocked by ${inspection.issues.length} conflict(s)`,
+      );
+    }
+    const activeRun = run ?? (await repository.beginRun(request.run));
+    run = activeRun;
+    let progress = { completedBatches: 0, applied: 0, matched: 0, completedOperations: 0 };
+    if (request.resumeRunId) {
+      const evidence = await repository.inspectRun(activeRun.id);
+      if (!evidence) throw new WooImportManualReviewError("resume_run_evidence_missing");
+      progress = resumeProgress(evidence, plannedBatches);
+    }
+    applied = progress.applied;
+    matched = progress.matched;
+    for (const [index, operations] of plannedBatches.slice(progress.completedBatches).entries()) {
+      const batchIndex = progress.completedBatches + index;
       const result = await repository.applyBatch({
-        runId: run.id,
+        runId: activeRun.id,
         sourceStoreId: request.plan.sourceStoreId,
-        batchKey: `phase-1-${index + 1}`,
+        batchKey: `phase-1-${batchIndex + 1}`,
         operations,
         nextCheckpoint: {
           phase: 1,
-          batchKey: `phase-1-${index + 1}`,
-          appliedOperationCount: applied + matched + operations.length,
+          batchKey: `phase-1-${batchIndex + 1}`,
+          appliedOperationCount:
+            progress.completedOperations +
+            plannedBatches
+              .slice(progress.completedBatches, batchIndex + 1)
+              .reduce((total, batch) => total + batch.length, 0),
         },
       });
       applied += result.applied;
@@ -163,9 +230,10 @@ export async function applyWooCommercePlan(
       moneyDifference: 0,
     };
     assertWooImportCanComplete(reconciliation);
-    await repository.completeRun(run.id, reconciliation);
-    return { runId: run.id, applied, matched, reconciliation };
+    await repository.completeRun(activeRun.id, reconciliation);
+    return { runId: activeRun.id, applied, matched, reconciliation };
   } catch (error) {
+    if (!run) throw error;
     if (error instanceof WooImportManualReviewError) {
       await repository.markRunManualReview(run.id, error.reasonCode);
     } else {

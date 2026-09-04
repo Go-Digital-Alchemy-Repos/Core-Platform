@@ -14,6 +14,7 @@ export interface WooImportApplyCommand {
   operatorReference: string;
   confirmedFingerprint: string;
   batchSize: number;
+  resumeRunId?: string;
 }
 
 function valueAfter(args: string[], flag: string) {
@@ -29,6 +30,19 @@ function valueAfter(args: string[], flag: string) {
 function requiredValue(args: string[], flag: string) {
   const value = valueAfter(args, flag)?.trim();
   if (!value) throw new WooImportCommandError("missing_flag_value", `${flag} is required`);
+  return value;
+}
+
+function optionalIdentifier(args: string[], flag: string) {
+  const raw = valueAfter(args, flag);
+  if (raw === undefined) return undefined;
+  const value = raw.trim();
+  if (!value || value.length > 200) {
+    throw new WooImportCommandError(
+      "invalid_flag_value",
+      `${flag} must be a non-empty value of at most 200 characters`,
+    );
+  }
   return value;
 }
 
@@ -75,5 +89,6 @@ export function parseWooImportApplyCommand(args: string[]): WooImportApplyComman
     operatorReference: requiredValue(args, "--operator"),
     confirmedFingerprint,
     batchSize,
+    resumeRunId: optionalIdentifier(args, "--resume-run"),
   };
 }
