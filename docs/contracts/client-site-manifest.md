@@ -42,5 +42,9 @@ The [Better Farms example](../pilots/better-farms/client-site-manifest.example.j
 fixture based on source revision `0f0ddde40ed91f2cfa2182eb3627b51c85ec0c9c`. It documents current site
 routes, assets, and the approved runtime API publishing mode. It does not authorize deployment.
 
+The accompanying [client migration intake](client-migration-intake.md) carries the separate scope,
+source-access, recovery, and release decisions that must be approved before this draft manifest can support
+a client migration.
+
 See the [Client Site Preview Bridge](client-site-preview.md) for the versioned cross-origin preview
 protocol and [ADR 006](../adr/006-runtime-client-site-content.md) for publication behavior.

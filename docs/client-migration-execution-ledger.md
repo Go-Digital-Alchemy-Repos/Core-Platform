@@ -7,7 +7,7 @@ Statuses describe repository evidence and do not imply production release approv
 
 | Milestone                             | Status      | Evidence                                                                                                                                                                                 | Remaining gate                                                                                                                                                                            |
 | ------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0. Governance and baseline            | In progress | Core baseline `e2ba048`; Better Farms baseline `6dd6335`; Woo prototypes `325188d` and `ffd11a6`; orchestrator review recorded                                                           | Confirm final Better Farms modules, import history/exclusions, approvers, domain/operator details, success measures, RPO/RTO, and rollback triggers before the dependent production gates |
+| 0. Governance and baseline            | In progress | Core baseline `e2ba048`; Better Farms baseline `6dd6335`; Woo prototypes `325188d` and `ffd11a6`; orchestrator review and fail-closed intake contract recorded                            | Confirm final Better Farms modules, import history/exclusions, approvers, domain/operator details, success measures, RPO/RTO, and rollback triggers before the dependent production gates |
 | 1. Manifest and integration contracts | In progress | Manifest v1.0, compatibility validation, exact-origin preview, runtime publication ADR, Better Farms fixture, and WooCommerce import contract v1.0.0                                     | Freeze manual DNS, module registry, and remaining route/data ownership contracts                                                                                                          |
 | 2. Better Farms adapter               | In progress | Better Farms branch `codex/site-shell-fund-a-farm` through `0f0ddde`; locked shell, theme adapter, bounded Fund a Farm registry/content, preview, runtime API fallback                   | Complete site inventory and expand page, form, SEO, accessibility, responsive, and asset coverage incrementally                                                                           |
 | 3. Railway deployment foundation      | In progress | Client-stack preflight, stack identity, Railway/manual-domain runbook, backup provenance, runtime publishing rollback runbook                                                            | Implement the registrar-neutral onboarding wizard and read-only readiness verification; rehearse restore in a disposable environment before release                                       |
@@ -212,6 +212,19 @@ and budgets remain green.
 - **Safety boundary:** an in-progress or failed request cannot create another order. The browser keeps the key
   for an unchanged checkout payload and changes it when the payload changes. The migration remains unapplied;
   this does not authorize a production deployment.
+
+### 2026-09-04 — Better Farms client-migration intake contract
+
+- **Implemented:** a versioned, secret-free intake contract and validator capture source-access mode,
+  pilot route scope, excluded capabilities, data entity dispositions, reconciliation owner, recovery targets,
+  operational owners, release roles, and blockers. The validator permits a transparent draft but refuses an
+  approved intake until each required decision is resolved and all three release roles are present.
+- **Evidence:** the Better Farms draft references the same stack ID as the client-site manifest, explicitly
+  excludes live ecommerce, customer/order history, and production DNS cutover, and validates through the
+  new CLI. It contains no client credentials, exports, endpoint URLs, or registrar access.
+- **Risk carried forward:** the draft is not a substitute for client decisions. Protected source access,
+  approved scope and exclusions, RPO/RTO, DNS and release owners, and sandbox/production-like evidence
+  remain required before approval or deployment.
 
 ### 2026-09-04 — Ecommerce stock-boundary review
 
