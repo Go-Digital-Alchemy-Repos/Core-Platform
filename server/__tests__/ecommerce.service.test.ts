@@ -28,6 +28,7 @@ const mockCreateOrderNote = vi.fn();
 const mockCreatePaymentRequest = vi.fn();
 const mockUpdatePaymentRequest = vi.fn();
 const mockMarkPaymentRequestPaidBySession = vi.fn();
+const mockSettlePaymentRequestOrderBySession = vi.fn();
 const mockGetFulfillmentsForOrder = vi.fn();
 const mockGetRefundByStripeRefundId = vi.fn();
 const mockGetRefund = vi.fn();
@@ -120,6 +121,7 @@ vi.mock("../storage/index", () => ({
       createPaymentRequest: mockCreatePaymentRequest,
       updatePaymentRequest: mockUpdatePaymentRequest,
       markPaymentRequestPaidBySession: mockMarkPaymentRequestPaidBySession,
+      settlePaymentRequestOrderBySession: mockSettlePaymentRequestOrderBySession,
       getFulfillmentsForOrder: mockGetFulfillmentsForOrder,
       recordCouponRedemptionForOrder: mockRecordCouponRedemptionForOrder,
       deductInventoryForPaidOrder: mockDeductInventoryForPaidOrder,
@@ -226,6 +228,7 @@ describe("ecommerce services", () => {
     mockUpdatePaymentRequest.mockReset();
     mockUpdatePaymentRequest.mockImplementation(async (id, data) => ({ id, ...data }));
     mockMarkPaymentRequestPaidBySession.mockReset();
+    mockSettlePaymentRequestOrderBySession.mockReset();
   });
 
   it("calculates effective sale pricing without trusting client prices", async () => {
@@ -2430,6 +2433,66 @@ describe("ecommerce services", () => {
     expect(mockSettlePaidOrder).toHaveBeenCalledWith("order-1", "pi_123");
     expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
     expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
+    expect(mockSendEcommerceOrderConfirmation).not.toHaveBeenCalled();
+  });
+
+  it("reconciles a payment-link request through the atomic order settlement", async () => {
+    const { reconcileEcommercePaymentRequestSession } =
+      await import("../services/ecommerce-order.service");
+    const paidOrder = {
+      id: "order-payment-link-1",
+      status: "paid",
+      paymentStatus: "paid",
+      stripePaymentIntentId: "pi_payment_link_1",
+    } as EcommerceOrder;
+    const paidRequest = {
+      id: "request-payment-link-1",
+      orderId: paidOrder.id,
+      status: "paid",
+      stripePaymentIntentId: "pi_payment_link_1",
+    };
+    mockSettlePaymentRequestOrderBySession.mockResolvedValue({
+      request: paidRequest,
+      order: paidOrder,
+      transitioned: true,
+    });
+    mockGetOrderWithDetails.mockResolvedValue({
+      ...paidOrder,
+      customer: null,
+      items: [],
+      refunds: [],
+      shipments: [],
+    });
+
+    await expect(
+      reconcileEcommercePaymentRequestSession("cs_payment_link_1", "pi_payment_link_1"),
+    ).resolves.toEqual(paidRequest);
+
+    expect(mockSettlePaymentRequestOrderBySession).toHaveBeenCalledWith(
+      "cs_payment_link_1",
+      "pi_payment_link_1",
+    );
+    expect(mockSettlePaidOrder).not.toHaveBeenCalled();
+    expect(mockSendEcommerceOrderConfirmation).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not send a payment-link confirmation when settlement was already completed", async () => {
+    const { reconcileEcommercePaymentRequestSession } =
+      await import("../services/ecommerce-order.service");
+    const paidOrder = {
+      id: "order-payment-link-2",
+      status: "paid",
+      paymentStatus: "paid",
+    } as EcommerceOrder;
+    mockSettlePaymentRequestOrderBySession.mockResolvedValue({
+      request: { id: "request-payment-link-2", orderId: paidOrder.id, status: "paid" },
+      order: paidOrder,
+      transitioned: false,
+    });
+
+    await reconcileEcommercePaymentRequestSession("cs_payment_link_2", "pi_payment_link_2");
+
+    expect(mockGetOrderWithDetails).not.toHaveBeenCalled();
     expect(mockSendEcommerceOrderConfirmation).not.toHaveBeenCalled();
   });
 

@@ -76,6 +76,8 @@ import {
   type InsertEcommerceShippingZone,
 } from "@shared/schema";
 
+type EcommerceDbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 export interface EcommerceProductWithCategories extends EcommerceProduct {
   categories: EcommerceCategory[];
   variants: EcommerceProductVariant[];
@@ -1244,6 +1246,143 @@ export class EcommerceStorage {
     return order;
   }
 
+  private async settlePaidOrderInTransaction(
+    tx: EcommerceDbTransaction,
+    orderId: string,
+    paymentIntentId: string | null,
+    manualPayment?: {
+      method: string;
+      reference?: string | null;
+      markedBy?: string | null;
+      markedAt?: Date;
+    },
+  ): Promise<{ order: EcommerceOrder | undefined; transitioned: boolean }> {
+    await tx.execute(sql`SELECT id FROM ecommerce_orders WHERE id = ${orderId} FOR UPDATE`);
+    const [existing] = await tx
+      .select()
+      .from(ecommerceOrders)
+      .where(eq(ecommerceOrders.id, orderId));
+    if (!existing) return { order: undefined, transitioned: false };
+    if (
+      paymentIntentId &&
+      existing.stripePaymentIntentId &&
+      existing.stripePaymentIntentId !== paymentIntentId
+    ) {
+      throw new Error("PaymentIntent does not match this order");
+    }
+
+    const transitioned = existing.status !== "paid" || existing.paymentStatus !== "paid";
+    let order = existing;
+    if (transitioned || manualPayment) {
+      const [updated] = await tx
+        .update(ecommerceOrders)
+        .set({
+          status: "paid",
+          paymentStatus: "paid",
+          ...(paymentIntentId ? { stripePaymentIntentId: paymentIntentId } : {}),
+          ...(manualPayment
+            ? {
+                manualPaymentMethod: manualPayment.method,
+                manualPaymentReference: manualPayment.reference ?? null,
+                manualPaymentMarkedBy: manualPayment.markedBy ?? null,
+                manualPaymentMarkedAt: manualPayment.markedAt ?? new Date(),
+              }
+            : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(ecommerceOrders.id, orderId))
+        .returning();
+      order = updated;
+    }
+
+    if (order.couponCode && order.discountAmount > 0) {
+      const [existingRedemption] = await tx
+        .select()
+        .from(ecommerceCouponRedemptions)
+        .where(eq(ecommerceCouponRedemptions.orderId, orderId))
+        .limit(1);
+      if (!existingRedemption) {
+        const [coupon] = await tx
+          .select()
+          .from(ecommerceCoupons)
+          .where(eq(ecommerceCoupons.code, order.couponCode));
+        if (coupon) {
+          const [customer] = await tx
+            .select()
+            .from(ecommerceCustomers)
+            .where(eq(ecommerceCustomers.id, order.customerId));
+          await tx
+            .update(ecommerceCoupons)
+            .set({ timesUsed: sql`${ecommerceCoupons.timesUsed} + 1`, updatedAt: new Date() })
+            .where(eq(ecommerceCoupons.id, coupon.id));
+          await tx.insert(ecommerceCouponRedemptions).values({
+            couponId: coupon.id,
+            orderId: order.id,
+            customerId: order.customerId,
+            couponCode: coupon.code,
+            customerEmail: customer?.email.trim().toLowerCase(),
+            discountAmount: order.discountAmount,
+          });
+        }
+      }
+    }
+
+    const items = await tx
+      .select()
+      .from(ecommerceOrderItems)
+      .where(eq(ecommerceOrderItems.orderId, orderId));
+    for (const item of items) {
+      if (!item.variantId) continue;
+      const [existingAdjustment] = await tx
+        .select()
+        .from(ecommerceInventoryAdjustments)
+        .where(
+          and(
+            eq(ecommerceInventoryAdjustments.orderId, orderId),
+            eq(ecommerceInventoryAdjustments.variantId, item.variantId),
+            eq(ecommerceInventoryAdjustments.reason, "order_paid"),
+          ),
+        )
+        .limit(1);
+      if (existingAdjustment) continue;
+
+      const [variant] = await tx
+        .select()
+        .from(ecommerceProductVariants)
+        .where(eq(ecommerceProductVariants.id, item.variantId))
+        .limit(1);
+      if (!variant?.trackInventory) continue;
+      const whereClause = requiresAtomicInventoryStockGuard(variant)
+        ? and(
+            eq(ecommerceProductVariants.id, variant.id),
+            gte(ecommerceProductVariants.inventoryQuantity, item.quantity),
+          )
+        : eq(ecommerceProductVariants.id, variant.id);
+      const [updatedVariant] = await tx
+        .update(ecommerceProductVariants)
+        .set({
+          inventoryQuantity: sql`${ecommerceProductVariants.inventoryQuantity} - ${item.quantity}`,
+          updatedAt: new Date(),
+        })
+        .where(whereClause)
+        .returning({ inventoryQuantity: ecommerceProductVariants.inventoryQuantity });
+      if (!updatedVariant) {
+        throw new Error(`Insufficient inventory for variant ${variant.id}`);
+      }
+      await tx.insert(ecommerceInventoryAdjustments).values({
+        productId: item.productId,
+        variantId: variant.id,
+        orderId,
+        delta: -item.quantity,
+        quantityAfter: updatedVariant.inventoryQuantity,
+        reason: "order_paid",
+        note: `Order ${orderId}`,
+      });
+    }
+
+    return { order, transitioned };
+  }
+
   async settlePaidOrder(
     orderId: string,
     paymentIntentId: string | null,
@@ -1254,132 +1393,9 @@ export class EcommerceStorage {
       markedAt?: Date;
     },
   ): Promise<{ order: EcommerceOrder | undefined; transitioned: boolean }> {
-    return db.transaction(async (tx) => {
-      await tx.execute(sql`SELECT id FROM ecommerce_orders WHERE id = ${orderId} FOR UPDATE`);
-      const [existing] = await tx
-        .select()
-        .from(ecommerceOrders)
-        .where(eq(ecommerceOrders.id, orderId));
-      if (!existing) return { order: undefined, transitioned: false };
-      if (
-        paymentIntentId &&
-        existing.stripePaymentIntentId &&
-        existing.stripePaymentIntentId !== paymentIntentId
-      ) {
-        throw new Error("PaymentIntent does not match this order");
-      }
-
-      const transitioned = existing.status !== "paid" || existing.paymentStatus !== "paid";
-      let order = existing;
-      if (transitioned || manualPayment) {
-        const [updated] = await tx
-          .update(ecommerceOrders)
-          .set({
-            status: "paid",
-            paymentStatus: "paid",
-            ...(paymentIntentId ? { stripePaymentIntentId: paymentIntentId } : {}),
-            ...(manualPayment
-              ? {
-                  manualPaymentMethod: manualPayment.method,
-                  manualPaymentReference: manualPayment.reference ?? null,
-                  manualPaymentMarkedBy: manualPayment.markedBy ?? null,
-                  manualPaymentMarkedAt: manualPayment.markedAt ?? new Date(),
-                }
-              : {}),
-            updatedAt: new Date(),
-          })
-          .where(eq(ecommerceOrders.id, orderId))
-          .returning();
-        order = updated;
-      }
-
-      if (order.couponCode && order.discountAmount > 0) {
-        const [existingRedemption] = await tx
-          .select()
-          .from(ecommerceCouponRedemptions)
-          .where(eq(ecommerceCouponRedemptions.orderId, orderId))
-          .limit(1);
-        if (!existingRedemption) {
-          const [coupon] = await tx
-            .select()
-            .from(ecommerceCoupons)
-            .where(eq(ecommerceCoupons.code, order.couponCode));
-          if (coupon) {
-            const [customer] = await tx
-              .select()
-              .from(ecommerceCustomers)
-              .where(eq(ecommerceCustomers.id, order.customerId));
-            await tx
-              .update(ecommerceCoupons)
-              .set({ timesUsed: sql`${ecommerceCoupons.timesUsed} + 1`, updatedAt: new Date() })
-              .where(eq(ecommerceCoupons.id, coupon.id));
-            await tx.insert(ecommerceCouponRedemptions).values({
-              couponId: coupon.id,
-              orderId: order.id,
-              customerId: order.customerId,
-              couponCode: coupon.code,
-              customerEmail: customer?.email.trim().toLowerCase(),
-              discountAmount: order.discountAmount,
-            });
-          }
-        }
-      }
-
-      const items = await tx
-        .select()
-        .from(ecommerceOrderItems)
-        .where(eq(ecommerceOrderItems.orderId, orderId));
-      for (const item of items) {
-        if (!item.variantId) continue;
-        const [existingAdjustment] = await tx
-          .select()
-          .from(ecommerceInventoryAdjustments)
-          .where(
-            and(
-              eq(ecommerceInventoryAdjustments.orderId, orderId),
-              eq(ecommerceInventoryAdjustments.variantId, item.variantId),
-              eq(ecommerceInventoryAdjustments.reason, "order_paid"),
-            ),
-          )
-          .limit(1);
-        if (existingAdjustment) continue;
-
-        const [variant] = await tx
-          .select()
-          .from(ecommerceProductVariants)
-          .where(eq(ecommerceProductVariants.id, item.variantId))
-          .limit(1);
-        if (!variant?.trackInventory) continue;
-        const whereClause = requiresAtomicInventoryStockGuard(variant)
-          ? and(
-              eq(ecommerceProductVariants.id, variant.id),
-              gte(ecommerceProductVariants.inventoryQuantity, item.quantity),
-            )
-          : eq(ecommerceProductVariants.id, variant.id);
-        const [updatedVariant] = await tx
-          .update(ecommerceProductVariants)
-          .set({
-            inventoryQuantity: sql`${ecommerceProductVariants.inventoryQuantity} - ${item.quantity}`,
-            updatedAt: new Date(),
-          })
-          .where(whereClause)
-          .returning({ inventoryQuantity: ecommerceProductVariants.inventoryQuantity });
-        if (!updatedVariant) {
-          throw new Error(`Insufficient inventory for variant ${variant.id}`);
-        }
-        await tx.insert(ecommerceInventoryAdjustments).values({
-          productId: item.productId,
-          variantId: variant.id,
-          orderId,
-          delta: -item.quantity,
-          quantityAfter: updatedVariant.inventoryQuantity,
-          reason: "order_paid",
-          note: `Order ${orderId}`,
-        });
-      }
-
-      return { order, transitioned };
-    });
+    return db.transaction((tx) =>
+      this.settlePaidOrderInTransaction(tx, orderId, paymentIntentId, manualPayment),
+    );
   }
 
   async createPaymentRequest(
@@ -1436,6 +1452,61 @@ export class EcommerceStorage {
       .where(eq(ecommercePaymentRequests.stripeSessionId, sessionId))
       .returning();
     return request;
+  }
+
+  async settlePaymentRequestOrderBySession(
+    sessionId: string,
+    paymentIntentId?: string | null,
+  ): Promise<{
+    request: EcommercePaymentRequest | undefined;
+    order: EcommerceOrder | undefined;
+    transitioned: boolean;
+  }> {
+    return db.transaction(async (tx) => {
+      await tx.execute(
+        sql`SELECT id FROM ecommerce_payment_requests WHERE stripe_session_id = ${sessionId} FOR UPDATE`,
+      );
+      const [existingRequest] = await tx
+        .select()
+        .from(ecommercePaymentRequests)
+        .where(eq(ecommercePaymentRequests.stripeSessionId, sessionId));
+      if (!existingRequest) {
+        return { request: undefined, order: undefined, transitioned: false };
+      }
+      if (
+        paymentIntentId &&
+        existingRequest.stripePaymentIntentId &&
+        existingRequest.stripePaymentIntentId !== paymentIntentId
+      ) {
+        throw new Error("PaymentIntent does not match this payment request");
+      }
+      if (existingRequest.orderId && !paymentIntentId) {
+        throw new Error("A linked payment request requires a PaymentIntent");
+      }
+
+      const settlement = existingRequest.orderId
+        ? await this.settlePaidOrderInTransaction(
+            tx,
+            existingRequest.orderId,
+            paymentIntentId ?? null,
+          )
+        : { order: undefined, transitioned: false };
+      if (existingRequest.orderId && !settlement.order) {
+        throw new Error("Payment request references an unknown order");
+      }
+
+      const [request] = await tx
+        .update(ecommercePaymentRequests)
+        .set({
+          status: "paid",
+          ...(paymentIntentId ? { stripePaymentIntentId: paymentIntentId } : {}),
+          paidAt: existingRequest.paidAt ?? new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(ecommercePaymentRequests.id, existingRequest.id))
+        .returning();
+      return { request, ...settlement };
+    });
   }
 
   async getProductsByIds(ids: string[]): Promise<EcommerceProduct[]> {

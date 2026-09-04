@@ -460,3 +460,17 @@ and budgets remain green.
   and wrote no adjustment. No client, Railway, Stripe, or production database was contacted.
 - **Risk carried forward:** provider-backed payment, email/jobs/replay, customer reconciliation, and Stripe
   sandbox concurrency evidence remain required before enabling a live ecommerce release.
+
+### 2026-09-04 — Atomic payment-link settlement
+
+- **Implemented:** Stripe Checkout payment-link reconciliation now locks the payment request and settles its
+  linked order in one transaction. The request changes to paid only after guarded inventory, coupon, and
+  order-payment effects succeed. A linked request without a PaymentIntent, an intent mismatch, or a missing
+  linked order is rejected so the provider webhook can retry rather than acknowledge an inconsistent state.
+- **Evidence:** focused service and webhook tests cover first settlement and idempotent replay. A fresh
+  disposable local PostgreSQL 16 rehearsal settled one linked request and order with one inventory
+  adjustment, then attempted a second request after stock was exhausted. The second order remained
+  `pending/unpaid` and its request remained `open`, with no PaymentIntent recorded. No client, Railway,
+  Stripe, or production database was contacted.
+- **Risk carried forward:** live provider retries, durable confirmation-email delivery, customer
+  reconciliation, and Stripe sandbox concurrency evidence remain release gates.

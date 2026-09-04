@@ -90,7 +90,9 @@ Ecommerce Stripe webhook events are processed separately from the existing subsc
 Current webhook behavior:
 
 - `payment_intent.succeeded` validates the PaymentIntent identity and amount against the order, then reconciles paid-order effects.
-- `checkout.session.completed` reconciles payment requests.
+- `checkout.session.completed` settles a payment request and its linked order atomically. A linked
+  request requires a PaymentIntent; if paid-order settlement cannot complete, neither local record is
+  marked paid and the webhook remains retryable.
 - `refund.created` and `refund.updated` reconcile refund records and order payment status.
 - A successful handler marks the delivery `processed`; a thrown failure records bounded diagnostic text and returns an error so Stripe can retry.
 

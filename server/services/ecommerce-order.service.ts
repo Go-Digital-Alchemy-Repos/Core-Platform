@@ -876,15 +876,16 @@ export async function reconcileEcommercePaymentRequestSession(
   sessionId: string,
   paymentIntentId?: string | null,
 ) {
-  const request = await storage.ecommerce.markPaymentRequestPaidBySession(
+  const settlement = await storage.ecommerce.settlePaymentRequestOrderBySession(
     sessionId,
     paymentIntentId,
   );
-  if (!request) return undefined;
-  if (request.orderId && paymentIntentId) {
-    await markEcommerceOrderPaid(request.orderId, paymentIntentId);
+  if (!settlement.request) return undefined;
+  if (settlement.order && settlement.transitioned) {
+    const details = await storage.ecommerce.getOrderWithDetails(settlement.order.id);
+    if (details) await sendEcommerceOrderConfirmation(details);
   }
-  return request;
+  return settlement.request;
 }
 
 export async function updateAdminEcommerceOrder(
