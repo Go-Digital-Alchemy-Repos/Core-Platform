@@ -60,6 +60,10 @@ describe("runMigrations", () => {
       expect.stringContaining("0047_woocommerce_import_lifecycle.sql"),
       "utf8",
     );
+    expect(mockReadFile).toHaveBeenCalledWith(
+      expect.stringContaining("0048_ecommerce_checkout_request_idempotency.sql"),
+      "utf8",
+    );
   });
 
   it("recognizes the default Drizzle journal schema on an existing database", async () => {

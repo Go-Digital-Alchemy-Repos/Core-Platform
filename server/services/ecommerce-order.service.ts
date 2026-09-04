@@ -24,6 +24,7 @@ const MAX_CHECKOUT_TEXT_LENGTH = 160;
 const MAX_CHECKOUT_ADDRESS_LENGTH = 240;
 const MAX_CHECKOUT_URL_LENGTH = 2048;
 const MAX_CHECKOUT_USER_AGENT_LENGTH = 512;
+const checkoutRequestKeySchema = z.string().trim().uuid();
 
 const addressSchema = z.object({
   name: z.string().trim().min(1).max(MAX_CHECKOUT_TEXT_LENGTH),
@@ -264,9 +265,13 @@ async function createStripeCheckoutSessionForPaymentRequest(params: {
 
 export async function createEcommercePaymentIntent(
   input: unknown,
-  requestMeta: { ip?: string | null; user?: User | null } = {},
+  requestMeta: { ip?: string | null; user?: User | null; checkoutRequestKey?: string | null } = {},
 ) {
   const data = checkoutSchema.parse(input);
+  const requiresRequestKey = Object.hasOwn(requestMeta, "checkoutRequestKey");
+  const checkoutRequestKey = requiresRequestKey
+    ? checkoutRequestKeySchema.parse(requestMeta.checkoutRequestKey)
+    : null;
   const accountSettings = await getEcommerceCustomerAccountSettings();
   const requestedAccountMode = data.account?.mode ?? "guest";
   const checkoutEmail = data.customer.email.trim().toLowerCase();
@@ -406,180 +411,253 @@ export async function createEcommercePaymentIntent(
   const stripe =
     fraudEvaluation.decision === "manual_review" ? null : await getEcommerceStripeClient();
 
-  if (accountNameParts && data.account?.password) {
-    accountUser = await storage.users.createUser({
-      email: checkoutEmail,
-      password: await hashPassword(data.account.password),
-      firstName: accountNameParts.firstName,
-      lastName: accountNameParts.lastName,
-      role: "client",
-    });
-    accountCreated = true;
-  }
-  const customer = await storage.ecommerce.findOrCreateCustomer({
-    userId: accountUser?.id,
-    email: data.customer.email,
-    name: data.customer.name,
-    phone: data.customer.phone,
-    address: data.shippingAddress.address,
-    line2: data.shippingAddress.line2,
-    city: data.shippingAddress.city,
-    state: data.shippingAddress.state,
-    zipCode: data.shippingAddress.zip,
-    country: data.shippingAddress.country,
-  });
-
-  const billing = data.billingSameAsShipping ? data.shippingAddress : data.billingAddress;
-  const order = await storage.ecommerce.createOrder(
-    {
-      customerId: customer.id,
-      status: "pending",
-      paymentStatus: "unpaid",
-      totalAmount: priced.totalAmount,
-      subtotalAmount: priced.subtotalAmount,
-      taxAmount: priced.taxAmount,
-      shippingAmount: priced.shippingAmount,
-      discountAmount: priced.discountAmount,
-      couponCode: priced.coupon?.code,
-      couponSnapshot: buildCouponSnapshot(priced.coupon),
-      customerIp: requestMeta.ip ?? null,
-      shippingName: data.shippingAddress.name,
-      shippingCompany: data.shippingAddress.company,
-      shippingAddress: data.shippingAddress.address,
-      shippingLine2: data.shippingAddress.line2,
-      shippingCity: data.shippingAddress.city,
-      shippingState: data.shippingAddress.state,
-      shippingZip: data.shippingAddress.zip,
-      shippingCountry: data.shippingAddress.country,
-      billingSameAsShipping: data.billingSameAsShipping,
-      billingName: billing?.name,
-      billingCompany: billing?.company,
-      billingAddress: billing?.address,
-      billingLine2: billing?.line2,
-      billingCity: billing?.city,
-      billingState: billing?.state,
-      billingZip: billing?.zip,
-      billingCountry: billing?.country,
-      marketingConsentGranted: data.metaTracking?.marketingConsentGranted ?? false,
-      metaFbp: data.metaTracking?.fbp,
-      metaFbc: data.metaTracking?.fbc,
-      metaEventSourceUrl: data.metaTracking?.eventSourceUrl,
-      customerUserAgent: data.metaTracking?.userAgent,
-      fraudScore: fraudEvaluation.score,
-      fraudRiskLevel: fraudEvaluation.riskLevel,
-      fraudDecision: fraudEvaluation.decision,
-      fraudReviewStatus: fraudEvaluation.decision === "manual_review" ? "pending" : "not_required",
-      fraudSignals: fraudEvaluation.matchedRules,
-    },
-    pricedLinesToOrderItems(priced.lines),
-  );
-
-  await recordEcommerceFraudEvent({
-    eventType:
-      fraudEvaluation.decision === "manual_review" ? "checkout_review" : "checkout_screened",
-    orderId: order.id,
-    customerId: customer.id,
-    email: checkoutEmail,
-    ipAddress: requestMeta.ip,
-    userAgent: data.metaTracking?.userAgent,
-    amount: priced.totalAmount,
-    score: fraudEvaluation.score,
-    riskLevel: fraudEvaluation.riskLevel,
-    decision: fraudEvaluation.decision,
-    matchedRules: fraudEvaluation.matchedRules,
-    message: fraudEvaluation.message,
-    requestSnapshot: fraudRequestSnapshot,
-  });
-
-  if (fraudEvaluation.decision === "manual_review") {
-    throw httpError(
-      "This order needs a quick review before payment. Please contact support or try again later.",
-      409,
+  const checkoutRequest = checkoutRequestKey
+    ? await storage.ecommerce.claimCheckoutRequest({
+        requestKey: checkoutRequestKey,
+        customerEmail: checkoutEmail,
+      })
+    : null;
+  if (checkoutRequest && !checkoutRequest.created) {
+    if (checkoutRequest.request.customerEmail !== checkoutEmail) {
+      throw httpError("This checkout request cannot be reused for a different customer.", 409);
+    }
+    if (!checkoutRequest.request.orderId) {
+      throw httpError("This checkout request is still being prepared. Retry in a moment.", 409);
+    }
+    const existingOrder = await storage.ecommerce.getOrder(checkoutRequest.request.orderId);
+    if (!existingOrder?.stripePaymentIntentId || !stripe) {
+      throw httpError(
+        "This checkout request is not ready for payment. Start a new checkout attempt.",
+        409,
+      );
+    }
+    const existingIntent = await stripe.paymentIntents.retrieve(
+      existingOrder.stripePaymentIntentId,
     );
+    if (!existingIntent.client_secret) {
+      throw httpError(
+        "This checkout request is not ready for payment. Start a new checkout attempt.",
+        409,
+      );
+    }
+    return {
+      clientSecret: existingIntent.client_secret,
+      paymentIntentId: existingIntent.id,
+      orderId: existingOrder.id,
+      lookupToken: existingOrder.lookupToken,
+      priced: toPublicPricedCart(priced),
+      accountCreated: false,
+      accountUser: null,
+    };
   }
 
-  let intent;
   try {
-    if (!stripe) {
+    if (accountNameParts && data.account?.password) {
+      accountUser = await storage.users.createUser({
+        email: checkoutEmail,
+        password: await hashPassword(data.account.password),
+        firstName: accountNameParts.firstName,
+        lastName: accountNameParts.lastName,
+        role: "client",
+      });
+      accountCreated = true;
+    }
+    const customer = await storage.ecommerce.findOrCreateCustomer({
+      userId: accountUser?.id,
+      email: data.customer.email,
+      name: data.customer.name,
+      phone: data.customer.phone,
+      address: data.shippingAddress.address,
+      line2: data.shippingAddress.line2,
+      city: data.shippingAddress.city,
+      state: data.shippingAddress.state,
+      zipCode: data.shippingAddress.zip,
+      country: data.shippingAddress.country,
+    });
+
+    const billing = data.billingSameAsShipping ? data.shippingAddress : data.billingAddress;
+    const order = await storage.ecommerce.createOrder(
+      {
+        customerId: customer.id,
+        status: "pending",
+        paymentStatus: "unpaid",
+        totalAmount: priced.totalAmount,
+        subtotalAmount: priced.subtotalAmount,
+        taxAmount: priced.taxAmount,
+        shippingAmount: priced.shippingAmount,
+        discountAmount: priced.discountAmount,
+        couponCode: priced.coupon?.code,
+        couponSnapshot: buildCouponSnapshot(priced.coupon),
+        customerIp: requestMeta.ip ?? null,
+        shippingName: data.shippingAddress.name,
+        shippingCompany: data.shippingAddress.company,
+        shippingAddress: data.shippingAddress.address,
+        shippingLine2: data.shippingAddress.line2,
+        shippingCity: data.shippingAddress.city,
+        shippingState: data.shippingAddress.state,
+        shippingZip: data.shippingAddress.zip,
+        shippingCountry: data.shippingAddress.country,
+        billingSameAsShipping: data.billingSameAsShipping,
+        billingName: billing?.name,
+        billingCompany: billing?.company,
+        billingAddress: billing?.address,
+        billingLine2: billing?.line2,
+        billingCity: billing?.city,
+        billingState: billing?.state,
+        billingZip: billing?.zip,
+        billingCountry: billing?.country,
+        marketingConsentGranted: data.metaTracking?.marketingConsentGranted ?? false,
+        metaFbp: data.metaTracking?.fbp,
+        metaFbc: data.metaTracking?.fbc,
+        metaEventSourceUrl: data.metaTracking?.eventSourceUrl,
+        customerUserAgent: data.metaTracking?.userAgent,
+        fraudScore: fraudEvaluation.score,
+        fraudRiskLevel: fraudEvaluation.riskLevel,
+        fraudDecision: fraudEvaluation.decision,
+        fraudReviewStatus:
+          fraudEvaluation.decision === "manual_review" ? "pending" : "not_required",
+        fraudSignals: fraudEvaluation.matchedRules,
+      },
+      pricedLinesToOrderItems(priced.lines),
+    );
+    if (checkoutRequestKey) {
+      const attached = await storage.ecommerce.attachCheckoutRequestOrder(
+        checkoutRequestKey,
+        order.id,
+      );
+      if (!attached) throw new Error("Failed to attach checkout request to ecommerce order");
+    }
+
+    await recordEcommerceFraudEvent({
+      eventType:
+        fraudEvaluation.decision === "manual_review" ? "checkout_review" : "checkout_screened",
+      orderId: order.id,
+      customerId: customer.id,
+      email: checkoutEmail,
+      ipAddress: requestMeta.ip,
+      userAgent: data.metaTracking?.userAgent,
+      amount: priced.totalAmount,
+      score: fraudEvaluation.score,
+      riskLevel: fraudEvaluation.riskLevel,
+      decision: fraudEvaluation.decision,
+      matchedRules: fraudEvaluation.matchedRules,
+      message: fraudEvaluation.message,
+      requestSnapshot: fraudRequestSnapshot,
+    });
+
+    if (fraudEvaluation.decision === "manual_review") {
       throw httpError(
         "This order needs a quick review before payment. Please contact support or try again later.",
         409,
       );
     }
-    intent = await stripe.paymentIntents.create(
-      {
-        amount: order.totalAmount,
-        currency: "usd",
-        automatic_payment_methods: { enabled: true },
-        receipt_email: customer.email,
-        metadata: {
-          orderId: order.id,
-          fraudRiskLevel: fraudEvaluation.riskLevel,
-          fraudScore: String(fraudEvaluation.score),
-          fraudDecision: fraudEvaluation.decision,
+
+    let intent;
+    try {
+      if (!stripe) {
+        throw httpError(
+          "This order needs a quick review before payment. Please contact support or try again later.",
+          409,
+        );
+      }
+      intent = await stripe.paymentIntents.create(
+        {
+          amount: order.totalAmount,
+          currency: "usd",
+          automatic_payment_methods: { enabled: true },
+          receipt_email: customer.email,
+          metadata: {
+            orderId: order.id,
+            fraudRiskLevel: fraudEvaluation.riskLevel,
+            fraudScore: String(fraudEvaluation.score),
+            fraudDecision: fraudEvaluation.decision,
+          },
         },
-      },
-      {
-        idempotencyKey: `ecommerce_order_${order.id}_payment_intent`,
-      },
-    );
-    if (!intent.client_secret) {
-      throw new Error("Stripe did not return a client secret for this PaymentIntent");
+        {
+          idempotencyKey: `ecommerce_order_${order.id}_payment_intent`,
+        },
+      );
+      if (!intent.client_secret) {
+        throw new Error("Stripe did not return a client secret for this PaymentIntent");
+      }
+    } catch (err) {
+      if (intent?.id && stripe) {
+        try {
+          await stripe.paymentIntents.cancel(intent.id);
+        } catch (cancelErr) {
+          logger.stripe.warn("Failed to cancel ecommerce PaymentIntent without a client secret", {
+            orderId: order.id,
+            paymentIntentId: intent.id,
+            error: cancelErr instanceof Error ? cancelErr.message : String(cancelErr),
+          });
+        }
+      }
+      try {
+        await storage.ecommerce.updateOrder(order.id, {
+          status: "cancelled",
+          paymentStatus: "failed",
+          notes: `Checkout failed before PaymentIntent creation: ${err instanceof Error ? err.message : String(err)}`,
+        });
+      } catch (updateErr) {
+        logger.stripe.warn("Failed to mark ecommerce checkout order failed after Stripe error", {
+          orderId: order.id,
+          error: updateErr instanceof Error ? updateErr.message : String(updateErr),
+        });
+      }
+      throw err;
     }
-  } catch (err) {
-    if (intent?.id && stripe) {
+
+    try {
+      const linkedOrder = await storage.ecommerce.updateOrder(order.id, {
+        stripePaymentIntentId: intent.id,
+      });
+      if (!linkedOrder) throw new Error("Failed to attach Stripe PaymentIntent to ecommerce order");
+    } catch (err) {
       try {
         await stripe.paymentIntents.cancel(intent.id);
       } catch (cancelErr) {
-        logger.stripe.warn("Failed to cancel ecommerce PaymentIntent without a client secret", {
+        logger.stripe.warn("Failed to cancel orphaned ecommerce PaymentIntent", {
           orderId: order.id,
           paymentIntentId: intent.id,
           error: cancelErr instanceof Error ? cancelErr.message : String(cancelErr),
         });
       }
+      throw err;
     }
-    try {
-      await storage.ecommerce.updateOrder(order.id, {
-        status: "cancelled",
-        paymentStatus: "failed",
-        notes: `Checkout failed before PaymentIntent creation: ${err instanceof Error ? err.message : String(err)}`,
-      });
-    } catch (updateErr) {
-      logger.stripe.warn("Failed to mark ecommerce checkout order failed after Stripe error", {
-        orderId: order.id,
-        error: updateErr instanceof Error ? updateErr.message : String(updateErr),
-      });
-    }
-    throw err;
-  }
 
-  try {
-    const linkedOrder = await storage.ecommerce.updateOrder(order.id, {
-      stripePaymentIntentId: intent.id,
-    });
-    if (!linkedOrder) throw new Error("Failed to attach Stripe PaymentIntent to ecommerce order");
+    if (checkoutRequestKey) {
+      const completed = await storage.ecommerce.completeCheckoutRequest(
+        checkoutRequestKey,
+        order.id,
+      );
+      if (!completed) throw new Error("Failed to complete checkout request");
+    }
+
+    return {
+      clientSecret: intent.client_secret,
+      paymentIntentId: intent.id,
+      orderId: order.id,
+      lookupToken: order.lookupToken,
+      priced: toPublicPricedCart(priced),
+      accountCreated,
+      accountUser: accountCreated ? accountUser : null,
+    };
   } catch (err) {
-    try {
-      await stripe.paymentIntents.cancel(intent.id);
-    } catch (cancelErr) {
-      logger.stripe.warn("Failed to cancel orphaned ecommerce PaymentIntent", {
-        orderId: order.id,
-        paymentIntentId: intent.id,
-        error: cancelErr instanceof Error ? cancelErr.message : String(cancelErr),
-      });
+    if (checkoutRequestKey) {
+      try {
+        await storage.ecommerce.failCheckoutRequest(
+          checkoutRequestKey,
+          "payment_intent_unavailable",
+        );
+      } catch (requestUpdateErr) {
+        logger.stripe.warn("Failed to mark ecommerce checkout request failed", {
+          error:
+            requestUpdateErr instanceof Error ? requestUpdateErr.message : String(requestUpdateErr),
+        });
+      }
     }
     throw err;
   }
-
-  return {
-    clientSecret: intent.client_secret,
-    paymentIntentId: intent.id,
-    orderId: order.id,
-    lookupToken: order.lookupToken,
-    priced: toPublicPricedCart(priced),
-    accountCreated,
-    accountUser: accountCreated ? accountUser : null,
-  };
 }
 
 export async function createManualEcommerceOrder(input: unknown) {

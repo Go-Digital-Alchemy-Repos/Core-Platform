@@ -5,6 +5,7 @@ import { requiresAtomicInventoryStockGuard } from "../services/ecommerce-invento
 import { isEcommerceOrderLookupAuthorized } from "../services/ecommerce-order-lookup.service";
 import {
   ecommerceCategories,
+  ecommerceCheckoutRequests,
   ecommerceCouponRedemptions,
   ecommerceCoupons,
   ecommerceCustomerAddresses,
@@ -31,6 +32,7 @@ import {
   ecommerceShippingZones,
   users,
   type EcommerceCategory,
+  type EcommerceCheckoutRequest,
   type EcommerceCoupon,
   type EcommerceCustomerAddress,
   type EcommerceCustomer,
@@ -122,6 +124,58 @@ export interface EcommerceCouponReport {
 }
 
 export class EcommerceStorage {
+  async claimCheckoutRequest(params: {
+    requestKey: string;
+    customerEmail: string;
+  }): Promise<{ created: boolean; request: EcommerceCheckoutRequest }> {
+    return db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(ecommerceCheckoutRequests)
+        .values({
+          requestKey: params.requestKey,
+          customerEmail: params.customerEmail,
+          status: "processing",
+        })
+        .onConflictDoNothing({ target: ecommerceCheckoutRequests.requestKey })
+        .returning();
+      if (created) return { created: true, request: created };
+
+      const [existing] = await tx
+        .select()
+        .from(ecommerceCheckoutRequests)
+        .where(eq(ecommerceCheckoutRequests.requestKey, params.requestKey));
+      if (!existing) throw new Error("Checkout request claim could not be loaded");
+      return { created: false, request: existing };
+    });
+  }
+
+  async attachCheckoutRequestOrder(requestKey: string, orderId: string) {
+    const [request] = await db
+      .update(ecommerceCheckoutRequests)
+      .set({ orderId, updatedAt: new Date() })
+      .where(eq(ecommerceCheckoutRequests.requestKey, requestKey))
+      .returning();
+    return request;
+  }
+
+  async completeCheckoutRequest(requestKey: string, orderId: string) {
+    const [request] = await db
+      .update(ecommerceCheckoutRequests)
+      .set({ status: "ready", orderId, completedAt: new Date(), updatedAt: new Date() })
+      .where(eq(ecommerceCheckoutRequests.requestKey, requestKey))
+      .returning();
+    return request;
+  }
+
+  async failCheckoutRequest(requestKey: string, failureCode: string) {
+    const [request] = await db
+      .update(ecommerceCheckoutRequests)
+      .set({ status: "failed", failureCode, failedAt: new Date(), updatedAt: new Date() })
+      .where(eq(ecommerceCheckoutRequests.requestKey, requestKey))
+      .returning();
+    return request;
+  }
+
   async getProducts(
     options: { publicOnly?: boolean; search?: string; includeArchived?: boolean } = {},
   ): Promise<EcommerceProduct[]> {

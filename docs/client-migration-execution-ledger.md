@@ -202,3 +202,13 @@ migrations, tests, operational documentation, and this ledger. The two prototype
 resume and replay are idempotent; target edits fail to manual review; lifecycle and checkpoint writes are atomic;
 database evolution is additive; existing Core tests, lint, types, build, migration checks, manifest validation,
 and budgets remain green.
+
+### 2026-09-04 — Durable ecommerce checkout requests
+
+- **Implemented:** an additive checkout-request lifecycle that atomically claims a browser-generated UUID
+  before account, customer, order, or payment writes. A repeated request for the same customer returns the
+  existing Stripe PaymentIntent client secret after the order link is durable; a request for another email is
+  rejected without exposing the order.
+- **Safety boundary:** an in-progress or failed request cannot create another order. The browser keeps the key
+  for an unchanged checkout payload and changes it when the payload changes. The migration remains unapplied;
+  this does not authorize a production deployment.

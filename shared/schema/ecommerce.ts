@@ -568,6 +568,28 @@ export const ecommerceOrders = pgTable(
   ],
 );
 
+export const ecommerceCheckoutRequests = pgTable(
+  "ecommerce_checkout_requests",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    requestKey: varchar("request_key", { length: 128 }).notNull(),
+    customerEmail: text("customer_email").notNull(),
+    status: text("status").notNull().default("processing"),
+    orderId: varchar("order_id").references(() => ecommerceOrders.id, { onDelete: "set null" }),
+    failureCode: text("failure_code"),
+    completedAt: timestamp("completed_at"),
+    failedAt: timestamp("failed_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_ecommerce_checkout_requests_key").on(table.requestKey),
+    uniqueIndex("idx_ecommerce_checkout_requests_order").on(table.orderId),
+  ],
+);
+
 export const ecommerceOrderItems = pgTable(
   "ecommerce_order_items",
   {
@@ -1297,6 +1319,7 @@ export type EcommerceCustomerAddress = typeof ecommerceCustomerAddresses.$inferS
 export type InsertEcommerceCustomerAddress = z.infer<typeof insertEcommerceCustomerAddressSchema>;
 export type EcommerceOrder = typeof ecommerceOrders.$inferSelect;
 export type InsertEcommerceOrder = z.infer<typeof insertEcommerceOrderSchema>;
+export type EcommerceCheckoutRequest = typeof ecommerceCheckoutRequests.$inferSelect;
 export type EcommerceOrderItem = typeof ecommerceOrderItems.$inferSelect;
 export type InsertEcommerceOrderItem = z.infer<typeof insertEcommerceOrderItemSchema>;
 export type EcommerceOrderNote = typeof ecommerceOrderNotes.$inferSelect;

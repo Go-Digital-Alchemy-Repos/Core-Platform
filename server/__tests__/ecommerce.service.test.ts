@@ -20,6 +20,10 @@ const mockGetOrderWithDetails = vi.fn();
 const mockGetCustomer = vi.fn();
 const mockFindOrCreateCustomer = vi.fn();
 const mockCreateOrder = vi.fn();
+const mockClaimCheckoutRequest = vi.fn();
+const mockAttachCheckoutRequestOrder = vi.fn();
+const mockCompleteCheckoutRequest = vi.fn();
+const mockFailCheckoutRequest = vi.fn();
 const mockCreateOrderNote = vi.fn();
 const mockCreatePaymentRequest = vi.fn();
 const mockUpdatePaymentRequest = vi.fn();
@@ -43,6 +47,7 @@ const mockInvalidateCategory = vi.fn();
 const mockGetEcommerceStripeClient = vi.fn();
 const mockStripePaymentIntentCreate = vi.fn();
 const mockStripePaymentIntentCancel = vi.fn();
+const mockStripePaymentIntentRetrieve = vi.fn();
 const mockStripeCheckoutSessionCreate = vi.fn();
 const mockStripeRefundCreate = vi.fn();
 
@@ -106,6 +111,10 @@ vi.mock("../storage/index", () => ({
       getCustomer: mockGetCustomer,
       findOrCreateCustomer: mockFindOrCreateCustomer,
       createOrder: mockCreateOrder,
+      claimCheckoutRequest: mockClaimCheckoutRequest,
+      attachCheckoutRequestOrder: mockAttachCheckoutRequestOrder,
+      completeCheckoutRequest: mockCompleteCheckoutRequest,
+      failCheckoutRequest: mockFailCheckoutRequest,
       createOrderNote: mockCreateOrderNote,
       createPaymentRequest: mockCreatePaymentRequest,
       updatePaymentRequest: mockUpdatePaymentRequest,
@@ -150,6 +159,10 @@ describe("ecommerce services", () => {
     mockGetCustomer.mockReset();
     mockFindOrCreateCustomer.mockReset();
     mockCreateOrder.mockReset();
+    mockClaimCheckoutRequest.mockReset();
+    mockAttachCheckoutRequestOrder.mockReset();
+    mockCompleteCheckoutRequest.mockReset();
+    mockFailCheckoutRequest.mockReset();
     mockCreateOrderNote.mockReset();
     mockGetFulfillmentsForOrder.mockReset();
     mockGetFulfillmentsForOrder.mockResolvedValue([]);
@@ -177,6 +190,7 @@ describe("ecommerce services", () => {
       paymentIntents: {
         create: mockStripePaymentIntentCreate,
         cancel: mockStripePaymentIntentCancel,
+        retrieve: mockStripePaymentIntentRetrieve,
       },
       checkout: {
         sessions: {
@@ -192,6 +206,11 @@ describe("ecommerce services", () => {
     });
     mockStripePaymentIntentCancel.mockReset();
     mockStripePaymentIntentCancel.mockResolvedValue({ id: "pi_test", status: "canceled" });
+    mockStripePaymentIntentRetrieve.mockReset();
+    mockStripePaymentIntentRetrieve.mockResolvedValue({
+      id: "pi_test",
+      client_secret: "pi_test_secret",
+    });
     mockStripeCheckoutSessionCreate.mockReset();
     mockStripeCheckoutSessionCreate.mockResolvedValue({
       id: "cs_test",
@@ -416,6 +435,82 @@ describe("ecommerce services", () => {
         metaTracking: { eventSourceUrl: "not-a-url" },
       }),
     ).toThrow();
+  });
+
+  it("returns the original PaymentIntent for a repeated checkout request", async () => {
+    const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
+    const order = {
+      id: "order-existing-checkout",
+      customerId: "customer-1",
+      lookupToken: "lookup-existing",
+      stripePaymentIntentId: "pi_existing",
+      totalAmount: 5000,
+    } as EcommerceOrder;
+    mockProducts.push({
+      id: "p-idempotent",
+      name: "Digital Guide",
+      price: 5000,
+      active: true,
+      status: "published",
+      visibility: "online",
+      archivedAt: null,
+      requiresShipping: false,
+      productType: "digital",
+      fulfillmentType: "digital",
+    } as EcommerceProduct);
+    mockVariants.push({
+      id: "v-idempotent",
+      productId: "p-idempotent",
+      title: "Default",
+      price: 5000,
+      active: true,
+      status: "active",
+      isDefault: true,
+      trackInventory: false,
+      inventoryQuantity: 0,
+      allowBackorder: false,
+      optionValues: {},
+    } as EcommerceProductVariant);
+    mockClaimCheckoutRequest.mockResolvedValue({
+      created: false,
+      request: {
+        requestKey: "9d723950-a6e1-4bb9-b95a-58a43eeafb1b",
+        customerEmail: "buyer@example.com",
+        orderId: order.id,
+        status: "ready",
+      },
+    });
+    mockGetOrder.mockResolvedValue(order);
+    mockStripePaymentIntentRetrieve.mockResolvedValue({
+      id: "pi_existing",
+      client_secret: "pi_existing_secret",
+    });
+
+    await expect(
+      createEcommercePaymentIntent(
+        {
+          items: [{ productId: "p-idempotent", quantity: 1 }],
+          customer: { email: "buyer@example.com", name: "Buyer" },
+          shippingAddress: {
+            name: "Buyer",
+            address: "123 Main St",
+            city: "Detroit",
+            state: "MI",
+            zip: "48201",
+            country: "US",
+          },
+          billingSameAsShipping: true,
+        },
+        { checkoutRequestKey: "9d723950-a6e1-4bb9-b95a-58a43eeafb1b" },
+      ),
+    ).resolves.toMatchObject({
+      orderId: order.id,
+      clientSecret: "pi_existing_secret",
+      paymentIntentId: "pi_existing",
+    });
+    expect(mockFindOrCreateCustomer).not.toHaveBeenCalled();
+    expect(mockCreateOrder).not.toHaveBeenCalled();
+    expect(mockStripePaymentIntentRetrieve).toHaveBeenCalledWith("pi_existing");
   });
 
   it("rejects guest checkout when customer accounts are required", async () => {
