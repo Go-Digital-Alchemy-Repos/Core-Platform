@@ -536,3 +536,16 @@ and budgets remain green.
   and Better Farms contract gates passed.
 - **Risk carried forward:** guest access and scheduled notification policies are separate event-delivery
   contracts; no provider or production event data was contacted.
+
+### 2026-09-04 — Paid event reminder entitlement
+
+- **Implemented:** automated event reminders now require `paymentStatus: paid` for explicitly paid events
+  before sending the event payload. Free and legacy unspecified registration types retain their normal
+  reminder behavior. A pending paid registration remains unsent and is retried after Stripe’s verified
+  payment webhook changes its state to paid.
+- **Evidence:** focused reminder tests cover free, legacy, pending-paid, and post-settlement flows. An
+  independent boundary review and a separate bypass/regression review found no remaining direct automated
+  join-link disclosure in the scoped sender. The full test, type, lint, formatting, production build, bundle
+  budget, and Better Farms contract gates passed.
+- **Risk carried forward:** refund/revocation eligibility and manual notification policy require their own
+  event-lifecycle decisions. No production event, Stripe, or email-provider action occurred.
