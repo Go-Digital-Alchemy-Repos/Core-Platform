@@ -861,3 +861,6 @@ and budgets remain green.
   client-approved copy, identities, rights, visual, and accessibility evidence remain required.
 - **Safety boundary:** this changes a local release-control contract and its draft record only. It does not
   change the Better Farms site, contact a client service, deploy to Railway, or authorize a release.
+- **Candidate pin:** the Better Farms draft binds the reviewed site revision `31deb36` to Core revision
+  `8dcd98c`, the exact content-gate implementation. The combined client-site, intake, release-record, and
+  source-checkout verifier must pass again for this pin.
