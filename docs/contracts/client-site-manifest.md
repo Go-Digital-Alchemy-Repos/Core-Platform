@@ -38,6 +38,17 @@ contract. Exit code `2` means usage, file access, or JSON parsing failed. Succes
 the schema version and client stack ID; failure output includes structured error paths, codes, and safe
 messages.
 
+The structural validator does not prove that a separately checked-out site still contains every declared
+source file. Verify that cross-repository boundary with the site checkout path:
+
+```sh
+npm run site:contract:verify -- docs/pilots/better-farms/client-site-manifest.example.json /path/to/Better-Farms
+```
+
+This checks every declared route component, asset source, theme token source, and Puck renderer while
+rejecting references outside the supplied checkout. It performs no build, network request, source change,
+or deployment.
+
 The [Better Farms example](../pilots/better-farms/client-site-manifest.example.json) is an adapter-facing
 fixture based on source revision `0f0ddde40ed91f2cfa2182eb3627b51c85ec0c9c`. It documents current site
 routes, assets, and the approved runtime API publishing mode. It does not authorize deployment.

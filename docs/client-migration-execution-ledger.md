@@ -226,6 +226,17 @@ and budgets remain green.
   approved scope and exclusions, RPO/RTO, DNS and release owners, and sandbox/production-like evidence
   remain required before approval or deployment.
 
+### 2026-09-04 — Better Farms cross-repository site contract verification
+
+- **Implemented:** a site-contract verifier loads the fail-closed manifest and checks its route components,
+  source assets, theme token source, and Puck renderers against a supplied site checkout. References that
+  escape the checkout or point to a missing file fail the verification.
+- **Evidence:** the verifier passed against Better Farms revision `0f0ddde`, checking 12 unique declared
+  source references with no missing or unsafe paths. It makes no network request, site change, build, or
+  deployment.
+- **Risk carried forward:** source-file presence does not replace visual, responsive, accessibility, SEO,
+  form, API, or production-like acceptance evidence for the full pilot.
+
 ### 2026-09-04 — Ecommerce stock-boundary review
 
 - **Verified:** cart pricing aggregates duplicate product/variant lines before order creation. Paid-order
