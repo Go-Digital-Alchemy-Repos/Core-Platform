@@ -285,6 +285,18 @@ and budgets remain green.
   data-handling approval, and a configured-environment rehearsal. The current generic Core system forms must
   not be assumed to establish client-scoped mailing-list or contact-message ownership.
 
+### 2026-09-04 — Better Farms crawler-facing route metadata
+
+- **Implemented:** Better Farms source revision `3fbe1bb` now emits server-rendered title, description,
+  robots, Open Graph, Twitter, and canonical metadata for each declared public route. Browser navigation
+  synchronizes the same tags. Canonicals require an explicit credential-free `PUBLIC_SITE_ORIGIN`, never
+  derive from request headers, and are omitted for unknown noindex routes.
+- **Evidence:** TypeScript check, all 17 Better Farms contract/security tests, and production build passed.
+  A local production server configured with a test origin returned Fund a Farm metadata and its expected
+  canonical URL; an unknown route returned `noindex, nofollow` with no canonical URL.
+- **Risk carried forward:** a real public origin and content/SEO review remain client decisions. This is
+  implementation and local evidence only; it makes no DNS, hosting, or deployment change.
+
 ### 2026-09-04 — Ecommerce stock-boundary review
 
 - **Verified:** cart pricing aggregates duplicate product/variant lines before order creation. Paid-order
