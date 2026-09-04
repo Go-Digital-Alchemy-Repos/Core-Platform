@@ -722,3 +722,6 @@ and budgets remain green.
 - **Evidence:** onboarding service tests cover valid record plans and both invalid address/alias inputs.
   TypeScript, lint, and formatting passed. The workflow remains deterministic, credential-free, and does not
   read or mutate any DNS provider.
+- **Evidence update:** hosted GitHub Actions run `33848841230` passed isolated PostgreSQL migration
+  verification, type-check, lint, formatting, 511 tests, production build, and bundle budget for revision
+  `ad8b5fc`.
