@@ -376,6 +376,9 @@ export const ecommerceInventoryAdjustments = pgTable(
       table.variantId,
       table.reason,
     ),
+    uniqueIndex("idx_ecommerce_inventory_adjustments_paid_order_effect")
+      .on(table.orderId, table.variantId)
+      .where(sql`${table.orderId} IS NOT NULL AND ${table.reason} = 'order_paid'`),
   ],
 );
 

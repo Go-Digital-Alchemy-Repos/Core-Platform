@@ -560,3 +560,15 @@ and budgets remain green.
   and Better Farms site/pilot contract checks passed.
 - **Risk carried forward:** live shipping rates, labels, address validation, and carrier tracking remain
   client-dependent acceptance gates until a selected provider adapter and sandbox verification are complete.
+
+### 2026-09-04 — Database-enforced paid inventory effects
+
+- **Implemented:** added the partial unique inventory index that permits at most one `order_paid` adjustment
+  for each order and variant. The storage-layer order lock and atomic stock guard remain in place; the database
+  now independently rejects a duplicate paid effect if a caller ever bypasses the existing read check.
+- **Evidence:** reconciliation migration coverage includes the new `0049` migration. A disposable PostgreSQL
+  16 rehearsal inserted one paid adjustment and a separate manual adjustment, then rejected a duplicate paid
+  adjustment with the named unique constraint. The full test suite, build, bundle budget, and Better Farms
+  release/site/pilot checks passed.
+- **Risk carried forward:** no inventory reservation is held during an unpaid checkout, and live Stripe
+  concurrency behavior still requires sandbox evidence before a transaction-enabled client launch.
