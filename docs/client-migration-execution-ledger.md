@@ -656,6 +656,9 @@ and budgets remain green.
 - **Evidence:** focused worker and migration suites passed. A disposable PostgreSQL 16 rehearsal applied the
   migration sequence, created a synthetic shipment, verified the order became shipped, and claimed the
   matching notification job. No client or production provider was contacted.
+- **Evidence update:** hosted GitHub Actions run `33845834480` passed isolated PostgreSQL migration
+  verification, type-check, lint, formatting, tests, production build, and bundle budgets for the shipment
+  notification candidate.
 
 ### 2026-09-04 — Durable order-status notifications
 
@@ -668,6 +671,10 @@ and budgets remain green.
   client, Railway, Neon, Stripe, email provider, or production database was contacted.
 - **Risk carried forward:** provider sandbox retries, delivery monitoring, and client-specific email
   acceptance remain release gates. The Better Farms manifest remains draft pending the approved client gates.
+- **Evidence update:** hosted GitHub Actions run `33845987420` passed isolated PostgreSQL migration
+  verification, type-check, lint, formatting, tests, production build, and bundle budgets for the
+  order-status notification candidate. The draft Better Farms manifest reference passed the same hosted gate
+  in `33846343839`.
 
 ### 2026-09-04 — Compensated paid-order cancellation boundary
 
