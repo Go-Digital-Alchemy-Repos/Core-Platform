@@ -387,6 +387,18 @@ and budgets remain green.
   still require a client-approved staging configuration and browser evidence. This preflight rejects unsafe
   configuration; it does not provision or validate a live topology.
 
+### 2026-09-04 — Public/customer and admin link ownership
+
+- **Implemented:** the client-stack origin helper resolves canonical public and admin origins independently,
+  with safe fallback to the legacy application origin for existing stacks. Ecommerce checkout success and
+  customer order-status email links now use `PUBLIC_SITE_ORIGIN`; an admin-created payment request uses
+  `CORE_PLATFORM_ADMIN_ORIGIN` for its cancellation path.
+- **Evidence:** helper tests reject credential-bearing or path-bearing overrides and preserve the legacy
+  fallback. Ecommerce service tests verify the exact Stripe success/cancel origins; ecommerce email tests
+  verify the customer status URL. Focused suites passed 66 tests, along with TypeScript and formatting.
+- **Risk carried forward:** a client-approved staging browser exercise must still prove routing, session
+  cookies, proxy behavior, emails, Stripe redirects, preview, and CORS/CSRF work at the real origins.
+
 ### 2026-09-04 — WooCommerce isolated PostgreSQL rehearsal
 
 - **Environment:** disposable local PostgreSQL 16 container, created only for this rehearsal. Core's complete

@@ -1,5 +1,6 @@
 import { renderEmailShell, sendEmail } from "./email.service";
 import { logger } from "../utils/logger";
+import { buildPublicSiteUrl } from "../config/client-stack-origins";
 import type { EcommerceOrderWithDetails } from "../storage/ecommerce.storage";
 import type { EcommerceShipment } from "@shared/schema";
 
@@ -8,9 +9,9 @@ function money(cents: number): string {
 }
 
 function orderUrl(order: { id: string; lookupToken: string }, email: string): string {
-  const base = (process.env.APP_URL || "").replace(/\/$/, "");
   const params = new URLSearchParams({ orderId: order.id, email, token: order.lookupToken });
-  return `${base}/orders/status?${params.toString()}`;
+  const path = `/orders/status?${params.toString()}`;
+  return buildPublicSiteUrl(path) ?? path;
 }
 
 export async function sendEcommerceOrderConfirmation(

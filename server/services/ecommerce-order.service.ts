@@ -9,6 +9,7 @@ import {
   type PricedCartLine,
 } from "./ecommerce-pricing.service";
 import { getEcommerceStripeClient } from "./ecommerce-stripe.service";
+import { buildCorePlatformAdminUrl, buildPublicSiteUrl } from "../config/client-stack-origins";
 import {
   sendEcommerceOrderConfirmation,
   sendEcommerceOrderStatusEmail,
@@ -193,9 +194,12 @@ function lineKey(productId: string, variantId?: string | null) {
   return `${productId}:${variantId ?? ""}`;
 }
 
-function appUrl(path = "") {
-  const base = (process.env.APP_URL || "http://localhost:5000").replace(/\/$/, "");
-  return `${base}${path}`;
+function publicSiteUrl(path: string) {
+  return buildPublicSiteUrl(path) ?? `http://localhost:5000${path}`;
+}
+
+function adminSiteUrl(path: string) {
+  return buildCorePlatformAdminUrl(path) ?? `http://localhost:5000${path}`;
 }
 
 function getManualDiscounts(data: z.infer<typeof manualOrderSchema>, lines: PricedCartLine[]) {
@@ -229,10 +233,10 @@ async function createStripeCheckoutSessionForPaymentRequest(params: {
     {
       mode: "payment",
       customer_email: params.customerEmail,
-      success_url: appUrl(
+      success_url: publicSiteUrl(
         `/order-success?orderId=${encodeURIComponent(params.orderId ?? "")}&paymentRequestId=${encodeURIComponent(params.paymentRequestId)}`,
       ),
-      cancel_url: appUrl(params.orderId ? `/admin/ecommerce/orders` : `/admin/ecommerce/orders`),
+      cancel_url: adminSiteUrl("/admin/ecommerce/orders"),
       line_items: [
         {
           quantity: 1,

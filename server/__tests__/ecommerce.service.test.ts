@@ -3048,32 +3048,52 @@ describe("ecommerce services", () => {
       shipments: [],
       fulfillments: [],
     });
+    const originalPublicSiteOrigin = process.env.PUBLIC_SITE_ORIGIN;
+    const originalAdminOrigin = process.env.CORE_PLATFORM_ADMIN_ORIGIN;
+    const originalAppUrl = process.env.APP_URL;
+    process.env.PUBLIC_SITE_ORIGIN = "https://www.example.com";
+    process.env.CORE_PLATFORM_ADMIN_ORIGIN = "https://admin.example.com";
+    process.env.APP_URL = "https://admin.example.com";
+    try {
+      await createManualEcommerceOrderDraft({
+        customerId: customer.id,
+        items: [{ productId: "p-manual", quantity: 1 }],
+        paymentAction: "send_payment_link",
+        customReason: "Phone order",
+      });
 
-    await createManualEcommerceOrderDraft({
-      customerId: customer.id,
-      items: [{ productId: "p-manual", quantity: 1 }],
-      paymentAction: "send_payment_link",
-      customReason: "Phone order",
-    });
-
-    expect(mockCreatePaymentRequest).toHaveBeenCalledWith(
-      expect.objectContaining({
-        orderId: "order-link-1",
-        customerEmail: "buyer@example.com",
-        amount: 2500,
-        reason: "Phone order",
-      }),
-    );
-    expect(mockStripeCheckoutSessionCreate).toHaveBeenCalled();
-    expect(mockUpdateOrder).toHaveBeenCalledWith(
-      "order-link-1",
-      expect.objectContaining({
-        paymentStatus: "pending_payment",
-        stripeSessionId: "cs_test",
-        manualPaymentMethod: "payment_link",
-      }),
-    );
-    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
+      expect(mockCreatePaymentRequest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderId: "order-link-1",
+          customerEmail: "buyer@example.com",
+          amount: 2500,
+          reason: "Phone order",
+        }),
+      );
+      expect(mockStripeCheckoutSessionCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success_url: expect.stringMatching(/^https:\/\/www\.example\.com\/order-success\?/),
+          cancel_url: "https://admin.example.com/admin/ecommerce/orders",
+        }),
+        expect.anything(),
+      );
+      expect(mockUpdateOrder).toHaveBeenCalledWith(
+        "order-link-1",
+        expect.objectContaining({
+          paymentStatus: "pending_payment",
+          stripeSessionId: "cs_test",
+          manualPaymentMethod: "payment_link",
+        }),
+      );
+      expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
+    } finally {
+      if (originalPublicSiteOrigin === undefined) delete process.env.PUBLIC_SITE_ORIGIN;
+      else process.env.PUBLIC_SITE_ORIGIN = originalPublicSiteOrigin;
+      if (originalAdminOrigin === undefined) delete process.env.CORE_PLATFORM_ADMIN_ORIGIN;
+      else process.env.CORE_PLATFORM_ADMIN_ORIGIN = originalAdminOrigin;
+      if (originalAppUrl === undefined) delete process.env.APP_URL;
+      else process.env.APP_URL = originalAppUrl;
+    }
   });
 
   it("marks manual orders paid and deducts inventory after external payment", async () => {
