@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const CLIENT_RELEASE_MANIFEST_SCHEMA_VERSION = "2.0" as const;
+export const CLIENT_RELEASE_MANIFEST_SCHEMA_VERSION = "3.0" as const;
 const RELEASE_GATE_IDS = [
   "identity",
   "topology",
@@ -10,6 +10,7 @@ const RELEASE_GATE_IDS = [
   "health",
   "security",
   "monitoring",
+  "content",
   "transactions",
   "import",
 ] as const;

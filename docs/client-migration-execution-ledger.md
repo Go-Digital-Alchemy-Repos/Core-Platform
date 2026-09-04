@@ -850,3 +850,14 @@ and budgets remain green.
   review are required before the representative-page success measure or a content-release approval can pass.
 - **Safety boundary:** no external Core request, form submission, client data, DNS, Railway resource, or
   production configuration was used. The local server and browser were closed after the review.
+
+### 2026-09-04 — Release-contract content gate
+
+- **Implemented:** release-manifest schema v3.0 adds a required `content` gate. Versions v1.0 and v2.0 now
+  fail closed, so a release record cannot treat an omitted copy and identity review as approval. A passed gate
+  requires an evidence reference, while the record itself remains secret-free and does not confer approval.
+- **Better Farms status:** the draft manifest now records `content` as explicitly pending. This reflects the
+  rendered-route review finding that testimonials and team cards still use placeholder names and credentials;
+  client-approved copy, identities, rights, visual, and accessibility evidence remain required.
+- **Safety boundary:** this changes a local release-control contract and its draft record only. It does not
+  change the Better Farms site, contact a client service, deploy to Railway, or authorize a release.
