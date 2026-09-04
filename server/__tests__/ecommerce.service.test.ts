@@ -108,6 +108,7 @@ vi.mock("../storage/index", () => ({
       countCouponRedemptions: mockCountCouponRedemptions,
       getOrder: mockGetOrder,
       updateOrder: mockUpdateOrder,
+      updateOrderWithStatusNotification: mockUpdateOrder,
       settlePaidOrder: mockSettlePaidOrder,
       getOrderWithDetails: mockGetOrderWithDetails,
       getCustomer: mockGetCustomer,
@@ -2551,7 +2552,7 @@ describe("ecommerce services", () => {
     });
     expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
     expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
-    expect(mockSendEcommerceOrderStatusEmail).toHaveBeenCalledTimes(1);
+    expect(mockSendEcommerceOrderStatusEmail).not.toHaveBeenCalled();
   });
 
   it("reconciles idempotent paid effects when an admin saves an already-paid order", async () => {

@@ -10,7 +10,6 @@ import {
 } from "./ecommerce-pricing.service";
 import { getEcommerceStripeClient } from "./ecommerce-stripe.service";
 import { buildCorePlatformAdminUrl, buildPublicSiteUrl } from "../config/client-stack-origins";
-import { sendEcommerceOrderStatusEmail } from "./ecommerce-email.service";
 import { getEcommerceCustomerAccountSettings } from "./ecommerce-customer-account.service";
 import { assertEcommerceShippingDestinationAllowed } from "./ecommerce-store-settings.service";
 import { evaluateEcommerceFraud, recordEcommerceFraudEvent } from "./ecommerce-fraud.service";
@@ -903,7 +902,7 @@ export async function updateAdminEcommerceOrder(
             markedBy: actor?.id ?? null,
           })
         ).order
-      : await storage.ecommerce.updateOrder(orderId, {
+      : await storage.ecommerce.updateOrderWithStatusNotification(orderId, {
           status: data.status,
           notes: noteBody || undefined,
         });
@@ -918,12 +917,6 @@ export async function updateAdminEcommerceOrder(
     if (data.status === "paid") {
       await storage.ecommerce.updateOrder(order.id, { notes: noteBody });
     }
-  }
-
-  const changedStatus = Boolean(data.status && previous.status !== data.status);
-  if (changedStatus) {
-    const details = await storage.ecommerce.getOrderWithDetails(order.id);
-    if (details) await sendEcommerceOrderStatusEmail(details);
   }
 
   return order;

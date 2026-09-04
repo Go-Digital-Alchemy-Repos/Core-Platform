@@ -2,6 +2,7 @@ import { storage } from "../storage";
 import { logger } from "../utils/logger";
 import {
   sendEcommerceOrderConfirmation,
+  sendEcommerceOrderStatusEmail,
   sendEcommerceRefundEmail,
   sendEcommerceShipmentEmail,
 } from "./ecommerce-email.service";
@@ -21,6 +22,7 @@ async function dispatchEcommerceNotificationJob(job: {
   orderId: string;
   refundId?: string | null;
   shipmentId?: string | null;
+  statusValue?: string | null;
 }): Promise<boolean> {
   const order = await storage.ecommerce.getOrderWithDetails(job.orderId);
   if (!order) throw new Error("ecommerce_notification_order_not_found");
@@ -40,6 +42,10 @@ async function dispatchEcommerceNotificationJob(job: {
       throw new Error("ecommerce_notification_shipment_not_found");
     }
     return sendEcommerceShipmentEmail(order, shipment);
+  }
+  if (job.type === "order_status") {
+    if (!job.statusValue) throw new Error("ecommerce_notification_status_not_found");
+    return sendEcommerceOrderStatusEmail(order, job.statusValue);
   }
   throw new Error("unsupported_ecommerce_notification_type");
 }

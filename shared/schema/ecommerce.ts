@@ -658,6 +658,7 @@ export const ecommerceNotificationJobs = pgTable(
     shipmentId: varchar("shipment_id").references(() => ecommerceShipments.id, {
       onDelete: "cascade",
     }),
+    statusValue: text("status_value"),
     deduplicationKey: varchar("deduplication_key", { length: 200 }).notNull(),
     attemptCount: integer("attempt_count").notNull().default(0),
     processingToken: varchar("processing_token"),

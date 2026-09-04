@@ -1337,6 +1337,35 @@ export class EcommerceStorage {
     return order;
   }
 
+  async updateOrderWithStatusNotification(
+    id: string,
+    data: Partial<InsertEcommerceOrder>,
+  ): Promise<EcommerceOrder | undefined> {
+    return db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT id FROM ecommerce_orders WHERE id = ${id} FOR UPDATE`);
+      const [previous] = await tx.select().from(ecommerceOrders).where(eq(ecommerceOrders.id, id));
+      if (!previous) return undefined;
+      const [order] = await tx
+        .update(ecommerceOrders)
+        .set({ ...data, updatedAt: new Date() } as Partial<typeof ecommerceOrders.$inferInsert>)
+        .where(eq(ecommerceOrders.id, id))
+        .returning();
+      if (data.status && data.status !== previous.status) {
+        await tx
+          .insert(ecommerceNotificationJobs)
+          .values({
+            type: "order_status",
+            status: "queued",
+            orderId: order.id,
+            statusValue: data.status,
+            deduplicationKey: `order_status:${order.id}:${data.status}:${order.updatedAt.getTime()}`,
+          })
+          .onConflictDoNothing({ target: ecommerceNotificationJobs.deduplicationKey });
+      }
+      return order;
+    });
+  }
+
   async getExpiredEcommerceInventoryReservationOrderIds(
     now = new Date(),
     limit = 25,
@@ -1548,6 +1577,7 @@ export class EcommerceStorage {
           order_id AS "orderId",
           refund_id AS "refundId",
           shipment_id AS "shipmentId",
+          status_value AS "statusValue",
           deduplication_key AS "deduplicationKey",
           attempt_count AS "attemptCount",
           processing_token AS "processingToken",

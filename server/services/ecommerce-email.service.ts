@@ -40,11 +40,12 @@ export async function sendEcommerceOrderConfirmation(
 
 export async function sendEcommerceOrderStatusEmail(
   order: EcommerceOrderWithDetails,
-): Promise<void> {
-  if (!order.customer?.email) return;
-  const body = `<p>Your order status is now <strong>${order.status}</strong>.</p><p><a href="${orderUrl(order, order.customer.email)}">View order status</a></p>`;
+  status = order.status,
+): Promise<boolean> {
+  if (!order.customer?.email) return true;
+  const body = `<p>Your order status is now <strong>${status}</strong>.</p><p><a href="${orderUrl(order, order.customer.email)}">View order status</a></p>`;
   const html = await renderEmailShell("Order status updated", body);
-  await sendEmail(order.customer.email, `Order status updated #${order.id.slice(0, 8)}`, html);
+  return sendEmail(order.customer.email, `Order status updated #${order.id.slice(0, 8)}`, html);
 }
 
 export async function sendEcommerceOrderStatusLinkEmail(
