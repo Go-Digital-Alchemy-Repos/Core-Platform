@@ -864,3 +864,15 @@ and budgets remain green.
 - **Candidate pin:** the Better Farms draft binds the reviewed site revision `31deb36` to Core revision
   `8dcd98c`, the exact content-gate implementation. The combined client-site, intake, release-record, and
   source-checkout verifier must pass again for this pin.
+
+### 2026-09-04 — Better Farms content-review inventory
+
+- **Evidence:** a source-specific, secret-free draft review record now names the visible non-form
+  placeholders in the exact reviewed revision: two testimonial attributions, three home-team cards, six
+  About-board cards and their shared filler biographies, and one unattributed quotation. It separates those
+  content claims from legitimate form input placeholders.
+- **Release control:** the record specifies the client evidence required for retained copy, names, roles,
+  quotations, portraits, media rights, responsive visual review, and accessibility review. It remains a
+  draft and does not change the pending Better Farms `content` gate or approve publication.
+- **Safety boundary:** this inventory reads the pinned local site source only. It does not modify the client
+  site, contact a client, access customer data, or change Railway, DNS, or production configuration.
