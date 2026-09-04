@@ -22,6 +22,10 @@ describe("client site manifest", () => {
         path: "/fund-a-farm",
         editableRegions: ["fund-a-farm-hero"],
       });
+      expect(result.data.forms.find((form) => form.id === "newsletter-signup")).toMatchObject({
+        endpoint: "/api/forms/newsletter-signup/submit",
+        method: "POST",
+      });
     }
   });
 

@@ -3,6 +3,7 @@ import { asyncHandler } from "../middleware/error-handler";
 import { storage } from "../storage";
 import { submitManagedFormBySlug } from "../services/forms.service";
 import { paramString } from "../utils/params";
+import { sanitizePublicCmsContent } from "../utils/sanitize-rich-html";
 
 const router = Router();
 
@@ -16,7 +17,7 @@ router.get(
     }
 
     res.json({
-      ...form,
+      ...sanitizePublicCmsContent(form),
       settings: {
         submitButtonText:
           typeof form.settings?.submitButtonText === "string"

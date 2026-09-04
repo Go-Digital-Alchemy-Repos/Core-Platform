@@ -54,6 +54,17 @@ configuration remain explicitly deferred.
 
 ## Accepted Checkpoints
 
+### 2026-09-03 — Public CMS HTML boundary hardening
+
+- **Implemented:** Better Farms' newsletter fixture now targets the existing managed-form submission route;
+  public CMS pages and previews, public sidebars, and public managed-form HTML pass through the established
+  allowlist sanitizer at the response boundary.
+- **Content compatibility:** the policy retains the CMS editor's headings, lists, links, and approved image
+  markup while removing scripts, event handlers, unsafe URL schemes, and arbitrary embeds. No stored content
+  was modified.
+- **Validation:** manifest and sanitization regression coverage added; no database, client data, deployment,
+  DNS, or external-service action performed.
+
 ### 2026-09-03 — WooCommerce phase-one catalog planner
 
 - **Implemented:** strict `core.woocommerce-import` v1.0.0 envelope parsing; stable source fingerprints and

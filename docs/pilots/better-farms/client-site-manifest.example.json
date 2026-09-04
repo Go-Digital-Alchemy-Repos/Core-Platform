@@ -281,7 +281,7 @@
     {
       "id": "newsletter-signup",
       "routeId": "home",
-      "endpoint": "/api/newsletter",
+      "endpoint": "/api/forms/newsletter-signup/submit",
       "method": "POST",
       "authentication": "public",
       "handlerOwner": "platform",

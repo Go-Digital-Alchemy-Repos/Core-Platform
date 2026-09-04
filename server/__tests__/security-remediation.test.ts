@@ -12,7 +12,7 @@ import {
 } from "../services/public-event.service";
 import { isDesignEditableBrandingSetting } from "../utils/branding-settings-policy";
 import { isPublicR2Key } from "../utils/public-storage-policy";
-import { sanitizePublicRichHtml } from "../utils/sanitize-rich-html";
+import { sanitizePublicCmsContent, sanitizePublicRichHtml } from "../utils/sanitize-rich-html";
 import { findActiveTierForStripePrice } from "../utils/membership-price-policy";
 
 describe("security remediation policies", () => {
@@ -75,6 +75,41 @@ describe("security remediation policies", () => {
     );
 
     expect(html).toBe("<p>Hello <strong>there</strong></p><a>bad</a>");
+  });
+
+  it("sanitizes every HTML-bearing public CMS field while preserving editor rich content", () => {
+    const createdAt = new Date("2026-09-03T00:00:00.000Z");
+    const content = sanitizePublicCmsContent({
+      createdAt,
+      blocks: [
+        {
+          props: {
+            content:
+              '<h2>Heading</h2><p>Safe <a href="https://example.test">link</a></p><img src="/cms/photo.webp" alt="Farm" data-align="center" class="cms-richtext-media cms-richtext-media-center" onerror="alert(1)"><script>alert(1)</script>',
+            ctaLink: "javascript:alert(1)",
+          },
+        },
+      ],
+      widgets: [
+        { settings: { html: '<p>Widget</p><iframe src="https://evil.example"></iframe>' } },
+      ],
+      fields: [{ config: { htmlContent: '<p>Form copy</p><img src="javascript:alert(1)">' } }],
+    });
+
+    expect(content).toMatchObject({
+      createdAt,
+      blocks: [
+        {
+          props: {
+            content:
+              '<h2>Heading</h2><p>Safe <a href="https://example.test">link</a></p><img src="/cms/photo.webp" alt="Farm" data-align="center" class="cms-richtext-media cms-richtext-media-center" />',
+            ctaLink: "javascript:alert(1)",
+          },
+        },
+      ],
+      widgets: [{ settings: { html: "<p>Widget</p>" } }],
+      fields: [{ config: { htmlContent: "<p>Form copy</p><img />" } }],
+    });
   });
 
   it("keeps private R2 namespaces out of the public object proxy", () => {
