@@ -16,8 +16,8 @@ function orderUrl(order: { id: string; lookupToken: string }, email: string): st
 
 export async function sendEcommerceOrderConfirmation(
   order: EcommerceOrderWithDetails,
-): Promise<void> {
-  if (!order.customer?.email) return;
+): Promise<boolean> {
+  if (!order.customer?.email) return true;
   const lines = order.items
     .map((item) => `<li>${item.productName} x ${item.quantity}: ${money(item.lineTotal)}</li>`)
     .join("");
@@ -35,6 +35,7 @@ export async function sendEcommerceOrderConfirmation(
     html,
   );
   if (!ok) logger.email.warn("Failed to send ecommerce order confirmation", { orderId: order.id });
+  return ok;
 }
 
 export async function sendEcommerceOrderStatusEmail(

@@ -10,10 +10,7 @@ import {
 } from "./ecommerce-pricing.service";
 import { getEcommerceStripeClient } from "./ecommerce-stripe.service";
 import { buildCorePlatformAdminUrl, buildPublicSiteUrl } from "../config/client-stack-origins";
-import {
-  sendEcommerceOrderConfirmation,
-  sendEcommerceOrderStatusEmail,
-} from "./ecommerce-email.service";
+import { sendEcommerceOrderStatusEmail } from "./ecommerce-email.service";
 import { getEcommerceCustomerAccountSettings } from "./ecommerce-customer-account.service";
 import { assertEcommerceShippingDestinationAllowed } from "./ecommerce-store-settings.service";
 import { evaluateEcommerceFraud, recordEcommerceFraudEvent } from "./ecommerce-fraud.service";
@@ -881,10 +878,6 @@ export async function reconcileEcommercePaymentRequestSession(
     paymentIntentId,
   );
   if (!settlement.request) return undefined;
-  if (settlement.order && settlement.transitioned) {
-    const details = await storage.ecommerce.getOrderWithDetails(settlement.order.id);
-    if (details) await sendEcommerceOrderConfirmation(details);
-  }
   return settlement.request;
 }
 
@@ -1003,9 +996,8 @@ export async function markEcommerceOrderPaid(orderId: string, paymentIntentId: s
   if (existing.stripePaymentIntentId && existing.stripePaymentIntentId !== paymentIntentId) {
     throw new Error("PaymentIntent does not match this order");
   }
-  const settlement = await storage.ecommerce.settlePaidOrder(orderId, paymentIntentId);
+  await storage.ecommerce.settlePaidOrder(orderId, paymentIntentId);
   const details = await storage.ecommerce.getOrderWithDetails(orderId);
-  if (details && settlement.transitioned) await sendEcommerceOrderConfirmation(details);
   return details;
 }
 

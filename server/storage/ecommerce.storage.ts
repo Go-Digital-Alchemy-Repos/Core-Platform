@@ -1,11 +1,12 @@
 import { and, desc, eq, gte, ilike, inArray, isNull, or, sql } from "drizzle-orm";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { db } from "../db";
 import { requiresAtomicInventoryStockGuard } from "../services/ecommerce-inventory.service";
 import { isEcommerceOrderLookupAuthorized } from "../services/ecommerce-order-lookup.service";
 import {
   ecommerceCategories,
   ecommerceCheckoutRequests,
+  ecommerceNotificationJobs,
   ecommerceCouponRedemptions,
   ecommerceCoupons,
   ecommerceCustomerAddresses,
@@ -42,6 +43,7 @@ import {
   type EcommerceFraudBlock,
   type EcommerceFraudEvent,
   type EcommerceOrder,
+  type EcommerceNotificationJob,
   type EcommerceOrderItem,
   type EcommerceOrderNote,
   type EcommercePaymentRequest,
@@ -124,6 +126,14 @@ export interface EcommerceCouponReport {
     discountAmount: number;
     redeemedAt: Date;
   }>;
+}
+
+const ECOMMERCE_NOTIFICATION_JOB_MAX_ATTEMPTS = 5;
+const ECOMMERCE_NOTIFICATION_JOB_CLAIM_TIMEOUT_MS = 10 * 60_000;
+
+function notificationJobErrorCode(error: unknown) {
+  const value = error instanceof Error ? error.message : String(error);
+  return `notification_delivery_${createHash("sha256").update(value).digest("hex").slice(0, 16)}`;
 }
 
 export class EcommerceStorage {
@@ -1381,7 +1391,114 @@ export class EcommerceStorage {
       });
     }
 
+    if (transitioned) {
+      await tx
+        .insert(ecommerceNotificationJobs)
+        .values({
+          type: "order_confirmation",
+          status: "queued",
+          orderId: order.id,
+          deduplicationKey: `order_confirmation:${order.id}`,
+        })
+        .onConflictDoNothing({ target: ecommerceNotificationJobs.deduplicationKey });
+    }
+
     return { order, transitioned };
+  }
+
+  async claimNextEcommerceNotificationJob(
+    now = new Date(),
+  ): Promise<EcommerceNotificationJob | undefined> {
+    const token = randomUUID();
+    const staleBefore = new Date(now.getTime() - ECOMMERCE_NOTIFICATION_JOB_CLAIM_TIMEOUT_MS);
+    return db.transaction(async (tx) => {
+      const result = await tx.execute(sql<EcommerceNotificationJob>`
+        WITH candidate AS (
+          SELECT id
+          FROM ecommerce_notification_jobs
+          WHERE (
+            status = 'queued' AND next_attempt_at <= ${now}
+          ) OR (
+            status = 'processing' AND claimed_at < ${staleBefore}
+          )
+          ORDER BY next_attempt_at ASC, created_at ASC
+          FOR UPDATE SKIP LOCKED
+          LIMIT 1
+        )
+        UPDATE ecommerce_notification_jobs
+        SET
+          status = 'processing',
+          processing_token = ${token},
+          claimed_at = ${now},
+          attempt_count = attempt_count + 1,
+          updated_at = ${now}
+        WHERE id IN (SELECT id FROM candidate)
+        RETURNING *
+      `);
+      return result.rows[0] as EcommerceNotificationJob | undefined;
+    });
+  }
+
+  async completeEcommerceNotificationJob(jobId: string, processingToken: string, now = new Date()) {
+    const [job] = await db
+      .update(ecommerceNotificationJobs)
+      .set({
+        status: "sent",
+        processingToken: null,
+        sentAt: now,
+        failedAt: null,
+        lastErrorCode: null,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(ecommerceNotificationJobs.id, jobId),
+          eq(ecommerceNotificationJobs.status, "processing"),
+          eq(ecommerceNotificationJobs.processingToken, processingToken),
+        ),
+      )
+      .returning();
+    return job;
+  }
+
+  async retryEcommerceNotificationJob(
+    job: Pick<EcommerceNotificationJob, "id" | "attemptCount"> & { processingToken: string },
+    nextAttemptAt: Date,
+    error: unknown,
+    now = new Date(),
+  ) {
+    const failed = job.attemptCount >= ECOMMERCE_NOTIFICATION_JOB_MAX_ATTEMPTS;
+    const [updated] = await db
+      .update(ecommerceNotificationJobs)
+      .set({
+        status: failed ? "failed" : "queued",
+        processingToken: null,
+        nextAttemptAt: failed ? now : nextAttemptAt,
+        failedAt: failed ? now : null,
+        lastErrorCode: notificationJobErrorCode(error),
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(ecommerceNotificationJobs.id, job.id),
+          eq(ecommerceNotificationJobs.status, "processing"),
+          eq(ecommerceNotificationJobs.processingToken, job.processingToken),
+        ),
+      )
+      .returning();
+    return updated;
+  }
+
+  async getEcommerceNotificationJobs(options: { status?: "failed"; limit?: number } = {}) {
+    const limit = Math.min(Math.max(options.limit ?? 50, 1), 200);
+    const query = db
+      .select()
+      .from(ecommerceNotificationJobs)
+      .orderBy(desc(ecommerceNotificationJobs.createdAt))
+      .limit(limit);
+    return options.status
+      ? query.where(eq(ecommerceNotificationJobs.status, options.status))
+      : query;
   }
 
   async settlePaidOrder(

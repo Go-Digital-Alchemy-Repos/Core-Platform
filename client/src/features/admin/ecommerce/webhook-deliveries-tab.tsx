@@ -26,6 +26,17 @@ interface StripeWebhookDelivery {
   hasFailure: boolean;
 }
 
+interface EcommerceNotificationJob {
+  id: string;
+  type: "order_confirmation";
+  status: "failed";
+  orderId: string;
+  attemptCount: number;
+  createdAt: string;
+  failedAt: string | null;
+  hasFailure: boolean;
+}
+
 function statusBadge(status: StripeWebhookDelivery["status"]) {
   if (status === "processed")
     return { label: "Processed", className: "bg-emerald-50 text-emerald-700 border-emerald-200" };
@@ -38,6 +49,11 @@ export function WebhookDeliveriesTab() {
   const { toast } = useToast();
   const { data: deliveries = [], isLoading } = useQuery<StripeWebhookDelivery[]>({
     queryKey: ["/api/admin/ecommerce/webhooks/stripe", { status: "failed", limit: 50 }],
+  });
+  const { data: notificationJobs = [], isLoading: notificationJobsLoading } = useQuery<
+    EcommerceNotificationJob[]
+  >({
+    queryKey: ["/api/admin/ecommerce/notification-jobs", { status: "failed", limit: 50 }],
   });
   const replayMutation = useMutation({
     mutationFn: async (eventId: string) => {
@@ -129,6 +145,49 @@ export function WebhookDeliveriesTab() {
                       </TableRow>
                     );
                   })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Failed order receipts</CardTitle>
+          <CardDescription>
+            Receipt delivery retries with bounded backoff. Failed jobs are retained here without
+            recipient or provider details so an operator can investigate the mail configuration and
+            order history safely.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {notificationJobsLoading ? (
+            <p className="text-sm text-muted-foreground">Loading failed receipt jobs…</p>
+          ) : notificationJobs.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No failed order receipt jobs.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Notification</TableHead>
+                    <TableHead>Order</TableHead>
+                    <TableHead>Attempts</TableHead>
+                    <TableHead>Failed at</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {notificationJobs.map((job) => (
+                    <TableRow key={job.id}>
+                      <TableCell className="font-medium">Order confirmation</TableCell>
+                      <TableCell className="font-mono text-xs">{job.orderId}</TableCell>
+                      <TableCell>{job.attemptCount}</TableCell>
+                      <TableCell>
+                        {job.failedAt ? new Date(job.failedAt).toLocaleString() : "Pending review"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>

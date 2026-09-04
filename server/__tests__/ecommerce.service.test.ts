@@ -2402,7 +2402,7 @@ describe("ecommerce services", () => {
     expect(mockUpdateOrder).not.toHaveBeenCalled();
     expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
     expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
-    expect(mockSendEcommerceOrderConfirmation).toHaveBeenCalledTimes(1);
+    expect(mockSendEcommerceOrderConfirmation).not.toHaveBeenCalled();
   });
 
   it("does not send duplicate paid-order effects when another worker wins the paid transition", async () => {
@@ -2473,7 +2473,7 @@ describe("ecommerce services", () => {
       "pi_payment_link_1",
     );
     expect(mockSettlePaidOrder).not.toHaveBeenCalled();
-    expect(mockSendEcommerceOrderConfirmation).toHaveBeenCalledTimes(1);
+    expect(mockSendEcommerceOrderConfirmation).not.toHaveBeenCalled();
   });
 
   it("does not send a payment-link confirmation when settlement was already completed", async () => {

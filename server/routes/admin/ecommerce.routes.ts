@@ -108,6 +108,28 @@ function toWebhookDeliverySummary(delivery: {
   };
 }
 
+function toNotificationJobSummary(job: {
+  id: string;
+  type: string;
+  status: string;
+  orderId: string;
+  attemptCount: number;
+  createdAt: Date;
+  failedAt: Date | null;
+  lastErrorCode: string | null;
+}) {
+  return {
+    id: job.id,
+    type: job.type,
+    status: job.status,
+    orderId: job.orderId,
+    attemptCount: job.attemptCount,
+    createdAt: job.createdAt,
+    failedAt: job.failedAt,
+    hasFailure: Boolean(job.lastErrorCode),
+  };
+}
+
 const productPayloadSchema = insertEcommerceProductSchema.extend({
   categoryIds: z.array(z.string()).default([]),
 });
@@ -551,6 +573,16 @@ router.get(
       limit: query.limit,
     });
     res.json(deliveries.map(toWebhookDeliverySummary));
+  }),
+);
+
+router.get(
+  "/notification-jobs",
+  asyncHandler(async (req, res) => {
+    const rawLimit = typeof req.query.limit === "string" ? Number(req.query.limit) : 50;
+    const limit = Number.isSafeInteger(rawLimit) ? Math.min(Math.max(rawLimit, 1), 200) : 50;
+    const jobs = await storage.ecommerce.getEcommerceNotificationJobs({ status: "failed", limit });
+    res.json(jobs.map(toNotificationJobSummary));
   }),
 );
 

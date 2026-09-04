@@ -596,3 +596,19 @@ and budgets remain green.
   formatting, tests, production build, and bundle budgets for the pinned candidate revision.
 - **Risk carried forward:** client backup, restore, security, health, import, browser, and provider-sandbox
   evidence remain separate required release gates.
+
+### 2026-09-04 — Durable paid-order receipt delivery
+
+- **Implemented:** a paid-order settlement now inserts a deduplicated `order_confirmation` outbox job in
+  the same database transaction as payment status, coupon, and inventory effects. The worker claims jobs
+  with PostgreSQL row locking, reloads current order data, uses bounded exponential retry, and retains a
+  failed job after five attempts. Ecommerce Operations exposes failed receipt jobs without recipient,
+  provider, or raw error details.
+- **Evidence:** focused worker tests cover completion, retry backoff, and terminal failure. A fresh
+  disposable PostgreSQL 16 rehearsal applied all migrations, settled the same synthetic order twice, and
+  observed one queued confirmation job and one inventory decrement. The full local suite passed 108 test
+  files and 500 tests, type-check, lint, formatting, production build, and bundle budgets. No client,
+  Railway, Neon, Stripe, email provider, or production database was contacted.
+- **Risk carried forward:** refund, shipment, and status notifications still use their existing delivery
+  paths. Provider sandbox retries, delivery monitoring, and client-specific email acceptance remain release
+  gates.

@@ -80,6 +80,13 @@ export const ECOMMERCE_COUPON_STATUSES = [
 ] as const;
 export const ECOMMERCE_REFUND_STATUSES = ["pending", "processed", "rejected", "failed"] as const;
 export const ECOMMERCE_REFUND_TYPES = ["full", "partial"] as const;
+export const ECOMMERCE_NOTIFICATION_JOB_TYPES = ["order_confirmation"] as const;
+export const ECOMMERCE_NOTIFICATION_JOB_STATUSES = [
+  "queued",
+  "processing",
+  "sent",
+  "failed",
+] as const;
 export const ECOMMERCE_SHIPPING_PROVIDER_TYPES = [
   "direct_carrier",
   "aggregator",
@@ -590,6 +597,43 @@ export const ecommerceCheckoutRequests = pgTable(
   (table) => [
     uniqueIndex("idx_ecommerce_checkout_requests_key").on(table.requestKey),
     uniqueIndex("idx_ecommerce_checkout_requests_order").on(table.orderId),
+  ],
+);
+
+/**
+ * Transactional outbox for payment-adjacent notifications. Payloads carry only
+ * stable internal identifiers; a worker reloads current order details at send time.
+ */
+export const ecommerceNotificationJobs = pgTable(
+  "ecommerce_notification_jobs",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    type: text("type").notNull(),
+    status: text("status").notNull().default("queued"),
+    orderId: varchar("order_id")
+      .notNull()
+      .references(() => ecommerceOrders.id, { onDelete: "cascade" }),
+    deduplicationKey: varchar("deduplication_key", { length: 200 }).notNull(),
+    attemptCount: integer("attempt_count").notNull().default(0),
+    processingToken: varchar("processing_token"),
+    claimedAt: timestamp("claimed_at"),
+    nextAttemptAt: timestamp("next_attempt_at").notNull().defaultNow(),
+    sentAt: timestamp("sent_at"),
+    failedAt: timestamp("failed_at"),
+    lastErrorCode: varchar("last_error_code", { length: 120 }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_ecommerce_notification_jobs_deduplication").on(table.deduplicationKey),
+    index("idx_ecommerce_notification_jobs_ready").on(
+      table.status,
+      table.nextAttemptAt,
+      table.createdAt,
+    ),
+    index("idx_ecommerce_notification_jobs_order").on(table.orderId),
   ],
 );
 
@@ -1323,6 +1367,7 @@ export type InsertEcommerceCustomerAddress = z.infer<typeof insertEcommerceCusto
 export type EcommerceOrder = typeof ecommerceOrders.$inferSelect;
 export type InsertEcommerceOrder = z.infer<typeof insertEcommerceOrderSchema>;
 export type EcommerceCheckoutRequest = typeof ecommerceCheckoutRequests.$inferSelect;
+export type EcommerceNotificationJob = typeof ecommerceNotificationJobs.$inferSelect;
 export type EcommerceProcessedWebhookEvent = typeof ecommerceProcessedWebhookEvents.$inferSelect;
 export type EcommerceOrderItem = typeof ecommerceOrderItems.$inferSelect;
 export type InsertEcommerceOrderItem = z.infer<typeof insertEcommerceOrderItemSchema>;

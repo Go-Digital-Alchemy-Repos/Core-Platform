@@ -96,7 +96,7 @@ Current webhook behavior:
 - `refund.created` and `refund.updated` reconcile refund records and order payment status.
 - A successful handler marks the delivery `processed`; a thrown failure records bounded diagnostic text and returns an error so Stripe can retry.
 
-Paid-order reconciliation locks the order row and commits the paid status, coupon redemption, coupon usage counter, inventory decrements, and inventory adjustment records in one database transaction. Reprocessing the same order observes its existing redemption and inventory adjustments. The confirmation email is sent only after this transaction commits; durable email delivery and replay visibility remain an operations gate.
+Paid-order reconciliation locks the order row and commits the paid status, coupon redemption, coupon usage counter, inventory decrements, inventory adjustment records, and a deduplicated order-confirmation outbox record in one database transaction. Reprocessing the same order observes its existing redemption, inventory adjustments, and notification job. A worker reloads the order after commit and sends the receipt with bounded retry and failed-job visibility; refund, shipment, and order-status notifications remain separate delivery work.
 
 Refund creation locks the order and reserves refundable balance in a local refund row before calling a payment provider. Only one pending refund is allowed per order, and its local ID becomes Stripe's idempotency key and webhook metadata. An ambiguous provider timeout leaves that reservation pending, blocks another refund, and can be reconciled by the signed Stripe webhook through the local ID. Operators must resolve a pending refund before submitting another one.
 
