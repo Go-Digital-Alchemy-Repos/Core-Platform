@@ -1,5 +1,4 @@
 import { storage } from "../storage/index";
-import { sendEcommerceRefundEmail } from "./ecommerce-email.service";
 import {
   assertPaymentGatewayRefundReady,
   createPaymentGatewayRefund,
@@ -151,7 +150,6 @@ export async function createEcommerceRefund(params: {
     await storage.ecommerce.updateOrder(order.id, {
       paymentStatus: deriveRefundPaymentStatus(order, refundsForStatus),
     });
-    await sendEcommerceRefundEmail(refreshed, params.amount);
   }
   return refund;
 }

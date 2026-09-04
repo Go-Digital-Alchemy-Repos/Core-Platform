@@ -1541,7 +1541,22 @@ export class EcommerceStorage {
           attempt_count = attempt_count + 1,
           updated_at = ${now}
         WHERE id IN (SELECT id FROM candidate)
-        RETURNING *
+        RETURNING
+          id,
+          type,
+          status,
+          order_id AS "orderId",
+          refund_id AS "refundId",
+          deduplication_key AS "deduplicationKey",
+          attempt_count AS "attemptCount",
+          processing_token AS "processingToken",
+          claimed_at AS "claimedAt",
+          next_attempt_at AS "nextAttemptAt",
+          sent_at AS "sentAt",
+          failed_at AS "failedAt",
+          last_error_code AS "lastErrorCode",
+          created_at AS "createdAt",
+          updated_at AS "updatedAt"
       `);
       return result.rows[0] as EcommerceNotificationJob | undefined;
     });
@@ -1800,8 +1815,11 @@ export class EcommerceStorage {
   }
 
   async createRefund(data: InsertEcommerceRefund): Promise<EcommerceRefund> {
-    const [refund] = await db.insert(ecommerceRefunds).values(data).returning();
-    return refund;
+    return db.transaction(async (tx) => {
+      const [refund] = await tx.insert(ecommerceRefunds).values(data).returning();
+      await this.enqueueRefundNotification(tx, refund);
+      return refund;
+    });
   }
 
   async reserveRefund(data: InsertEcommerceRefund): Promise<EcommerceRefund> {
@@ -1851,6 +1869,7 @@ export class EcommerceStorage {
         });
       }
       const [refund] = await tx.insert(ecommerceRefunds).values(data).returning();
+      await this.enqueueRefundNotification(tx, refund);
       const paymentStatus =
         data.status === "pending"
           ? "refund_pending"
@@ -1869,12 +1888,32 @@ export class EcommerceStorage {
     id: string,
     data: Partial<InsertEcommerceRefund>,
   ): Promise<EcommerceRefund | undefined> {
-    const [refund] = await db
-      .update(ecommerceRefunds)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(ecommerceRefunds.id, id))
-      .returning();
-    return refund;
+    return db.transaction(async (tx) => {
+      const [refund] = await tx
+        .update(ecommerceRefunds)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(ecommerceRefunds.id, id))
+        .returning();
+      if (refund) await this.enqueueRefundNotification(tx, refund);
+      return refund;
+    });
+  }
+
+  private async enqueueRefundNotification(
+    tx: EcommerceDbTransaction,
+    refund: EcommerceRefund,
+  ): Promise<void> {
+    if (refund.status !== "processed") return;
+    await tx
+      .insert(ecommerceNotificationJobs)
+      .values({
+        type: "refund_confirmation",
+        status: "queued",
+        orderId: refund.orderId,
+        refundId: refund.id,
+        deduplicationKey: `refund_confirmation:${refund.id}`,
+      })
+      .onConflictDoNothing({ target: ecommerceNotificationJobs.deduplicationKey });
   }
 
   async getRefundByStripeRefundId(stripeRefundId: string): Promise<EcommerceRefund | undefined> {

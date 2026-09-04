@@ -1,6 +1,9 @@
 import { storage } from "../storage";
 import { logger } from "../utils/logger";
-import { sendEcommerceOrderConfirmation } from "./ecommerce-email.service";
+import {
+  sendEcommerceOrderConfirmation,
+  sendEcommerceRefundEmail,
+} from "./ecommerce-email.service";
 
 const CHECK_INTERVAL_MS = 30_000;
 const MAX_JOBS_PER_RUN = 25;
@@ -15,13 +18,20 @@ export function ecommerceNotificationRetryAt(attemptCount: number, now = new Dat
 async function dispatchEcommerceNotificationJob(job: {
   type: string;
   orderId: string;
+  refundId?: string | null;
 }): Promise<boolean> {
-  if (job.type !== "order_confirmation") {
-    throw new Error("unsupported_ecommerce_notification_type");
-  }
   const order = await storage.ecommerce.getOrderWithDetails(job.orderId);
   if (!order) throw new Error("ecommerce_notification_order_not_found");
-  return sendEcommerceOrderConfirmation(order);
+  if (job.type === "order_confirmation") return sendEcommerceOrderConfirmation(order);
+  if (job.type === "refund_confirmation") {
+    if (!job.refundId) throw new Error("ecommerce_notification_refund_not_found");
+    const refund = await storage.ecommerce.getRefund(job.refundId);
+    if (!refund || refund.orderId !== order.id || refund.status !== "processed") {
+      throw new Error("ecommerce_notification_refund_not_found");
+    }
+    return sendEcommerceRefundEmail(order, refund.amount);
+  }
+  throw new Error("unsupported_ecommerce_notification_type");
 }
 
 export async function runEcommerceNotificationJobs(now = new Date(), maxJobs = MAX_JOBS_PER_RUN) {

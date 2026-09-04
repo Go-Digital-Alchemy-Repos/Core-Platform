@@ -5,7 +5,9 @@ const mocks = vi.hoisted(() => ({
   complete: vi.fn(),
   retry: vi.fn(),
   getOrderWithDetails: vi.fn(),
+  getRefund: vi.fn(),
   sendConfirmation: vi.fn(),
+  sendRefund: vi.fn(),
 }));
 
 vi.mock("../storage", () => ({
@@ -15,12 +17,14 @@ vi.mock("../storage", () => ({
       completeEcommerceNotificationJob: mocks.complete,
       retryEcommerceNotificationJob: mocks.retry,
       getOrderWithDetails: mocks.getOrderWithDetails,
+      getRefund: mocks.getRefund,
     },
   },
 }));
 
 vi.mock("./ecommerce-email.service", () => ({
   sendEcommerceOrderConfirmation: mocks.sendConfirmation,
+  sendEcommerceRefundEmail: mocks.sendRefund,
 }));
 
 vi.mock("../utils/logger", () => ({
@@ -41,6 +45,13 @@ describe("ecommerce notification jobs", () => {
       customer: { email: "buyer@test" },
     });
     mocks.sendConfirmation.mockResolvedValue(true);
+    mocks.getRefund.mockResolvedValue({
+      id: "refund-1",
+      orderId: "order-1",
+      amount: 1250,
+      status: "processed",
+    });
+    mocks.sendRefund.mockResolvedValue(true);
   });
 
   it("delivers an atomically queued receipt and marks the claimed job sent", async () => {
@@ -89,6 +100,29 @@ describe("ecommerce notification jobs", () => {
       now,
     );
     expect(result).toEqual({ completed: 0, retried: 1, failed: 0 });
+  });
+
+  it("delivers a processed refund through the durable notification worker", async () => {
+    mocks.claim
+      .mockResolvedValueOnce({
+        id: "job-refund-1",
+        type: "refund_confirmation",
+        orderId: "order-1",
+        refundId: "refund-1",
+        processingToken: "claim-refund-1",
+        attemptCount: 1,
+      })
+      .mockResolvedValueOnce(undefined);
+
+    const { runEcommerceNotificationJobs } = await import("./ecommerce-notification-jobs.service");
+    const now = new Date("2026-09-04T00:00:00.000Z");
+    await expect(runEcommerceNotificationJobs(now)).resolves.toEqual({
+      completed: 1,
+      retried: 0,
+      failed: 0,
+    });
+    expect(mocks.sendRefund).toHaveBeenCalledWith(expect.objectContaining({ id: "order-1" }), 1250);
+    expect(mocks.complete).toHaveBeenCalledWith("job-refund-1", "claim-refund-1", now);
   });
 
   it("reports a dead-lettered job after the final attempt", async () => {

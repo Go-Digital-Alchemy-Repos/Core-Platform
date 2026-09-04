@@ -76,6 +76,10 @@ describe("runMigrations", () => {
       expect.stringContaining("0051_ecommerce_inventory_reservations.sql"),
       "utf8",
     );
+    expect(mockReadFile).toHaveBeenCalledWith(
+      expect.stringContaining("0052_ecommerce_refund_notification_jobs.sql"),
+      "utf8",
+    );
   });
 
   it("recognizes the default Drizzle journal schema on an existing database", async () => {

@@ -631,3 +631,19 @@ and budgets remain green.
   database was contacted.
 - **Risk carried forward:** live Stripe timeout, cancellation, and delayed-event behavior still needs sandbox
   evidence before a transaction-enabled client launch.
+- **Evidence update:** hosted GitHub Actions run `33844886692` passed the isolated PostgreSQL migration
+  verification, type-check, lint, formatting, tests, production build, and bundle budgets for the inventory
+  reservation candidate revision.
+
+### 2026-09-04 — Durable refund notifications
+
+- **Implemented:** processed refunds now enqueue a deduplicated `refund_confirmation` outbox job in the same
+  database transaction that creates or transitions the refund. The shared worker reloads the processed refund
+  before sending, and retries a failed email rather than marking the job sent. The notification timing columns
+  now retain time-zone information, which aligns database defaults with worker-supplied retry times.
+- **Evidence:** focused notification, email, refund, and migration suites passed 73 tests. A disposable
+  PostgreSQL 16 rehearsal applied all migrations, created a processed synthetic refund, claimed the queued
+  job with the correct order and refund IDs, and marked it sent. No client, Railway, Neon, Stripe, email
+  provider, or production database was contacted.
+- **Risk carried forward:** shipment and order-status notifications still need the durable delivery model;
+  provider sandbox evidence and delivery monitoring remain client-release gates.

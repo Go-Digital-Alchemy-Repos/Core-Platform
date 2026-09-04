@@ -91,11 +91,13 @@ export async function sendEcommerceShipmentEmail(
 export async function sendEcommerceRefundEmail(
   order: EcommerceOrderWithDetails,
   amount: number,
-): Promise<void> {
-  if (!order.customer?.email) return;
+): Promise<boolean> {
+  if (!order.customer?.email) return true;
   const html = await renderEmailShell(
     "Refund update",
     `<p>A refund of ${money(amount)} has been recorded for your order.</p>`,
   );
-  await sendEmail(order.customer.email, `Refund update #${order.id.slice(0, 8)}`, html);
+  const ok = await sendEmail(order.customer.email, `Refund update #${order.id.slice(0, 8)}`, html);
+  if (!ok) logger.email.warn("Failed to send ecommerce refund notification", { orderId: order.id });
+  return ok;
 }
