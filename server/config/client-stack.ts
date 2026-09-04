@@ -2,6 +2,7 @@ export interface ClientStackRequirements {
   ecommerce?: boolean;
   email?: boolean;
   backups?: boolean;
+  separatePublicAndAdminOrigins?: boolean;
 }
 
 export interface ClientStackValidationResult {
@@ -79,6 +80,25 @@ export function validateClientStackEnvironment(
   }
 
   const corePlatformOrigin = parseCanonicalOrigin(env.APP_URL, "APP_URL", errors);
+  let publicSiteOrigin: string | null = null;
+  let adminOrigin: string | null = null;
+
+  if (requirements.separatePublicAndAdminOrigins) {
+    requireVariables(env, ["PUBLIC_SITE_ORIGIN", "CORE_PLATFORM_ADMIN_ORIGIN"], errors);
+    publicSiteOrigin = parseCanonicalOrigin(env.PUBLIC_SITE_ORIGIN, "PUBLIC_SITE_ORIGIN", errors);
+    adminOrigin = parseCanonicalOrigin(
+      env.CORE_PLATFORM_ADMIN_ORIGIN,
+      "CORE_PLATFORM_ADMIN_ORIGIN",
+      errors,
+    );
+    if (publicSiteOrigin && adminOrigin && publicSiteOrigin === adminOrigin) {
+      errors.push("PUBLIC_SITE_ORIGIN and CORE_PLATFORM_ADMIN_ORIGIN must be distinct origins");
+    }
+    if (corePlatformOrigin && adminOrigin && corePlatformOrigin !== adminOrigin) {
+      errors.push("APP_URL must exactly match CORE_PLATFORM_ADMIN_ORIGIN for this topology");
+    }
+  }
+
   const trustedOrigins = (env.TRUSTED_ORIGINS || "")
     .split(",")
     .map((value) => value.trim())
@@ -94,6 +114,12 @@ export function validateClientStackEnvironment(
       .filter((origin): origin is string => Boolean(origin));
     if (corePlatformOrigin && !normalized.includes(corePlatformOrigin)) {
       errors.push("TRUSTED_ORIGINS must include the exact APP_URL origin");
+    }
+    if (publicSiteOrigin && !normalized.includes(publicSiteOrigin)) {
+      errors.push("TRUSTED_ORIGINS must include the exact PUBLIC_SITE_ORIGIN origin");
+    }
+    if (adminOrigin && !normalized.includes(adminOrigin)) {
+      errors.push("TRUSTED_ORIGINS must include the exact CORE_PLATFORM_ADMIN_ORIGIN origin");
     }
     if (new Set(normalized).size !== normalized.length) {
       errors.push("TRUSTED_ORIGINS must not contain duplicate origins");

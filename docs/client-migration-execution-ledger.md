@@ -373,6 +373,20 @@ and budgets remain green.
   create Railway infrastructure, or authorize cutover. The generated plan and observed verification evidence
   must be preserved in the client operations record before release review.
 
+### 2026-09-04 — Separate public/admin origin preflight
+
+- **Implemented:** the deployment preflight can now enforce the approved two-origin topology. When selected,
+  it requires distinct canonical `PUBLIC_SITE_ORIGIN` and `CORE_PLATFORM_ADMIN_ORIGIN` values, requires the
+  legacy `APP_URL` to match the admin origin, and requires both exact origins in `TRUSTED_ORIGINS`. The
+  checked flag is `--require-separate-origins`; the deployment runbook defines each variable's role.
+- **Evidence:** valid split topology, mismatched/identical/untrusted origins, and existing bootstrap policy
+  are covered by 15 focused tests. The CLI passed with a complete synthetic isolated-stack fixture using
+  ecommerce, email, backups, and the split-origin gate. TypeScript, lint, formatting, and whitespace checks
+  passed. No Railway variable, DNS record, client service, or credential was read or changed.
+- **Risk carried forward:** runtime login, proxy, preview, cookie, generated-link, and CORS/CSRF behavior
+  still require a client-approved staging configuration and browser evidence. This preflight rejects unsafe
+  configuration; it does not provision or validate a live topology.
+
 ### 2026-09-04 — WooCommerce isolated PostgreSQL rehearsal
 
 - **Environment:** disposable local PostgreSQL 16 container, created only for this rehearsal. Core's complete

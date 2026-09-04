@@ -1,7 +1,12 @@
 import { validateClientStackEnvironment } from "../config/client-stack";
 
 const flags = new Set(process.argv.slice(2));
-const allowedFlags = new Set(["--require-ecommerce", "--require-email", "--require-backups"]);
+const allowedFlags = new Set([
+  "--require-ecommerce",
+  "--require-email",
+  "--require-backups",
+  "--require-separate-origins",
+]);
 const unknownFlags = [...flags].filter((flag) => !allowedFlags.has(flag));
 
 if (unknownFlags.length > 0) {
@@ -12,6 +17,7 @@ if (unknownFlags.length > 0) {
     ecommerce: flags.has("--require-ecommerce"),
     email: flags.has("--require-email"),
     backups: flags.has("--require-backups"),
+    separatePublicAndAdminOrigins: flags.has("--require-separate-origins"),
   });
 
   if (result.errors.length > 0) {

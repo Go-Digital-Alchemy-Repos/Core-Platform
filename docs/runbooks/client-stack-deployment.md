@@ -60,15 +60,15 @@ observed evidence in the client operations record before a release review.
 3. Keep `railway.toml` health checking `/api/health/ready`; use Git-backed builds and immutable commit
    SHAs for release records.
 4. Configure the public domain, protected admin subdomain, and same-origin `/api` routing from the approved
-   integration contract and domain wizard record plan. Until that contract introduces distinct runtime
-   variables, `APP_URL` remains the current Core Platform service origin and every browser origin allowed
-   to call its API must appear in `TRUSTED_ORIGINS`. This compatibility rule is not sufficient evidence
-   for public/admin link, preview, cookie, or publishing behavior; those checks remain a launch gate.
+   integration contract and domain wizard record plan. For this topology, set `PUBLIC_SITE_ORIGIN` to the
+   public site, `CORE_PLATFORM_ADMIN_ORIGIN` to the protected dashboard, and retain `APP_URL` as the exact
+   admin origin for legacy Core Platform services. Both exact origins must appear once in `TRUSTED_ORIGINS`.
+   The preflight rejects missing, non-canonical, identical, mismatched, or untrusted origins.
 5. Set the variables below through Railway's secret/configuration controls. Never commit real values.
 6. Before deployment, run the same candidate configuration through the preflight:
 
    ```bash
-   npm run deploy:check -- --require-ecommerce --require-email --require-backups
+   npm run deploy:check -- --require-ecommerce --require-email --require-backups --require-separate-origins
    ```
 
    The command reports only missing or invalid variable names and non-secret identity/origin values.
@@ -80,7 +80,7 @@ observed evidence in the client operations record before a release review.
 | Identity          | `CLIENT_STACK_ID`                                                                                                                                                    |
 | Database          | Dedicated `DATABASE_URL`                                                                                                                                             |
 | Sessions/security | Unique 32+ character `SESSION_SECRET`, optional unique `CMS_PREVIEW_SECRET`, unique `SETUP_TOKEN` for first setup                                                    |
-| Domain/origins    | Public domain, admin subdomain, same-origin `/api` routing, DNS provider and manual operator, current `APP_URL`, exact `TRUSTED_ORIGINS`, certificate/routing status |
+| Domain/origins    | Public domain, admin subdomain, same-origin `/api` routing, DNS provider and manual operator, exact `PUBLIC_SITE_ORIGIN`, `CORE_PLATFORM_ADMIN_ORIGIN`, legacy-compatible `APP_URL` equal to the admin origin, exact `TRUSTED_ORIGINS`, certificate/routing status |
 | Stripe ecommerce  | Dedicated `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`; record account and test/live mode                                                  |
 | Email             | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`; SPF/DKIM/DMARC ownership evidence                                                                   |
 | Backups           | `SYSTEM_BACKUPS_ENABLED=true`, interval/retention settings, dedicated R2 credentials/bucket, `BACKUP_R2_PREFIX` containing `CLIENT_STACK_ID` as one path segment     |
