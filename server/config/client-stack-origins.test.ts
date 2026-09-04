@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildCorePlatformAdminUrl,
   buildPublicSiteUrl,
+  getEffectivePublicSiteOrigin,
   getCorePlatformAdminOrigin,
   getPublicSiteOrigin,
 } from "./client-stack-origins";
@@ -33,5 +34,19 @@ describe("client stack origins", () => {
 
     expect(getPublicSiteOrigin(env)).toBe("https://legacy.example.com");
     expect(getCorePlatformAdminOrigin(env)).toBe("https://legacy.example.com");
+  });
+
+  it("uses the configured public origin before persisted SEO settings", () => {
+    const env = {
+      APP_URL: "https://admin.example.com",
+      PUBLIC_SITE_ORIGIN: "https://preview.example.com",
+    } as NodeJS.ProcessEnv;
+
+    expect(getEffectivePublicSiteOrigin("https://previous-client.example.com", env)).toBe(
+      "https://preview.example.com",
+    );
+    expect(getEffectivePublicSiteOrigin("https://previous-client.example.com", {})).toBe(
+      "https://previous-client.example.com",
+    );
   });
 });

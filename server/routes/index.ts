@@ -41,6 +41,7 @@ import {
 } from "../middleware/site-features";
 import { searchPublicSite } from "../services/public-search.service";
 import { buildRobotsTxtPayload } from "../services/robots-txt.service";
+import { getEffectivePublicSiteOrigin } from "../config/client-stack-origins";
 import { storage } from "../storage/index";
 import { getEventPath } from "@shared/event-url";
 import {
@@ -254,7 +255,7 @@ export function registerApiRoutes(app: Express) {
           storage.portfolio.getProjects({ publicOnly: true }),
         ]);
 
-      const base = seoSettings?.siteUrl?.replace(/\/$/, "") || "";
+      const base = getEffectivePublicSiteOrigin(seoSettings?.siteUrl) || "";
 
       const urls: Array<{ loc: string; lastmod?: string; changefreq?: string; priority?: string }> =
         [];

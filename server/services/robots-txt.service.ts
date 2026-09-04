@@ -1,4 +1,5 @@
 import type { SeoSettings } from "@shared/schema";
+import { getEffectivePublicSiteOrigin } from "../config/client-stack-origins";
 
 export interface RobotsTxtPayload {
   generatedContent: string;
@@ -7,7 +8,7 @@ export interface RobotsTxtPayload {
 }
 
 export function buildDefaultRobotsTxt(seoSettings?: SeoSettings | null) {
-  const siteUrl = seoSettings?.siteUrl?.replace(/\/$/, "") || "";
+  const siteUrl = getEffectivePublicSiteOrigin(seoSettings?.siteUrl) || "";
   const noindexAll = seoSettings?.defaultRobotsNoindex ?? false;
 
   const lines: string[] = [];

@@ -22,6 +22,14 @@ export function getPublicSiteOrigin(env: NodeJS.ProcessEnv = process.env): strin
   return parseOrigin(env.PUBLIC_SITE_ORIGIN) ?? parseOrigin(env.APP_URL);
 }
 
+/** The environment owns the deployed public origin; stored SEO data is only a legacy fallback. */
+export function getEffectivePublicSiteOrigin(
+  seoSiteUrl?: string | null,
+  env: NodeJS.ProcessEnv = process.env,
+): string | null {
+  return getPublicSiteOrigin(env) ?? parseOrigin(seoSiteUrl ?? undefined);
+}
+
 export function getCorePlatformAdminOrigin(env: NodeJS.ProcessEnv = process.env): string | null {
   return parseOrigin(env.CORE_PLATFORM_ADMIN_ORIGIN) ?? parseOrigin(env.APP_URL);
 }

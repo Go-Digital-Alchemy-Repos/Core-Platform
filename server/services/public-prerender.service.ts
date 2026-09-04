@@ -2,6 +2,7 @@ import sanitizeHtml from "sanitize-html";
 import type { BlogPost, CmsPage, EcommerceProduct, Event, SeoSettings } from "@shared/schema";
 import { getEventPath } from "@shared/event-url";
 import { storage } from "../storage";
+import { getEffectivePublicSiteOrigin } from "../config/client-stack-origins";
 import { getDirectorySettings } from "./directory-settings.service";
 
 interface PublicHtmlSnapshot {
@@ -609,7 +610,7 @@ export async function getPublicHtmlSnapshot(
   }
 
   const seo = (await storage.seoSettings.get()) ?? null;
-  const siteUrl = (seo?.siteUrl || "").replace(/\/$/, "") || "https://coreplatform.com";
+  const siteUrl = getEffectivePublicSiteOrigin(seo?.siteUrl) || "https://coreplatform.com";
 
   if (pathname === "/search") {
     const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);

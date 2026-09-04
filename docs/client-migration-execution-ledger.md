@@ -1004,3 +1004,14 @@ and budgets remain green.
   its required operational and content evidence is present.
 - **Safety boundary:** recording authorization does not create infrastructure, provide a release window,
   satisfy any pending gate, authorize a deployment, or access client or production systems.
+
+### 2026-09-04 — Per-deployment public-origin template hardening
+
+- **Implemented:** public prerendering, JSON-LD, `robots.txt`, sitemap generation, and product feeds now
+  use the configured per-deployment public origin before any persisted SEO site URL. This prevents a new
+  Railway deployment from inheriting canonical or feed URLs from a prior site's stored settings.
+- **Evidence:** focused origin, prerender, robots, and product-feed coverage passed 18 tests; TypeScript,
+  lint, and formatting passed. The existing temporary Railway endpoint returned HTTP 200 for both the
+  application route and `/api/health/ready`, with its database connected.
+- **Safety boundary:** the Railway checks were read-only. No deployment, environment-variable change, DNS
+  mutation, client-data access, backup, restore, or production release was performed.
