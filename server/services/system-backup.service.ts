@@ -80,6 +80,15 @@ function quoteIdent(identifier: string) {
   return `"${identifier.replace(/"/g, '""')}"`;
 }
 
+export function serializeRestoreValue(
+  value: unknown,
+  jsonColumns: ReadonlySet<string>,
+  column: string,
+) {
+  if (value === null || value === undefined || !jsonColumns.has(column)) return value ?? null;
+  return JSON.stringify(value);
+}
+
 function parsePositiveInt(value: string | undefined, fallback: number): number {
   const parsed = Number.parseInt(value ?? "", 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
@@ -432,6 +441,15 @@ export async function restoreBackupSnapshot(
 
       const columns = Object.keys(table.rows[0]);
       if (columns.length === 0) continue;
+      const jsonColumnResult = await client.query<{ column_name: string }>(
+        `SELECT column_name
+         FROM information_schema.columns
+         WHERE table_schema = 'public'
+           AND table_name = $1
+           AND data_type IN ('json', 'jsonb')`,
+        [tableName],
+      );
+      const jsonColumns = new Set(jsonColumnResult.rows.map((row) => row.column_name));
 
       const chunkSize = 100;
       for (let offset = 0; offset < table.rows.length; offset += chunkSize) {
@@ -439,7 +457,9 @@ export async function restoreBackupSnapshot(
         const values: unknown[] = [];
         const placeholders = chunk.map((row, rowIndex) => {
           const rowPlaceholders = columns.map((column, columnIndex) => {
-            values.push((row as Record<string, unknown>)[column] ?? null);
+            values.push(
+              serializeRestoreValue((row as Record<string, unknown>)[column], jsonColumns, column),
+            );
             return `$${rowIndex * columns.length + columnIndex + 1}`;
           });
           return `(${rowPlaceholders.join(", ")})`;

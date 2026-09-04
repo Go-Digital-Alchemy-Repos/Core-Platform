@@ -18,7 +18,7 @@ Deliverables:
 - [x] Adopt one application/database/config/storage/provider/operations boundary per client.
 - [x] Add a secret-safe deployment configuration preflight.
 - [x] Add stack identity to newly created backup manifests.
-- [ ] Exercise a restore into a disposable duplicate environment and verify stack identity.
+- [x] Exercise a synthetic restore into a disposable duplicate environment and verify stack identity.
 - [ ] Add a checked, versioned infrastructure provisioning workflow when the first client's inputs exist.
 
 Launch gate: deployment preflight, migration, backup creation, restore drill, rollback drill, health

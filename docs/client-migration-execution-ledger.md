@@ -439,11 +439,14 @@ and budgets remain green.
   business/technical/operations evidence. The Better Farms record is deliberately a draft with pending
   database, backup, restore, health, security, and import gates.
 - **Evidence:** exact match, missing target, mismatch, and legacy restore-policy tests pass; release-manifest
-  schema tests and Better Farms draft validation pass. No restore, deployment, Railway configuration, DNS
-  mutation, provider call, or client-data access occurred.
-- **Risk carried forward:** a client-approved duplicate-environment restore drill, actual stack origins,
-  browser/routing evidence, backup provenance, remaining operational gates, and named approvals are still
-  required before the manifest can be approved or a release considered.
+  schema tests and Better Farms draft validation pass. A disposable PostgreSQL 16 source/target drill first
+  rejected a mismatched target identity without changing the destination, then restored an exact-match
+  synthetic snapshot containing a JSON menu array and settings record. The drill uncovered and fixed JSON
+  array serialization during restore. No Railway configuration, DNS mutation, provider call, or client data
+  access occurred.
+- **Risk carried forward:** a client-approved duplicate-environment restore using its actual protected
+  snapshot, actual stack origins, browser/routing evidence, backup provenance, remaining operational gates,
+  and named approvals are still required before the manifest can be approved or a release considered.
 
 ### 2026-09-04 — Better Farms authenticated form handoff
 
