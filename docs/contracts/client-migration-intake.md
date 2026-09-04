@@ -8,6 +8,11 @@ It records the approved pilot routes and exclusions, non-secret source-access re
 dispositions, recovery objectives, named operational roles, and release blockers. It does not store an
 export, endpoint credentials, database URLs, API keys, or registrar credentials.
 
+When a pilot has no source system available, record `sourceAccess.system` as `none` and
+`sourceAccess.accessMode` as `not-applicable`. Its migration history policy must be `none`, every entity
+must be excluded, and the paired release manifest's import gate must be `not-required`. The combined
+pilot-contract verifier rejects either record when those decisions disagree.
+
 An intake may stay `draft` while decisions are outstanding. It cannot validate as `approved` until it has
 protected source access, an approved scope and migration policy, numeric RPO/RTO objectives, an approved
 release state, no remaining release blockers, and business, technical, and operations approver roles.

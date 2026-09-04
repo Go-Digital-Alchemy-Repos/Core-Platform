@@ -112,4 +112,30 @@ describe("client pilot contract verification", () => {
       message: "must match the client-site manifest source revision",
     });
   });
+
+  it("rejects a disabled import gate unless the intake explicitly excludes all migration", async () => {
+    const siteRoot = await createSiteRoot();
+    const modifiedIntakePath = await copyFixture("intake.json", intakePath);
+    const intake = JSON.parse(await readFile(modifiedIntakePath, "utf8")) as Record<
+      string,
+      unknown
+    >;
+    const dataMigration = intake.dataMigration as Record<string, unknown>;
+    dataMigration.historyPolicy = "catalog-only";
+    await writeFile(modifiedIntakePath, JSON.stringify(intake));
+
+    const result = await verifyClientPilotContract({
+      manifestPath,
+      intakePath: modifiedIntakePath,
+      releaseManifestPath,
+      siteRoot,
+      corePlatformVersion: "1.0.0",
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual({
+      path: "release.gates.import",
+      message: "an import gate marked not-required requires a no-import intake",
+    });
+  });
 });

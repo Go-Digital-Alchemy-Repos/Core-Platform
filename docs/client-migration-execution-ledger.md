@@ -982,3 +982,17 @@ and budgets remain green.
   `--require-ecommerce` exited `2` with only the duplicate-option error.
 - **Safety boundary:** validation used no deployment environment, manifest, client system, Railway service,
   DNS record, backup, restore, or production operation.
+
+### 2026-09-04 — Better Farms no-import pilot decision
+
+- **Decision recorded:** the client confirmed that no WooCommerce site is ready for import. Better Farms is
+  therefore a site-only pilot: catalog, media, customer, and order imports are excluded; no client source
+  data is accessed; and the import release gate is explicitly not required.
+- **Implemented:** the combined pilot-contract verifier now requires a disabled import gate to pair with an
+  intake that records no source system, no migration history, and only excluded entity dispositions. It
+  rejects either record when that no-import decision is inconsistent.
+- **Evidence:** focused intake, release-manifest, and combined-pilot coverage passed 14 tests. The Better
+  Farms manifests and pinned site checkout pass their combined contract verifier. Release readiness now
+  omits import but remains fail-closed on the remaining infrastructure, content, and approval evidence.
+- **Safety boundary:** no WooCommerce endpoint, export, client data, Railway service, DNS record, backup,
+  restore, or production operation was accessed.

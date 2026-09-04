@@ -25,6 +25,10 @@ describe("client migration intake", () => {
   it("fails closed when an approved intake leaves a required decision unresolved", async () => {
     const input = await fixture();
     input.status = "approved";
+    const sourceAccess = input.sourceAccess as Record<string, unknown>;
+    sourceAccess.accessMode = "pending";
+    const dataMigration = input.dataMigration as Record<string, unknown>;
+    dataMigration.status = "pending";
 
     const result = validateClientMigrationIntake(input);
 

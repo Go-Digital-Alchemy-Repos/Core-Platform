@@ -34,7 +34,12 @@
     { "id": "monitoring", "required": true, "status": "pending" },
     { "id": "content", "required": true, "status": "pending" },
     { "id": "transactions", "required": false, "status": "not-required" },
-    { "id": "import", "required": true, "status": "pending" }
+    {
+      "id": "import",
+      "required": false,
+      "status": "not-required",
+      "evidenceReference": "better-farms-no-woocommerce-source-2026-09-04"
+    }
   ],
   "approvals": []
 }

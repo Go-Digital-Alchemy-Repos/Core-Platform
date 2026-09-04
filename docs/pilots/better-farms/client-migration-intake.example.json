@@ -6,29 +6,66 @@
     "displayName": "Better Farms Foundation"
   },
   "sourceAccess": {
-    "system": "woocommerce",
-    "ownerReference": "client-designated data owner required",
-    "accessMode": "pending",
-    "reference": "protected source export or read-only source endpoint required",
+    "system": "none",
+    "ownerReference": "client decision recorded 2026-09-04",
+    "accessMode": "not-applicable",
+    "reference": "No WooCommerce site is ready for import; source import is excluded from this pilot.",
     "credentialsStored": false
   },
   "pilotScope": {
-    "routeIds": ["home", "about", "how-it-works", "contact", "for-farmers", "fund-a-farm", "get-involved"],
-    "excludedCapabilities": ["live ecommerce checkout", "customer and order history import", "production DNS cutover"],
-    "successMeasures": ["approved representative page and form behavior", "reconciled catalog-only rehearsal", "approved rollback evidence"],
-    "status": "pending"
+    "routeIds": [
+      "home",
+      "about",
+      "how-it-works",
+      "contact",
+      "for-farmers",
+      "fund-a-farm",
+      "get-involved"
+    ],
+    "excludedCapabilities": [
+      "live ecommerce checkout",
+      "WooCommerce catalog and media import",
+      "customer and order history import",
+      "production DNS cutover"
+    ],
+    "successMeasures": [
+      "approved representative page and form behavior",
+      "approved rollback evidence",
+      "no client source data imported"
+    ],
+    "status": "approved"
   },
   "dataMigration": {
     "entities": [
-      { "id": "categories", "disposition": "included", "rationale": "Phase 1 catalog migration." },
-      { "id": "products", "disposition": "included", "rationale": "Phase 1 catalog migration." },
-      { "id": "customers", "disposition": "excluded", "rationale": "Not part of the pilot without written approval." },
-      { "id": "orders", "disposition": "excluded", "rationale": "Not part of the pilot without written approval." },
-      { "id": "media", "disposition": "decision-required", "rationale": "Requires source audit and rights confirmation." }
+      {
+        "id": "categories",
+        "disposition": "excluded",
+        "rationale": "No WooCommerce source is available for this pilot."
+      },
+      {
+        "id": "products",
+        "disposition": "excluded",
+        "rationale": "No WooCommerce source is available for this pilot."
+      },
+      {
+        "id": "customers",
+        "disposition": "excluded",
+        "rationale": "Customer history is excluded from this pilot."
+      },
+      {
+        "id": "orders",
+        "disposition": "excluded",
+        "rationale": "Order history is excluded from this pilot."
+      },
+      {
+        "id": "media",
+        "disposition": "excluded",
+        "rationale": "No source media is available for this pilot."
+      }
     ],
-    "historyPolicy": "catalog-only",
-    "reconciliationOwner": "client-designated reconciliation owner required",
-    "status": "pending"
+    "historyPolicy": "none",
+    "reconciliationOwner": "not applicable: no source import is in pilot scope",
+    "status": "approved"
   },
   "operations": {
     "dnsOperator": "client-designated DNS operator required",
@@ -41,7 +78,12 @@
     "release": {
       "status": "blocked",
       "approverRoles": ["business", "technical", "operations"],
-      "blockers": ["source access and source audit", "approved scope and exclusions", "recovery objectives", "DNS and release owners", "sandbox and production-like evidence"]
+      "blockers": [
+        "recovery objectives",
+        "DNS and release owners",
+        "sandbox and production-like evidence",
+        "approved content and accessibility evidence"
+      ]
     }
   }
 }

@@ -100,6 +100,31 @@ export async function verifyClientPilotContract(params: {
       });
     }
   });
+  const importGate = release.gates.find((gate) => gate.id === "import");
+  const noImportPilot =
+    intake.sourceAccess.system === "none" && intake.sourceAccess.accessMode === "not-applicable";
+  const noImportMigrationPolicy =
+    intake.dataMigration.historyPolicy === "none" &&
+    intake.dataMigration.entities.every((entity) => entity.disposition === "excluded");
+
+  if (noImportPilot && !noImportMigrationPolicy) {
+    errors.push({
+      path: "dataMigration",
+      message: "a no-import intake requires no history and excluded entity dispositions",
+    });
+  }
+  if (importGate && !importGate.required && (!noImportPilot || !noImportMigrationPolicy)) {
+    errors.push({
+      path: "release.gates.import",
+      message: "an import gate marked not-required requires a no-import intake",
+    });
+  }
+  if (noImportPilot && importGate?.required) {
+    errors.push({
+      path: "release.gates.import",
+      message: "a no-import intake requires an import gate marked not-required",
+    });
+  }
   if (intake.status === "approved" && manifest.status !== "approved") {
     errors.push({
       path: "status",
