@@ -1246,7 +1246,13 @@ export class EcommerceStorage {
 
   async settlePaidOrder(
     orderId: string,
-    paymentIntentId: string,
+    paymentIntentId: string | null,
+    manualPayment?: {
+      method: string;
+      reference?: string | null;
+      markedBy?: string | null;
+      markedAt?: Date;
+    },
   ): Promise<{ order: EcommerceOrder | undefined; transitioned: boolean }> {
     return db.transaction(async (tx) => {
       await tx.execute(sql`SELECT id FROM ecommerce_orders WHERE id = ${orderId} FOR UPDATE`);
@@ -1255,19 +1261,31 @@ export class EcommerceStorage {
         .from(ecommerceOrders)
         .where(eq(ecommerceOrders.id, orderId));
       if (!existing) return { order: undefined, transitioned: false };
-      if (existing.stripePaymentIntentId && existing.stripePaymentIntentId !== paymentIntentId) {
+      if (
+        paymentIntentId &&
+        existing.stripePaymentIntentId &&
+        existing.stripePaymentIntentId !== paymentIntentId
+      ) {
         throw new Error("PaymentIntent does not match this order");
       }
 
       const transitioned = existing.status !== "paid" || existing.paymentStatus !== "paid";
       let order = existing;
-      if (transitioned) {
+      if (transitioned || manualPayment) {
         const [updated] = await tx
           .update(ecommerceOrders)
           .set({
             status: "paid",
             paymentStatus: "paid",
-            stripePaymentIntentId: paymentIntentId,
+            ...(paymentIntentId ? { stripePaymentIntentId: paymentIntentId } : {}),
+            ...(manualPayment
+              ? {
+                  manualPaymentMethod: manualPayment.method,
+                  manualPaymentReference: manualPayment.reference ?? null,
+                  manualPaymentMarkedBy: manualPayment.markedBy ?? null,
+                  manualPaymentMarkedAt: manualPayment.markedAt ?? new Date(),
+                }
+              : {}),
             updatedAt: new Date(),
           })
           .where(eq(ecommerceOrders.id, orderId))

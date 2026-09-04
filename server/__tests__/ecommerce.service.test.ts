@@ -2465,7 +2465,7 @@ describe("ecommerce services", () => {
       paymentStatus: "paid",
     } as EcommerceOrder;
     mockGetOrder.mockResolvedValue(pendingOrder);
-    mockUpdateOrder.mockResolvedValue(paidOrder);
+    mockSettlePaidOrder.mockResolvedValue({ order: paidOrder, transitioned: true });
     mockGetOrderWithDetails.mockResolvedValue({
       ...paidOrder,
       customer: null,
@@ -2478,12 +2478,13 @@ describe("ecommerce services", () => {
     const order = await updateAdminEcommerceOrder("order-admin-1", { status: "paid" });
 
     expect(order).toBe(paidOrder);
-    expect(mockUpdateOrder).toHaveBeenCalledWith("order-admin-1", {
-      status: "paid",
-      paymentStatus: "paid",
+    expect(mockSettlePaidOrder).toHaveBeenCalledWith("order-admin-1", null, {
+      method: "other",
+      reference: undefined,
+      markedBy: null,
     });
-    expect(mockRecordCouponRedemptionForOrder).toHaveBeenCalledWith("order-admin-1");
-    expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledWith("order-admin-1");
+    expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
+    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
     expect(mockSendEcommerceOrderStatusEmail).toHaveBeenCalledTimes(1);
   });
 
@@ -2495,7 +2496,7 @@ describe("ecommerce services", () => {
       paymentStatus: "paid",
     } as EcommerceOrder;
     mockGetOrder.mockResolvedValue(paidOrder);
-    mockUpdateOrder.mockResolvedValue(paidOrder);
+    mockSettlePaidOrder.mockResolvedValue({ order: paidOrder, transitioned: false });
 
     await updateAdminEcommerceOrder(
       "order-admin-2",
@@ -2503,18 +2504,19 @@ describe("ecommerce services", () => {
       { id: "admin-1" },
     );
 
-    expect(mockUpdateOrder).toHaveBeenCalledWith("order-admin-2", {
-      status: "paid",
-      notes: "Already handled",
-      paymentStatus: "paid",
+    expect(mockSettlePaidOrder).toHaveBeenCalledWith("order-admin-2", null, {
+      method: "other",
+      reference: undefined,
+      markedBy: "admin-1",
     });
+    expect(mockUpdateOrder).toHaveBeenCalledWith("order-admin-2", { notes: "Already handled" });
     expect(mockCreateOrderNote).toHaveBeenCalledWith({
       orderId: "order-admin-2",
       authorId: "admin-1",
       body: "Already handled",
     });
-    expect(mockRecordCouponRedemptionForOrder).toHaveBeenCalledWith("order-admin-2");
-    expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledWith("order-admin-2");
+    expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
+    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
     expect(mockSendEcommerceOrderStatusEmail).not.toHaveBeenCalled();
   });
 
@@ -2923,6 +2925,11 @@ describe("ecommerce services", () => {
       updatedAt: new Date(),
     });
 
+    mockSettlePaidOrder.mockResolvedValue({
+      order: { id: "order-manual-1", status: "paid", paymentStatus: "paid" },
+      transitioned: true,
+    });
+
     const order = await createManualEcommerceOrder({
       customerId: customer.id,
       items: [{ productId: "p-manual", quantity: 2 }],
@@ -2933,8 +2940,8 @@ describe("ecommerce services", () => {
     expect(mockCreateOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         customerId: customer.id,
-        status: "paid",
-        paymentStatus: "paid",
+        status: "pending",
+        paymentStatus: "unpaid",
         subtotalAmount: 5000,
         totalAmount: 5000,
         isManualOrder: true,
@@ -2951,8 +2958,13 @@ describe("ecommerce services", () => {
         }),
       ],
     );
-    expect(mockRecordCouponRedemptionForOrder).toHaveBeenCalledWith("order-manual-1");
-    expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledWith("order-manual-1");
+    expect(mockSettlePaidOrder).toHaveBeenCalledWith("order-manual-1", null, {
+      method: "other",
+      reference: undefined,
+      markedBy: null,
+    });
+    expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
+    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
   });
 
   it("rejects manual orders for unknown customers before creating orders", async () => {
@@ -2967,6 +2979,41 @@ describe("ecommerce services", () => {
     ).rejects.toThrow(/Customer not found/);
 
     expect(mockCreateOrder).not.toHaveBeenCalled();
+    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
+  });
+
+  it("keeps a newly created manual order pending when atomic paid settlement fails", async () => {
+    const { createManualEcommerceOrder } = await import("../services/ecommerce-order.service");
+    const customer = { id: "customer-1", email: "buyer@example.com", name: "Buyer" };
+    seedManualOrderProduct();
+    mockGetCustomer.mockResolvedValue(customer);
+    mockCreateOrder.mockResolvedValue({
+      id: "order-settlement-failed",
+      customerId: customer.id,
+      status: "pending",
+      paymentStatus: "unpaid",
+      totalAmount: 2500,
+      customer,
+      items: [],
+      refunds: [],
+      shipments: [],
+      fulfillments: [],
+      internalNotes: [],
+    });
+    mockSettlePaidOrder.mockRejectedValue(new Error("Insufficient inventory for variant v-manual"));
+
+    await expect(
+      createManualEcommerceOrder({
+        customerId: customer.id,
+        items: [{ productId: "p-manual", quantity: 1 }],
+      }),
+    ).rejects.toThrow(/Insufficient inventory/);
+
+    expect(mockCreateOrder).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "pending", paymentStatus: "unpaid" }),
+      expect.any(Array),
+    );
+    expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
     expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
   });
 
@@ -3103,7 +3150,7 @@ describe("ecommerce services", () => {
       status: "paid",
       paymentStatus: "paid",
     } as EcommerceOrder;
-    mockUpdateOrder.mockResolvedValue(paidOrder);
+    mockSettlePaidOrder.mockResolvedValue({ order: paidOrder, transitioned: true });
     mockGetOrderWithDetails.mockResolvedValue({
       ...paidOrder,
       customer: null,
@@ -3123,20 +3170,18 @@ describe("ecommerce services", () => {
       { id: "admin-1" },
     );
 
-    expect(mockUpdateOrder).toHaveBeenCalledWith(
-      "order-manual-paid",
-      expect.objectContaining({
-        status: "paid",
-        paymentStatus: "paid",
-        manualPaymentMethod: "cash",
-        manualPaymentReference: "receipt-12",
-        manualPaymentMarkedBy: "admin-1",
-      }),
-    );
+    expect(mockSettlePaidOrder).toHaveBeenCalledWith("order-manual-paid", null, {
+      method: "cash",
+      reference: "receipt-12",
+      markedBy: "admin-1",
+    });
     expect(mockCreateOrderNote).toHaveBeenCalledWith(
       expect.objectContaining({ body: "Paid at counter" }),
     );
-    expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledWith("order-manual-paid");
+    expect(mockUpdateOrder).toHaveBeenCalledWith("order-manual-paid", {
+      notes: "Paid at counter",
+    });
+    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
   });
 
   it("requires a reason for standalone custom payment requests", async () => {

@@ -447,3 +447,16 @@ and budgets remain green.
 - **Preflight:** client-form releases must include `--require-client-form-proxy`; it verifies that the Core
   stack has its server-side proxy token without printing its value. The paired Better Farms server token is
   recorded only as a required contract reference and must be configured separately during an approved setup.
+
+### 2026-09-04 — Atomic manual ecommerce payment settlement
+
+- **Implemented:** manual paid-order creation, an administrator marking an order paid, and an administrator
+  changing an order to paid now all use the same order-locked settlement transaction as Stripe payment
+  completion. The transaction writes paid status and manual payment evidence together with coupon redemption
+  and guarded inventory adjustment. A failure leaves a newly created manual order pending and unpaid.
+- **Evidence:** focused ecommerce tests cover each admin/manual route and the failure-safe pending state. A
+  fresh disposable local PostgreSQL 16 instance ran the full migration sequence: one manual settlement wrote
+  paid status and a single stock adjustment, while an insufficient-stock settlement left its order pending
+  and wrote no adjustment. No client, Railway, Stripe, or production database was contacted.
+- **Risk carried forward:** provider-backed payment, email/jobs/replay, customer reconciliation, and Stripe
+  sandbox concurrency evidence remain required before enabling a live ecommerce release.

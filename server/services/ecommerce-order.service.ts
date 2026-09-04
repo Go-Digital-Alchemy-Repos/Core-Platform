@@ -127,9 +127,14 @@ const excludedFulfillmentStatuses = new Set(["cancelled", "canceled", "failed"])
 
 const shippablePaymentStatuses = new Set(["paid", "partially_refunded"]);
 const fulfillmentCompleteStatuses = new Set(["shipped", "delivered"]);
+const manualPaymentMethods = new Set(["cash", "external_card", "check", "other"]);
 
 function httpError(message: string, statusCode: number) {
   return Object.assign(new Error(message), { statusCode });
+}
+
+function normalizeManualPaymentMethod(value: string | null | undefined) {
+  return value && manualPaymentMethods.has(value) ? value : "other";
 }
 
 function splitCustomerName(name: string) {
@@ -698,8 +703,8 @@ export async function createManualEcommerceOrderDraft(
   const order = await storage.ecommerce.createOrder(
     {
       customerId: customer.id,
-      status: isPaid ? "paid" : "pending",
-      paymentStatus: isPaid ? "paid" : isPaymentLink ? "pending_payment" : "unpaid",
+      status: "pending",
+      paymentStatus: isPaymentLink ? "pending_payment" : "unpaid",
       subtotalAmount: priced.subtotalAmount,
       totalAmount,
       taxAmount: priced.taxAmount,
@@ -709,14 +714,10 @@ export async function createManualEcommerceOrderDraft(
       couponSnapshot: buildCouponSnapshot(priced.coupon),
       isManualOrder: true,
       fulfillmentMode: data.fulfillmentMode,
-      manualPaymentMethod: isPaid
-        ? (data.manualPaymentMethod ?? "other")
-        : isPaymentLink
-          ? "payment_link"
-          : null,
-      manualPaymentReference: data.manualPaymentReference,
-      manualPaymentMarkedBy: isPaid ? (actor?.id ?? null) : null,
-      manualPaymentMarkedAt: isPaid ? new Date() : null,
+      manualPaymentMethod: isPaymentLink ? "payment_link" : null,
+      manualPaymentReference: isPaymentLink ? data.manualPaymentReference : null,
+      manualPaymentMarkedBy: null,
+      manualPaymentMarkedAt: null,
       notes: data.notes,
       shippingName: customer.name,
       shippingAddress: customer.address,
@@ -731,8 +732,12 @@ export async function createManualEcommerceOrderDraft(
   );
 
   if (isPaid) {
-    await storage.ecommerce.recordCouponRedemptionForOrder(order.id);
-    await storage.ecommerce.deductInventoryForPaidOrder(order.id);
+    const settlement = await storage.ecommerce.settlePaidOrder(order.id, null, {
+      method: normalizeManualPaymentMethod(data.manualPaymentMethod),
+      reference: data.manualPaymentReference,
+      markedBy: actor?.id ?? null,
+    });
+    if (!settlement.order) throw new Error("Failed to settle manual ecommerce order");
   }
 
   let paymentLink: Awaited<ReturnType<typeof createPaymentLinkForOrder>> | null = null;
@@ -803,15 +808,12 @@ export async function markManualEcommerceOrderPaid(
   actor?: Pick<User, "id"> | null,
 ) {
   const data = manualPaymentSchema.parse(input);
-  const order = await storage.ecommerce.updateOrder(orderId, {
-    status: "paid",
-    paymentStatus: "paid",
-    manualPaymentMethod: data.method,
-    manualPaymentReference: data.reference,
-    manualPaymentMarkedBy: actor?.id ?? null,
-    manualPaymentMarkedAt: new Date(),
-    notes: data.notes || undefined,
+  const settlement = await storage.ecommerce.settlePaidOrder(orderId, null, {
+    method: data.method,
+    reference: data.reference,
+    markedBy: actor?.id ?? null,
   });
+  const order = settlement.order;
   if (!order) return undefined;
   if (data.notes?.trim()) {
     await storage.ecommerce.createOrderNote({
@@ -820,8 +822,9 @@ export async function markManualEcommerceOrderPaid(
       body: data.notes.trim(),
     });
   }
-  await storage.ecommerce.recordCouponRedemptionForOrder(orderId);
-  await storage.ecommerce.deductInventoryForPaidOrder(orderId);
+  if (data.notes?.trim()) {
+    await storage.ecommerce.updateOrder(orderId, { notes: data.notes.trim() });
+  }
   return storage.ecommerce.getOrderWithDetails(orderId);
 }
 
@@ -895,12 +898,19 @@ export async function updateAdminEcommerceOrder(
   assertAdminOrderStatusTransition(previous, data.status);
 
   const noteBody = data.notes?.trim();
-  const updateData = {
-    status: data.status,
-    notes: noteBody || undefined,
-    paymentStatus: data.status === "paid" ? ("paid" as const) : undefined,
-  };
-  const order = await storage.ecommerce.updateOrder(orderId, updateData);
+  const order =
+    data.status === "paid"
+      ? (
+          await storage.ecommerce.settlePaidOrder(orderId, null, {
+            method: normalizeManualPaymentMethod(previous.manualPaymentMethod),
+            reference: previous.manualPaymentReference,
+            markedBy: actor?.id ?? null,
+          })
+        ).order
+      : await storage.ecommerce.updateOrder(orderId, {
+          status: data.status,
+          notes: noteBody || undefined,
+        });
   if (!order) return undefined;
 
   if (noteBody) {
@@ -909,13 +919,12 @@ export async function updateAdminEcommerceOrder(
       authorId: actor?.id ?? null,
       body: noteBody,
     });
+    if (data.status === "paid") {
+      await storage.ecommerce.updateOrder(order.id, { notes: noteBody });
+    }
   }
 
   const changedStatus = Boolean(data.status && previous.status !== data.status);
-  if (data.status === "paid") {
-    await storage.ecommerce.recordCouponRedemptionForOrder(order.id);
-    await storage.ecommerce.deductInventoryForPaidOrder(order.id);
-  }
   if (changedStatus) {
     const details = await storage.ecommerce.getOrderWithDetails(order.id);
     if (details) await sendEcommerceOrderStatusEmail(details);
