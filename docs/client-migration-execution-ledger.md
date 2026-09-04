@@ -231,7 +231,9 @@ and budgets remain green.
   production credential was used.
 - **Evidence:** the Drizzle repository completed a two-operation catalog run with two durable audit records;
   exact replay of the category batch returned its existing result without another target write; concurrent
-  active-run claims for the same source/target produced exactly one success and one database rejection.
+  active-run claims for the same source/target produced exactly one success and one database rejection. A
+  second fresh PostgreSQL 16 target was migrated and rehearsed with the same completed-run, audit-count,
+  replay, and concurrency results.
 - **Risk carried forward:** this proves the durable Phase 1 behavior on an isolated database, but does not
   authorize a client import, cutover, customer/order history, or a production migration. A protected source
   export, two full clean-target rehearsals, reconciliation approval, and restore/rollback evidence remain
