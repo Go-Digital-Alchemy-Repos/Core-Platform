@@ -297,6 +297,19 @@ and budgets remain green.
 - **Risk carried forward:** a real public origin and content/SEO review remain client decisions. This is
   implementation and local evidence only; it makes no DNS, hosting, or deployment change.
 
+### 2026-09-04 — Better Farms configured-form handoff verification
+
+- **Implemented:** Better Farms source revision `46dfc54` makes the form proxy's Core origin and fetch
+  dependency injectable for deterministic verification while preserving production configuration behavior.
+  The proxy continues to validate the credential-free origin, accepts only strict managed-form payloads,
+  and enforces the same five-second upstream boundary.
+- **Evidence:** the Better Farms contract suite now includes direct proxy tests for a successful Core handoff,
+  rejection of unexpected form fields before an upstream call, and the unavailable response on transport
+  failure. TypeScript and all 20 contract/security tests passed without a Core request or visitor data.
+- **Risk carried forward:** this proves the adapter handoff contract, not the client-specific Core form
+  configuration. Data ownership approval and a configured-environment rehearsal remain required before
+  enabling the upstream origin.
+
 ### 2026-09-04 — Ecommerce stock-boundary review
 
 - **Verified:** cart pricing aggregates duplicate product/variant lines before order creation. Paid-order
