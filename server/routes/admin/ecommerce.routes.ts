@@ -586,6 +586,22 @@ router.get(
 );
 
 router.post(
+  "/notification-jobs/:id/retry",
+  asyncHandler(async (req, res) => {
+    const jobId = z.string().uuid().parse(req.params.id);
+    const job = await storage.ecommerce.requeueFailedEcommerceNotificationJob(
+      jobId,
+      req.user?.id ?? null,
+    );
+    if (!job) {
+      res.status(404).json({ message: "A failed notification job was not found" });
+      return;
+    }
+    res.json(toNotificationJobSummary(job));
+  }),
+);
+
+router.post(
   "/webhooks/stripe/:eventId/replay",
   asyncHandler(async (req, res) => {
     const eventId = z

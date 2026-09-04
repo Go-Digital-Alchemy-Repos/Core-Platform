@@ -72,14 +72,23 @@ describe("WebhookDeliveriesTab", () => {
     expect(container.textContent).toContain("payment_intent.succeeded");
     expect(container.textContent).toContain("evt_failed_123");
     expect(container.textContent).toContain("Needs replay");
-    expect(container.textContent).toContain("Failed order receipts");
+    expect(container.textContent).toContain("Failed customer notifications");
     expect(container.textContent).toContain("order-123");
     expect(container.textContent).toContain("5");
+    expect(container.textContent).toContain("Retry email");
     const replay = Array.from(container.querySelectorAll("button")).find((button) =>
       button.textContent?.includes("Replay from Stripe"),
     );
     expect(replay).toBeTruthy();
     act(() => replay?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
     expect(mocks.mutate).toHaveBeenCalledWith("evt_failed_123");
+
+    const retryEmail = Array.from(container.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes("Retry email"),
+    );
+    expect(retryEmail).toBeTruthy();
+    act(() => retryEmail?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(document.body.textContent).toContain("Queue this notification for one retry?");
+    expect(document.body.textContent).toContain("duplicate customer email");
   });
 });

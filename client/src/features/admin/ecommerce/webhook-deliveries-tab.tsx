@@ -5,6 +5,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -28,7 +38,7 @@ interface StripeWebhookDelivery {
 
 interface EcommerceNotificationJob {
   id: string;
-  type: "order_confirmation";
+  type: "order_confirmation" | "refund_confirmation" | "shipment_confirmation" | "order_status";
   status: "failed";
   orderId: string;
   attemptCount: number;
@@ -47,6 +57,7 @@ function statusBadge(status: StripeWebhookDelivery["status"]) {
 
 export function WebhookDeliveriesTab() {
   const { toast } = useToast();
+  const [jobToRetry, setJobToRetry] = React.useState<EcommerceNotificationJob | null>(null);
   const { data: deliveries = [], isLoading } = useQuery<StripeWebhookDelivery[]>({
     queryKey: ["/api/admin/ecommerce/webhooks/stripe", { status: "failed", limit: 50 }],
   });
@@ -78,6 +89,33 @@ export function WebhookDeliveriesTab() {
         title: "Stripe event could not be replayed",
         description:
           error instanceof Error ? error.message : "Review the delivery state and try again.",
+        variant: "destructive",
+      }),
+  });
+  const retryNotificationMutation = useMutation({
+    mutationFn: async (jobId: string) => {
+      const response = await apiRequest(
+        "POST",
+        `/api/admin/ecommerce/notification-jobs/${encodeURIComponent(jobId)}/retry`,
+      );
+      return response.json() as Promise<{ id: string }>;
+    },
+    onSuccess: async () => {
+      setJobToRetry(null);
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/notification-jobs"] });
+      toast({
+        title: "Notification queued for one retry",
+        description:
+          "The worker will make one new delivery attempt using the current order details.",
+      });
+    },
+    onError: (error) =>
+      toast({
+        title: "Notification could not be queued",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Refresh the job list and review the order history.",
         variant: "destructive",
       }),
   });
@@ -154,11 +192,11 @@ export function WebhookDeliveriesTab() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Failed order receipts</CardTitle>
+          <CardTitle>Failed customer notifications</CardTitle>
           <CardDescription>
             Receipt delivery retries with bounded backoff. Failed jobs are retained here without
             recipient or provider details so an operator can investigate the mail configuration and
-            order history safely.
+            order history safely before explicitly queuing one further attempt.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -175,16 +213,28 @@ export function WebhookDeliveriesTab() {
                     <TableHead>Order</TableHead>
                     <TableHead>Attempts</TableHead>
                     <TableHead>Failed at</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {notificationJobs.map((job) => (
                     <TableRow key={job.id}>
-                      <TableCell className="font-medium">Order confirmation</TableCell>
+                      <TableCell className="font-medium">{job.type.replaceAll("_", " ")}</TableCell>
                       <TableCell className="font-mono text-xs">{job.orderId}</TableCell>
                       <TableCell>{job.attemptCount}</TableCell>
                       <TableCell>
                         {job.failedAt ? new Date(job.failedAt).toLocaleString() : "Pending review"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={retryNotificationMutation.isPending}
+                          onClick={() => setJobToRetry(job)}
+                        >
+                          <RefreshCw className="mr-2 h-4 w-4" /> Retry email
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -194,6 +244,38 @@ export function WebhookDeliveriesTab() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog
+        open={Boolean(jobToRetry)}
+        onOpenChange={(open) => {
+          if (!open && !retryNotificationMutation.isPending) setJobToRetry(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Queue this notification for one retry?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Review the order history and mail-provider logs first. A provider may have accepted an
+              earlier attempt before returning an error, so this action can result in a duplicate
+              customer email.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={retryNotificationMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={retryNotificationMutation.isPending}
+              onClick={(event) => {
+                event.preventDefault();
+                if (jobToRetry) retryNotificationMutation.mutate(jobToRetry.id);
+              }}
+            >
+              Queue one retry
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

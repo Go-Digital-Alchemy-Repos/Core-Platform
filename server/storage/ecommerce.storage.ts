@@ -1643,6 +1643,41 @@ export class EcommerceStorage {
     return updated;
   }
 
+  /**
+   * Returns a terminal job to the queue after an administrator has reviewed the
+   * mail configuration and order history. The lifetime attempt count is kept so
+   * the next failed delivery remains terminal instead of silently restarting a
+   * new automatic retry cycle.
+   */
+  async requeueFailedEcommerceNotificationJob(
+    jobId: string,
+    retryingUserId: string | null,
+    now = new Date(),
+  ) {
+    const [job] = await db
+      .update(ecommerceNotificationJobs)
+      .set({
+        status: "queued",
+        processingToken: null,
+        claimedAt: null,
+        nextAttemptAt: now,
+        failedAt: null,
+        lastErrorCode: null,
+        manualRetryCount: sql`${ecommerceNotificationJobs.manualRetryCount} + 1`,
+        lastManualRetryAt: now,
+        lastManualRetryBy: retryingUserId,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(ecommerceNotificationJobs.id, jobId),
+          eq(ecommerceNotificationJobs.status, "failed"),
+        ),
+      )
+      .returning();
+    return job;
+  }
+
   async getEcommerceNotificationJobs(options: { status?: "failed"; limit?: number } = {}) {
     const limit = Math.min(Math.max(options.limit ?? 50, 1), 200);
     const query = db

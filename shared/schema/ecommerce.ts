@@ -667,6 +667,11 @@ export const ecommerceNotificationJobs = pgTable(
     sentAt: timestamp("sent_at", { withTimezone: true }),
     failedAt: timestamp("failed_at", { withTimezone: true }),
     lastErrorCode: varchar("last_error_code", { length: 120 }),
+    manualRetryCount: integer("manual_retry_count").notNull().default(0),
+    lastManualRetryAt: timestamp("last_manual_retry_at", { withTimezone: true }),
+    lastManualRetryBy: varchar("last_manual_retry_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },

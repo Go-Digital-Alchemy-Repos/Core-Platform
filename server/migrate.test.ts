@@ -92,6 +92,14 @@ describe("runMigrations", () => {
       expect.stringContaining("0055_woo_import_disposition_evidence.sql"),
       "utf8",
     );
+    expect(mockReadFile).toHaveBeenCalledWith(
+      expect.stringContaining("0056_client_stack_onboarding_evidence.sql"),
+      "utf8",
+    );
+    expect(mockReadFile).toHaveBeenCalledWith(
+      expect.stringContaining("0057_ecommerce_notification_job_manual_retries.sql"),
+      "utf8",
+    );
   });
 
   it("recognizes the default Drizzle journal schema on an existing database", async () => {
