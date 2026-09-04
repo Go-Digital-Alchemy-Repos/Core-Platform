@@ -5,6 +5,7 @@ const allowedFlags = new Set([
   "--require-ecommerce",
   "--require-email",
   "--require-backups",
+  "--require-client-form-proxy",
   "--require-separate-origins",
 ]);
 const unknownFlags = [...flags].filter((flag) => !allowedFlags.has(flag));
@@ -17,6 +18,7 @@ if (unknownFlags.length > 0) {
     ecommerce: flags.has("--require-ecommerce"),
     email: flags.has("--require-email"),
     backups: flags.has("--require-backups"),
+    clientFormProxy: flags.has("--require-client-form-proxy"),
     separatePublicAndAdminOrigins: flags.has("--require-separate-origins"),
   });
 

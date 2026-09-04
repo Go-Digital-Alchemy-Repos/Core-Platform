@@ -23,6 +23,7 @@ function completeEnvironment(): NodeJS.ProcessEnv {
     BACKUP_R2_SECRET_ACCESS_KEY: "secret",
     BACKUP_R2_BUCKET_NAME: "client-backups",
     BACKUP_R2_PREFIX: "production/pilot-acme",
+    CLIENT_FORM_PROXY_TOKEN: "client-form-proxy-token-placeholder",
   };
 }
 
@@ -66,6 +67,7 @@ describe("validateClientStackEnvironment", () => {
     delete env.STRIPE_WEBHOOK_SECRET;
     delete env.SMTP_PASS;
     delete env.BACKUP_R2_BUCKET_NAME;
+    delete env.CLIENT_FORM_PROXY_TOKEN;
     env.SYSTEM_BACKUPS_ENABLED = "false";
 
     expect(validateClientStackEnvironment(env).errors).toEqual([]);
@@ -74,6 +76,7 @@ describe("validateClientStackEnvironment", () => {
         ecommerce: true,
         email: true,
         backups: true,
+        clientFormProxy: true,
       }).errors,
     ).toEqual(
       expect.arrayContaining([
@@ -81,6 +84,7 @@ describe("validateClientStackEnvironment", () => {
         "SMTP_PASS is required",
         "SYSTEM_BACKUPS_ENABLED must be true",
         "BACKUP_R2_BUCKET_NAME is required",
+        "CLIENT_FORM_PROXY_TOKEN is required",
       ]),
     );
   });

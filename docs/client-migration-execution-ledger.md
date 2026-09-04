@@ -444,3 +444,6 @@ and budgets remain green.
 - **Risk carried forward:** no token has been generated or configured, and no server-to-server request has
   been made outside tests. The release still requires isolated-stack configuration, deployed-origin browser
   evidence, and approval before the route may be enabled.
+- **Preflight:** client-form releases must include `--require-client-form-proxy`; it verifies that the Core
+  stack has its server-side proxy token without printing its value. The paired Better Farms server token is
+  recorded only as a required contract reference and must be configured separately during an approved setup.

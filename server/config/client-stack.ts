@@ -2,6 +2,7 @@ export interface ClientStackRequirements {
   ecommerce?: boolean;
   email?: boolean;
   backups?: boolean;
+  clientFormProxy?: boolean;
   separatePublicAndAdminOrigins?: boolean;
 }
 
@@ -161,6 +162,10 @@ export function validateClientStackEnvironment(
     if (stackId && prefix && !prefix.split("/").includes(stackId)) {
       errors.push("BACKUP_R2_PREFIX must contain CLIENT_STACK_ID as a complete path segment");
     }
+  }
+
+  if (requirements.clientFormProxy) {
+    requireVariables(env, ["CLIENT_FORM_PROXY_TOKEN"], errors);
   }
 
   return { stackId, corePlatformOrigin, errors };

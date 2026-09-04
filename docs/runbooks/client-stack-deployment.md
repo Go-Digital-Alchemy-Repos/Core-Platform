@@ -68,7 +68,7 @@ observed evidence in the client operations record before a release review.
 6. Before deployment, run the same candidate configuration through the preflight:
 
    ```bash
-   npm run deploy:check -- --require-ecommerce --require-email --require-backups --require-separate-origins
+   npm run deploy:check -- --require-ecommerce --require-email --require-backups --require-client-form-proxy --require-separate-origins
    ```
 
    The command reports only missing or invalid variable names and non-secret identity/origin values.
