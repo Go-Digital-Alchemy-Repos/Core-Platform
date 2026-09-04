@@ -799,3 +799,6 @@ and budgets remain green.
   ALIAS/ANAME manual review. The full local gate passed with 110 test files / 519 tests, type-check, lint,
   formatting, production build, bundle budget, and diff validation. No client endpoint, provider, or
   production stack was contacted.
+- **Evidence update:** hosted GitHub Actions run `33856073524` passed isolated PostgreSQL migration
+  verification, type-check, lint, formatting, 519 tests, production build, and bundle budget for revision
+  `78b254b`.
