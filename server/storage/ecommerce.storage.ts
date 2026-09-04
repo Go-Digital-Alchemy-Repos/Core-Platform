@@ -1547,6 +1547,7 @@ export class EcommerceStorage {
           status,
           order_id AS "orderId",
           refund_id AS "refundId",
+          shipment_id AS "shipmentId",
           deduplication_key AS "deduplicationKey",
           attempt_count AS "attemptCount",
           processing_token AS "processingToken",
@@ -1994,6 +1995,40 @@ export class EcommerceStorage {
 
   async createShipment(data: InsertEcommerceShipment): Promise<EcommerceShipment> {
     const [shipment] = await db.insert(ecommerceShipments).values(data).returning();
+    return shipment;
+  }
+
+  async createShipmentAndMarkOrderShipped(
+    data: InsertEcommerceShipment,
+  ): Promise<EcommerceShipment> {
+    return db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT id FROM ecommerce_orders WHERE id = ${data.orderId} FOR UPDATE`);
+      const [order] = await tx
+        .update(ecommerceOrders)
+        .set({ status: "shipped", updatedAt: new Date() })
+        .where(eq(ecommerceOrders.id, data.orderId))
+        .returning();
+      if (!order) throw new Error("Order not found");
+      const [shipment] = await tx.insert(ecommerceShipments).values(data).returning();
+      await tx
+        .insert(ecommerceNotificationJobs)
+        .values({
+          type: "shipment_confirmation",
+          status: "queued",
+          orderId: order.id,
+          shipmentId: shipment.id,
+          deduplicationKey: `shipment_confirmation:${shipment.id}`,
+        })
+        .onConflictDoNothing({ target: ecommerceNotificationJobs.deduplicationKey });
+      return shipment;
+    });
+  }
+
+  async getShipment(id: string): Promise<EcommerceShipment | undefined> {
+    const [shipment] = await db
+      .select()
+      .from(ecommerceShipments)
+      .where(eq(ecommerceShipments.id, id));
     return shipment;
   }
 

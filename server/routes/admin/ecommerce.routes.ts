@@ -44,7 +44,6 @@ import {
   standalonePaymentRequestSchema,
   updateAdminEcommerceOrder,
 } from "../../services/ecommerce-order.service";
-import { sendEcommerceShipmentEmail } from "../../services/ecommerce-email.service";
 import { replayEcommerceStripeWebhook } from "../../webhooks/ecommerce-stripe.handler";
 import {
   ECOMMERCE_SHIPPING_PROVIDER_REGISTRY,
@@ -871,19 +870,10 @@ router.post(
       orderId,
       shippedBy: req.user?.id,
     });
-    const shipment = await storage.ecommerce.createShipment({
+    const shipment = await storage.ecommerce.createShipmentAndMarkOrderShipped({
       ...shipmentPayload,
       trackingUrl: inferCarrierTrackingUrl(shipmentPayload),
     });
-    await storage.ecommerce.updateOrder(orderId, { status: "shipped" });
-    const details = await storage.ecommerce.getOrderWithDetails(orderId);
-    if (details && (await sendEcommerceShipmentEmail(details, shipment))) {
-      const updatedShipment = await storage.ecommerce.updateShipment(shipment.id, {
-        emailSentAt: new Date(),
-      });
-      res.status(201).json(updatedShipment ?? shipment);
-      return;
-    }
     res.status(201).json(shipment);
   }),
 );

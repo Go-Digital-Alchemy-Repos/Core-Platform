@@ -647,3 +647,11 @@ and budgets remain green.
   provider, or production database was contacted.
 - **Risk carried forward:** shipment and order-status notifications still need the durable delivery model;
   provider sandbox evidence and delivery monitoring remain client-release gates.
+
+### 2026-09-04 — Durable shipment notifications
+
+- **Implemented:** shipment creation, its order status transition, and the deduplicated shipment-confirmation
+  job now commit together. The worker reloads the shipment and retries a failed delivery.
+- **Evidence:** focused worker and migration suites passed. A disposable PostgreSQL 16 rehearsal applied the
+  migration sequence, created a synthetic shipment, verified the order became shipped, and claimed the
+  matching notification job. No client or production provider was contacted.

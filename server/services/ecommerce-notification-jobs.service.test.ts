@@ -6,8 +6,10 @@ const mocks = vi.hoisted(() => ({
   retry: vi.fn(),
   getOrderWithDetails: vi.fn(),
   getRefund: vi.fn(),
+  getShipment: vi.fn(),
   sendConfirmation: vi.fn(),
   sendRefund: vi.fn(),
+  sendShipment: vi.fn(),
 }));
 
 vi.mock("../storage", () => ({
@@ -18,6 +20,7 @@ vi.mock("../storage", () => ({
       retryEcommerceNotificationJob: mocks.retry,
       getOrderWithDetails: mocks.getOrderWithDetails,
       getRefund: mocks.getRefund,
+      getShipment: mocks.getShipment,
     },
   },
 }));
@@ -25,6 +28,7 @@ vi.mock("../storage", () => ({
 vi.mock("./ecommerce-email.service", () => ({
   sendEcommerceOrderConfirmation: mocks.sendConfirmation,
   sendEcommerceRefundEmail: mocks.sendRefund,
+  sendEcommerceShipmentEmail: mocks.sendShipment,
 }));
 
 vi.mock("../utils/logger", () => ({
@@ -52,6 +56,8 @@ describe("ecommerce notification jobs", () => {
       status: "processed",
     });
     mocks.sendRefund.mockResolvedValue(true);
+    mocks.getShipment.mockResolvedValue({ id: "shipment-1", orderId: "order-1" });
+    mocks.sendShipment.mockResolvedValue(true);
   });
 
   it("delivers an atomically queued receipt and marks the claimed job sent", async () => {
@@ -123,6 +129,30 @@ describe("ecommerce notification jobs", () => {
     });
     expect(mocks.sendRefund).toHaveBeenCalledWith(expect.objectContaining({ id: "order-1" }), 1250);
     expect(mocks.complete).toHaveBeenCalledWith("job-refund-1", "claim-refund-1", now);
+  });
+
+  it("delivers a shipment through the durable notification worker", async () => {
+    mocks.claim
+      .mockResolvedValueOnce({
+        id: "job-shipment-1",
+        type: "shipment_confirmation",
+        orderId: "order-1",
+        shipmentId: "shipment-1",
+        processingToken: "claim-shipment-1",
+        attemptCount: 1,
+      })
+      .mockResolvedValueOnce(undefined);
+
+    const { runEcommerceNotificationJobs } = await import("./ecommerce-notification-jobs.service");
+    await expect(runEcommerceNotificationJobs()).resolves.toEqual({
+      completed: 1,
+      retried: 0,
+      failed: 0,
+    });
+    expect(mocks.sendShipment).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "order-1" }),
+      expect.objectContaining({ id: "shipment-1" }),
+    );
   });
 
   it("reports a dead-lettered job after the final attempt", async () => {

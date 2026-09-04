@@ -655,6 +655,9 @@ export const ecommerceNotificationJobs = pgTable(
     refundId: varchar("refund_id").references(() => ecommerceRefunds.id, {
       onDelete: "cascade",
     }),
+    shipmentId: varchar("shipment_id").references(() => ecommerceShipments.id, {
+      onDelete: "cascade",
+    }),
     deduplicationKey: varchar("deduplication_key", { length: 200 }).notNull(),
     attemptCount: integer("attempt_count").notNull().default(0),
     processingToken: varchar("processing_token"),
@@ -675,6 +678,7 @@ export const ecommerceNotificationJobs = pgTable(
     ),
     index("idx_ecommerce_notification_jobs_order").on(table.orderId),
     index("idx_ecommerce_notification_jobs_refund").on(table.refundId),
+    index("idx_ecommerce_notification_jobs_shipment").on(table.shipmentId),
   ],
 );
 
