@@ -811,3 +811,6 @@ and budgets remain green.
 - **Safety boundary:** the evidence stores planned targets and observed public answers, never provider
   credentials. It does not mark a release approved, provision Railway, alter DNS, or bypass the remaining
   client-owned certificate, routing, health, restore, and approval gates.
+- **Evidence update:** hosted GitHub Actions run `33857544782` passed isolated PostgreSQL migration
+  verification, type-check, lint, formatting, 520 tests, production build, and bundle budget for revision
+  `fba3c05`.
