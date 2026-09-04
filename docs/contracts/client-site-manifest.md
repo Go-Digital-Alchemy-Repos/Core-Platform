@@ -50,7 +50,7 @@ rejecting references outside the supplied checkout. It performs no build, networ
 or deployment.
 
 The [Better Farms example](../pilots/better-farms/client-site-manifest.example.json) is an adapter-facing
-fixture based on source revision `0f0ddde40ed91f2cfa2182eb3627b51c85ec0c9c`. It documents current site
+fixture based on source revision `31deb36e3fb13e29b1cab557dccd070c9e3fdf81`. It documents current site
 routes, assets, and the approved runtime API publishing mode. It does not authorize deployment.
 
 The accompanying [client migration intake](client-migration-intake.md) carries the separate scope,
