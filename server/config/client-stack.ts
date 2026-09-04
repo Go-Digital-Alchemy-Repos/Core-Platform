@@ -163,7 +163,6 @@ export function validateClientStackEnvironment(
         "BACKUP_R2_ACCESS_KEY_ID",
         "BACKUP_R2_SECRET_ACCESS_KEY",
         "BACKUP_R2_BUCKET_NAME",
-        "BACKUP_R2_PREFIX",
       ],
       errors,
     );

@@ -32,7 +32,8 @@ channel in the client operations record. Do not record secret values there.
 The dashboard onboarding wizard is registrar-agnostic. It captures the public domain, apex/`www` preference,
 the required `dashboard` subdomain, site/backend routing targets, same-origin `/api` mode, and DNS/launch owners. It produces
 an exact record plan with record type, host, target/value, TTL, provider proxy mode when applicable,
-purpose, and copyable manual instructions.
+purpose, and copyable manual instructions. It also derives the shared R2 bucket and client object prefixes:
+`clients/<client-domain>/backups/` and `clients/<client-domain>/uploads/`.
 
 The operator enters the records at any registrar/DNS provider, then the wizard verifies ownership,
 authoritative nameservers, propagation, certificate issuance, public and admin routing, `/api` proxy
@@ -96,18 +97,18 @@ health, redirect, and rollback checks.
 
 ## Configuration Inventory
 
-| Area              | Required variables or records                                                                                                                                        |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Identity          | `CLIENT_STACK_ID`                                                                                                                                                    |
-| Database          | Dedicated `DATABASE_URL`                                                                                                                                             |
-| Sessions/security | Unique 32+ character `SESSION_SECRET`, optional unique `CMS_PREVIEW_SECRET`, unique `SETUP_TOKEN` for first setup                                                    |
-| Domain/origins    | Public domain, `dashboard` subdomain, same-origin `/api` routing, DNS provider and manual operator, exact `PUBLIC_SITE_ORIGIN`, `CORE_PLATFORM_ADMIN_ORIGIN`, legacy-compatible `APP_URL` equal to the dashboard origin, exact `TRUSTED_ORIGINS`, certificate/routing status |
-| Stripe ecommerce  | Dedicated `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`; record account and test/live mode                                                  |
-| Email             | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`; SPF/DKIM/DMARC ownership evidence                                                                   |
-| Site form proxy   | Matching `CLIENT_FORM_PROXY_TOKEN` on Core Platform and `CORE_PLATFORM_FORM_PROXY_TOKEN` only in the client's site server environment; never expose either to browser code |
-| Backups           | `SYSTEM_BACKUPS_ENABLED=true`, `SYSTEM_BACKUP_INTERVAL_HOURS=24`, `SYSTEM_BACKUP_RETENTION_DAYS=30`, dedicated R2 credentials/bucket, `BACKUP_R2_PREFIX` containing `CLIENT_STACK_ID` as one path segment     |
-| Observability     | `LOG_LEVEL`, `METRICS_ENABLED=true`, a unique 32+ character `METRICS_BEARER_TOKEN`, uptime/error/log destinations, and named responders                                |
-| Railway metadata  | Git commit SHA, project/service/environment IDs are supplied by Railway and included in backup metadata                                                              |
+| Area              | Required variables or records                                                                                                                                                                                                                                                                    |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Identity          | `CLIENT_STACK_ID`                                                                                                                                                                                                                                                                                |
+| Database          | Dedicated `DATABASE_URL`                                                                                                                                                                                                                                                                         |
+| Sessions/security | Unique 32+ character `SESSION_SECRET`, optional unique `CMS_PREVIEW_SECRET`, unique `SETUP_TOKEN` for first setup                                                                                                                                                                                |
+| Domain/origins    | Public domain, `dashboard` subdomain, same-origin `/api` routing, DNS provider and manual operator, exact `PUBLIC_SITE_ORIGIN`, `CORE_PLATFORM_ADMIN_ORIGIN`, legacy-compatible `APP_URL` equal to the dashboard origin, exact `TRUSTED_ORIGINS`, certificate/routing status                     |
+| Stripe ecommerce  | Dedicated `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`; record account and test/live mode                                                                                                                                                                              |
+| Email             | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`; SPF/DKIM/DMARC ownership evidence                                                                                                                                                                                               |
+| Site form proxy   | Matching `CLIENT_FORM_PROXY_TOKEN` on Core Platform and `CORE_PLATFORM_FORM_PROXY_TOKEN` only in the client's site server environment; never expose either to browser code                                                                                                                       |
+| Backups           | `SYSTEM_BACKUPS_ENABLED=true`, `SYSTEM_BACKUP_INTERVAL_HOURS=24`, `SYSTEM_BACKUP_RETENTION_DAYS=30`, `core-platform-website-backups` R2 bucket, credentials scoped to the client prefix, and `BACKUP_R2_PREFIX=clients/<client-domain>/backups` (derived from `PUBLIC_SITE_ORIGIN` when omitted) |
+| Observability     | `LOG_LEVEL`, `METRICS_ENABLED=true`, a unique 32+ character `METRICS_BEARER_TOKEN`, uptime/error/log destinations, and named responders                                                                                                                                                          |
+| Railway metadata  | Git commit SHA, project/service/environment IDs are supplied by Railway and included in backup metadata                                                                                                                                                                                          |
 
 Prefer environment-managed provider secrets for deterministic stacks. If an admin UI can persist a
 provider secret in the database, document the precedence and verify that a restored database cannot
@@ -117,8 +118,11 @@ silently point to another client's provider account.
 
 - Use a dedicated media bucket or a client-specific namespace with credentials that cannot access other
   client prefixes.
-- Use a dedicated backup bucket where practical. At minimum use a unique prefix containing the exact
-  `CLIENT_STACK_ID` path segment and client-scoped credentials.
+- The template uses the shared `core-platform-website-backups` bucket. Backups default to
+  `clients/<client-domain>/backups/`, derived from the public domain entered during activation. Uploads and
+  other R2 objects use `clients/<client-domain>/uploads/`; before a domain is configured, the client stack ID
+  is used instead. Scope credentials to the client prefix where the
+  provider supports it.
 - Enable Railway-native PostgreSQL backups in addition to application-level R2 backups.
 - Create a manual pre-cutover backup and retain it outside the normal short rolling window.
 - Restore into a disposable duplicate environment. Confirm the manifest's `clientStackId`, Railway

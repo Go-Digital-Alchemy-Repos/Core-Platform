@@ -6,6 +6,7 @@ import {
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
 import { logger } from "../utils/logger";
+import { getClientBackupPrefix } from "../../shared/client-backup-policy";
 
 interface BackupStorageConfig {
   accountId: string;
@@ -30,8 +31,7 @@ let cachedClient: S3Client | null = null;
 let cachedConfig: BackupStorageConfig | null = null;
 
 function normalizePrefix(prefix: string | undefined): string {
-  const trimmed = (prefix || "system-backups").trim().replace(/^\/+|\/+$/g, "");
-  return trimmed || "system-backups";
+  return getClientBackupPrefix(process.env.CLIENT_STACK_ID, process.env.PUBLIC_SITE_ORIGIN, prefix);
 }
 
 async function loadConfigFromSettings(): Promise<BackupStorageConfig | null> {

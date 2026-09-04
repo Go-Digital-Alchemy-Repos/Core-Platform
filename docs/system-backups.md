@@ -45,8 +45,8 @@ The backup system supports two storage modes:
 - `BACKUP_R2_ACCOUNT_ID=...`
 - `BACKUP_R2_ACCESS_KEY_ID=...`
 - `BACKUP_R2_SECRET_ACCESS_KEY=...`
-- `BACKUP_R2_BUCKET_NAME=...`
-- `BACKUP_R2_PREFIX=production/<client-stack-id>`
+- `BACKUP_R2_BUCKET_NAME=core-platform-website-backups`
+- `BACKUP_R2_PREFIX=clients/<client-domain>/backups` (derived automatically from `PUBLIC_SITE_ORIGIN`, with `CLIENT_STACK_ID` as the pre-domain fallback)
 
 ### Optional environment variables
 

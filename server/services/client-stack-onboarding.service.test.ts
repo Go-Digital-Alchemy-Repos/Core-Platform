@@ -47,6 +47,12 @@ describe("client stack onboarding", () => {
       publicOrigin: "https://www.betterfarms.org",
       adminOrigin: "https://dashboard.betterfarms.org",
       routingMode: "same-origin-proxy",
+      storage: {
+        bucketName: "core-platform-website-backups",
+        clientPrefix: "clients/betterfarms.org",
+        backupPrefix: "clients/betterfarms.org/backups",
+        uploadPrefix: "clients/betterfarms.org/uploads",
+      },
     });
     expect(plan.records.map((record) => record.fqdn)).toEqual([
       "betterfarms.org",

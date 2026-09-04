@@ -1033,3 +1033,14 @@ and budgets remain green.
 
 - **Decision recorded:** Mike at Go Digital Alchemy is the primary super admin, DNS operator, and release owner for Better Farms template onboarding.
 - **Scope:** this assigns the accountable operator only. It does not approve a release or authorize DNS, Railway, backup, restore, or production changes.
+
+### 2026-09-04 — Shared R2 client namespaces
+
+- **Decision recorded:** template installations use the shared `core-platform-website-backups` R2 bucket.
+  The public domain chosen during onboarding determines the client namespace, with backups at
+  `clients/<client-domain>/backups/` and uploaded objects at `clients/<client-domain>/uploads/`.
+- **Implemented:** the domain-plan output records the derived bucket and prefixes. Backup storage and media
+  storage automatically qualify objects into their respective client namespaces; no per-client bucket is
+  created. Credentials remain Railway secrets and are never stored in the onboarding record.
+- **Safety boundary:** the template does not provision the bucket or credentials, and no R2 object or live
+  infrastructure was changed.

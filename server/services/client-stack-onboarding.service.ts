@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { resolve4, resolve6, resolveCname } from "node:dns/promises";
 import { isIP } from "node:net";
+import {
+  DEFAULT_BACKUP_BUCKET_NAME,
+  getClientBackupPrefix,
+  getClientStoragePrefix,
+} from "../../shared/client-backup-policy";
 
 export const clientStackIdSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 const hostnameSchema = z
@@ -269,6 +274,12 @@ export function createClientStackDomainPlan(input: ClientStackDomainPlanInput) {
     publicOrigin: `https://${plan.canonicalHost === "apex" ? plan.publicDomain : `www.${plan.publicDomain}`}`,
     adminOrigin: `https://${plan.adminDomain}`,
     routingMode: plan.routingMode,
+    storage: {
+      bucketName: DEFAULT_BACKUP_BUCKET_NAME,
+      clientPrefix: getClientStoragePrefix(plan.stackId, `https://${plan.publicDomain}`),
+      backupPrefix: getClientBackupPrefix(plan.stackId, `https://${plan.publicDomain}`),
+      uploadPrefix: `${getClientStoragePrefix(plan.stackId, `https://${plan.publicDomain}`)}/uploads`,
+    },
     records,
     manualInstructions: records.map(
       (record, index) =>
