@@ -549,3 +549,14 @@ and budgets remain green.
   budget, and Better Farms contract gates passed.
 - **Risk carried forward:** refund/revocation eligibility and manual notification policy require their own
   event-lifecycle decisions. No production event, Stripe, or email-provider action occurred.
+
+### 2026-09-04 — Shipping provider readiness truthfulness
+
+- **Implemented:** shipping-provider status now separates saved credentials from a working operational
+  capability. A provider becomes operational only when its registry capability is backed by an end-to-end
+  carrier transport; no unimplemented provider is advertised as ready for rates, labels, or tracking.
+- **Evidence:** the provider-registry suite covers a configured, active EasyPost record that remains
+  non-operational while its transport is absent. Full tests, production build, bundle budget, release-manifest,
+  and Better Farms site/pilot contract checks passed.
+- **Risk carried forward:** live shipping rates, labels, address validation, and carrier tracking remain
+  client-dependent acceptance gates until a selected provider adapter and sandbox verification are complete.

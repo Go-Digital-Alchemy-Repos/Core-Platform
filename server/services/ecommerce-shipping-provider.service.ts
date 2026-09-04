@@ -39,6 +39,18 @@ export interface EcommerceShippingProviderStatus extends EcommerceShippingProvid
   missingCredentialLabels: string[];
 }
 
+// Credentials alone do not make a provider operational. Add a capability here only when its
+// carrier client performs the corresponding provider API operation end-to-end.
+const IMPLEMENTED_SHIPPING_PROVIDER_CAPABILITIES: Partial<
+  Record<string, EcommerceShippingProviderCapability[]>
+> = {};
+
+export function getImplementedShippingProviderCapabilities(
+  provider: string,
+): EcommerceShippingProviderCapability[] {
+  return IMPLEMENTED_SHIPPING_PROVIDER_CAPABILITIES[provider] ?? [];
+}
+
 export const ECOMMERCE_SHIPPING_PROVIDER_REGISTRY: EcommerceShippingProviderDefinition[] = [
   {
     provider: "easypost",
@@ -159,6 +171,12 @@ export function mergeShippingProviderStatuses(
       .map((field) => field.label);
     const hasRequiredCredentials = missingCredentialLabels.length === 0;
     const active = configured?.active ?? false;
+    const readyCapabilities =
+      active && hasRequiredCredentials
+        ? definition.capabilities.filter((capability) =>
+            getImplementedShippingProviderCapabilities(definition.provider).includes(capability),
+          )
+        : [];
     return {
       ...definition,
       setupFields,
@@ -166,8 +184,8 @@ export function mergeShippingProviderStatuses(
       testMode: configured?.testMode ?? true,
       connectedAt: configured?.connectedAt ?? null,
       configured: hasRequiredCredentials,
-      operational: active && hasRequiredCredentials,
-      readyCapabilities: active && hasRequiredCredentials ? definition.capabilities : [],
+      operational: readyCapabilities.length > 0,
+      readyCapabilities,
       missingCredentialLabels,
     };
   });
