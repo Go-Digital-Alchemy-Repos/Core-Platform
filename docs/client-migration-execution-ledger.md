@@ -524,3 +524,15 @@ and budgets remain green.
 - **Safety boundary:** the delivery list excludes processing tokens and raw error text. A replay requires the
   existing admin authorization plus configured Stripe credentials; no replay, provider call, database change,
   or deployment was performed while implementing this control.
+
+### 2026-09-04 — Recording archive access projection
+
+- **Implemented:** the public recording-archive route now uses the same entitlement projection as event
+  detail. Archive responses always omit virtual join URLs, Zoom links, and dial-in details. Free recordings,
+  completed recording purchases, and administrators retain only the recording URL they are authorized to use.
+- **Evidence:** endpoint-level tests cover anonymous paid archives, authenticated purchasers, and free
+  recordings. Two independent read-only boundary reviews found the original archive-only exposure and no
+  remaining bypass in the scoped fix. The full test, type, lint, formatting, production build, bundle budget,
+  and Better Farms contract gates passed.
+- **Risk carried forward:** guest access and scheduled notification policies are separate event-delivery
+  contracts; no provider or production event data was contacted.

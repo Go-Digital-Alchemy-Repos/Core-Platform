@@ -62,15 +62,16 @@ router.get(
 
     const filtered = eventsList
       .filter((event) => canAccessPublicEvent(event, userRole))
-      .map((event) => {
-        if (event.recordingAccess === "paid" && event.recordingPrice) {
-          if (userRole === "admin" || purchasedEventIds.has(event.id)) {
-            return event;
-          }
-          return { ...event, recordingUrl: null };
-        }
-        return event;
-      });
+      .map((event) =>
+        applyEventAccessEntitlements(event, {
+          canJoin: false,
+          canViewRecording:
+            userRole === "admin" ||
+            event.recordingAccess !== "paid" ||
+            !event.recordingPrice ||
+            purchasedEventIds.has(event.id),
+        }),
+      );
     res.json(await Promise.all(filtered.map(normalizeEventImage)));
   }),
 );
