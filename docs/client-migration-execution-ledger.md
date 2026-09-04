@@ -1015,3 +1015,21 @@ and budgets remain green.
   application route and `/api/health/ready`, with its database connected.
 - **Safety boundary:** the Railway checks were read-only. No deployment, environment-variable change, DNS
   mutation, client-data access, backup, restore, or production release was performed.
+
+### 2026-09-04 — Client dashboard and recovery defaults
+
+- **Decision recorded:** every client receives a dashboard at `dashboard.<client-domain>`. The installing
+  super admin is the designated DNS and release operator and manually applies generated DNS records through
+  the client's existing provider access.
+- **Recovery baseline:** scheduled backups run every 24 hours, retain 30 days of snapshots, target an RPO
+  of 24 hours, and target restoration within 24 hours. This preserves all data captured by a completed
+  backup; actual recovery remains contingent on a verified restore drill.
+- **Implemented:** client manifests, deployment preflight, and DNS-plan generation now require the matching
+  `dashboard` hostname, with the public origin allowed at the apex or `www` host. Better Farms records the
+  same recovery objectives while its evidence gates remain pending.
+- **Safety boundary:** no DNS provider, Railway configuration, backup object, restore target, or production
+  environment was changed.
+### 2026-09-04 — Better Farms primary super-admin assignment
+
+- **Decision recorded:** Mike at Go Digital Alchemy is the primary super admin, DNS operator, and release owner for Better Farms template onboarding.
+- **Scope:** this assigns the accountable operator only. It does not approve a release or authorize DNS, Railway, backup, restore, or production changes.

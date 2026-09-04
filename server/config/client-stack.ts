@@ -1,3 +1,5 @@
+import { getDashboardOriginPolicyError } from "../../shared/client-origin-policy";
+
 export interface ClientStackRequirements {
   ecommerce?: boolean;
   email?: boolean;
@@ -95,6 +97,12 @@ export function validateClientStackEnvironment(
     );
     if (publicSiteOrigin && adminOrigin && publicSiteOrigin === adminOrigin) {
       errors.push("PUBLIC_SITE_ORIGIN and CORE_PLATFORM_ADMIN_ORIGIN must be distinct origins");
+    }
+    if (publicSiteOrigin && adminOrigin) {
+      const dashboardOriginError = getDashboardOriginPolicyError(publicSiteOrigin, adminOrigin);
+      if (dashboardOriginError) {
+        errors.push(`CORE_PLATFORM_ADMIN_ORIGIN ${dashboardOriginError}`);
+      }
     }
     if (corePlatformOrigin && adminOrigin && corePlatformOrigin !== adminOrigin) {
       errors.push("APP_URL must exactly match CORE_PLATFORM_ADMIN_ORIGIN for this topology");

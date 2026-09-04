@@ -11,7 +11,7 @@ Choose one immutable lowercase kebab-case `CLIENT_STACK_ID`, for example `acme-s
 Railway project/environment labels, backup prefix, monitoring labels, and operator records. Never reuse
 another client's database, secrets, storage prefix, Stripe webhook secret, or release/rollback boundary.
 
-Record the application service ID, PostgreSQL service ID, public domain, protected admin subdomain,
+Record the application service ID, PostgreSQL service ID, public domain, protected `dashboard` subdomain,
 routing mode, DNS provider, Stripe account/mode, R2 bucket and prefix, email sender, owners, and incident
 channel in the client operations record. Do not record secret values there.
 
@@ -19,9 +19,9 @@ channel in the client operations record. Do not record secret values there.
 
 - Serve the React public site from the client's normal HTTPS domain, with an explicit apex/`www`
   canonicalization rule.
-- Serve the Core Platform dashboard from a protected admin subdomain such as `admin.example.com`.
+- Serve the Core Platform dashboard from `dashboard.<client-domain>`, such as `dashboard.example.com`.
 - Route public browser requests from `/api` on the public domain to the Core Platform backend where the
-  hosting/CDN topology supports it. Keep the dashboard's API same-origin on the admin subdomain.
+  hosting/CDN topology supports it. Keep the dashboard's API same-origin on the dashboard subdomain.
 - Keep authentication cookies host-only by default. Use a reviewed signed preview flow between admin and
   public origins. Edge access controls may supplement but never replace application authorization.
 - Assign public links, admin links, webhooks, callbacks, CSP, CORS/CSRF, redirects, and email destinations
@@ -29,8 +29,8 @@ channel in the client operations record. Do not record secret values there.
 
 ## Domain Setup Wizard Contract
 
-The admin onboarding wizard is registrar-agnostic. It captures the public domain, apex/`www` preference,
-admin subdomain, site/backend routing targets, same-origin `/api` mode, and DNS/launch owners. It produces
+The dashboard onboarding wizard is registrar-agnostic. It captures the public domain, apex/`www` preference,
+the required `dashboard` subdomain, site/backend routing targets, same-origin `/api` mode, and DNS/launch owners. It produces
 an exact record plan with record type, host, target/value, TTL, provider proxy mode when applicable,
 purpose, and copyable manual instructions.
 
@@ -38,6 +38,10 @@ The operator enters the records at any registrar/DNS provider, then the wizard v
 authoritative nameservers, propagation, certificate issuance, public and admin routing, `/api` proxy
 behavior, readiness, canonical redirects, and origin policy. Pending propagation is reported separately
 from invalid configuration. Record creation alone never marks the domain ready.
+
+For each client onboarding, the installing super admin is the designated DNS and release operator. That
+person applies generated records manually through the client's provider account and records prior values
+for rollback.
 
 Core Platform never requests or stores registrar/DNS-provider credentials and never creates, updates, or
 deletes DNS records in this workflow. The operator records the prior values before applying the generated
@@ -97,11 +101,11 @@ health, redirect, and rollback checks.
 | Identity          | `CLIENT_STACK_ID`                                                                                                                                                    |
 | Database          | Dedicated `DATABASE_URL`                                                                                                                                             |
 | Sessions/security | Unique 32+ character `SESSION_SECRET`, optional unique `CMS_PREVIEW_SECRET`, unique `SETUP_TOKEN` for first setup                                                    |
-| Domain/origins    | Public domain, admin subdomain, same-origin `/api` routing, DNS provider and manual operator, exact `PUBLIC_SITE_ORIGIN`, `CORE_PLATFORM_ADMIN_ORIGIN`, legacy-compatible `APP_URL` equal to the admin origin, exact `TRUSTED_ORIGINS`, certificate/routing status |
+| Domain/origins    | Public domain, `dashboard` subdomain, same-origin `/api` routing, DNS provider and manual operator, exact `PUBLIC_SITE_ORIGIN`, `CORE_PLATFORM_ADMIN_ORIGIN`, legacy-compatible `APP_URL` equal to the dashboard origin, exact `TRUSTED_ORIGINS`, certificate/routing status |
 | Stripe ecommerce  | Dedicated `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`; record account and test/live mode                                                  |
 | Email             | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`; SPF/DKIM/DMARC ownership evidence                                                                   |
 | Site form proxy   | Matching `CLIENT_FORM_PROXY_TOKEN` on Core Platform and `CORE_PLATFORM_FORM_PROXY_TOKEN` only in the client's site server environment; never expose either to browser code |
-| Backups           | `SYSTEM_BACKUPS_ENABLED=true`, interval/retention settings, dedicated R2 credentials/bucket, `BACKUP_R2_PREFIX` containing `CLIENT_STACK_ID` as one path segment     |
+| Backups           | `SYSTEM_BACKUPS_ENABLED=true`, `SYSTEM_BACKUP_INTERVAL_HOURS=24`, `SYSTEM_BACKUP_RETENTION_DAYS=30`, dedicated R2 credentials/bucket, `BACKUP_R2_PREFIX` containing `CLIENT_STACK_ID` as one path segment     |
 | Observability     | `LOG_LEVEL`, `METRICS_ENABLED=true`, a unique 32+ character `METRICS_BEARER_TOKEN`, uptime/error/log destinations, and named responders                                |
 | Railway metadata  | Git commit SHA, project/service/environment IDs are supplied by Railway and included in backup metadata                                                              |
 

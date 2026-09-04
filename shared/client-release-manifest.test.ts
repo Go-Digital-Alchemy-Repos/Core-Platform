@@ -12,7 +12,7 @@ const release = {
   candidate: { coreRevision: sha, siteRevision: sha },
   origins: {
     publicSite: "https://better-farms.example",
-    admin: "https://admin.better-farms.example",
+    admin: "https://dashboard.better-farms.example",
   },
   backup: { status: "pending" },
   gates: [
@@ -77,6 +77,15 @@ describe("client release manifest", () => {
       validateClientReleaseManifest({
         ...release,
         origins: { ...release.origins, admin: release.origins.publicSite },
+      }),
+    ).toMatchObject({ success: false, errors: expect.arrayContaining([expect.any(Object)]) });
+  });
+
+  it("requires the dashboard hostname to match the public-site domain", () => {
+    expect(
+      validateClientReleaseManifest({
+        ...release,
+        origins: { ...release.origins, admin: "https://admin.better-farms.example" },
       }),
     ).toMatchObject({ success: false, errors: expect.arrayContaining([expect.any(Object)]) });
   });

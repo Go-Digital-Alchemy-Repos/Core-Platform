@@ -26,7 +26,7 @@
   },
   "origins": {
     "publicSite": "https://better-farms.example",
-    "admin": "https://admin.better-farms.example",
+    "admin": "https://dashboard.better-farms.example",
     "publicApiPath": "/api",
     "adminApiPath": "/api",
     "routingMode": "same-origin-proxy"

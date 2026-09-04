@@ -68,19 +68,17 @@
     "status": "approved"
   },
   "operations": {
-    "dnsOperator": "client-designated DNS operator required",
-    "releaseOwner": "client-designated release owner required",
+    "dnsOperator": "Mike at Go Digital Alchemy (primary super admin)",
+    "releaseOwner": "Mike at Go Digital Alchemy (primary super admin)",
     "recovery": {
-      "status": "pending",
-      "rpoMinutes": null,
-      "rtoMinutes": null
+      "status": "approved",
+      "rpoMinutes": 1440,
+      "rtoMinutes": 1440
     },
     "release": {
       "status": "blocked",
       "approverRoles": ["business", "technical", "operations"],
       "blockers": [
-        "recovery objectives",
-        "DNS and release owners",
         "sandbox and production-like evidence",
         "approved content and accessibility evidence"
       ]

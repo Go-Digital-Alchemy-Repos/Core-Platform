@@ -10,7 +10,7 @@ import {
 const input = {
   stackId: "better-farms-foundation",
   publicDomain: "betterfarms.org",
-  adminDomain: "admin.betterfarms.org",
+  adminDomain: "dashboard.betterfarms.org",
   canonicalHost: "www" as const,
   publicRecords: [
     {
@@ -45,23 +45,23 @@ describe("client stack onboarding", () => {
     expect(plan).toMatchObject({
       stackId: "better-farms-foundation",
       publicOrigin: "https://www.betterfarms.org",
-      adminOrigin: "https://admin.betterfarms.org",
+      adminOrigin: "https://dashboard.betterfarms.org",
       routingMode: "same-origin-proxy",
     });
     expect(plan.records.map((record) => record.fqdn)).toEqual([
       "betterfarms.org",
       "www.betterfarms.org",
-      "admin.betterfarms.org",
+      "dashboard.betterfarms.org",
     ]);
     expect(plan.manualInstructions.join(" ")).not.toContain("credential");
     expect(plan.rollbackInstructions).toHaveLength(3);
   });
 
-  it("rejects an unsafe apex CNAME and an admin host outside the public domain", () => {
+  it("rejects an unsafe apex CNAME and a non-dashboard host", () => {
     expect(() =>
       createClientStackDomainPlan({
         ...input,
-        adminDomain: "admin.other.org",
+        adminDomain: "admin.betterfarms.org",
         publicRecords: [{ ...input.publicRecords[0], type: "CNAME" }, input.publicRecords[1]],
       }),
     ).toThrow();

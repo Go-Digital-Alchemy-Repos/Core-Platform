@@ -119,10 +119,10 @@ describe("validateClientStackEnvironment", () => {
 
   it("requires distinct, exact public and admin origins when the split topology is selected", () => {
     const env = completeEnvironment();
-    env.APP_URL = "https://admin.example.com";
+    env.APP_URL = "https://dashboard.example.com";
     env.PUBLIC_SITE_ORIGIN = "https://www.example.com";
-    env.CORE_PLATFORM_ADMIN_ORIGIN = "https://admin.example.com";
-    env.TRUSTED_ORIGINS = "https://www.example.com,https://admin.example.com";
+    env.CORE_PLATFORM_ADMIN_ORIGIN = "https://dashboard.example.com";
+    env.TRUSTED_ORIGINS = "https://www.example.com,https://dashboard.example.com";
 
     expect(
       validateClientStackEnvironment(env, { separatePublicAndAdminOrigins: true }).errors,
@@ -132,8 +132,8 @@ describe("validateClientStackEnvironment", () => {
   it("rejects ambiguous or untrusted split origins", () => {
     const env = completeEnvironment();
     env.APP_URL = "https://legacy.example.com";
-    env.PUBLIC_SITE_ORIGIN = "https://admin.example.com";
-    env.CORE_PLATFORM_ADMIN_ORIGIN = "https://admin.example.com";
+    env.PUBLIC_SITE_ORIGIN = "https://dashboard.example.com";
+    env.CORE_PLATFORM_ADMIN_ORIGIN = "https://dashboard.example.com";
     env.TRUSTED_ORIGINS = "https://legacy.example.com";
 
     expect(
@@ -144,6 +144,22 @@ describe("validateClientStackEnvironment", () => {
         "APP_URL must exactly match CORE_PLATFORM_ADMIN_ORIGIN for this topology",
         "TRUSTED_ORIGINS must include the exact PUBLIC_SITE_ORIGIN origin",
         "TRUSTED_ORIGINS must include the exact CORE_PLATFORM_ADMIN_ORIGIN origin",
+      ]),
+    );
+  });
+
+  it("requires the dashboard subdomain for split client stacks", () => {
+    const env = completeEnvironment();
+    env.APP_URL = "https://admin.example.com";
+    env.PUBLIC_SITE_ORIGIN = "https://www.example.com";
+    env.CORE_PLATFORM_ADMIN_ORIGIN = "https://admin.example.com";
+    env.TRUSTED_ORIGINS = "https://www.example.com,https://admin.example.com";
+
+    expect(
+      validateClientStackEnvironment(env, { separatePublicAndAdminOrigins: true }).errors,
+    ).toEqual(
+      expect.arrayContaining([
+        "CORE_PLATFORM_ADMIN_ORIGIN must use the dashboard hostname dashboard.example.com",
       ]),
     );
   });

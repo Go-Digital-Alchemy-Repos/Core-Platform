@@ -60,12 +60,11 @@ export const clientStackDomainPlanSchema = z
   })
   .strict()
   .superRefine((plan, context) => {
-    const expectedAdminLabel = plan.adminDomain.slice(0, -(plan.publicDomain.length + 1));
-    if (!expectedAdminLabel || !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(expectedAdminLabel)) {
+    if (plan.adminDomain !== `dashboard.${plan.publicDomain}`) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["adminDomain"],
-        message: "must be a direct subdomain of publicDomain",
+        message: "must use the dashboard subdomain of publicDomain",
       });
     }
     for (const host of ["@", "www"] as const) {

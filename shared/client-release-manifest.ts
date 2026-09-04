@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getDashboardOriginPolicyError } from "./client-origin-policy";
 
 export const CLIENT_RELEASE_MANIFEST_SCHEMA_VERSION = "3.0" as const;
 const RELEASE_GATE_IDS = [
@@ -124,6 +125,17 @@ export const clientReleaseManifestSchema = clientReleaseManifestBaseSchema.super
         code: z.ZodIssueCode.custom,
         path: ["origins", "admin"],
         message: "must differ from publicSite",
+      });
+    }
+    const dashboardOriginError = getDashboardOriginPolicyError(
+      manifest.origins.publicSite,
+      manifest.origins.admin,
+    );
+    if (dashboardOriginError) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["origins", "admin"],
+        message: dashboardOriginError,
       });
     }
 

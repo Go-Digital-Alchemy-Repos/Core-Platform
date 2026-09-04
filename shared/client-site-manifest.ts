@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { validateClientSiteComponentContent } from "./client-site-content-contract";
+import { getDashboardOriginPolicyError } from "./client-origin-policy";
 
 export const CLIENT_SITE_MANIFEST_SCHEMA_VERSION = "1.0" as const;
 
@@ -260,6 +261,17 @@ const clientSiteManifestBaseSchema = z
         code: z.ZodIssueCode.custom,
         path: ["origins", "admin"],
         message: "must differ from the public site origin",
+      });
+    }
+    const dashboardOriginError = getDashboardOriginPolicyError(
+      manifest.origins.publicSite,
+      manifest.origins.admin,
+    );
+    if (dashboardOriginError) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["origins", "admin"],
+        message: dashboardOriginError,
       });
     }
 
