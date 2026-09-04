@@ -833,3 +833,20 @@ and budgets remain green.
 - **Risk carried forward:** manual retry is an accountable recovery control, not end-to-end provider delivery
   proof. Mail-provider sandbox behavior, delivery monitoring, reconciliation procedures, and client approval
   remain transaction-release gates.
+
+### 2026-09-04 — Better Farms rendered-route browser review
+
+- **Evidence:** the exact pinned Better Farms revision `31deb36` completed a fresh production build and was
+  served locally without a Core origin. A real browser loaded all seven manifest-declared public routes:
+  home, About, How It Works, Get Involved, For Farmers, Fund a Farm, and Contact. Desktop home and mobile
+  Contact captures rendered without observed layout defects; the mobile form exposed labeled controls and
+  blocked an empty submit with visible required-field errors before making a request. The Contact route had
+  no browser console errors or non-static network failures.
+- **Known fallback:** Fund a Farm requested its configured runtime-content path and received the intentional
+  local HTTP 503 because no `CORE_PLATFORM_API_ORIGIN` was supplied. It rendered the schema-validated pinned
+  fallback content as designed. This is not configured-Core integration evidence and remains a staging gate.
+- **Content blocker:** rendered testimonials and team cards still contain placeholders such as `Full Name`,
+  `Placeholder Name`, and placeholder credentials. Client-approved copy, identities, rights, and accessibility
+  review are required before the representative-page success measure or a content-release approval can pass.
+- **Safety boundary:** no external Core request, form submission, client data, DNS, Railway resource, or
+  production configuration was used. The local server and browser were closed after the review.
