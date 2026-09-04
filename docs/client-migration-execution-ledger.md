@@ -213,6 +213,20 @@ and budgets remain green.
   for an unchanged checkout payload and changes it when the payload changes. The migration remains unapplied;
   this does not authorize a production deployment.
 
+### 2026-09-04 — Ecommerce stock-boundary review
+
+- **Verified:** cart pricing aggregates duplicate product/variant lines before order creation. Paid-order
+  settlement runs in one database transaction: it serializes on the order row, transitions payment state,
+  records any coupon redemption, conditionally decrements tracked non-backorder stock only when the available
+  quantity covers the full line, and writes the inventory adjustment. A failed guarded decrement rolls back
+  the paid transition and all accompanying effects.
+- **Concurrency boundary:** competing paid orders use the conditional stock update, so only one can consume a
+  limited final unit. Backorder-enabled variants are deliberately excluded from that nonnegative-stock guard.
+  Focused inventory, ecommerce-service, and Stripe-webhook suites passed 66 tests.
+- **Risk carried forward:** the database boundary is covered by code review and focused suites, but live
+  checkout remains blocked pending Stripe sandbox concurrency and production-like end-to-end evidence,
+  reconciliation procedures, and the client release approval.
+
 ### 2026-09-04 — Registrar-neutral client stack onboarding
 
 - **Implemented:** an admin-only, credential-free domain onboarding workflow that validates client stack and
