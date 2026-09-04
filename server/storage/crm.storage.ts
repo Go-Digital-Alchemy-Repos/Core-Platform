@@ -25,6 +25,8 @@ import {
   type InsertCrmLeadTask,
 } from "@shared/schema";
 
+type CrmDbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 export interface CrmLeadListFilters {
   query?: string;
   stage?: CrmLeadStage | "all";
@@ -130,6 +132,43 @@ export class CrmStorage {
       .where(eq(crmLeads.id, id))
       .returning();
     return lead;
+  }
+
+  async updateLeadAndCreateWonClient(
+    id: string,
+    data: Partial<InsertCrmLead>,
+    buildClient: (lead: CrmLead) => InsertCrmClient,
+    createdById?: string | null,
+  ): Promise<{ lead: CrmLead; client: CrmClient | undefined } | undefined> {
+    return db.transaction(async (tx: CrmDbTransaction) => {
+      await tx.execute(sql`SELECT id FROM crm_leads WHERE id = ${id} FOR UPDATE`);
+      const [lead] = await tx
+        .update(crmLeads)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(crmLeads.id, id))
+        .returning();
+      if (!lead) return undefined;
+
+      const [existingClient] = await tx
+        .select()
+        .from(crmClients)
+        .where(eq(crmClients.sourceLeadId, lead.id))
+        .limit(1);
+      if (existingClient) return { lead, client: existingClient };
+
+      const [client] = await tx.insert(crmClients).values(buildClient(lead)).returning();
+      await tx.insert(crmLeadNotes).values({
+        leadId: lead.id,
+        createdById: createdById ?? null,
+        body: "Lead converted to client after moving to Won.",
+      });
+      await tx.insert(crmClientNotes).values({
+        clientId: client.id,
+        createdById: createdById ?? null,
+        body: "Client created from won lead.",
+      });
+      return { lead, client };
+    });
   }
 
   async listNotes(leadId: string): Promise<CrmLeadNote[]> {

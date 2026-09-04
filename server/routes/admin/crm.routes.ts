@@ -8,7 +8,7 @@ import {
 } from "@shared/schema";
 import { asyncHandler } from "../../middleware/error-handler";
 import { storage } from "../../storage";
-import { createOrUpdateCrmLead, ensureClientForWonLead } from "../../services/crm.service";
+import { createOrUpdateCrmLead, updateCrmLead } from "../../services/crm.service";
 import { paramString } from "../../utils/params";
 import type { CrmClientStatus, CrmLeadStage } from "@shared/schema";
 
@@ -144,11 +144,8 @@ router.patch(
   "/:id",
   asyncHandler(async (req, res) => {
     const parsed = leadUpdateSchema.parse(req.body);
-    const lead = await storage.crm.updateLead(paramString(req.params.id), parsed);
+    const lead = await updateCrmLead(paramString(req.params.id), parsed, req.user?.id);
     if (!lead) return res.status(404).json({ message: "Lead not found" });
-    if (parsed.stage === "won") {
-      await ensureClientForWonLead(lead, req.user?.id);
-    }
     res.json(lead);
   }),
 );

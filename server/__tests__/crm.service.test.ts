@@ -7,6 +7,7 @@ const mockCreateNote = vi.fn();
 const mockGetClientBySourceLeadId = vi.fn();
 const mockCreateClient = vi.fn();
 const mockCreateClientNote = vi.fn();
+const mockUpdateLeadAndCreateWonClient = vi.fn();
 
 vi.mock("../storage", () => ({
   storage: {
@@ -14,6 +15,7 @@ vi.mock("../storage", () => ({
       findDuplicateLead: mockFindDuplicateLead,
       createLead: mockCreateLead,
       updateLead: mockUpdateLead,
+      updateLeadAndCreateWonClient: mockUpdateLeadAndCreateWonClient,
       createNote: mockCreateNote,
       getClientBySourceLeadId: mockGetClientBySourceLeadId,
       createClient: mockCreateClient,
@@ -156,6 +158,42 @@ describe("crm.service", () => {
     expect(mockCreateClientNote).toHaveBeenCalledWith(
       expect.objectContaining({ clientId: "client-1" }),
     );
+  });
+
+  it("moves a lead to won with its client creation in one storage operation", async () => {
+    mockUpdateLeadAndCreateWonClient.mockImplementation(async (_id, data, buildClient) => ({
+      lead: { id: "lead-atomic", ...data },
+      client: buildClient({
+        id: "lead-atomic",
+        name: "Ada Lovelace",
+        email: "ada@example.com",
+        phone: null,
+        company: "Compiler Co",
+        message: null,
+        stage: "won",
+        source: "manual",
+        externalId: null,
+        formSubmissionId: null,
+        formData: {},
+        metadata: {},
+        ownerId: null,
+        nextFollowUpAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }),
+    }));
+
+    const { updateCrmLead } = await import("../services/crm.service");
+    const lead = await updateCrmLead("lead-atomic", { stage: "won" }, "admin-1");
+
+    expect(lead).toMatchObject({ id: "lead-atomic", stage: "won" });
+    expect(mockUpdateLeadAndCreateWonClient).toHaveBeenCalledWith(
+      "lead-atomic",
+      { stage: "won" },
+      expect.any(Function),
+      "admin-1",
+    );
+    expect(mockUpdateLead).not.toHaveBeenCalled();
   });
 
   it("creates an individual client for a won lead without a company", async () => {

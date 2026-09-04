@@ -485,3 +485,15 @@ and budgets remain green.
   content remains renderable. The existing shared sanitization regression suite and form service tests pass.
 - **Risk carried forward:** other public rich-HTML renderers have separate content contracts and remain
   subject to their own sanitizer and release-gate review.
+
+### 2026-09-04 — Atomic CRM won conversion
+
+- **Implemented:** the administrative transition of a lead to `won` now locks the lead and writes its
+  converted client plus both conversion notes in one database transaction. If any conversion write fails,
+  the lead does not move to `won`; a concurrent retry sees the already-created client under the same lock.
+- **Evidence:** focused CRM service coverage verifies the administrative route delegates the complete
+  transition to the atomic storage operation. A fresh disposable local PostgreSQL 16 rehearsal committed a
+  won lead, client, and two notes together, then injected a conversion failure and confirmed that the second
+  lead remained `new` with no client or notes. No client, Railway, or production database was contacted.
+- **Risk carried forward:** lead-intake duplicate identity, retention/export policy, and operational audit
+  coverage remain client-release review items.

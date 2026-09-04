@@ -3,6 +3,8 @@ import {
   type CrmClient,
   type CrmLead,
   type CrmLeadInput,
+  type InsertCrmClient,
+  type InsertCrmLead,
 } from "@shared/schema";
 import { storage } from "../storage";
 
@@ -103,16 +105,10 @@ export async function createCrmLeadFromFormSubmission({
   });
 }
 
-export async function ensureClientForWonLead(
-  lead: CrmLead,
-  createdById?: string | null,
-): Promise<CrmClient> {
-  const existing = await storage.crm.getClientBySourceLeadId(lead.id);
-  if (existing) return existing;
+function buildWonLeadClient(lead: CrmLead): InsertCrmClient {
   const clientType = cleanString(lead.company) ? "business" : "individual";
   const now = new Date();
-
-  const client = await storage.crm.createClient({
+  return {
     sourceLeadId: lead.id,
     name: lead.name,
     email: lead.email,
@@ -135,7 +131,32 @@ export async function ensureClientForWonLead(
     },
     ownerId: lead.ownerId,
     nextFollowUpAt: lead.nextFollowUpAt,
-  });
+  };
+}
+
+export async function updateCrmLead(
+  id: string,
+  data: Partial<InsertCrmLead>,
+  createdById?: string | null,
+): Promise<CrmLead | undefined> {
+  if (data.stage !== "won") return storage.crm.updateLead(id, data);
+  const result = await storage.crm.updateLeadAndCreateWonClient(
+    id,
+    data,
+    buildWonLeadClient,
+    createdById,
+  );
+  return result?.lead;
+}
+
+export async function ensureClientForWonLead(
+  lead: CrmLead,
+  createdById?: string | null,
+): Promise<CrmClient> {
+  const existing = await storage.crm.getClientBySourceLeadId(lead.id);
+  if (existing) return existing;
+
+  const client = await storage.crm.createClient(buildWonLeadClient(lead));
 
   await storage.crm.createNote({
     leadId: lead.id,
