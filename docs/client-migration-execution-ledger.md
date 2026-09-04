@@ -782,3 +782,6 @@ and budgets remain green.
 - **Evidence:** focused mismatch coverage and the complete local gate passed with 110 test files / 517 tests,
   type-check, lint, formatting, production build, bundle budget, and combined Better Farms checkout
   verification. No client endpoint, provider, or production stack was contacted.
+- **Evidence update:** hosted GitHub Actions run `33854154794` passed isolated PostgreSQL migration
+  verification, type-check, lint, formatting, 517 tests, production build, and bundle budget for revision
+  `6d32456`.
