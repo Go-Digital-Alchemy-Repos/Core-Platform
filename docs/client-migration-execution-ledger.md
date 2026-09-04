@@ -890,3 +890,20 @@ and budgets remain green.
   without the prior deprecated-action-runtime annotation.
 - **Safety boundary:** no upstream form request, Core service, client data, Railway resource, DNS record, or
   production configuration was used. The local site server and browser were closed after review.
+
+### 2026-09-04 — Better Farms intentional content fallback
+
+- **Implemented:** the Fund a Farm content proxy now returns an explicit empty publication (`204`, no-store)
+  when a Core origin is intentionally unconfigured. The site recognizes that response as its existing
+  schema-validated bundled-content fallback. Actual configured-upstream failures remain `503`; public-form
+  submissions without configuration remain unavailable and are unchanged.
+- **Evidence:** the exact site revision `ee14d67` passed TypeScript, all 22 site contract/security tests, and
+  a production build. A fresh local production browser visit to Fund a Farm rendered the fallback content,
+  exposed its donation controls with accessible names and expected pressed state, and reported zero console
+  errors or warnings.
+- **Content review:** the same rendered-route audit found generic image alternatives such as `Rectangle`,
+  `Group`, and `Img` on Home. The secret-free content-review record now requires client-approved alternative
+  text or a documented decorative designation for each retained image; the `content` gate remains pending.
+- **Safety boundary:** no Core origin, form submission, client data, Railway resource, DNS record, or
+  production configuration was used. This local fallback behavior is not configured-Core integration or
+  production-health evidence.

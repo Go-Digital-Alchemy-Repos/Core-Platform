@@ -7,9 +7,10 @@
 This is a secret-free working record for the Better Farms `content` release gate. It identifies content
 that needs client evidence; it does not approve copy, identities, media, or publication.
 
-The current integration candidate `cee3a0e5b83966e7d1cbe0153fa1e2e555d594d9` carries the programmatic
-Contact labels introduced in `cfd8576` and runs its quality workflow on Node 24. The focused mobile browser
-review confirms the Contact accessible names without changing rendered content or layout, so the content
+The current integration candidate `ee14d6746cc14cb4b441eecf6598aaaf0e18e975` carries the programmatic
+Contact labels introduced in `cfd8576`, runs its quality workflow on Node 24, and renders the bundled Fund a
+Farm content quietly when a Core origin is intentionally unconfigured. The focused browser review confirms
+the Contact and donation-control accessible names without changing rendered content or layout, so the content
 findings below remain applicable.
 
 ## Required approval evidence
@@ -19,6 +20,7 @@ Before the content gate can pass, the client must provide a dated approval recor
 - approved copy for each included route and component;
 - the name, role, and permission basis for every named person, testimonial, quotation, and portrait;
 - the source or license for each reused image, logo, and other media where applicable;
+- approved alternate text for images that convey content, or a documented decorative designation;
 - the reviewer and evidence for responsive visual and accessibility review of the approved rendered pages;
 - the approver, scope, and version/revision of the reviewed site content.
 
@@ -34,6 +36,7 @@ manifest should reference the approved record without copying its contents.
 | About | `client/src/pages/AboutUs.tsx` `boardMembers` | Six cards use `Full Name`, `One-line credential`, and the shared filler biography. | Supply approved board identity, title, portrait rights, and biography for every retained card; otherwise remove the cards. |
 | Home and About | `client/src/components/TeamMemberDialog.tsx` `placeholderBio` | The member dialog displays Latin filler text for the cards above. | Replace it for each retained person with approved biography copy, or remove the affected member dialog entries. |
 | How It Works | `client/src/pages/HowItWorks.tsx` quotation footer | A visible quotation is attributed only as `— Name`. | Supply approved attribution and permission basis, or remove the quotation. |
+| Home | `client/src/pages/HomepageWhite.tsx` image alternatives | Several rendered images expose generic alternatives such as `Rectangle`, `Group`, or `Img`. | For each retained image, supply an approved descriptive alternative or explicitly mark it decorative after rendered-page review. |
 
 Input placeholders such as `Full Name`, `Email`, `Select`, and `Leave a message` were reviewed as form
 affordances rather than content claims. They are not release blockers on their own. Their labels,
