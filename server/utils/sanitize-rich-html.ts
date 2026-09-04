@@ -34,6 +34,31 @@ const publicRichHtmlFieldNames = new Set([
   "subheading",
 ]);
 
+// Public block renderers also use these properties as URL targets. Keep this
+// separate from the HTML list: URLs need scheme validation, not HTML parsing.
+const publicUrlFieldNames = new Set([
+  "ctaLink",
+  "ctaSecondaryLink",
+  "href",
+  "link",
+  "primaryLink",
+  "secondaryLink",
+  "url",
+]);
+
+function sanitizePublicUrl(value: string): string {
+  const normalized = value.trim();
+  if (!normalized) return "";
+  if (normalized.startsWith("/") && !normalized.startsWith("//")) return normalized;
+  if (normalized.startsWith("#") || normalized.startsWith("?")) return normalized;
+  try {
+    const url = new URL(normalized);
+    return ["http:", "https:", "mailto:", "tel:"].includes(url.protocol) ? normalized : "#";
+  } catch {
+    return "#";
+  }
+}
+
 export function sanitizePublicRichHtml(value: string | null | undefined): string | null {
   if (value == null) return null;
   return sanitizeHtml(value, {
@@ -67,8 +92,8 @@ export function sanitizePublicRichHtml(value: string | null | undefined): string
 
 /**
  * Sanitizes only the explicitly supported HTML-bearing values in public CMS
- * payloads. Other data remains untouched so URLs, editor settings, and module
- * configuration retain their existing contracts.
+ * payloads. Known public links receive scheme validation; other data remains
+ * untouched so editor settings and module configuration retain their contracts.
  */
 export function sanitizePublicCmsContent<T>(value: T): T {
   if (Array.isArray(value)) {
@@ -84,7 +109,9 @@ export function sanitizePublicCmsContent<T>(value: T): T {
       key,
       publicRichHtmlFieldNames.has(key) && typeof nestedValue === "string"
         ? sanitizePublicRichHtml(nestedValue)
-        : sanitizePublicCmsContent(nestedValue),
+        : publicUrlFieldNames.has(key) && typeof nestedValue === "string"
+          ? sanitizePublicUrl(nestedValue)
+          : sanitizePublicCmsContent(nestedValue),
     ]),
   ) as T;
 }

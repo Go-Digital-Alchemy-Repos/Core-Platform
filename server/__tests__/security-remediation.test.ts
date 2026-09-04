@@ -87,6 +87,7 @@ describe("security remediation policies", () => {
             content:
               '<h2>Heading</h2><p>Safe <a href="https://example.test">link</a></p><img src="/cms/photo.webp" alt="Farm" data-align="center" class="cms-richtext-media cms-richtext-media-center" onerror="alert(1)"><script>alert(1)</script>',
             ctaLink: "javascript:alert(1)",
+            ctaSecondaryLink: "/give",
           },
         },
       ],
@@ -103,12 +104,28 @@ describe("security remediation policies", () => {
           props: {
             content:
               '<h2>Heading</h2><p>Safe <a href="https://example.test">link</a></p><img src="/cms/photo.webp" alt="Farm" data-align="center" class="cms-richtext-media cms-richtext-media-center" />',
-            ctaLink: "javascript:alert(1)",
+            ctaLink: "#",
           },
         },
       ],
       widgets: [{ settings: { html: "<p>Widget</p>" } }],
       fields: [{ config: { htmlContent: "<p>Form copy</p><img />" } }],
+    });
+  });
+
+  it("allows only safe public CMS URL schemes", () => {
+    expect(
+      sanitizePublicCmsContent({
+        ctaLink: "javascript:alert(1)",
+        primaryLink: "data:text/html,unsafe",
+        secondaryLink: "/fund-a-farm",
+        link: "https://example.test/donate",
+      }),
+    ).toEqual({
+      ctaLink: "#",
+      primaryLink: "#",
+      secondaryLink: "/fund-a-farm",
+      link: "https://example.test/donate",
     });
   });
 
