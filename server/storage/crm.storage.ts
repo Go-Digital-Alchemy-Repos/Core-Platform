@@ -55,6 +55,14 @@ function isCrmClientStatus(value: string | undefined): value is CrmClientStatus 
   return !!value && CRM_CLIENT_STATUSES.includes(value as CrmClientStatus);
 }
 
+function normalizedEmailDedupeKey(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim().toLowerCase() : null;
+}
+
+function normalizedPhoneDedupeKey(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
 export class CrmStorage {
   async listLeads(filters: CrmLeadListFilters = {}): Promise<CrmLead[]> {
     const conditions = [];
@@ -99,8 +107,24 @@ export class CrmStorage {
   }
 
   async findDuplicateLead(
-    data: Pick<InsertCrmLead, "email" | "phone">,
+    data: Pick<InsertCrmLead, "email" | "phone" | "emailDedupeKey" | "phoneDedupeKey">,
   ): Promise<CrmLead | undefined> {
+    if (data.emailDedupeKey) {
+      const [lead] = await db
+        .select()
+        .from(crmLeads)
+        .where(eq(crmLeads.emailDedupeKey, data.emailDedupeKey))
+        .limit(1);
+      if (lead) return lead;
+    }
+    if (data.phoneDedupeKey) {
+      const [lead] = await db
+        .select()
+        .from(crmLeads)
+        .where(eq(crmLeads.phoneDedupeKey, data.phoneDedupeKey))
+        .limit(1);
+      if (lead) return lead;
+    }
     const email = typeof data.email === "string" ? data.email.trim().toLowerCase() : "";
     const phone = typeof data.phone === "string" ? data.phone.trim() : "";
     if (email) {
@@ -124,9 +148,16 @@ export class CrmStorage {
   }
 
   async updateLead(id: string, data: Partial<InsertCrmLead>): Promise<CrmLead | undefined> {
+    const normalized = { ...data };
+    if (Object.prototype.hasOwnProperty.call(data, "email")) {
+      normalized.emailDedupeKey = normalizedEmailDedupeKey(data.email);
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "phone")) {
+      normalized.phoneDedupeKey = normalizedPhoneDedupeKey(data.phone);
+    }
     const [lead] = await db
       .update(crmLeads)
-      .set({ ...data, updatedAt: new Date() })
+      .set({ ...normalized, updatedAt: new Date() })
       .where(eq(crmLeads.id, id))
       .returning();
     return lead;

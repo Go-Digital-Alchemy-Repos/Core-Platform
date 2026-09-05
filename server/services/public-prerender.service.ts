@@ -3,6 +3,10 @@ import type { BlogPost, CmsPage, EcommerceProduct, Event, SeoSettings } from "@s
 import { getEventPath } from "@shared/event-url";
 import { storage } from "../storage";
 import { getDirectorySettings } from "./directory-settings.service";
+import {
+  isPublicDirectoryProfile,
+  toPublicDirectoryProfile,
+} from "./directory-public-profile.service";
 
 interface PublicHtmlSnapshot {
   title: string;
@@ -412,13 +416,9 @@ async function buildTherapistSnapshot(
   siteUrl: string,
 ): Promise<PublicHtmlSnapshot | null> {
   const directorySettings = await getDirectorySettings();
-  const profile = await storage.therapists.getProfileWithUser(id);
-  if (
-    !profile ||
-    !profile.isActive ||
-    (directorySettings.directoryRequiresApprovedApplication && !profile.isApproved)
-  )
-    return null;
+  const storedProfile = await storage.therapists.getProfileWithUser(id);
+  if (!storedProfile || !isPublicDirectoryProfile(storedProfile, directorySettings)) return null;
+  const profile = toPublicDirectoryProfile(storedProfile, directorySettings);
 
   const displayName =
     [profile.user?.firstName, profile.user?.lastName].filter(Boolean).join(" ") ||

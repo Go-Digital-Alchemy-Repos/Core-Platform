@@ -11,6 +11,12 @@ function cleanString(value: string | null | undefined) {
   return trimmed || null;
 }
 
+function isUniqueConstraintViolation(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  if ("code" in error && error.code === "23505") return true;
+  return "cause" in error && isUniqueConstraintViolation(error.cause);
+}
+
 function valueToString(value: unknown): string | null {
   if (typeof value === "string") return cleanString(value);
   if (typeof value === "number" || typeof value === "boolean") return String(value);
@@ -59,6 +65,8 @@ export async function createOrUpdateCrmLead(
     ownerId: cleanString(parsed.ownerId),
     formSubmissionId: cleanString(parsed.formSubmissionId),
     nextFollowUpAt: parsed.nextFollowUpAt ?? null,
+    emailDedupeKey: cleanString(parsed.email)?.toLowerCase() ?? null,
+    phoneDedupeKey: cleanString(parsed.phone),
   };
 
   const duplicate = await storage.crm.findDuplicateLead(payload);
@@ -70,6 +78,8 @@ export async function createOrUpdateCrmLead(
       source: payload.source ?? duplicate.source,
       externalId: payload.externalId ?? duplicate.externalId,
       formSubmissionId: payload.formSubmissionId ?? duplicate.formSubmissionId,
+      emailDedupeKey: payload.emailDedupeKey ?? duplicate.emailDedupeKey,
+      phoneDedupeKey: payload.phoneDedupeKey ?? duplicate.phoneDedupeKey,
     });
     await storage.crm.createNote({
       leadId: duplicate.id,
@@ -79,10 +89,32 @@ export async function createOrUpdateCrmLead(
     return { lead: updated ?? duplicate, duplicate: true };
   }
 
-  return {
-    lead: await storage.crm.createLead(payload),
-    duplicate: false,
-  };
+  try {
+    return {
+      lead: await storage.crm.createLead(payload),
+      duplicate: false,
+    };
+  } catch (error) {
+    if (!isUniqueConstraintViolation(error)) throw error;
+    const concurrent = await storage.crm.findDuplicateLead(payload);
+    if (!concurrent) throw error;
+    const updated = await storage.crm.updateLead(concurrent.id, {
+      metadata: { ...(concurrent.metadata ?? {}), ...(payload.metadata ?? {}) },
+      formData: { ...(concurrent.formData ?? {}), ...(payload.formData ?? {}) },
+      message: payload.message ?? concurrent.message,
+      source: payload.source ?? concurrent.source,
+      externalId: payload.externalId ?? concurrent.externalId,
+      formSubmissionId: payload.formSubmissionId ?? concurrent.formSubmissionId,
+      emailDedupeKey: payload.emailDedupeKey ?? concurrent.emailDedupeKey,
+      phoneDedupeKey: payload.phoneDedupeKey ?? concurrent.phoneDedupeKey,
+    });
+    await storage.crm.createNote({
+      leadId: concurrent.id,
+      createdById: createdById ?? null,
+      body: `Duplicate lead received from ${payload.source}. Existing lead was updated.`,
+    });
+    return { lead: updated ?? concurrent, duplicate: true };
+  }
 }
 
 export async function createCrmLeadFromFormSubmission({
@@ -112,30 +144,38 @@ export async function ensureClientForWonLead(
   const clientType = cleanString(lead.company) ? "business" : "individual";
   const now = new Date();
 
-  const client = await storage.crm.createClient({
-    sourceLeadId: lead.id,
-    name: lead.name,
-    email: lead.email,
-    phone: lead.phone,
-    company: lead.company,
-    clientType,
-    primaryEmail: lead.email,
-    primaryPhone: lead.phone,
-    preferredContactMethod: lead.email ? "email" : lead.phone ? "phone" : "no_preference",
-    companyName: lead.company,
-    onboardingStatus: "not_started",
-    clientSince: now,
-    status: "onboarding",
-    source: lead.source,
-    formData: lead.formData ?? {},
-    metadata: {
-      ...(lead.metadata ?? {}),
-      convertedFromLeadId: lead.id,
-      convertedAt: new Date().toISOString(),
-    },
-    ownerId: lead.ownerId,
-    nextFollowUpAt: lead.nextFollowUpAt,
-  });
+  let client: CrmClient;
+  try {
+    client = await storage.crm.createClient({
+      sourceLeadId: lead.id,
+      name: lead.name,
+      email: lead.email,
+      phone: lead.phone,
+      company: lead.company,
+      clientType,
+      primaryEmail: lead.email,
+      primaryPhone: lead.phone,
+      preferredContactMethod: lead.email ? "email" : lead.phone ? "phone" : "no_preference",
+      companyName: lead.company,
+      onboardingStatus: "not_started",
+      clientSince: now,
+      status: "onboarding",
+      source: lead.source,
+      formData: lead.formData ?? {},
+      metadata: {
+        ...(lead.metadata ?? {}),
+        convertedFromLeadId: lead.id,
+        convertedAt: new Date().toISOString(),
+      },
+      ownerId: lead.ownerId,
+      nextFollowUpAt: lead.nextFollowUpAt,
+    });
+  } catch (error) {
+    if (!isUniqueConstraintViolation(error)) throw error;
+    const concurrentlyCreated = await storage.crm.getClientBySourceLeadId(lead.id);
+    if (!concurrentlyCreated) throw error;
+    return concurrentlyCreated;
+  }
 
   await storage.crm.createNote({
     leadId: lead.id,

@@ -179,10 +179,14 @@ export const membershipProcessedWebhookEvents = pgTable(
     provider: text("provider").notNull(),
     eventId: text("event_id").notNull(),
     eventType: text("event_type").notNull(),
+    status: text("status").notNull().default("completed"),
+    claimToken: text("claim_token"),
+    claimedAt: timestamp("claimed_at").notNull().defaultNow(),
     processedAt: timestamp("processed_at").defaultNow(),
   },
   (table) => [
     uniqueIndex("idx_membership_webhook_provider_event").on(table.provider, table.eventId),
+    index("idx_membership_webhook_claim").on(table.status, table.claimedAt),
   ],
 );
 

@@ -1,5 +1,14 @@
 import { sql } from "drizzle-orm";
-import { boolean, index, jsonb, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { cmsFormSubmissions } from "./forms";
@@ -74,6 +83,8 @@ export const crmLeads = pgTable(
     stage: text("stage").$type<CrmLeadStage>().notNull().default("new"),
     source: text("source").notNull().default("manual"),
     externalId: text("external_id"),
+    emailDedupeKey: text("email_dedupe_key"),
+    phoneDedupeKey: text("phone_dedupe_key"),
     formSubmissionId: varchar("form_submission_id").references(() => cmsFormSubmissions.id, {
       onDelete: "set null",
     }),
@@ -97,6 +108,12 @@ export const crmLeads = pgTable(
     index("idx_crm_leads_source").on(table.source),
     index("idx_crm_leads_created_at").on(table.createdAt),
     index("idx_crm_leads_owner").on(table.ownerId),
+    uniqueIndex("idx_crm_leads_email_dedupe_key")
+      .on(table.emailDedupeKey)
+      .where(sql`${table.emailDedupeKey} IS NOT NULL`),
+    uniqueIndex("idx_crm_leads_phone_dedupe_key")
+      .on(table.phoneDedupeKey)
+      .where(sql`${table.phoneDedupeKey} IS NOT NULL`),
   ],
 );
 

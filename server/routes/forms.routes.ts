@@ -38,6 +38,7 @@ router.post(
     const result = await submitManagedFormBySlug(paramString(req.params.slug), req.body, {
       baseUrl,
       source: "public",
+      idempotencyKey: req.get("Idempotency-Key"),
     });
     res.status(201).json({ message: result.successMessage, submissionId: result.submission.id });
   }),

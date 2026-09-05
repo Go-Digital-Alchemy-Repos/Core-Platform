@@ -12,6 +12,26 @@ import {
 } from "../services/ecommerce-order.service";
 import { recordStripeRefundWebhook } from "../services/ecommerce-refund.service";
 
+async function processWithWebhookClaim(event: Stripe.Event, process: () => Promise<void>) {
+  const claimToken = await storage.ecommerce.claimWebhook("stripe", event.id, event.type);
+  if (!claimToken) {
+    logger.stripe.info("Duplicate ecommerce webhook already reconciled", {
+      eventId: event.id,
+      eventType: event.type,
+    });
+    return false;
+  }
+
+  try {
+    await process();
+    await storage.ecommerce.completeWebhookClaim("stripe", event.id, claimToken);
+    return true;
+  } catch (error) {
+    await storage.ecommerce.releaseWebhookClaim("stripe", event.id, claimToken);
+    throw error;
+  }
+}
+
 export async function processEcommerceStripeWebhook(payload: Buffer, signature?: string) {
   const stripe = await getEcommerceStripeClient();
   const secret = await getEcommerceStripeWebhookSecret();
@@ -57,29 +77,20 @@ export async function processEcommerceStripeWebhook(payload: Buffer, signature?:
       });
       return;
     }
-    const latestCharge =
-      typeof intent.latest_charge === "object" && intent.latest_charge
-        ? intent.latest_charge
-        : null;
-    if (latestCharge) {
-      await recordEcommerceStripeRiskOutcome({
-        orderId,
-        paymentIntentId: intent.id,
-        charge: latestCharge,
-      });
-    }
-    await markEcommerceOrderPaid(orderId, intent.id);
-    const firstProcessing = await storage.ecommerce.markWebhookProcessed(
-      "stripe",
-      event.id,
-      event.type,
-    );
-    if (!firstProcessing) {
-      logger.stripe.info("Duplicate ecommerce webhook already reconciled", {
-        eventId: event.id,
-        eventType: event.type,
-      });
-    }
+    await processWithWebhookClaim(event, async () => {
+      const latestCharge =
+        typeof intent.latest_charge === "object" && intent.latest_charge
+          ? intent.latest_charge
+          : null;
+      if (latestCharge) {
+        await recordEcommerceStripeRiskOutcome({
+          orderId,
+          paymentIntentId: intent.id,
+          charge: latestCharge,
+        });
+      }
+      await markEcommerceOrderPaid(orderId, intent.id);
+    });
     return;
   }
 
@@ -89,46 +100,29 @@ export async function processEcommerceStripeWebhook(payload: Buffer, signature?:
       typeof session.payment_intent === "string"
         ? session.payment_intent
         : session.payment_intent?.id;
-    if (session.id) {
-      await reconcileEcommercePaymentRequestSession(session.id, paymentIntentId);
-    }
-    const firstProcessing = await storage.ecommerce.markWebhookProcessed(
-      "stripe",
-      event.id,
-      event.type,
-    );
-    if (!firstProcessing) {
-      logger.stripe.info("Duplicate ecommerce webhook already reconciled", {
-        eventId: event.id,
-        eventType: event.type,
-      });
-    }
+    await processWithWebhookClaim(event, async () => {
+      if (session.id) {
+        await reconcileEcommercePaymentRequestSession(session.id, paymentIntentId);
+      }
+    });
     return;
   }
 
   if (event.type === "refund.created" || event.type === "refund.updated") {
     const refund = event.data.object as Stripe.Refund;
-    await recordStripeRefundWebhook({
-      stripeRefundId: refund.id,
-      orderId: typeof refund.metadata?.orderId === "string" ? refund.metadata.orderId : undefined,
-      amount: refund.amount,
-      status: refund.status,
+    const processed = await processWithWebhookClaim(event, async () => {
+      await recordStripeRefundWebhook({
+        stripeRefundId: refund.id,
+        orderId: typeof refund.metadata?.orderId === "string" ? refund.metadata.orderId : undefined,
+        amount: refund.amount,
+        status: refund.status,
+      });
     });
-    const firstProcessing = await storage.ecommerce.markWebhookProcessed(
-      "stripe",
-      event.id,
-      event.type,
-    );
-    if (!firstProcessing) {
-      logger.stripe.info("Duplicate ecommerce webhook already reconciled", {
+    if (processed) {
+      logger.stripe.info("Ecommerce refund webhook processed", {
         eventId: event.id,
         eventType: event.type,
       });
-      return;
     }
-    logger.stripe.info("Ecommerce refund webhook processed", {
-      eventId: event.id,
-      eventType: event.type,
-    });
   }
 }

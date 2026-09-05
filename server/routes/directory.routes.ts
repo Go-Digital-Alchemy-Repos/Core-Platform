@@ -2,26 +2,30 @@ import { Router } from "express";
 import { storage } from "../storage/index";
 import { asyncHandler } from "../middleware/error-handler";
 import { paramString } from "../utils/params";
-import { therapistSearchSchema } from "@shared/types/directory";
+import { therapistSearchSchema, type TherapistWithUser } from "@shared/types/directory";
 import * as r2Service from "../services/r2.service";
 import { getDirectorySettings } from "../services/directory-settings.service";
 import { getSiteFeatures } from "../services/site-features.service";
+import { getDirectoryExperienceMode } from "@shared/types/directory-settings";
 import {
-  DIRECTORY_MODE_PROFILE_ALIASES,
-  getDirectoryExperienceMode,
-} from "@shared/types/directory-settings";
+  isPublicDirectoryProfile,
+  toPublicDirectoryProfile,
+} from "../services/directory-public-profile.service";
 
 const router = Router();
 
-async function normalizeTherapistResult<
-  T extends { user?: { profileImageUrl?: string | null } | null },
->(item: T): Promise<T> {
-  if (!item.user) return item;
+async function normalizeTherapistResult(
+  item: TherapistWithUser,
+  directorySettings: Awaited<ReturnType<typeof getDirectorySettings>>,
+) {
+  const publicItem = toPublicDirectoryProfile(item, directorySettings);
+  if (!publicItem.user) return publicItem;
   return {
-    ...item,
+    ...publicItem,
     user: {
-      ...item.user,
-      profileImageUrl: (await r2Service.normalizePublicUrl(item.user.profileImageUrl)) ?? null,
+      ...publicItem.user,
+      profileImageUrl:
+        (await r2Service.normalizePublicUrl(publicItem.user.profileImageUrl)) ?? null,
     },
   };
 }
@@ -77,7 +81,9 @@ router.get(
 
     res.json({
       ...result,
-      items: await Promise.all(result.items.map(normalizeTherapistResult)),
+      items: await Promise.all(
+        result.items.map((item) => normalizeTherapistResult(item, directorySettings)),
+      ),
     });
   }),
 );
@@ -104,7 +110,9 @@ router.get(
       directorySettings.directoryRequiresApprovedApplication,
       directoryMode,
     );
-    res.json(await Promise.all(featured.map(normalizeTherapistResult)));
+    res.json(
+      await Promise.all(featured.map((item) => normalizeTherapistResult(item, directorySettings))),
+    );
   }),
 );
 
@@ -126,12 +134,7 @@ router.get(
 
     const profileId = paramString(req.params.id);
     const profile = await storage.therapists.getProfileWithUser(profileId);
-    if (
-      !profile ||
-      !profile.isActive ||
-      !DIRECTORY_MODE_PROFILE_ALIASES[directoryMode].includes(profile.directoryMode) ||
-      (directorySettings.directoryRequiresApprovedApplication && !profile.isApproved)
-    ) {
+    if (!profile || !isPublicDirectoryProfile(profile, directorySettings)) {
       res.status(404).json({ message: "Location not found" });
       return;
     }
@@ -149,18 +152,12 @@ router.get(
   "/:id",
   asyncHandler(async (req, res) => {
     const directorySettings = await getDirectorySettings();
-    const directoryMode = getDirectoryExperienceMode(directorySettings);
     const profile = await storage.therapists.getProfileWithUser(paramString(req.params.id));
-    if (
-      !profile ||
-      !profile.isActive ||
-      !DIRECTORY_MODE_PROFILE_ALIASES[directoryMode].includes(profile.directoryMode) ||
-      (directorySettings.directoryRequiresApprovedApplication && !profile.isApproved)
-    ) {
+    if (!profile || !isPublicDirectoryProfile(profile, directorySettings)) {
       res.status(404).json({ message: "Therapist not found" });
       return;
     }
-    res.json(await normalizeTherapistResult(profile));
+    res.json(await normalizeTherapistResult(profile, directorySettings));
   }),
 );
 

@@ -160,11 +160,15 @@ export const cmsFormSubmissions = pgTable(
       .default(sql`'{}'::jsonb`)
       .notNull(),
     source: text("source"),
+    idempotencyKey: text("idempotency_key"),
     createdAt: timestamp("created_at").defaultNow(),
   },
   (table) => [
     index("idx_cms_form_submissions_form_id").on(table.formId),
     index("idx_cms_form_submissions_created_at").on(table.createdAt),
+    uniqueIndex("idx_cms_form_submissions_idempotency")
+      .on(table.formId, table.idempotencyKey)
+      .where(sql`${table.idempotencyKey} IS NOT NULL`),
   ],
 );
 
@@ -183,6 +187,7 @@ export const insertCmsFormSubmissionSchema = z.object({
   formId: z.string().min(1),
   data: z.record(z.unknown()).default({}),
   source: z.string().optional().nullable(),
+  idempotencyKey: z.string().trim().min(1).max(255).optional().nullable(),
 });
 
 export type InsertCmsForm = z.infer<typeof insertCmsFormSchema>;

@@ -1,4 +1,5 @@
-import { and, desc, eq, gte, ilike, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
+import { and, desc, eq, gte, ilike, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
 import { db } from "../db";
 import { requiresAtomicInventoryStockGuard } from "../services/ecommerce-inventory.service";
 import { isEcommerceOrderLookupAuthorized } from "../services/ecommerce-order-lookup.service";
@@ -1533,22 +1534,76 @@ export class EcommerceStorage {
         and(
           eq(ecommerceProcessedWebhookEvents.provider, provider),
           eq(ecommerceProcessedWebhookEvents.eventId, eventId),
+          eq(ecommerceProcessedWebhookEvents.status, "completed"),
         ),
       )
       .limit(1);
     return Boolean(event);
   }
 
-  async markWebhookProcessed(
-    provider: string,
-    eventId: string,
-    eventType: string,
-  ): Promise<boolean> {
-    const inserted = await db
+  async claimWebhook(provider: string, eventId: string, eventType: string): Promise<string | null> {
+    const claimToken = randomUUID();
+    const claimedAt = new Date();
+    const staleBefore = new Date(claimedAt.getTime() - 15 * 60 * 1000);
+    const [reclaimed] = await db
+      .update(ecommerceProcessedWebhookEvents)
+      .set({
+        eventType,
+        status: "processing",
+        claimToken,
+        claimedAt,
+        processedAt: null,
+      })
+      .where(
+        and(
+          eq(ecommerceProcessedWebhookEvents.provider, provider),
+          eq(ecommerceProcessedWebhookEvents.eventId, eventId),
+          eq(ecommerceProcessedWebhookEvents.status, "processing"),
+          lt(ecommerceProcessedWebhookEvents.claimedAt, staleBefore),
+        ),
+      )
+      .returning({ claimToken: ecommerceProcessedWebhookEvents.claimToken });
+    if (reclaimed) return claimToken;
+
+    const [inserted] = await db
       .insert(ecommerceProcessedWebhookEvents)
-      .values({ provider, eventId, eventType })
+      .values({
+        provider,
+        eventId,
+        eventType,
+        status: "processing",
+        claimToken,
+        claimedAt,
+        processedAt: null,
+      })
       .onConflictDoNothing()
-      .returning();
-    return inserted.length > 0;
+      .returning({ claimToken: ecommerceProcessedWebhookEvents.claimToken });
+    return inserted ? claimToken : null;
+  }
+
+  async completeWebhookClaim(provider: string, eventId: string, claimToken: string): Promise<void> {
+    await db
+      .update(ecommerceProcessedWebhookEvents)
+      .set({ status: "completed", claimToken: null, processedAt: new Date() })
+      .where(
+        and(
+          eq(ecommerceProcessedWebhookEvents.provider, provider),
+          eq(ecommerceProcessedWebhookEvents.eventId, eventId),
+          eq(ecommerceProcessedWebhookEvents.claimToken, claimToken),
+        ),
+      );
+  }
+
+  async releaseWebhookClaim(provider: string, eventId: string, claimToken: string): Promise<void> {
+    await db
+      .delete(ecommerceProcessedWebhookEvents)
+      .where(
+        and(
+          eq(ecommerceProcessedWebhookEvents.provider, provider),
+          eq(ecommerceProcessedWebhookEvents.eventId, eventId),
+          eq(ecommerceProcessedWebhookEvents.claimToken, claimToken),
+          eq(ecommerceProcessedWebhookEvents.status, "processing"),
+        ),
+      );
   }
 }

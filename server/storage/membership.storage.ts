@@ -1,4 +1,5 @@
-import { and, desc, eq, ilike, or } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
+import { and, desc, eq, ilike, lt, or } from "drizzle-orm";
 import { db } from "../db";
 import {
   membershipAccessRules,
@@ -325,20 +326,76 @@ export class MembershipStorage {
         and(
           eq(membershipProcessedWebhookEvents.provider, provider),
           eq(membershipProcessedWebhookEvents.eventId, eventId),
+          eq(membershipProcessedWebhookEvents.status, "completed"),
         ),
       );
     return !!event;
   }
 
-  async markWebhookProcessed(
-    provider: string,
-    eventId: string,
-    eventType: string,
-  ): Promise<boolean> {
-    const existing = await this.hasProcessedWebhook(provider, eventId);
-    if (existing) return false;
-    await db.insert(membershipProcessedWebhookEvents).values({ provider, eventId, eventType });
-    return true;
+  async claimWebhook(provider: string, eventId: string, eventType: string): Promise<string | null> {
+    const claimToken = randomUUID();
+    const claimedAt = new Date();
+    const staleBefore = new Date(claimedAt.getTime() - 15 * 60 * 1000);
+    const [reclaimed] = await db
+      .update(membershipProcessedWebhookEvents)
+      .set({
+        eventType,
+        status: "processing",
+        claimToken,
+        claimedAt,
+        processedAt: null,
+      })
+      .where(
+        and(
+          eq(membershipProcessedWebhookEvents.provider, provider),
+          eq(membershipProcessedWebhookEvents.eventId, eventId),
+          eq(membershipProcessedWebhookEvents.status, "processing"),
+          lt(membershipProcessedWebhookEvents.claimedAt, staleBefore),
+        ),
+      )
+      .returning({ claimToken: membershipProcessedWebhookEvents.claimToken });
+    if (reclaimed) return claimToken;
+
+    const [inserted] = await db
+      .insert(membershipProcessedWebhookEvents)
+      .values({
+        provider,
+        eventId,
+        eventType,
+        status: "processing",
+        claimToken,
+        claimedAt,
+        processedAt: null,
+      })
+      .onConflictDoNothing()
+      .returning({ claimToken: membershipProcessedWebhookEvents.claimToken });
+    return inserted ? claimToken : null;
+  }
+
+  async completeWebhookClaim(provider: string, eventId: string, claimToken: string): Promise<void> {
+    await db
+      .update(membershipProcessedWebhookEvents)
+      .set({ status: "completed", claimToken: null, processedAt: new Date() })
+      .where(
+        and(
+          eq(membershipProcessedWebhookEvents.provider, provider),
+          eq(membershipProcessedWebhookEvents.eventId, eventId),
+          eq(membershipProcessedWebhookEvents.claimToken, claimToken),
+        ),
+      );
+  }
+
+  async releaseWebhookClaim(provider: string, eventId: string, claimToken: string): Promise<void> {
+    await db
+      .delete(membershipProcessedWebhookEvents)
+      .where(
+        and(
+          eq(membershipProcessedWebhookEvents.provider, provider),
+          eq(membershipProcessedWebhookEvents.eventId, eventId),
+          eq(membershipProcessedWebhookEvents.claimToken, claimToken),
+          eq(membershipProcessedWebhookEvents.status, "processing"),
+        ),
+      );
   }
 
   async createAuditEvent(data: InsertMembershipAuditEvent): Promise<MembershipAuditEvent> {

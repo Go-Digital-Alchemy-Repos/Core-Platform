@@ -1,4 +1,5 @@
 import type { CmsForm, CmsFormField, InsertCmsFormSubmission } from "@shared/schema";
+import { isDeepStrictEqual } from "node:util";
 import { storage } from "../storage";
 import { logger } from "../utils/logger";
 import { sendContactFormEmail, sendManagedFormSubmissionEmail } from "./email.service";
@@ -419,7 +420,7 @@ async function maybeCreateCrmLead(
 export async function submitManagedFormBySlug(
   slug: string,
   data: unknown,
-  options: { baseUrl?: string; source?: string } = {},
+  options: { baseUrl?: string; source?: string; idempotencyKey?: string } = {},
 ) {
   const form = await storage.forms.getPublicBySlug(slug);
   if (!form) {
@@ -434,7 +435,32 @@ export async function submitManagedFormBySlug(
     source: options.source ?? null,
   };
 
-  const submission = await storage.forms.createSubmission(submissionPayload);
+  const idempotencyKey = options.idempotencyKey?.trim();
+  if (idempotencyKey && idempotencyKey.length > 255) {
+    throw new AppError("Idempotency key must be 255 characters or fewer", 400);
+  }
+  const submissionResult = idempotencyKey
+    ? await storage.forms.createSubmissionIdempotently({
+        ...submissionPayload,
+        idempotencyKey,
+      })
+    : { submission: await storage.forms.createSubmission(submissionPayload), created: true };
+  const submission = submissionResult.submission;
+
+  if (!submissionResult.created) {
+    if (
+      !isDeepStrictEqual(submission.data, submissionPayload.data) ||
+      submission.source !== submissionPayload.source
+    ) {
+      throw new AppError("Idempotency key was already used for a different submission", 409);
+    }
+    return {
+      form,
+      submission,
+      successMessage: normalizeFormSettings(form).successMessage,
+      duplicate: true,
+    };
+  }
 
   await maybeSyncFormToMailchimp(form, validated);
   await handleContactFormEffects(form, validated, options.baseUrl);
@@ -445,13 +471,14 @@ export async function submitManagedFormBySlug(
     form,
     submission,
     successMessage: normalizeFormSettings(form).successMessage,
+    duplicate: false,
   };
 }
 
 export async function submitManagedFormById(
   id: string,
   data: unknown,
-  options: { baseUrl?: string; source?: string } = {},
+  options: { baseUrl?: string; source?: string; idempotencyKey?: string } = {},
 ) {
   const form = await storage.forms.getPublicById(id);
   if (!form) {
@@ -459,11 +486,37 @@ export async function submitManagedFormById(
   }
 
   const validated = validateSubmissionData(form, data);
-  const submission = await storage.forms.createSubmission({
+  const submissionPayload: InsertCmsFormSubmission = {
     formId: form.id,
     data: validated,
     source: options.source ?? null,
-  });
+  };
+  const idempotencyKey = options.idempotencyKey?.trim();
+  if (idempotencyKey && idempotencyKey.length > 255) {
+    throw new AppError("Idempotency key must be 255 characters or fewer", 400);
+  }
+  const submissionResult = idempotencyKey
+    ? await storage.forms.createSubmissionIdempotently({
+        ...submissionPayload,
+        idempotencyKey,
+      })
+    : { submission: await storage.forms.createSubmission(submissionPayload), created: true };
+  const submission = submissionResult.submission;
+
+  if (!submissionResult.created) {
+    if (
+      !isDeepStrictEqual(submission.data, submissionPayload.data) ||
+      submission.source !== submissionPayload.source
+    ) {
+      throw new AppError("Idempotency key was already used for a different submission", 409);
+    }
+    return {
+      form,
+      submission,
+      successMessage: normalizeFormSettings(form).successMessage,
+      duplicate: true,
+    };
+  }
 
   await maybeSyncFormToMailchimp(form, validated);
   await handleContactFormEffects(form, validated, options.baseUrl);
@@ -474,6 +527,7 @@ export async function submitManagedFormById(
     form,
     submission,
     successMessage: normalizeFormSettings(form).successMessage,
+    duplicate: false,
   };
 }
 

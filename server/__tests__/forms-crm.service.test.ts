@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockGetPublicBySlug = vi.fn();
 const mockGetPublicById = vi.fn();
 const mockCreateSubmission = vi.fn();
+const mockCreateSubmissionIdempotently = vi.fn();
 const mockCreateCrmLeadFromFormSubmission = vi.fn();
 
 vi.mock("../storage", () => ({
@@ -11,6 +12,7 @@ vi.mock("../storage", () => ({
       getPublicBySlug: mockGetPublicBySlug,
       getPublicById: mockGetPublicById,
       createSubmission: mockCreateSubmission,
+      createSubmissionIdempotently: mockCreateSubmissionIdempotently,
     },
     users: {
       getFormNotificationUsers: vi.fn().mockResolvedValue([]),
@@ -79,6 +81,16 @@ describe("forms CRM ingestion", () => {
       data: {},
       source: "public",
     });
+    mockCreateSubmissionIdempotently.mockResolvedValue({
+      submission: {
+        id: "submission-1",
+        formId: "form-1",
+        data: {},
+        source: null,
+        idempotencyKey: "request-1",
+      },
+      created: true,
+    });
   });
 
   it("creates a CRM lead when the form setting is enabled", async () => {
@@ -104,6 +116,29 @@ describe("forms CRM ingestion", () => {
     expect(mockCreateCrmLeadFromFormSubmission).not.toHaveBeenCalled();
   });
 
+  it("rejects reuse of an idempotency key with a different payload", async () => {
+    mockCreateSubmissionIdempotently.mockResolvedValue({
+      submission: {
+        id: "submission-1",
+        formId: "form-1",
+        data: { name: "Original", email: "original@example.com" },
+        source: null,
+        idempotencyKey: "request-1",
+      },
+      created: false,
+    });
+
+    const { submitManagedFormBySlug } = await import("../services/forms.service");
+
+    await expect(
+      submitManagedFormBySlug(
+        "lead-form",
+        { name: "Lin", email: "lin@example.com" },
+        { idempotencyKey: "request-1" },
+      ),
+    ).rejects.toMatchObject({ statusCode: 409 });
+  });
+
   it("stores event intake submissions with event source metadata", async () => {
     const { submitManagedFormById } = await import("../services/forms.service");
     await submitManagedFormById(
@@ -117,5 +152,28 @@ describe("forms CRM ingestion", () => {
       data: { name: "Lin", email: "lin@example.com" },
       source: "event:event-1",
     });
+  });
+
+  it("does not replay downstream effects for an existing idempotency key", async () => {
+    mockCreateSubmissionIdempotently.mockResolvedValue({
+      submission: {
+        id: "submission-1",
+        formId: "form-1",
+        data: { name: "Lin", email: "lin@example.com" },
+        source: null,
+        idempotencyKey: "request-1",
+      },
+      created: false,
+    });
+
+    const { submitManagedFormBySlug } = await import("../services/forms.service");
+    const result = await submitManagedFormBySlug(
+      "lead-form",
+      { name: "Lin", email: "lin@example.com" },
+      { idempotencyKey: "request-1" },
+    );
+
+    expect(result.duplicate).toBe(true);
+    expect(mockCreateCrmLeadFromFormSubmission).not.toHaveBeenCalled();
   });
 });

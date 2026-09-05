@@ -5,6 +5,7 @@ import { authenticateToken } from "../middleware/auth";
 import { z } from "zod";
 
 const router = Router();
+const notificationIdSchema = z.coerce.number().int().positive();
 router.use(authenticateToken);
 
 router.get(
@@ -38,7 +39,8 @@ router.post(
   "/:id/read",
   asyncHandler(async (req, res) => {
     const userId = req.user!.id;
-    await storage.notifications.markRead(Number(req.params.id), userId);
+    const notificationId = notificationIdSchema.parse(req.params.id);
+    await storage.notifications.markRead(notificationId, userId);
     res.json({ ok: true });
   }),
 );

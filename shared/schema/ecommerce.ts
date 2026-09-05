@@ -1058,11 +1058,15 @@ export const ecommerceProcessedWebhookEvents = pgTable(
     provider: text("provider").notNull().default("stripe"),
     eventId: text("event_id").notNull(),
     eventType: text("event_type").notNull(),
-    processedAt: timestamp("processed_at").notNull().defaultNow(),
+    status: text("status").notNull().default("completed"),
+    claimToken: text("claim_token"),
+    claimedAt: timestamp("claimed_at").notNull().defaultNow(),
+    processedAt: timestamp("processed_at").defaultNow(),
   },
   (table) => [
     uniqueIndex("idx_ecommerce_webhook_events_provider_event").on(table.provider, table.eventId),
     index("idx_ecommerce_webhook_events_processed_at").on(table.processedAt),
+    index("idx_ecommerce_webhook_claim").on(table.status, table.claimedAt),
   ],
 );
 
