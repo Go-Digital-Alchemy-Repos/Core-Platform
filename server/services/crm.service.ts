@@ -63,28 +63,7 @@ export async function createOrUpdateCrmLead(
     nextFollowUpAt: parsed.nextFollowUpAt ?? null,
   };
 
-  const duplicate = await storage.crm.findDuplicateLead(payload);
-  if (duplicate) {
-    const updated = await storage.crm.updateLead(duplicate.id, {
-      metadata: { ...(duplicate.metadata ?? {}), ...(payload.metadata ?? {}) },
-      formData: { ...(duplicate.formData ?? {}), ...(payload.formData ?? {}) },
-      message: payload.message ?? duplicate.message,
-      source: payload.source ?? duplicate.source,
-      externalId: payload.externalId ?? duplicate.externalId,
-      formSubmissionId: payload.formSubmissionId ?? duplicate.formSubmissionId,
-    });
-    await storage.crm.createNote({
-      leadId: duplicate.id,
-      createdById: createdById ?? null,
-      body: `Duplicate lead received from ${payload.source}. Existing lead was updated.`,
-    });
-    return { lead: updated ?? duplicate, duplicate: true };
-  }
-
-  return {
-    lead: await storage.crm.createLead(payload),
-    duplicate: false,
-  };
+  return storage.crm.createOrUpdateInboundLead(payload, createdById);
 }
 
 export async function createCrmLeadFromFormSubmission({

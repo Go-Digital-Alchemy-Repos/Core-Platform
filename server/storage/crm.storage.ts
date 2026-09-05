@@ -100,6 +100,62 @@ export class CrmStorage {
     return { ...lead, notes, tasks, client };
   }
 
+  async createOrUpdateInboundLead(
+    data: InsertCrmLead,
+    createdById?: string | null,
+  ): Promise<{ lead: CrmLead; duplicate: boolean }> {
+    const email = typeof data.email === "string" ? data.email.trim().toLowerCase() : "";
+    const phone = typeof data.phone === "string" ? data.phone.trim() : "";
+    const lockKey = email
+      ? `crm-inbound:email:${email}`
+      : phone
+        ? `crm-inbound:phone:${phone}`
+        : null;
+
+    return db.transaction(async (tx: CrmDbTransaction) => {
+      if (lockKey) {
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`);
+      }
+
+      let duplicate: CrmLead | undefined;
+      if (email) {
+        [duplicate] = await tx
+          .select()
+          .from(crmLeads)
+          .where(sql`lower(${crmLeads.email}) = ${email}`)
+          .limit(1);
+      }
+      if (!duplicate && phone) {
+        [duplicate] = await tx.select().from(crmLeads).where(eq(crmLeads.phone, phone)).limit(1);
+      }
+
+      if (duplicate) {
+        const [updated] = await tx
+          .update(crmLeads)
+          .set({
+            metadata: { ...(duplicate.metadata ?? {}), ...(data.metadata ?? {}) },
+            formData: { ...(duplicate.formData ?? {}), ...(data.formData ?? {}) },
+            message: data.message ?? duplicate.message,
+            source: data.source ?? duplicate.source,
+            externalId: data.externalId ?? duplicate.externalId,
+            formSubmissionId: data.formSubmissionId ?? duplicate.formSubmissionId,
+            updatedAt: new Date(),
+          })
+          .where(eq(crmLeads.id, duplicate.id))
+          .returning();
+        await tx.insert(crmLeadNotes).values({
+          leadId: duplicate.id,
+          createdById: createdById ?? null,
+          body: `Duplicate lead received from ${data.source}. Existing lead was updated.`,
+        });
+        return { lead: updated ?? duplicate, duplicate: true };
+      }
+
+      const [lead] = await tx.insert(crmLeads).values(data).returning();
+      return { lead, duplicate: false };
+    });
+  }
+
   async findDuplicateLead(
     data: Pick<InsertCrmLead, "email" | "phone">,
   ): Promise<CrmLead | undefined> {

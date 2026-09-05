@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockFindDuplicateLead = vi.fn();
-const mockCreateLead = vi.fn();
+const mockCreateOrUpdateInboundLead = vi.fn();
 const mockUpdateLead = vi.fn();
 const mockCreateNote = vi.fn();
 const mockGetClientBySourceLeadId = vi.fn();
@@ -12,8 +11,7 @@ const mockUpdateLeadAndCreateWonClient = vi.fn();
 vi.mock("../storage", () => ({
   storage: {
     crm: {
-      findDuplicateLead: mockFindDuplicateLead,
-      createLead: mockCreateLead,
+      createOrUpdateInboundLead: mockCreateOrUpdateInboundLead,
       updateLead: mockUpdateLead,
       updateLeadAndCreateWonClient: mockUpdateLeadAndCreateWonClient,
       createNote: mockCreateNote,
@@ -30,8 +28,10 @@ describe("crm.service", () => {
   });
 
   it("creates a new lead with normalized inbound data", async () => {
-    mockFindDuplicateLead.mockResolvedValue(undefined);
-    mockCreateLead.mockImplementation(async (lead) => ({ id: "lead-1", ...lead }));
+    mockCreateOrUpdateInboundLead.mockImplementation(async (lead) => ({
+      lead: { id: "lead-1", ...lead },
+      duplicate: false,
+    }));
 
     const { createOrUpdateCrmLead } = await import("../services/crm.service");
     const result = await createOrUpdateCrmLead({
@@ -42,28 +42,22 @@ describe("crm.service", () => {
     });
 
     expect(result.duplicate).toBe(false);
-    expect(mockCreateLead).toHaveBeenCalledWith(
+    expect(mockCreateOrUpdateInboundLead).toHaveBeenCalledWith(
       expect.objectContaining({
         name: "Ada Lovelace",
         email: "ada@example.com",
         source: "facebook",
         stage: "new",
       }),
+      undefined,
     );
   });
 
-  it("updates an existing lead and records a duplicate note", async () => {
-    mockFindDuplicateLead.mockResolvedValue({
-      id: "lead-1",
-      name: "Ada",
-      email: "ada@example.com",
-      phone: null,
-      message: "Old message",
-      source: "manual",
-      metadata: { original: true },
-      formData: {},
+  it("delegates duplicate intake to the atomic storage operation", async () => {
+    mockCreateOrUpdateInboundLead.mockResolvedValue({
+      lead: { id: "lead-1", name: "Ada", email: "ada@example.com" },
+      duplicate: true,
     });
-    mockUpdateLead.mockResolvedValue({ id: "lead-1", name: "Ada", email: "ada@example.com" });
 
     const { createOrUpdateCrmLead } = await import("../services/crm.service");
     const result = await createOrUpdateCrmLead(
@@ -78,19 +72,14 @@ describe("crm.service", () => {
     );
 
     expect(result.duplicate).toBe(true);
-    expect(mockUpdateLead).toHaveBeenCalledWith(
-      "lead-1",
+    expect(mockCreateOrUpdateInboundLead).toHaveBeenCalledWith(
       expect.objectContaining({
-        message: "New message",
+        name: "Ada Lovelace",
+        email: "ada@example.com",
         source: "zapier",
-        metadata: { original: true, campaign: "retargeting" },
+        metadata: { campaign: "retargeting" },
       }),
-    );
-    expect(mockCreateNote).toHaveBeenCalledWith(
-      expect.objectContaining({
-        leadId: "lead-1",
-        createdById: "admin-1",
-      }),
+      "admin-1",
     );
   });
 

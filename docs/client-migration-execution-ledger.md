@@ -1145,3 +1145,16 @@ and budgets remain green.
   build, and bundle budgets passed locally.
 - **Safety boundary:** no WooCommerce endpoint, source export, client data, Railway service, DNS record,
   backup, restore, or production environment was accessed or changed.
+
+### 2026-09-05 — CRM inbound duplicate-intake hardening
+
+- **Implemented:** inbound CRM lead deduplication now occurs inside one database transaction. It acquires
+  transaction-scoped PostgreSQL advisory locks for normalized email and phone identities before it finds,
+  updates, or creates a lead, preventing concurrent requests from creating duplicate leads across application
+  instances.
+- **Behavior preserved:** matching intake updates the existing lead and writes the duplicate audit note;
+  new intake creates one lead. The separate atomic won-lead-to-client conversion remains unchanged.
+- **Evidence:** CRM-focused tests, TypeScript, lint, the full suite (113 files, 541 tests), production build,
+  and bundle budgets passed locally.
+- **Safety boundary:** this local code change did not receive or alter client lead records, CRM credentials,
+  Railway, R2, DNS, backups, restores, or production infrastructure.
