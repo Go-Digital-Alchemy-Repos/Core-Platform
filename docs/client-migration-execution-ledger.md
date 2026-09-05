@@ -1168,3 +1168,14 @@ and budgets remain green.
   114 files and 543 tests, with TypeScript, lint, production build, and bundle budgets also passing locally.
 - **Safety boundary:** no CRM credential, lead payload, client data, Railway, R2, DNS, backup, restore, or
   production infrastructure was accessed or changed.
+
+### 2026-09-05 — Shared-R2 backup client-isolation hardening
+
+- **Implemented:** the backup-storage adapter now rejects unsafe relative paths and refuses backup object
+  downloads or deletions unless the full object key is inside the active client's configured backup prefix.
+  Listing also rejects unsafe relative prefixes. This keeps administrative restore and retention operations
+  confined to `clients/<client-domain>/backups/` in the shared bucket.
+- **Evidence:** focused R2, backup-storage, and restore-identity tests passed. TypeScript, lint, the full
+  suite (115 files, 545 tests), production build, and bundle budgets passed locally.
+- **Safety boundary:** no R2 account, bucket, object, backup, restore, Railway environment, DNS record, or
+  client data was accessed or changed.

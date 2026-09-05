@@ -143,6 +143,22 @@ function qualifyKey(key: string, prefixOverride?: string): string {
   return `${prefix}/${normalizedKey}`.replace(/\/+/g, "/");
 }
 
+function isSafeRelativeKey(key: string): boolean {
+  const normalizedKey = key.replace(/^\/+/, "");
+  return (
+    Boolean(normalizedKey) &&
+    normalizedKey
+      .split("/")
+      .every((segment) => segment !== "" && segment !== "." && segment !== "..")
+  );
+}
+
+function isQualifiedKeyForPrefix(key: string, prefix: string): boolean {
+  const normalizedKey = key.replace(/^\/+/, "");
+  const normalizedPrefix = normalizePrefix(prefix);
+  return isSafeRelativeKey(normalizedKey) && normalizedKey.startsWith(`${normalizedPrefix}/`);
+}
+
 export async function isBackupStorageConfigured(): Promise<boolean> {
   return (await loadConfig()) !== null;
 }
@@ -167,6 +183,11 @@ export async function uploadBackupObject(
   const result = await getClient();
   if (!result) return null;
 
+  if (!isSafeRelativeKey(key)) {
+    logger.backup.warn("Refusing backup upload with an unsafe relative object key", { key });
+    return null;
+  }
+
   const qualifiedKey = qualifyKey(key, result.config.prefix);
 
   await result.client.send(
@@ -187,6 +208,11 @@ export async function downloadBackupObject(key: string): Promise<Buffer | null> 
   const result = await getClient();
   if (!result) return null;
 
+  if (!isQualifiedKeyForPrefix(key, result.config.prefix)) {
+    logger.backup.warn("Refusing backup download outside the configured client prefix", { key });
+    return null;
+  }
+
   const response = await result.client.send(
     new GetObjectCommand({
       Bucket: result.config.bucketName,
@@ -203,6 +229,11 @@ export async function listBackupObjects(
 ): Promise<BackupObjectSummary[]> {
   const result = await getClient();
   if (!result) return [];
+
+  if (relativePrefix && !isSafeRelativeKey(relativePrefix)) {
+    logger.backup.warn("Refusing backup list with an unsafe relative prefix", { relativePrefix });
+    return [];
+  }
 
   const prefix = relativePrefix
     ? qualifyKey(relativePrefix, result.config.prefix)
@@ -233,6 +264,11 @@ export async function listBackupObjects(
 export async function deleteBackupObject(key: string): Promise<void> {
   const result = await getClient();
   if (!result) return;
+
+  if (!isQualifiedKeyForPrefix(key, result.config.prefix)) {
+    logger.backup.warn("Refusing backup deletion outside the configured client prefix", { key });
+    return;
+  }
 
   await result.client.send(
     new DeleteObjectCommand({
