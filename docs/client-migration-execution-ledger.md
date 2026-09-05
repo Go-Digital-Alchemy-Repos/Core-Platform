@@ -207,11 +207,19 @@ The image must retain docs and installed production dependencies alongside dist.
 fixture proves the artifact/start command locally; live config adoption remains a release gate.
 The engineering specialist is converting the fixture into a reproducible CI production-start gate.
 
+### Planning reconciliation
+
+The master plan's historical planning-only authorization paragraph was superseded by the owner's
+current autonomous execution authorization. Its current-state section now reflects the approved
+seven-route/no-import pilot, operator and recovery fields already present in intake, while retaining
+the draft overall intake and unresolved client production release gates. This removes contradictory
+instructions without converting incomplete production evidence into approval.
+
 ## Current Program State
 
 | Milestone                             | Status      | Evidence                                                                                                                                                                                                         | Remaining gate                                                                                                                                                                               |
 | ------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0. Governance and baseline            | In progress | Core baseline `e2ba048`; Better Farms baseline `6dd6335`; Woo prototypes `325188d` and `ffd11a6`; orchestrator review and fail-closed intake contract recorded                                                   | Confirm final Better Farms modules, import history/exclusions, approvers, domain/operator details, success measures, RPO/RTO, and rollback triggers before the dependent production gates    |
+| 0. Governance and baseline            | In progress | Core baseline `e2ba048`; Better Farms baseline `6dd6335`; Woo prototypes `325188d` and `ffd11a6`; orchestrator review and fail-closed intake contract recorded                                                   | Verify remaining client launch evidence and approvals; approved intake already records seven routes, no import/live checkout/DNS cutover, Mike as operator, and 1440-minute RPO/RTO    |
 | 1. Manifest and integration contracts | In progress | Manifest v1.0, compatibility validation, exact-origin preview, runtime publication ADR, Better Farms fixture, WooCommerce import contract v1.0.0, and a registrar-neutral DNS-plan/verification contract         | Client confirmation of pilot modules, exact domains and origin ownership, provider responsibilities, and remaining route/data decisions                                                      |
 | 2. Better Farms adapter               | In progress | Better Farms source `31deb36`; locked shell, theme adapter, bounded Fund a Farm registry/content, preview, runtime API fallback, authenticated public-form proxy, route metadata, and hosted quality gate        | Complete site inventory and expand page, form, SEO, accessibility, responsive, and asset coverage incrementally                                                                              |
 | 3. Railway deployment foundation      | In progress | Client-stack preflight, stack identity, Railway/manual-domain runbook, backup provenance, runtime-publishing rollback runbook, registrar-neutral onboarding, and read-only A/AAAA/CNAME propagation verification | Record client ownership/certificate/routing/API/health/redirect/rollback evidence, provider-specific ALIAS/ANAME evidence where applicable, and rehearse restore in a disposable environment |
@@ -243,8 +251,8 @@ portfolio is not release-ready. Work is ordered by boundary risk and dependency:
 4. Migration and operations: durable WooCommerce mappings/runs, pagination and retention, object backup/restore,
    CI/E2E/accessibility gates, and module observability.
 
-Notifications are currently a UI/storage scaffold without production event producers. CRM is suitable only for a
-controlled low-volume pilot after atomic conversion. Ecommerce and memberships must not process live transactions
+Notifications are currently a UI/storage scaffold without production event producers. CRM atomic conversion and CRM-1 presentation settings now have disposable database and real-browser
+acceptance evidence; production release and broader CRM enhancements remain open. Ecommerce and memberships must not process live transactions
 until their webhook and transaction gates are closed.
 
 ## Security Baseline

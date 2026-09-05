@@ -387,24 +387,30 @@ Later enhancements:
 - requesting or storing registrar/DNS-provider credentials, or automatically changing DNS records;
 - launch without Project Owner authorization and recorded gate evidence.
 
-## Planning State and Next Authorization Points
+## Current execution authority and remaining client gates
 
-The single-client architecture and milestone ordering are accepted as the planning baseline. The reviewed
-deployment preflight and backup identity draft may be preserved in the repository as Milestone 3
-scaffolding, but it does not prove a deployable two-origin client stack. The first authorized execution
-wave should be limited to Milestone 0 evidence/intake and Milestone 1 contracts.
+The Project Owner has authorized the Orchestrator to continue implementation and verification
+sprint by sprint, including the September 5 infrastructure/engineering fixes, ecommerce completion,
+and compatible CRM improvements. The earlier restriction to the first planning wave is superseded
+by that authorization. Routine development does not require repeated basic approvals.
 
-Before public-site integration or a Woo adapter begins, the Project Owner must decide:
+The current Better Farms intake records an approved seven-route pilot and no source import.
+Live checkout, WooCommerce catalog/media or customer/order history import, and production DNS
+cutover are excluded. It also records Mike as DNS/release operator and approved recovery targets
+of 1440 minutes RPO and RTO. The overall intake remains draft and its release section blocked;
+these approved fields do not by themselves approve a production launch.
 
-1. the Better Farms pilot modules, data-history scope, exclusions, success measures, and rollback limits;
-2. the exact Better Farms domain names, apex/`www` policy, DNS/hosting providers, and named operator who
-   will apply the generated DNS instructions manually;
-3. whether CMS/Puck publishing updates the public site at runtime, triggers a static rebuild, or uses a
-   reviewed hybrid;
-4. which parts of Woo prototypes `325188d` and `ffd11a6` form the accepted import contract;
-5. the client approvers, RPO/RTO, provider ownership, and launch authority.
+Runtime publication, client/site manifest and WooCommerce catalog rehearsal contracts already have
+implementation and evidence recorded in the [execution ledger](client-migration-execution-ledger.md).
+Preserve those contracts while completing integration and acceptance. Do not restart resolved
+architecture decisions based on this plan's historical planning language.
 
-See [Orchestrator Client Migration Review](orchestrator-client-migration-review-2026-09-03.md) for bounded
-task ownership and acceptance criteria.
+Before the dependent client launch, verify the exact domains and origin ownership, remaining
+client/provider responsibilities, complete route/form/content acceptance, actual recovery and rollback
+evidence, and the required release approvals. Keep release blocked where that evidence is missing;
+continue authorized implementation and disposable rehearsals independently. Better Farms remains
+no-import unless the Project Owner explicitly changes that scope.
 
-This plan alone authorizes no product implementation, deployment, or infrastructure mutation.
+See the [pilot intake](pilots/better-farms/client-migration-intake.example.json) and current execution
+ledger for field-level evidence and unresolved gates. Examples, local tests and green CI are not
+substitutes for client production acceptance.
