@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import {
+  assertWooImportRehearsalEnvironment,
   parseWooImportApplyCommand,
   WooImportCommandError,
 } from "../services/woocommerce-import-command.service";
@@ -22,6 +23,7 @@ async function readDispositionSchedule(value: string | undefined) {
 
 async function main() {
   const command = parseWooImportApplyCommand(process.argv.slice(2));
+  assertWooImportRehearsalEnvironment(command);
   let input: unknown;
   try {
     input = JSON.parse(await readFile(path.resolve(command.inputPath), "utf8")) as unknown;

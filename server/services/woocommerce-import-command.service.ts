@@ -8,6 +8,41 @@ export class WooImportCommandError extends Error {
   }
 }
 
+export interface WooImportExecutionEnvironment {
+  nodeEnv?: string;
+  clientStackId?: string;
+}
+
+export function assertWooImportRehearsalEnvironment(
+  command: Pick<WooImportApplyCommand, "targetStackId">,
+  environment: WooImportExecutionEnvironment = {
+    nodeEnv: process.env.NODE_ENV,
+    clientStackId: process.env.CLIENT_STACK_ID,
+  },
+) {
+  if (environment.nodeEnv === "production") {
+    throw new WooImportCommandError(
+      "production_environment_forbidden",
+      "WooCommerce rehearsal imports are forbidden in a production runtime",
+    );
+  }
+
+  const clientStackId = environment.clientStackId?.trim();
+  if (!clientStackId) {
+    throw new WooImportCommandError(
+      "target_stack_unconfigured",
+      "CLIENT_STACK_ID must identify the isolated rehearsal target",
+    );
+  }
+
+  if (clientStackId !== command.targetStackId) {
+    throw new WooImportCommandError(
+      "target_stack_mismatch",
+      "--target-stack must match the configured CLIENT_STACK_ID",
+    );
+  }
+}
+
 export interface WooImportApplyCommand {
   inputPath: string;
   targetStackId: string;

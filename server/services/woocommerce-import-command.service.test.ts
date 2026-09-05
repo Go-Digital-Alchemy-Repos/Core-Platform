@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  assertWooImportRehearsalEnvironment,
   WooImportCommandError,
   parseWooImportApplyCommand,
 } from "./woocommerce-import-command.service";
@@ -32,6 +33,30 @@ describe("WooCommerce durable apply command", () => {
       resumeRunId: undefined,
       dispositionPath: undefined,
     });
+  });
+
+  it("refuses production runtimes and target identities that do not match the configured stack", () => {
+    const command = parseWooImportApplyCommand(validArgs());
+
+    expect(() =>
+      assertWooImportRehearsalEnvironment(command, {
+        nodeEnv: "production",
+        clientStackId: "isolated-rehearsal",
+      }),
+    ).toThrow(/forbidden in a production runtime/);
+    expect(() => assertWooImportRehearsalEnvironment(command, {})).toThrow(/CLIENT_STACK_ID/);
+    expect(() =>
+      assertWooImportRehearsalEnvironment(command, {
+        nodeEnv: "test",
+        clientStackId: "another-stack",
+      }),
+    ).toThrow(/must match/);
+    expect(() =>
+      assertWooImportRehearsalEnvironment(command, {
+        nodeEnv: "test",
+        clientStackId: "isolated-rehearsal",
+      }),
+    ).not.toThrow();
   });
 
   it("fails closed without the apply flag or a rehearsal mode", () => {

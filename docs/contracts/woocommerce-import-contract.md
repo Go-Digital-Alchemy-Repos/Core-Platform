@@ -283,10 +283,12 @@ npm run migration:woocommerce:validate -- /secure/path/woocommerce-envelope.json
 ```
 
 After the offline report has been reviewed, an operator may apply a **synthetic or isolated rehearsal** only
-through the explicit durable command below. It rejects cutover mode and requires the exact planned fingerprint;
-it must never be pointed at a production target.
+through the explicit durable command below. It rejects cutover mode, production runtimes, and a target-stack
+value that does not match `CLIENT_STACK_ID`; it requires the exact planned fingerprint and must never be
+pointed at a production target.
 
 ```bash
+CLIENT_STACK_ID=isolated-rehearsal NODE_ENV=development \
 npm run migration:woocommerce:apply -- /secure/path/woocommerce-envelope.json \
   --target-stack isolated-rehearsal \
   --operator approved-operator-reference \

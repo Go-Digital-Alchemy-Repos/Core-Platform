@@ -1133,3 +1133,15 @@ and budgets remain green.
   production build, and bundle budgets passed locally.
 - **Safety boundary:** this change does not submit forms, alter client records, or access Railway, R2, DNS,
   backups, restores, or production infrastructure.
+
+### 2026-09-05 — WooCommerce rehearsal target guard
+
+- **Implemented:** the durable WooCommerce apply command now fails closed in a production runtime and when
+  `--target-stack` does not match the configured `CLIENT_STACK_ID`. This makes the command's documented
+  isolated-rehearsal restriction an executable boundary rather than a convention.
+- **Scope:** the importer remains catalog-only and rehearsal-only. Customer and historical-order durable
+  application remain disabled; Better Farms remains a no-import pilot.
+- **Evidence:** command-boundary tests, TypeScript, lint, the full suite (113 files, 541 tests), production
+  build, and bundle budgets passed locally.
+- **Safety boundary:** no WooCommerce endpoint, source export, client data, Railway service, DNS record,
+  backup, restore, or production environment was accessed or changed.
