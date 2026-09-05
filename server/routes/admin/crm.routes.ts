@@ -1,3 +1,8 @@
+import { requireRole } from "../../middleware/auth";
+import {
+  getCrmPipelineSettings,
+  saveCrmPipelineSettings,
+} from "../../services/crm-pipeline-settings.service";
 import { Router } from "express";
 import { z } from "zod";
 import {
@@ -13,6 +18,20 @@ import { paramString } from "../../utils/params";
 import type { CrmClientStatus, CrmLeadStage } from "@shared/schema";
 
 const router = Router();
+
+router.get(
+  "/settings/pipeline",
+  asyncHandler(async (_req, res) => {
+    res.json(await getCrmPipelineSettings());
+  }),
+);
+router.put(
+  "/settings/pipeline",
+  requireRole("admin"),
+  asyncHandler(async (req, res) => {
+    res.json(await saveCrmPipelineSettings(req.body, req.user!.id));
+  }),
+);
 
 const leadUpdateSchema = crmLeadInputSchema.partial();
 const noteSchema = z.object({ body: z.string().trim().min(1, "Note is required") });

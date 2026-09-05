@@ -1,3 +1,4 @@
+import { startStoppableWorker } from "../utils/runtime-lifecycle";
 import type { Event } from "@shared/schema/events";
 import type { EventRegistration } from "@shared/schema/event-registrations";
 import { storage } from "../storage";
@@ -24,7 +25,7 @@ export function canSendEventReminder(
   return event.registrationType !== "paid" || registration.paymentStatus === "paid";
 }
 
-export async function runEventReminders() {
+export async function runEventReminders(isStopping: () => boolean = () => false) {
   try {
     const now = new Date();
     const in24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
@@ -41,6 +42,7 @@ export async function runEventReminders() {
     const sentIds: string[] = [];
 
     for (const reg of registrations) {
+      if (isStopping()) break;
       const event = eventMap.get(reg.eventId);
       if (!event || !canSendEventReminder(event, reg)) continue;
 
@@ -85,7 +87,11 @@ export async function runEventReminders() {
 }
 
 export function startEventReminderService() {
-  setInterval(() => void runEventReminders(), CHECK_INTERVAL_MS);
-  void runEventReminders();
+  const worker = startStoppableWorker({
+    intervalMs: CHECK_INTERVAL_MS,
+    run: runEventReminders,
+    onError: (error) => logger.app.error("Event reminder worker failed", error),
+  });
   logger.app.info("[event-reminder] Event reminder service started");
+  return worker;
 }

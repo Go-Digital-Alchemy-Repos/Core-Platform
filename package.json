@@ -28,7 +28,8 @@
     "lint": "eslint client/src server shared",
     "format": "prettier --check client/src server shared",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test --config playwright.app.config.ts",
+    "test:e2e:layout": "playwright test --config playwright.config.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1004.0",

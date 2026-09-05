@@ -1,3 +1,4 @@
+import { startStoppableWorker } from "../utils/runtime-lifecycle";
 import { storage } from "../storage";
 import { logger } from "../utils/logger";
 import { recordDomainOutcome } from "../utils/metrics";
@@ -54,6 +55,7 @@ async function dispatchEcommerceNotificationJob(job: {
 export async function runEcommerceNotificationJobs(
   clock: Date | (() => Date) = () => new Date(),
   maxJobs = MAX_JOBS_PER_RUN,
+  isStopping: () => boolean = () => false,
 ) {
   // Explicit dates preserve fixed-clock test callers. Workers use a fresh clock
   // reading for each operation so later jobs do not inherit the batch's lease.
@@ -63,6 +65,7 @@ export async function runEcommerceNotificationJobs(
   let failed = 0;
 
   for (let index = 0; index < maxJobs; index += 1) {
+    if (isStopping()) break;
     const job = await storage.ecommerce.claimNextEcommerceNotificationJob(getNow());
     if (!job) break;
     if (!job.processingToken) {
@@ -110,23 +113,16 @@ export async function runEcommerceNotificationJobs(
 }
 
 export function startEcommerceNotificationJobService() {
-  let running = false;
-  const run = async () => {
-    if (running) return;
-    running = true;
-    try {
-      const result = await runEcommerceNotificationJobs();
+  const worker = startStoppableWorker({
+    intervalMs: CHECK_INTERVAL_MS,
+    run: async (isStopping) => {
+      const result = await runEcommerceNotificationJobs(undefined, undefined, isStopping);
       if (result.completed || result.retried || result.failed) {
         logger.app.info("Ecommerce notification jobs processed", result);
       }
-    } catch (error) {
-      logger.app.error("Ecommerce notification worker failed", error);
-    } finally {
-      running = false;
-    }
-  };
-
-  setInterval(() => void run(), CHECK_INTERVAL_MS);
-  void run();
+    },
+    onError: (error) => logger.app.error("Ecommerce notification worker failed", error),
+  });
   logger.app.info("Ecommerce notification worker started");
+  return worker;
 }

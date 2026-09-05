@@ -1,3 +1,4 @@
+import { startStoppableWorker, type StoppableWorker } from "../utils/runtime-lifecycle";
 import { gzipSync, gunzipSync } from "zlib";
 import type { PoolClient } from "pg";
 import { pool } from "../db";
@@ -76,7 +77,7 @@ const MANIFEST_LATEST_KEY = "manifests/latest.json";
 const SNAPSHOT_PREFIX = "db";
 const ADVISORY_LOCK_ID = 880_120_441;
 const DEFAULT_EXCLUDED_TABLES = new Set(["session", "__drizzle_migrations"]);
-let backupTimer: NodeJS.Timeout | null = null;
+let backupWorker: StoppableWorker | undefined;
 
 function quoteIdent(identifier: string) {
   return `"${identifier.replace(/"/g, '""')}"`;
@@ -571,7 +572,7 @@ export async function restoreSystemBackupFromKey(key: string) {
 }
 
 export function startSystemBackupService() {
-  if (backupTimer) return;
+  if (backupWorker) return backupWorker;
 
   if (!shouldEnableBackups()) {
     logger.backup.info("System backups are disabled");
@@ -580,7 +581,7 @@ export function startSystemBackupService() {
 
   const intervalMs = getBackupIntervalHours() * 60 * 60 * 1000;
 
-  const tick = async () => {
+  const tick = async (isStopping: () => boolean) => {
     try {
       const configured = await isBackupStorageConfigured();
       if (!configured) {
@@ -588,6 +589,7 @@ export function startSystemBackupService() {
         return;
       }
 
+      if (isStopping()) return;
       const latest = await listRecentBackupManifests(1).then((items) => items[0] ?? null);
       const latestAgeMs = latest
         ? Date.now() - new Date(latest.createdAt).getTime()
@@ -597,27 +599,25 @@ export function startSystemBackupService() {
         return;
       }
 
+      if (isStopping()) return;
       await runSystemBackup(latest ? "scheduled" : "startup");
     } catch (error) {
       logger.backup.error("Scheduled backup run failed", error);
     }
   };
 
-  void tick();
-  backupTimer = setInterval(
-    () => {
-      void tick();
-    },
-    Math.min(intervalMs, 60 * 60 * 1000),
-  );
-
-  if (typeof backupTimer.unref === "function") {
-    backupTimer.unref();
-  }
+  const worker = startStoppableWorker({
+    intervalMs: Math.min(intervalMs, 60 * 60 * 1000),
+    run: tick,
+    unref: true,
+    onError: (error) => logger.backup.error("Scheduled backup run failed", error),
+  });
+  backupWorker = { stop: () => worker.stop() };
 
   logger.backup.info("System backup service started", {
     intervalHours: getBackupIntervalHours(),
     retentionDays: getRetentionDays(),
     maxSnapshots: getMaxSnapshots(),
   });
+  return backupWorker;
 }

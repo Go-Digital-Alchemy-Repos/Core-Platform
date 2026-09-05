@@ -1,58 +1,32 @@
 import { storage } from "../storage";
 import { logger } from "../utils/logger";
+import { startStoppableWorker } from "../utils/runtime-lifecycle";
 
 const HEARTBEAT_MS = 5 * 60_000;
 
 export function startScheduledPublishService() {
-  let timer: ReturnType<typeof setTimeout> | null = null;
-
-  async function getNextScheduledTime(): Promise<Date | null> {
-    const [pageTime, postTime] = await Promise.all([
-      storage.cmsPages.getNextScheduledTime(),
-      storage.blog.getNextScheduledTime(),
-    ]);
-    if (!pageTime && !postTime) return null;
-    if (!pageTime) return postTime;
-    if (!postTime) return pageTime;
-    return pageTime < postTime ? pageTime : postTime;
-  }
-
-  async function run() {
-    timer = null;
-    try {
+  const worker = startStoppableWorker({
+    intervalMs: HEARTBEAT_MS,
+    run: async (isStopping) => {
       const pages = await storage.cmsPages.publishScheduledPages();
+      if (isStopping()) return;
       const posts = await storage.blog.publishScheduledPosts();
-      if (pages > 0 || posts > 0) {
+      if (pages > 0 || posts > 0)
         logger.app.info(`[scheduler] Auto-published ${pages} page(s) and ${posts} post(s)`);
-      }
-    } catch (err) {
-      logger.app.error("[scheduler] Failed to check scheduled content:", err);
-    }
-    await scheduleNext();
-  }
-
-  async function scheduleNext() {
-    if (timer) {
-      clearTimeout(timer);
-      timer = null;
-    }
-    try {
-      const next = await getNextScheduledTime();
-      if (next) {
-        const delay = Math.max(next.getTime() - Date.now(), 1000);
-        const capped = Math.min(delay, HEARTBEAT_MS);
-        timer = setTimeout(run, capped);
-        logger.app.info(`[scheduler] Next check in ${Math.round(capped / 1000)}s`);
-      } else {
-        timer = setTimeout(run, HEARTBEAT_MS);
-        logger.app.info(`[scheduler] No scheduled content; heartbeat in ${HEARTBEAT_MS / 1000}s`);
-      }
-    } catch (err) {
-      logger.app.error("[scheduler] Failed to determine next schedule:", err);
-      timer = setTimeout(run, HEARTBEAT_MS);
-    }
-  }
-
-  run();
+      if (isStopping()) return;
+      const [pageTime, postTime] = await Promise.all([
+        storage.cmsPages.getNextScheduledTime(),
+        storage.blog.getNextScheduledTime(),
+      ]);
+      const times = [pageTime, postTime].filter((value): value is Date => value !== null);
+      if (!times.length) return HEARTBEAT_MS;
+      return Math.min(
+        Math.max(Math.min(...times.map((time) => time.getTime())) - Date.now(), 1000),
+        HEARTBEAT_MS,
+      );
+    },
+    onError: (error) => logger.app.error("[scheduler] Failed to check scheduled content", error),
+  });
   logger.app.info("[scheduler] Scheduled publishing service started");
+  return worker;
 }

@@ -1,3 +1,4 @@
+import { startStoppableWorker } from "../utils/runtime-lifecycle";
 import { storage } from "../storage";
 import { logger } from "../utils/logger";
 import { getDirectorySettings } from "./directory-settings.service";
@@ -51,7 +52,7 @@ async function activateProfileForTherapist(therapistId: string) {
   }
 }
 
-export async function processDirectoryMembershipLifecycle() {
+export async function processDirectoryMembershipLifecycle(isStopping: () => boolean = () => false) {
   const settings = await getDirectorySettings();
   const now = new Date();
   const renewalWindowEnd = new Date(
@@ -64,6 +65,7 @@ export async function processDirectoryMembershipLifecycle() {
   ]);
 
   for (const subscription of subscriptions) {
+    if (isStopping()) break;
     try {
       const user = await storage.users.getUser(subscription.therapistId);
       if (!user) continue;
@@ -196,15 +198,11 @@ export async function handleMembershipRecovered(
 }
 
 export function startDirectoryMembershipLifecycleService() {
-  async function run() {
-    try {
-      await processDirectoryMembershipLifecycle();
-    } catch (err) {
-      logger.app.error("[directory-membership] Lifecycle service failed", err);
-    }
-  }
-
-  setInterval(run, CHECK_INTERVAL_MS);
-  run();
+  const worker = startStoppableWorker({
+    intervalMs: CHECK_INTERVAL_MS,
+    run: processDirectoryMembershipLifecycle,
+    onError: (error) => logger.app.error("[directory-membership] Lifecycle service failed", error),
+  });
   logger.app.info("[directory-membership] Directory membership lifecycle service started");
+  return worker;
 }

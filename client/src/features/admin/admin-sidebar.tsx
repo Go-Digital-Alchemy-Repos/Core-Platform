@@ -253,6 +253,16 @@ export function buildNavGroups(
                 icon: UserCheck,
                 iconColor: "text-emerald-600",
               },
+              ...(user?.role === "admin"
+                ? [
+                    {
+                      title: "Settings",
+                      href: "/admin/crm/settings",
+                      icon: Settings,
+                      iconColor: "text-slate-500",
+                    },
+                  ]
+                : []),
             ],
           },
         ] satisfies NavGroup[])

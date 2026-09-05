@@ -1,3 +1,4 @@
+import { startStoppableWorker } from "../utils/runtime-lifecycle";
 import { type CmsFormEffectJob } from "@shared/schema";
 import { storage } from "../storage";
 import { logger } from "../utils/logger";
@@ -71,11 +72,16 @@ async function applyJob(job: CmsFormEffectJob, clock: () => Date) {
   return storage.forms.completeEffectJob(job.id, token, outcome, clock);
 }
 
-export async function runFormEffectJobs(clock: () => Date = () => new Date(), maxJobs = 25) {
+export async function runFormEffectJobs(
+  clock: () => Date = () => new Date(),
+  maxJobs = 25,
+  isStopping: () => boolean = () => false,
+) {
   let completed = 0;
   let retried = 0;
   let failed = 0;
   for (let i = 0; i < maxJobs; i += 1) {
+    if (isStopping()) break;
     const job = await storage.forms.claimNextEffectJob(clock());
     if (!job) break;
     try {
@@ -97,18 +103,11 @@ export async function runFormEffectJobs(clock: () => Date = () => new Date(), ma
 }
 
 export function startFormEffectJobService() {
-  let running = false;
-  const run = async () => {
-    if (running) return;
-    running = true;
-    try {
-      await runFormEffectJobs();
-    } catch {
-      logger.app.error("Managed form effect worker failed");
-    } finally {
-      running = false;
-    }
-  };
-  setInterval(() => void run(), 30_000);
-  void run();
+  return startStoppableWorker({
+    intervalMs: 30_000,
+    run: async (isStopping) => {
+      await runFormEffectJobs(undefined, undefined, isStopping);
+    },
+    onError: () => logger.app.error("Managed form effect worker failed"),
+  });
 }

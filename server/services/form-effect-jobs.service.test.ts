@@ -137,4 +137,19 @@ describe("form effect worker", () => {
     expect(mocks.claim).toHaveBeenNthCalledWith(2, later);
     expect(mocks.retry).toHaveBeenCalledWith(expect.objectContaining({ id: "a" }), later);
   });
+  it("finishes and fences its claimed effect after stop, without claiming the next job", async () => {
+    let stopping = false;
+    mocks.claim.mockResolvedValue(job("a", notification));
+    mocks.email.mockImplementationOnce(async () => {
+      stopping = true;
+      return "completed";
+    });
+    expect(await runFormEffectJobs(undefined, 25, () => stopping)).toEqual({
+      completed: 1,
+      retried: 0,
+      failed: 0,
+    });
+    expect(mocks.complete).toHaveBeenCalledWith("a", "token-a", "completed", expect.any(Function));
+    expect(mocks.claim).toHaveBeenCalledTimes(1);
+  });
 });

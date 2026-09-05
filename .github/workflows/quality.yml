@@ -72,7 +72,7 @@ jobs:
         run: >-
           node --input-type=module -e 'import pg from "pg";
           const pool = new pg.Pool();
-          try { for (const name of ["core_backup_test", "core_form_effect_test", "core_reservation_expiry_test"])
+          try { for (const name of ["core_backup_test", "core_form_effect_test", "core_reservation_expiry_test", "core_browser_test"])
           await pool.query(`CREATE DATABASE ${name}`); } finally { await pool.end(); }'
 
       - name: Verify database reliability across timezones
@@ -90,3 +90,11 @@ jobs:
 
       - name: Enforce bundle budgets
         run: npm run budget
+
+      - name: Install browser test runtime
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify real application browser journeys
+        env:
+          BROWSER_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/core_browser_test
+        run: npx playwright test --config playwright.app.config.ts

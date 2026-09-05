@@ -42,6 +42,9 @@ const router = Router();
 
 router.use(authenticateToken);
 
+// CRM editors must reach their scoped router before the admin-only root mounts.
+router.use("/crm", requireCrmEnabled, requireAdminPermission("crm"), crmRoutes);
+
 router.use("/", requireRole("admin"), dashboardRoutes);
 router.use(
   "/therapists",
@@ -86,7 +89,6 @@ router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsAudi
 router.use("/cms", requireCmsEnabled, requireAdminPermission("design"), cmsMenusRoutes);
 router.use("/cms", requireCmsEnabled, requireAdminPermission("design"), cmsSidebarsRoutes);
 router.use("/", requireAdminPermission("content"), formsRoutes);
-router.use("/crm", requireCrmEnabled, requireAdminPermission("crm"), crmRoutes);
 router.use("/ecommerce", requireRole("admin"), ecommerceRoutes);
 router.use("/membership", requireMembershipEnabled, requireRole("admin"), membershipRoutes);
 router.use("/careers", requireCareersEnabled, requireAdminPermission("content"), careersRoutes);

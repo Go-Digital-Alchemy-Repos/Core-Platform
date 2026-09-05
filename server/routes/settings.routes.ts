@@ -1,3 +1,4 @@
+import { CRM_PIPELINE_SETTING_KEY } from "@shared/crm-pipeline-settings";
 import { Router, type NextFunction, type Request, type Response } from "express";
 import multer from "multer";
 import { z } from "zod";
@@ -97,6 +98,10 @@ router.put(
   requireSettingWritePermission,
   asyncHandler(async (req, res) => {
     const data = upsertSettingSchema.parse(req.body);
+    if (data.key === CRM_PIPELINE_SETTING_KEY)
+      return res
+        .status(400)
+        .json({ message: "Use /api/admin/crm/settings/pipeline to update pipeline settings" });
     if (req.user?.role !== "admin") {
       const existing = (await storage.settings.getAllSettings()).find(
         (setting) => setting.key === data.key,
@@ -182,6 +187,10 @@ router.delete(
   "/settings/:key",
   requireRole("admin"),
   asyncHandler(async (req, res) => {
+    if (paramString(req.params.key) === CRM_PIPELINE_SETTING_KEY)
+      return res
+        .status(400)
+        .json({ message: "Use /api/admin/crm/settings/pipeline to restore pipeline defaults" });
     await storage.settings.deleteSetting(paramString(req.params.key));
     res.json({ message: "Setting deleted" });
   }),

@@ -132,6 +132,34 @@ HTTP/worker tests required. The CRM specialist owns CRM-1 implementation against
 contract, including actual mounted permission tests and browser acceptance. These in-progress
 candidates are not release evidence and remain subject to Orchestrator integration review.
 
+### CRM presentation, graceful shutdown and actual browser checkpoint
+
+CRM-1 now has typed settings for label/color/order over the original six stage keys, admin-only
+writes, permitted CRM-editor reads and reserved-key protection in the generic settings routes.
+Mounted permission tests exposed the earlier root admin guard blocking CRM editors before their
+CRM gate. Moving only the CRM mount before that blanket guard restores the intended access;
+unrelated admin routes remain protected. The UI now consumes the shared configuration throughout
+pipeline presentation. No lifecycle stage enum or won-conversion behavior changed.
+
+Runtime signals now stop admission and polling, drain startup/HTTP/current worker work, then close
+the database. A bounded deadline forces nonzero exit when work cannot drain. Independent review
+accepted the implementation; 24 lifecycle/worker checks passed, including real HTTP sockets, and
+an actual application signal shutdown exited cleanly. Railway termination grace must still be
+verified against the configured application deadline before production release.
+
+The new default browser suite starts actual Express/Vite against guarded, synthetic local PostgreSQL
+and excludes inherited provider credentials and both server/Vite dotenv discovery. Six journeys
+passed across desktop and mobile: all five ecommerce settings destinations plus reload, CRM UI
+save/reload with original stage keys, and editor read/write/route boundaries. CI now installs Chromium
+and runs these journeys. The old synthetic CSS fixtures are explicitly separate layout checks.
+
+Combined validation: 670 tests passed with 18 opt-in database checks skipped in that ordinary run;
+the earlier hosted reliability checkpoint ran those database checks explicitly. Current TypeScript,
+lint, formatting, build and bundle budgets passed. The six new browser journeys passed locally;
+the new hosted browser gate is awaiting its first run. CRM saved-config backup/restore, renamed-won
+conversion and the rest of the detailed CRM acceptance contract remain open. These changes are
+committed candidates, not a claim of production deployment or full program completion.
+
 ## Current Program State
 
 | Milestone                             | Status      | Evidence                                                                                                                                                                                                         | Remaining gate                                                                                                                                                                               |

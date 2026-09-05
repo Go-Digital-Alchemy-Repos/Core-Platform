@@ -87,13 +87,15 @@ Current guardrails expect app-level routes such as CRM and ecommerce to stay laz
 The tracked GitHub Actions quality workflow runs automatically on every push and pull request. It executes:
 
 1. `npm ci` — clean install of dependencies
-2. `npm run db:verify` — applies migrations to the workflow's isolated PostgreSQL 16 service
+2. Apply migrations twice to the workflow's isolated PostgreSQL 16 service
 3. `npm run check` — type-checking
 4. `npm run lint` — linting
 5. `npm run format` — formatting check
 6. `npm test` — unit tests
-7. `npm run build` — production bundle verification
-8. `npm run budget` — production asset size budget
+7. Run backup, managed-form and reservation reliability tests against dedicated disposable databases in New York and UTC process timezones
+8. `npm run build` — production bundle verification
+9. `npm run budget` — production asset size budget
+10. Install Chromium and run `playwright.app.config.ts` against the actual Express/Vite application and disposable PostgreSQL
 
 All steps must pass for the CI run to be green. The workflow uses Node.js 20 and npm's lockfile cache; it does not use production credentials or contact client services.
 
@@ -103,3 +105,18 @@ All steps must pass for the CI run to be green. The workflow uses Node.js 20 and
 - **Prefer `warn` over `error`** for rules that are aspirational rather than critical.
 - **Test file naming**: `<module>.test.ts` co-located with the source file.
 - **No mocked/stubbed database tests** in unit test files — those belong in integration tests (out of scope for now).
+
+## Real application browser tests
+
+`BROWSER_TEST_DATABASE_URL=postgresql://test:test@localhost:5432/core_browser_test npm run test:e2e`
+runs desktop and mobile journeys after `npx playwright install chromium`. Provision the dedicated
+local `core_browser_test` database first. The launcher rejects non-loopback destinations and URL
+overrides, ignores ordinary DATABASE_URL/.env/provider credentials, seeds synthetic admin and CRM
+editor users, runs migrations, and starts the actual app. It never reuses an existing web server.
+
+The suite checks every ecommerce settings route, persisted CRM presentation changes through the
+UI and reload, and CRM editor read/write permissions. It does not prove payment-provider sandbox
+transactions or all CRM lifecycle flows; those remain separate release gates.
+
+`npm run test:e2e:layout` retains the earlier synthetic CSS layout checks. Those fixture checks are
+not evidence that an actual application journey works.

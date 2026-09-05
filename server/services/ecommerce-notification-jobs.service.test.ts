@@ -280,4 +280,26 @@ describe("ecommerce notification jobs", () => {
     );
     expect(mocks.complete).not.toHaveBeenCalled();
   });
+  it("finishes the current claimed delivery but does not claim another job after stop", async () => {
+    let stopping = false;
+    mocks.claim.mockResolvedValue({
+      id: "job-1",
+      type: "order_confirmation",
+      orderId: "order-1",
+      processingToken: "claim-1",
+      attemptCount: 1,
+    });
+    mocks.sendConfirmation.mockImplementationOnce(async () => {
+      stopping = true;
+      return true;
+    });
+    const { runEcommerceNotificationJobs } = await import("./ecommerce-notification-jobs.service");
+    await expect(runEcommerceNotificationJobs(undefined, 25, () => stopping)).resolves.toEqual({
+      completed: 1,
+      retried: 0,
+      failed: 0,
+    });
+    expect(mocks.complete).toHaveBeenCalledWith("job-1", "claim-1", expect.any(Date));
+    expect(mocks.claim).toHaveBeenCalledTimes(1);
+  });
 });

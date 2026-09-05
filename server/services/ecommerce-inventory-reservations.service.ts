@@ -1,3 +1,4 @@
+import { startStoppableWorker } from "../utils/runtime-lifecycle";
 import { storage } from "../storage";
 import { logger } from "../utils/logger";
 import { recordDomainOutcome } from "../utils/metrics";
@@ -13,6 +14,7 @@ const MAX_RESERVATIONS_PER_RUN = 25;
 export async function expireEcommerceInventoryReservations(
   now = new Date(),
   maxReservations = MAX_RESERVATIONS_PER_RUN,
+  isStopping: () => boolean = () => false,
 ) {
   const orderIds = await storage.ecommerce.getExpiredEcommerceInventoryReservationOrderIds(
     now,
@@ -24,6 +26,7 @@ export async function expireEcommerceInventoryReservations(
   let cancelled = 0;
   let pending = 0;
   for (const orderId of orderIds) {
+    if (isStopping()) break;
     const order = await storage.ecommerce.getOrder(orderId);
     if (!order || order.status !== "pending" || order.paymentStatus !== "unpaid") continue;
     if (!order.stripePaymentIntentId) {
@@ -55,23 +58,15 @@ export async function expireEcommerceInventoryReservations(
 }
 
 export function startEcommerceInventoryReservationService() {
-  let running = false;
-  const run = async () => {
-    if (running) return;
-    running = true;
-    try {
-      const result = await expireEcommerceInventoryReservations();
-      if (result.cancelled || result.pending) {
+  const worker = startStoppableWorker({
+    intervalMs: CHECK_INTERVAL_MS,
+    run: async (isStopping) => {
+      const result = await expireEcommerceInventoryReservations(undefined, undefined, isStopping);
+      if (result.cancelled || result.pending)
         logger.app.info("Ecommerce inventory reservations processed", result);
-      }
-    } catch (error) {
-      logger.app.error("Ecommerce inventory reservation worker failed", error);
-    } finally {
-      running = false;
-    }
-  };
-
-  setInterval(() => void run(), CHECK_INTERVAL_MS);
-  void run();
+    },
+    onError: (error) => logger.app.error("Ecommerce inventory reservation worker failed", error),
+  });
   logger.app.info("Ecommerce inventory reservation worker started");
+  return worker;
 }
