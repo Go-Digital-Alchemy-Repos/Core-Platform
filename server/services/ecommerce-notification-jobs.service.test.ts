@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   claim: vi.fn(),
@@ -41,6 +41,10 @@ vi.mock("../utils/logger", () => ({
 }));
 
 describe("ecommerce notification jobs", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.claim.mockResolvedValue(undefined);
@@ -201,5 +205,79 @@ describe("ecommerce notification jobs", () => {
     const result = await runEcommerceNotificationJobs(new Date("2026-09-04T00:00:00.000Z"));
 
     expect(result).toEqual({ completed: 0, retried: 0, failed: 1 });
+  });
+
+  it("gives later jobs fresh claim times after a slow batch exceeds the lease timeout", async () => {
+    vi.useFakeTimers();
+    const startedAt = new Date("2026-09-04T00:00:00.000Z");
+    const secondClaimAt = new Date("2026-09-04T00:11:00.000Z");
+    const completedAt = new Date("2026-09-04T00:11:05.000Z");
+    vi.setSystemTime(startedAt);
+    for (const id of ["1", "2"]) {
+      mocks.claim.mockResolvedValueOnce({
+        id: `job-${id}`,
+        type: "order_confirmation",
+        orderId: "order-1",
+        processingToken: `claim-${id}`,
+        attemptCount: 1,
+      });
+    }
+    mocks.sendConfirmation
+      .mockImplementationOnce(async () => {
+        vi.setSystemTime(secondClaimAt);
+        return true;
+      })
+      .mockImplementationOnce(async () => {
+        vi.setSystemTime(completedAt);
+        return true;
+      });
+
+    const { runEcommerceNotificationJobs } = await import("./ecommerce-notification-jobs.service");
+    await expect(runEcommerceNotificationJobs(undefined, 2)).resolves.toEqual({
+      completed: 2,
+      retried: 0,
+      failed: 0,
+    });
+
+    expect(mocks.claim).toHaveBeenNthCalledWith(1, startedAt);
+    expect(mocks.claim).toHaveBeenNthCalledWith(2, secondClaimAt);
+    expect(mocks.complete).toHaveBeenNthCalledWith(1, "job-1", "claim-1", secondClaimAt);
+    expect(mocks.complete).toHaveBeenNthCalledWith(2, "job-2", "claim-2", completedAt);
+  });
+
+  it("starts retry backoff when a slow delivery fails using the injected live clock", async () => {
+    vi.useFakeTimers();
+    const startedAt = new Date("2026-09-04T00:00:00.000Z");
+    const failedAt = new Date("2026-09-04T00:11:00.000Z");
+    vi.setSystemTime(startedAt);
+    mocks.claim.mockResolvedValueOnce({
+      id: "job-1",
+      type: "order_confirmation",
+      orderId: "order-1",
+      processingToken: "claim-1",
+      attemptCount: 2,
+    });
+    const deliveryError = new Error("mail transport unavailable");
+    mocks.sendConfirmation.mockImplementationOnce(async () => {
+      vi.setSystemTime(failedAt);
+      throw deliveryError;
+    });
+
+    const { runEcommerceNotificationJobs } = await import("./ecommerce-notification-jobs.service");
+    const clock = vi.fn(() => new Date());
+    await expect(runEcommerceNotificationJobs(clock, 1)).resolves.toEqual({
+      completed: 0,
+      retried: 1,
+      failed: 0,
+    });
+
+    expect(mocks.claim).toHaveBeenCalledWith(startedAt);
+    expect(mocks.retry).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "job-1", processingToken: "claim-1", attemptCount: 2 }),
+      new Date("2026-09-04T00:12:00.000Z"),
+      deliveryError,
+      failedAt,
+    );
+    expect(mocks.complete).not.toHaveBeenCalled();
   });
 });

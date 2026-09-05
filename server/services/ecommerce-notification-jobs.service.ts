@@ -51,13 +51,19 @@ async function dispatchEcommerceNotificationJob(job: {
   throw new Error("unsupported_ecommerce_notification_type");
 }
 
-export async function runEcommerceNotificationJobs(now = new Date(), maxJobs = MAX_JOBS_PER_RUN) {
+export async function runEcommerceNotificationJobs(
+  clock: Date | (() => Date) = () => new Date(),
+  maxJobs = MAX_JOBS_PER_RUN,
+) {
+  // Explicit dates preserve fixed-clock test callers. Workers use a fresh clock
+  // reading for each operation so later jobs do not inherit the batch's lease.
+  const getNow = typeof clock === "function" ? clock : () => clock;
   let completed = 0;
   let retried = 0;
   let failed = 0;
 
   for (let index = 0; index < maxJobs; index += 1) {
-    const job = await storage.ecommerce.claimNextEcommerceNotificationJob(now);
+    const job = await storage.ecommerce.claimNextEcommerceNotificationJob(getNow());
     if (!job) break;
     if (!job.processingToken) {
       logger.email.error(
@@ -76,15 +82,16 @@ export async function runEcommerceNotificationJobs(now = new Date(), maxJobs = M
       const updated = await storage.ecommerce.completeEcommerceNotificationJob(
         job.id,
         job.processingToken,
-        now,
+        getNow(),
       );
       if (updated) completed += 1;
     } catch (error) {
+      const failedAt = getNow();
       const updated = await storage.ecommerce.retryEcommerceNotificationJob(
         { ...job, processingToken: job.processingToken },
-        ecommerceNotificationRetryAt(job.attemptCount, now),
+        ecommerceNotificationRetryAt(job.attemptCount, failedAt),
         error,
-        now,
+        failedAt,
       );
       if (updated?.status === "failed") failed += 1;
       else if (updated) retried += 1;

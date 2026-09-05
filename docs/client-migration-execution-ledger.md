@@ -3,6 +3,61 @@
 This ledger records verified execution against the [Client Migration Master Plan](core-project-plan.md).
 Statuses describe repository evidence and do not imply production release approval.
 
+## Orchestrator transition and current sprint — 2026-09-05
+
+### Ecommerce settings incident and expanded completion scope
+
+The Project Owner reported that every Admin → Ecommerce → Settings submenu returns 404 and authorized
+fixing ecommerce bugs and completing the ecommerce solution. This is an added requirement of the
+active program goal. Prioritize the five reported settings destinations (store, customer accounts,
+security, Stripe, tax), verify navigation and settings behavior, then audit the complete ecommerce
+journey against the existing ecommerce backlog and release criteria. Do not interpret “world class”
+as proof of completion or as permission to bypass provider, transaction, or production verification.
+
+Initial source evidence: the menu generates `/admin/ecommerce/settings/<section>`, but App.tsx
+registers only `/admin/ecommerce/:view` and `/admin/ecommerce`. A minimal release-branch hotfix is
+being isolated from the larger integration program.
+
+The Project Owner appointed task `01a073ab-f0d7-74b2-a649-4f69e49248ab` as the new Orchestrator,
+adopted `/Users/mike/Desktop/ORCHESTRATOR.md`, and authorized autonomous implementation within the
+program goal. Routine decisions must not stall development; when one workstream is blocked, continue
+independent approved work. Existing production release gates remain in force.
+
+The new remediation branch is `codex/orchestrator-remediation`, based on verified integration revision
+`6a74c6d`. The earlier integration branch and primary checkout remain preserved. The previous
+Orchestrator's last inspected turn reports CI success for that revision; no durable handoff document
+was found, so ownership and state are being reconstructed from source and this ledger.
+
+The [September 5 review](orchestrator-review-2026-09-05.md) is the remediation intake. Current ownership:
+
+| Work | Owner | Status |
+| --- | --- | --- |
+| Consistent backup snapshot and session-safe backup/restore locks | Infrastructure specialist; Orchestrator integration | Code reviewed; mocked cleanup and six disposable PostgreSQL regressions passed |
+| Durable production upload enforcement for attachments and CMS media | Orchestrator | Eight focused regressions passed |
+| Fresh notification claim/retry timestamps | Engineering specialist; Orchestrator integration | Code reviewed; eight focused regressions passed |
+| Durable form effects and retries | Engineering specialist; Orchestrator contract ownership | Design accepted; implementation in progress |
+| Digital Alchemy CRM settings/capability comparison | CRM source analyst | [Source-backed gap analysis](crm-capability-gap-analysis.md) completed at upstream revision `8473fa9` |
+
+The owner explicitly added CRM improvements from `Go-Digital-Alchemy-Repos/DigitalAlchemyCRM` to the
+goal. Adapt useful settings and capabilities to Core's architecture and permissions after source
+comparison; do not transplant the source project's tenancy or contracts. The reusable React website
+build prompt and deployment playbook remain deferred until the system and pilot are complete.
+
+### First remediation checkpoint
+
+Backup export now uses one repeatable-read transaction; backup and every restore entry point retain
+one checked-out connection for their advisory lock. Unlock failures evict the connection. Local
+PostgreSQL tests exercised concurrent parent/child writes, restoration, competing backup/restore,
+and cleanup after read/storage failures. Production attachments, CMS media, and avatars now fail
+instead of silently accepting local-disk storage when R2 is unavailable. Development fallback is
+preserved. Notification claims and retries use current operation time rather than batch start time.
+
+At the checkpoint, the full suite passed 560 tests in 116 files; six opt-in database tests were skipped
+in that run and passed separately against disposable local PostgreSQL. TypeScript, lint, formatting,
+production build, and bundle budgets passed during this remediation pass. The subsequently started
+form-outbox implementation is unfinished and requires its own complete validation before release.
+No production deployment or production data operation has occurred for these remediation changes.
+
 ## Current Program State
 
 | Milestone                             | Status      | Evidence                                                                                                                                                                                                         | Remaining gate                                                                                                                                                                               |
