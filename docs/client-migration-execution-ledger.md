@@ -1044,3 +1044,17 @@ and budgets remain green.
   created. Credentials remain Railway secrets and are never stored in the onboarding record.
 - **Safety boundary:** the template does not provision the bucket or credentials, and no R2 object or live
   infrastructure was changed.
+
+### 2026-09-05 — Template baseline quality confirmation
+
+- **Evidence:** GitHub Actions quality workflow `33888210287` passed for the current template baseline,
+  including migration verification, TypeScript, lint, formatting, the full test suite, production build, and
+  bundle budgets. Local verification on the same revision also completed a production build and bundle-budget
+  check successfully.
+- **QA review:** an isolated parallel QA proposal was compared with the current branch and was not accepted,
+  because it was based on an older revision and would replace newer atomic webhook, CRM, and directory
+  safeguards. It remains outside the integrated branch pending a clean, current-base review.
+- **Release state:** the Better Farms combined pilot contract passes. Its release remains draft and
+  fail-closed on database, backup, restore, health, security, monitoring, and content evidence.
+- **Safety boundary:** this checkpoint did not access or modify Railway, R2, DNS, client data, backups,
+  restores, or production infrastructure.
