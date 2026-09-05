@@ -36,6 +36,13 @@ the fully migrated disposable database confirmed migration `0052` converts notif
 next-attempt timestamps to timezone-aware columns, so that claim predicate does not share the expiry
 defect. Test reservation expiry under a non-UTC process timezone before accepting that worker gate.
 
+**Reservation fix verified:** the raw comparison now uses UTC ISO encoding, matching typed storage
+inserts. Four disposable PostgreSQL regressions failed before the fix and passed after it in both
+New York and UTC process timezones; each run also checked UTC and New York database timezones.
+Coverage includes exact expiry boundaries, future/paid/cancelled/released exclusions, distinct order
+IDs, ordering, and limits. Existing reservation-service tests passed. The disposable container was
+removed. This changes no payment-provider behavior or schema and is not yet deployed.
+
 The Project Owner appointed task `01a073ab-f0d7-74b2-a649-4f69e49248ab` as the new Orchestrator,
 adopted `/Users/mike/Desktop/ORCHESTRATOR.md`, and authorized autonomous implementation within the
 program goal. Routine decisions must not stall development; when one workstream is blocked, continue

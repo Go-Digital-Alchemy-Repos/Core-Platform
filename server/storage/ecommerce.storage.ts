@@ -1370,12 +1370,15 @@ export class EcommerceStorage {
     now = new Date(),
     limit = 25,
   ): Promise<string[]> {
+    // Match Drizzle's UTC encoding for timestamp-without-timezone inserts;
+    // passing Date directly to raw SQL lets pg serialize the host's local time.
+    const expiresBefore = now.toISOString();
     const result = await db.execute<{ order_id: string }>(sql`
       SELECT DISTINCT reservation.order_id
       FROM ecommerce_inventory_reservations AS reservation
       INNER JOIN ecommerce_orders AS ecommerce_order ON ecommerce_order.id = reservation.order_id
       WHERE reservation.released_at IS NULL
-        AND reservation.expires_at <= ${now}
+        AND reservation.expires_at <= ${expiresBefore}
         AND ecommerce_order.status = 'pending'
         AND ecommerce_order.payment_status = 'unpaid'
       ORDER BY reservation.order_id ASC
