@@ -95,7 +95,8 @@ The tracked GitHub Actions quality workflow runs automatically on every push and
 7. Run backup, managed-form and reservation reliability tests against dedicated disposable databases in New York and UTC process timezones
 8. `npm run build` — production bundle verification
 9. `npm run budget` — production asset size budget
-10. Install Chromium and run `playwright.app.config.ts` against the actual Express/Vite application and disposable PostgreSQL
+10. Start the compiled production bundle in isolated Linux with verified TLS PostgreSQL, verify readiness and Node PID 1, then require graceful SIGTERM exit
+11. Install Chromium and run `playwright.app.config.ts` against the actual Express/Vite application and disposable PostgreSQL
 
 All steps must pass for the CI run to be green. The workflow uses Node.js 20 and npm's lockfile cache; it does not use production credentials or contact client services.
 

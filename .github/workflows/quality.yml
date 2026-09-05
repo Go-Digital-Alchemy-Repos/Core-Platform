@@ -91,6 +91,10 @@ jobs:
       - name: Enforce bundle budgets
         run: npm run budget
 
+      - name: Verify compiled production startup and drainage
+        timeout-minutes: 8
+        run: python3 script/verify-production-runtime.py --output test-results/production-runtime.json
+
       - name: Install browser test runtime
         run: npx playwright install --with-deps chromium
 
@@ -98,3 +102,12 @@ jobs:
         env:
           BROWSER_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/core_browser_test
         run: npx playwright test --config playwright.app.config.ts
+
+      - name: Preserve production runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: production-runtime-evidence
+          path: test-results/production-runtime.json
+          if-no-files-found: warn
+          retention-days: 14

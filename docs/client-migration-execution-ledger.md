@@ -215,6 +215,24 @@ seven-route/no-import pilot, operator and recovery fields already present in int
 the draft overall intake and unresolved client production release gates. This removes contradictory
 instructions without converting incomplete production evidence into approval.
 
+### Reproducible production-start gate accepted
+
+Hosted run `33998723053` passed for `745cde6`, including expanded CRM browser journeys.
+The checked-in `script/verify-production-runtime.py` now repeats the compiled Linux startup with
+full locked production dependencies, trusted TLS PostgreSQL, artifact hash/native Sharp checks,
+PID 1, readiness and SIGTERM drainage. Final candidate passed on Node 22.23.2 with six TLS 1.3
+connections and exit 0; the old bundled-Sharp negative control failed before readiness as expected.
+Both fixtures reported removal of every owned container. Python syntax validation passed.
+CI runs this gate after build/budgets and preserves JSON evidence; first hosted execution of this
+new step is pending. It complements active-request/worker shutdown tests and does not prove the
+live Railway settings have changed.
+
+The [Core release-readiness audit](core-release-readiness-2026-09-05.md) distinguishes the full
+260-file integration branch from a genuinely narrow CRM extraction. The main remaining Core
+release evidence includes populated upgrade/recovery and existing upload namespace compatibility.
+Better Farms site launch remains separate. Its next bounded integration task is validated-origin
+preview CSP and content-editor access, followed by a real two-origin preview/publish journey.
+
 ## Current Program State
 
 | Milestone                             | Status      | Evidence                                                                                                                                                                                                         | Remaining gate                                                                                                                                                                               |
