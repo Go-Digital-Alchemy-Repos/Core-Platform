@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   pgTable,
+  integer,
   text,
   varchar,
   timestamp,
@@ -195,3 +196,52 @@ export type InsertCmsForm = z.infer<typeof insertCmsFormSchema>;
 export type CmsForm = typeof cmsForms.$inferSelect;
 export type InsertCmsFormSubmission = z.infer<typeof insertCmsFormSubmissionSchema>;
 export type CmsFormSubmission = typeof cmsFormSubmissions.$inferSelect;
+
+export type CmsFormEffectPayload =
+  | { kind: "crm_intake"; formName: string }
+  | { kind: "contact_message" }
+  | { kind: "mailchimp_sync"; email: string; firstName: string; lastName: string; tag: string }
+  | {
+      kind: "admin_notification";
+      recipient: string;
+      formName: string;
+      summary: string;
+      dashboardUrl: string;
+      contact: { name: string; email: string; message: string } | null;
+    };
+
+export const cmsFormEffectJobs = pgTable(
+  "cms_form_effect_jobs",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    submissionId: varchar("submission_id")
+      .notNull()
+      .references(() => cmsFormSubmissions.id, { onDelete: "cascade" }),
+    deduplicationKey: text("deduplication_key").notNull(),
+    payload: jsonb("payload").$type<CmsFormEffectPayload>().notNull(),
+    status: text("status")
+      .$type<"queued" | "processing" | "completed" | "skipped" | "failed">()
+      .notNull()
+      .default("queued"),
+    attemptCount: integer("attempt_count").notNull().default(0),
+    processingToken: varchar("processing_token"),
+    claimedAt: timestamp("claimed_at", { withTimezone: true }),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    failedAt: timestamp("failed_at", { withTimezone: true }),
+    lastErrorCode: varchar("last_error_code", { length: 120 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_cms_form_effect_jobs_deduplication").on(
+      table.submissionId,
+      table.deduplicationKey,
+    ),
+    index("idx_cms_form_effect_jobs_ready").on(table.status, table.nextAttemptAt, table.createdAt),
+  ],
+);
+
+export type CmsFormEffectJob = typeof cmsFormEffectJobs.$inferSelect;

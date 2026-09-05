@@ -103,6 +103,7 @@ export class CrmStorage {
   async createOrUpdateInboundLead(
     data: InsertCrmLead,
     createdById?: string | null,
+    transaction?: CrmDbTransaction,
   ): Promise<{ lead: CrmLead; duplicate: boolean }> {
     const email = typeof data.email === "string" ? data.email.trim().toLowerCase() : "";
     const phone = typeof data.phone === "string" ? data.phone.trim() : "";
@@ -112,7 +113,7 @@ export class CrmStorage {
         ? `crm-inbound:phone:${phone}`
         : null;
 
-    return db.transaction(async (tx: CrmDbTransaction) => {
+    const apply = async (tx: CrmDbTransaction) => {
       if (lockKey) {
         await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`);
       }
@@ -153,7 +154,8 @@ export class CrmStorage {
 
       const [lead] = await tx.insert(crmLeads).values(data).returning();
       return { lead, duplicate: false };
-    });
+    };
+    return transaction ? apply(transaction) : db.transaction(apply);
   }
 
   async findDuplicateLead(

@@ -46,12 +46,9 @@ export function inferCrmLeadFromFormData(
   };
 }
 
-export async function createOrUpdateCrmLead(
-  input: unknown,
-  createdById?: string | null,
-): Promise<{ lead: CrmLead; duplicate: boolean }> {
+export function normalizeCrmLeadInput(input: unknown) {
   const parsed = crmLeadInputSchema.parse(input);
-  const payload = {
+  return {
     ...parsed,
     email: cleanString(parsed.email),
     phone: cleanString(parsed.phone),
@@ -62,7 +59,13 @@ export async function createOrUpdateCrmLead(
     formSubmissionId: cleanString(parsed.formSubmissionId),
     nextFollowUpAt: parsed.nextFollowUpAt ?? null,
   };
+}
 
+export async function createOrUpdateCrmLead(
+  input: unknown,
+  createdById?: string | null,
+): Promise<{ lead: CrmLead; duplicate: boolean }> {
+  const payload = normalizeCrmLeadInput(input);
   return storage.crm.createOrUpdateInboundLead(payload, createdById);
 }
 

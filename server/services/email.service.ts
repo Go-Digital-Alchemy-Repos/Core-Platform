@@ -16,6 +16,10 @@ if (isSmtpConfigured) {
     port: SMTP_PORT,
     secure: SMTP_PORT === 465,
     auth: { user: SMTP_USER, pass: SMTP_PASS },
+    dnsTimeout: 10_000,
+    connectionTimeout: 15_000,
+    greetingTimeout: 15_000,
+    socketTimeout: 30_000,
   });
 }
 
@@ -96,7 +100,7 @@ async function sendViaMailgun(to: string, subject: string, html: string): Promis
     const FormData = (await import("form-data")).default;
     const Mailgun = (await import("mailgun.js")).default;
     const mailgun = new Mailgun(FormData);
-    const mg = mailgun.client({ username: "api", key: config.apiKey });
+    const mg = mailgun.client({ username: "api", key: config.apiKey, timeout: 30_000 });
     await mg.messages.create(config.domain, {
       from: config.fromAddress,
       to: [to],
@@ -426,6 +430,80 @@ export async function sendNewClientRegistrationEmail(
       });
     });
   }
+}
+
+export async function deliverManagedFormNotification(input: {
+  recipient: string;
+  formName: string;
+  summary: string;
+  dashboardUrl: string;
+  contact: { name: string; email: string; message: string } | null;
+}): Promise<"completed" | "skipped"> {
+  // This delivery path treats every submitted value as text. The legacy
+  // renderTemplate does raw string replacement for both HTML and subjects.
+  const escapeHtml = (value: string) =>
+    value.replace(
+      /[&<>"']/g,
+      (character) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[character]!,
+    );
+  const contact = input.contact;
+  const slug = contact ? "contact-form-submission" : "managed-form-submission";
+  const vars: Record<string, string> = contact
+    ? {
+        senderName: contact.name,
+        senderEmail: contact.email,
+        messageBody: contact.message,
+        dashboardUrl: input.dashboardUrl,
+      }
+    : {
+        formName: input.formName,
+        submissionSummary: input.summary,
+        dashboardUrl: input.dashboardUrl,
+      };
+  // Callback replacement keeps dollar signs literal and substitutes once, so
+  // submitted values cannot expand into another template variable or markup.
+  const render = (source: string, html: boolean) =>
+    source
+      .replace(/\{\{#(\w+)\}\}([\s\S]*?)\{\{\/\1\}\}/g, (match, key: string, body: string) =>
+        Object.hasOwn(vars, key) ? (vars[key] ? body : "") : match,
+      )
+      .replace(/\{\{(\w+)\}\}/g, (match, key: string) =>
+        Object.hasOwn(vars, key) ? (html ? escapeHtml(vars[key]) : vars[key]) : match,
+      );
+  let subject = contact
+    ? `New Contact Form: ${contact.name}`
+    : `New Form Submission: ${input.formName}`;
+  let body = contact
+    ? `<p>New message from ${escapeHtml(contact.name)} (${escapeHtml(contact.email)}): ${escapeHtml(contact.message)}</p>`
+    : `<p>A new submission was received for ${escapeHtml(input.formName)}.</p><p>${escapeHtml(input.summary)}</p>`;
+  let title = escapeHtml(subject);
+  try {
+    const { storage } = await import("../storage/index");
+    const template = await storage.emailTemplates.getTemplate(slug);
+    if (template) {
+      if (!template.isActive) return "skipped";
+      body = render(template.htmlBody, true);
+      subject = render(template.subject, false);
+      title = "";
+    }
+  } catch {
+    logger.email.warn("Failed to load managed form notification template, using fallback", {
+      slug,
+    });
+  }
+  const html = await renderEmailShell(title, body);
+  if (!(await sendEmail(input.recipient, subject, html))) {
+    throw new Error("managed_form_notification_transport_unavailable");
+  }
+
+  return "completed";
 }
 
 export async function sendContactFormEmail(

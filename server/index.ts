@@ -1,3 +1,4 @@
+import { startFormEffectJobService } from "./services/form-effect-jobs.service";
 import express, { type ErrorRequestHandler } from "express";
 import cookieParser from "cookie-parser";
 import path from "path";
@@ -296,6 +297,7 @@ app.use((req, res, next) => {
   startSystemBackupService();
   startDirectoryMembershipLifecycleService();
   startEcommerceNotificationJobService();
+  startFormEffectJobService();
   startEcommerceInventoryReservationService();
 
   const port = parseInt(process.env.PORT || "5000", 10);

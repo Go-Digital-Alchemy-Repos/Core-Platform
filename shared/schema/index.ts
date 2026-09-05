@@ -298,6 +298,9 @@ export {
 export {
   cmsForms,
   cmsFormSubmissions,
+  cmsFormEffectJobs,
+  type CmsFormEffectJob,
+  type CmsFormEffectPayload,
   CMS_FORM_KINDS,
   CMS_FORM_FIELD_TYPES,
   cmsFormFieldOptionSchema,

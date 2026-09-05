@@ -517,6 +517,7 @@ async function ensureCareerDirectoryLocations(migrationsFolder: string) {
 async function ensureManagedFormSubmissionSchema(migrationsFolder: string) {
   if (await tableExists("cms_form_submissions")) {
     await runSqlMigrationFile(migrationsFolder, "0058_cms_form_submission_idempotency.sql");
+    await runSqlMigrationFile(migrationsFolder, "0059_cms_form_effect_jobs.sql");
   }
 }
 

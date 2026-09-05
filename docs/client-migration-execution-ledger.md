@@ -60,7 +60,7 @@ The [September 5 review](orchestrator-review-2026-09-05.md) is the remediation i
 | Consistent backup snapshot and session-safe backup/restore locks | Infrastructure specialist; Orchestrator integration | Code reviewed; mocked cleanup and six disposable PostgreSQL regressions passed |
 | Durable production upload enforcement for attachments and CMS media | Orchestrator | Eight focused regressions passed |
 | Fresh notification claim/retry timestamps | Engineering specialist; Orchestrator integration | Code reviewed; eight focused regressions passed |
-| Durable form effects and retries | Engineering specialist; Orchestrator contract ownership | Design accepted; implementation in progress |
+| Durable form effects and retries | Engineering specialist; Orchestrator contract ownership | Implemented and independently verified; awaiting integration release |
 | Digital Alchemy CRM settings/capability comparison | CRM source analyst | [Source-backed gap analysis](crm-capability-gap-analysis.md) completed at upstream revision `8473fa9` |
 
 The owner explicitly added CRM improvements from `Go-Digital-Alchemy-Repos/DigitalAlchemyCRM` to the
@@ -82,6 +82,34 @@ in that run and passed separately against disposable local PostgreSQL. TypeScrip
 production build, and bundle budgets passed during this remediation pass. The subsequently started
 form-outbox implementation is unfinished and requires its own complete validation before release.
 No production deployment or production data operation has occurred for these remediation changes.
+
+### Durable form delivery and enforced release checks
+
+Managed form submissions now enqueue their downstream effects atomically. Internal CRM/contact
+writes and completion share a transaction; external email/Mailchimp delivery uses durable retries,
+fenced claims and bounded transport operations. An operator CLI lists and retries failed jobs without
+printing submission contents. Historical submissions are not replayed. Submitted notification text is
+escaped in both fallback and configured HTML templates. New job dates use timezone-aware columns.
+
+Validation passed: 587 tests, TypeScript, lint, formatting, production build and bundle budgets.
+Independent fresh PostgreSQL verification passed 14/14 checks under both New York and UTC process
+timezones with the database session in New York. Immediate-claim tests use the database clock to
+avoid host/container clock skew. CI now explicitly runs backup, form and reservation database tests
+in both process timezones. SMTP phase/inactivity timeouts are configured, but a strict whole-message
+deadline remains follow-up work; external delivery remains at least once. These changes are not yet
+in production.
+
+PR #9 added the hosted Verify workflow to main after successful hosted runs 33997345291 and
+33997339214. Main now requires an up-to-date Verify check from GitHub Actions, a PR and resolved
+conversations, including administrators; force pushes and deletion are disabled. No bypass allowances
+were added. Independent review remains procedural. Railway deployment
+`3d85b969-b2f7-4e0d-a774-34d6fb4e4144` for `f09e9d4199ffca634c0bc1df5c4e48d3c63bb762`
+reached SUCCESS; readiness reported database connected at 2026-09-05T23:05:26Z.
+
+CRM-1's [implementation contract](crm-settings-implementation-plan.md) is accepted for the next
+bounded implementation: configurable labels, preset colors and display order over the existing six
+immutable stage keys, admin-only writes, permitted editor reads and generic settings bypass
+protection. This is accepted design, not a claim that the feature has shipped.
 
 ## Current Program State
 
