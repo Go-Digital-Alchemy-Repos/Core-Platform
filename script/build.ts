@@ -24,6 +24,9 @@ async function buildAll() {
     },
     minify: true,
     packages: "bundle",
+    // Sharp loads native bindings relative to its package. Bundling its ESM
+    // loader into CJS erases import.meta.url and crashes before server startup.
+    external: ["sharp"],
     logLevel: "info",
   });
 

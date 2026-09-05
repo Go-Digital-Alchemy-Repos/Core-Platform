@@ -15,3 +15,19 @@ Forced termination can interrupt an external send after the provider accepts it 
 Inspection found no instantiated express-session/connect-pg-simple/memorystore cleanup timers in runtime server source; those packages are dependencies only. Search-index initialization is awaited and installs database triggers, not a Node polling timer. Retry/provider timeout timers belong to their in-flight operations and are not independently cancelled during drain. Existing fire-and-forget tasks outside tracked HTTP/worker lifetimes are not converted into durable work by this change; a global registry of detached work remains separate scope.
 
 Validation uses real localhost HTTP sockets to check in-flight responses, pipelined readiness 503, worker drainage before pool closure, startup-time signals, repeated signals, forced socket teardown, and a pool shutdown that exceeds the deadline. Worker tests verify completion of the current claimed job without claiming the next one. No production signals or deployment settings were changed by these tests.
+
+## Railway configuration evidence
+
+The September 5 read-only inspection of deployment `3d85b969-b2f7-4e0d-a774-34d6fb4e4144`
+found `drainingSeconds=null`, `startCommand="npm start"`, and no service drain/deadline overrides.
+Railway's [variable reference](https://docs.railway.com/variables/reference) documents a zero-second
+default. The candidate `railway.toml` therefore sets 45 seconds of draining for the default
+30-second application deadline. Its direct `env NODE_ENV=production node dist/index.cjs` start
+command replaces the package-manager wrapper; `env` executes Node with production mode set.
+Railway documents the package-manager signal issue in its
+[Node signal guide](https://docs.railway.com/deployments/troubleshooting/nodejs-sigterm-handling).
+
+Before release, reject any service override that shortens platform drain below the application
+deadline. After release, inspect the effective deployment manifest and observe a controlled
+replacement's draining/drained logs. The repository change is not evidence that the live service
+has adopted these settings. Do not send test shutdown signals to production.

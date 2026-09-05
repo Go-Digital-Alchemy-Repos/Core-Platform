@@ -170,6 +170,24 @@ Seventeen focused checks passed, including seven real database tests proving imm
 reads and preservation of the six immutable stage keys. This invalidation is process-local; other
 replicas require restart/cache expiry. No production restore or data operation occurred.
 
+### Production artifact and platform teardown verification
+
+Hosted run `33998294076` passed for `b61ad7f`, including the real development-app browser journeys.
+A separate compiled production smoke exposed a release blocker before database connection:
+Sharp 0.35.4's ESM `createRequire(import.meta.url)` was bundled into CommonJS, losing its module URL.
+Externalizing the production Sharp dependency corrected that crash; the rebuilt artifact completed
+strict-TLS migrations/bootstrap on macOS, then encountered macOS's unsupported production reusePort
+option. An isolated Linux image smoke is now running to verify readiness and signal drainage on the
+correct platform. Independent review accepted the package/config changes; green build/browser
+checks alone did not prove the compiled server could start. A persistent compiled-production smoke
+gate remains required alongside the development browser gate.
+
+Read-only Railway inspection found the active deployment has no explicit drain grace and starts
+through npm. Candidate config now starts Node directly with production mode and sets 45 seconds
+of platform grace for the 30-second application drain. Current Railway runtime is Node 22.23.2
+(Railpack 0.39.0). Effective config and a real replacement still require verification after a gated
+release; no production configuration was changed in this verification work.
+
 ## Current Program State
 
 | Milestone                             | Status      | Evidence                                                                                                                                                                                                         | Remaining gate                                                                                                                                                                               |
