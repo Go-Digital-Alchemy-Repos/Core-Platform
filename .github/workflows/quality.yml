@@ -1,0 +1,69 @@
+name: Quality gates
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: core_platform_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d core_platform_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify migrations
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/core_platform_ci
+        run: >-
+          npx tsx -e 'import { runMigrations } from "./server/migrate.ts";
+          import { pool } from "./server/db.ts";
+          (async () => { try { await runMigrations(); await runMigrations(); }
+          finally { await pool.end(); } })().catch(error => { console.error(error); process.exitCode = 1; });'
+
+      - name: Type-check
+        run: npm run check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Verify formatting
+        run: npm run format
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Enforce bundle budgets
+        run: npm run budget
