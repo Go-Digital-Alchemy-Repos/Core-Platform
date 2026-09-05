@@ -1088,3 +1088,14 @@ and budgets remain green.
 - **Evidence:** email-focused tests (11), the full suite (113 files, 538 tests), TypeScript, lint, and
   production build passed. The production audit no longer reports `nodemailer`.
 - **Safety boundary:** this local dependency update did not access or modify external infrastructure or data.
+
+### 2026-09-05 — Drizzle ORM security upgrade
+
+- **Implemented:** upgraded `drizzle-orm` to 0.45.2, clearing its direct SQL-identifier escaping advisory.
+- **Evidence:** TypeScript, lint, the full suite (113 files, 538 tests), production build, and bundle budgets
+  passed. The production dependency audit no longer reports `drizzle-orm` and now reports 17 advisories, 9
+  high, and no critical advisories.
+- **Deferred environment evidence:** `npm run db:verify` intentionally refused to run because no
+  `DATABASE_URL` is configured in this isolated workspace. Migration verification remains part of the
+  isolated Railway environment gate; no database connection was borrowed or created.
+- **Safety boundary:** this local dependency update did not access or modify external infrastructure or data.
