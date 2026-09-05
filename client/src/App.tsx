@@ -620,6 +620,11 @@ function Router() {
             {siteFeatures.crmEnabled ? <AdminCrmPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
+        <Route path="/admin/ecommerce/settings/:section">
+          <ProtectedRoute roles={["admin"]}>
+            {siteFeatures.ecommerceEnabled ? <AdminEcommercePage /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
         <Route path="/admin/ecommerce/:view">
           <ProtectedRoute roles={["admin"]}>
             {siteFeatures.ecommerceEnabled ? <AdminEcommercePage /> : <NotFound />}
