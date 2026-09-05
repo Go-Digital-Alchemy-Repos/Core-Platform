@@ -233,6 +233,15 @@ release evidence includes populated upgrade/recovery and existing upload namespa
 Better Farms site launch remains separate. Its next bounded integration task is validated-origin
 preview CSP and content-editor access, followed by a real two-origin preview/publish journey.
 
+### First hosted production gate follow-up
+
+Run `33999010828` failed because its first five-second `docker exec` readiness observation timed
+out during installation/startup. The harness incorrectly treated that observation as terminal and
+removed the still-running fixture. It now retries the same container within the original 180-second
+monotonic deadline, with a bounded HTTP probe, and records observation timeouts. It does not restart
+the container or extend the deadline. Diagnostic log timeouts are also contained so cleanup/report
+writing still runs. The next hosted run must prove the corrected gate succeeds.
+
 ## Current Program State
 
 | Milestone                             | Status      | Evidence                                                                                                                                                                                                         | Remaining gate                                                                                                                                                                               |

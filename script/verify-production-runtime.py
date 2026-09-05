@@ -104,7 +104,7 @@ def verify(output: Path, bundle: Path | None = None) -> int:
             command(["docker", "start", app_container])
             print("Starting compiled Linux runtime with isolated TLS PostgreSQL", flush=True)
             deadline = time.monotonic() + 180
-            probe = """fetch('http://127.0.0.1:5000/api/health/ready').then(async r => {
+            probe = """fetch('http://127.0.0.1:5000/api/health/ready', {signal: AbortSignal.timeout(2000)}).then(async r => {
               const body = await r.json();
               if (r.status !== 200 || body.status !== 'ready' || body.database !== 'connected') process.exit(1);
               console.log(JSON.stringify({status:r.status,body,node:process.version,
@@ -116,8 +116,14 @@ def verify(output: Path, bundle: Path | None = None) -> int:
                 state = command(["docker", "inspect", "--format", "{{.State.Status}}", app_container]).stdout.strip()
                 if state != "running":
                     raise RuntimeError(f"Compiled production runtime exited before readiness ({state})")
-                result = command(["docker", "exec", app_container, "node", "-e", probe], timeout=5, check=False)
-                if result.returncode == 0:
+                try:
+                    result = command(["docker", "exec", app_container, "node", "-e", probe], timeout=5, check=False)
+                except subprocess.TimeoutExpired:
+                    # A slow observation during dependency installation is not proof
+                    # the app failed. Keep the same container and overall deadline.
+                    result = None
+                    report["readiness_probe_timeouts"] = report.get("readiness_probe_timeouts", 0) + 1
+                if result is not None and result.returncode == 0:
                     report["ready"] = json.loads(result.stdout)
                     break
                 if time.monotonic() >= deadline:
@@ -151,11 +157,14 @@ def verify(output: Path, bundle: Path | None = None) -> int:
             message = message.replace(value, "[redacted]")
         report["error"] = message
         if app_container in created:
-            result = subprocess.run(["docker", "logs", "--tail", "15", app_container], text=True, capture_output=True, timeout=10)
-            log = result.stdout + result.stderr
-            for value in private_values:
-                log = log.replace(value, "[redacted]")
-            report["runtime_log_tail"] = log[-5000:]
+            try:
+                result = subprocess.run(["docker", "logs", "--tail", "15", app_container], text=True, capture_output=True, timeout=10)
+                log = result.stdout + result.stderr
+                for value in private_values:
+                    log = log.replace(value, "[redacted]")
+                report["runtime_log_tail"] = log[-5000:]
+            except Exception:
+                report["runtime_log_tail"] = "Unable to collect bounded runtime logs"
     finally:
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
         signal.signal(signal.SIGINT, signal.SIG_IGN)
