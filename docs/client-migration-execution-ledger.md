@@ -1072,3 +1072,11 @@ and budgets remain green.
   dependency paths.
 - **Safety boundary:** dependency updates and validation used the local repository only. No client data,
   Railway, R2, DNS, backups, restores, or production infrastructure was accessed or changed.
+
+### 2026-09-05 — Sharp security upgrade
+
+- **Implemented:** upgraded `sharp` from 0.34.x to 0.35.4, clearing its direct high-severity production
+  dependency advisory.
+- **Evidence:** TypeScript, lint, the full suite (113 files, 538 tests), production build, and bundle budgets
+  passed. The production audit reports 19 remaining advisories, 11 high, and no `sharp` advisory.
+- **Safety boundary:** this local dependency update did not access or modify external infrastructure or data.

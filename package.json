@@ -128,7 +128,7 @@
     "react-virtuoso": "^4.18.3",
     "recharts": "^2.15.2",
     "sanitize-html": "^2.17.7",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.4",
     "stripe": "^20.4.1",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
