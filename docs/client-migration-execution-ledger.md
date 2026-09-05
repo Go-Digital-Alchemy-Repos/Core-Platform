@@ -1190,3 +1190,13 @@ and budgets remain green.
   suite (115 files, 546 tests), production build, formatting, and bundle budgets passed locally.
 - **Safety boundary:** no R2 account, bucket, object, backup, restore, Railway environment, DNS record, or
   client data was accessed or changed.
+
+### 2026-09-05 — Bootstrap admin secret-comparison hardening
+
+- **Implemented:** the unauthenticated bootstrap-admin endpoint now uses the shared constant-time secret
+  comparator for `SETUP_TOKEN`, matching the CRM intake and client-form proxy boundaries. It reads a single
+  normalized setup-token header rather than comparing an untyped raw header value.
+- **Evidence:** secret-comparison and authentication tests passed. TypeScript, lint, the full suite (115
+  files, 546 tests), production build, formatting, and bundle budgets passed locally.
+- **Safety boundary:** no account was created, no identity or credential was accessed, and no Railway, R2,
+  DNS, backup, restore, or production infrastructure was changed.
