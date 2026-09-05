@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import nodemailer, { type Transporter } from "nodemailer";
 import { logger } from "../utils/logger";
 
 const SMTP_HOST = process.env.SMTP_HOST;
@@ -9,7 +9,7 @@ const SMTP_FROM = process.env.SMTP_FROM || "Core Platform <noreply@coreplatform.
 
 const isSmtpConfigured = !!(SMTP_HOST && SMTP_USER && SMTP_PASS);
 
-let transporter: nodemailer.Transporter | null = null;
+let transporter: Transporter | null = null;
 if (isSmtpConfigured) {
   transporter = nodemailer.createTransport({
     host: SMTP_HOST,

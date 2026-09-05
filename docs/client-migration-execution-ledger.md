@@ -1080,3 +1080,11 @@ and budgets remain green.
 - **Evidence:** TypeScript, lint, the full suite (113 files, 538 tests), production build, and bundle budgets
   passed. The production audit reports 19 remaining advisories, 11 high, and no `sharp` advisory.
 - **Safety boundary:** this local dependency update did not access or modify external infrastructure or data.
+
+### 2026-09-05 — Nodemailer security upgrade
+
+- **Implemented:** upgraded `nodemailer` to 10.0.0 and updated the SMTP transporter reference to the
+  package's exported `Transporter` type.
+- **Evidence:** email-focused tests (11), the full suite (113 files, 538 tests), TypeScript, lint, and
+  production build passed. The production audit no longer reports `nodemailer`.
+- **Safety boundary:** this local dependency update did not access or modify external infrastructure or data.
