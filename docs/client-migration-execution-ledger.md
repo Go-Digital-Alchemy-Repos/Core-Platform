@@ -5,6 +5,34 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Populated upgrade, two-origin pilot and upload execution checkpoint
+
+Hosted Verify run `33999305310` passed for `70f8f9e`. The next checkpoint adds a pinned-main
+populated upgrade rehearsal to CI, preserving its JSON evidence with the compiled runtime report.
+The actual local rehearsal also passed under Python optimization: two candidate migration runs
+preserved eleven seeded records across ten tables, did not replay historical effects, and verified
+new constraints. A separate duplicate-paid-history database correctly rejected the unique index
+while retaining both records. Cleanup was confirmed. These are synthetic fixtures, not evidence
+that production contains no duplicates or that production recovery has been exercised.
+
+The dedicated Better Farms HTTPS fixture passed against the unchanged site revision `ee14d67`.
+Root independently reran it successfully (13.3 seconds): actual content-editor UI, live preview,
+private drafts, publication on a fresh public page, stale-write rejection, permission boundaries,
+and browser-enforced origin/message isolation. Core runs its development application and Better
+Farms its compiled production application. This proves the Fund a Farm integration slice; remaining
+route acceptance, infrastructure and production cutover gates remain open.
+
+Upload migration now has reviewed executor/adapter libraries: exact target and ownership callback,
+dry-run default, explicit plan binding for apply, byte verification, atomic create-only destination
+writes, source preservation, durable-result callback and revalidation on resume. Request/body
+deadlines and byte limits bound operations. Thirty-two added focused regressions passed; the full
+ordinary suite passed 749 tests with 19 opt-in database tests excluded from that run. TypeScript,
+lint, formatting, build and budgets passed. The ownership inventory, operational CLI, actual R2
+conditional-write verification and media cutover remain unfinished; no production objects changed.
+
+Ecommerce remains an active completion workstream. The settings 404 incident below is resolved;
+settings load/error/save behavior is receiving an additional targeted review before further release.
+
 ### Ecommerce settings incident and expanded completion scope
 
 The Project Owner reported that every Admin → Ecommerce → Settings submenu returns 404 and authorized

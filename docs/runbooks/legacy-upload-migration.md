@@ -1,8 +1,9 @@
 # Existing upload namespace migration
 
-This is a dry-run planning contract, not an executable migration or deployment approval.
-The pure server helper is `server/services/legacy-upload-migration-plan.ts`. It performs
-no storage requests, bucket scans, copies, deletes, database changes or production access.
+The pure planning helper is `server/services/legacy-upload-migration-plan.ts`. The separately
+injected executor in `legacy-upload-migration.ts` and S3 adapter in `legacy-upload-storage.ts`
+implement verified, create-only copies. These are library components, not a production CLI
+or deployment approval. No actual storage migration has been performed.
 
 Existing installations may have objects at bucket-root logical keys; current Core prefixes
 uploads with `clients/<public-domain>/uploads`, or the stack ID before a domain is assigned.
@@ -31,9 +32,19 @@ Plan output is recursively frozen, but freezing and the digest are not authoriza
 security boundaries. Revalidate serialized plans and bind a separately approved plan ID
 when executing later; an attacker can recalculate a digest.
 
-## Future apply requirements
+## Execution and remaining operational requirements
 
-No apply implementation is included. Before implementing or running one:
+The executor defaults to dry-run, validates the active target and exact approved plan ID,
+awaits an independent ownership-verification callback before storage access, hashes current
+bytes, and awaits the supplied durable result sink before continuing. The adapter binds one
+bucket and uses `PutObject` with `IfNoneMatch: "*"`; existing destinations are never overwritten.
+Resumes re-read both objects. Source changes and destination conflicts stop the plan.
+The adapter limits object bytes and applies a 30-second abort deadline across each GET including
+its body, or each PUT (configurable up to five minutes). A timed-out PUT may already have been
+accepted remotely; recovery must re-read and verify the destination. Conditional writes still
+require verification against the actual provider before operational use.
+
+Before wiring these libraries into an operator command or running a real migration:
 
 1. Default to dry-run; require an explicit apply action and the separately approved exact
    plan ID. Revalidate its serialization, current stack/bucket/prefix and ownership proof.

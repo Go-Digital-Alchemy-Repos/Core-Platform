@@ -92,8 +92,9 @@ cross-client analytics.
 
 ## Better Farms Pilot Application
 
-Better Farms is the named first pilot. Discovery must map its actual WooCommerce catalog, transactions,
-shipping, tax, fulfillment, memberships, forms, and plugin behavior to this backlog. Any capability Better
-Farms requires becomes a pilot gate even if it could have been deferred for a simpler client. The durable
-WooCommerce adapter and mapping tables remain blocked until the master plan's manifest/import contracts
-are approved.
+Better Farms is the named first pilot, with approved scope limited to seven website routes and no
+WooCommerce import or live checkout cutover. The catalog-only WooCommerce planner and rehearsal adapter
+are a separate program workstream. Future clients that require commerce must map their actual catalog,
+transactions, shipping, tax, fulfillment, memberships and plugin behavior to this backlog; each required
+capability becomes a launch gate. Passing the Better Farms content pilot does not establish ecommerce
+payment, import or fulfillment readiness.

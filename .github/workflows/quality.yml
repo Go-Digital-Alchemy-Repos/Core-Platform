@@ -53,6 +53,12 @@ jobs:
       - name: Type-check
         run: npm run check
 
+      - name: Rehearse populated production-baseline upgrade
+        timeout-minutes: 8
+        run: |
+          git fetch --no-tags --depth=1 origin f09e9d4199ffca634c0bc1df5c4e48d3c63bb762
+          python3 script/verify-populated-upgrade.py --baseline f09e9d4199ffca634c0bc1df5c4e48d3c63bb762 --output test-results/populated-upgrade.json
+
       - name: Lint
         run: npm run lint
 
@@ -103,11 +109,13 @@ jobs:
           BROWSER_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/core_browser_test
         run: npx playwright test --config playwright.app.config.ts
 
-      - name: Preserve production runtime evidence
+      - name: Preserve release rehearsal evidence
         if: always()
         uses: actions/upload-artifact@v7.0.1
         with:
           name: production-runtime-evidence
-          path: test-results/production-runtime.json
+          path: |
+            test-results/production-runtime.json
+            test-results/populated-upgrade.json
           if-no-files-found: warn
           retention-days: 14
