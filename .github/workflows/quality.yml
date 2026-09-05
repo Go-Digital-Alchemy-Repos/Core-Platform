@@ -44,7 +44,11 @@ jobs:
       - name: Verify migrations
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/core_platform_ci
-        run: npm run db:verify
+        run: >-
+          npx tsx -e 'import { runMigrations } from "./server/migrate.ts";
+          import { pool } from "./server/db.ts";
+          (async () => { try { await runMigrations(); await runMigrations(); }
+          finally { await pool.end(); } })().catch(error => { console.error(error); process.exitCode = 1; });'
 
       - name: Type-check
         run: npm run check
