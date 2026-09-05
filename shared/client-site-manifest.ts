@@ -22,6 +22,12 @@ const relativePath = z
 const httpsOrigin = z.string().superRefine((value, context) => {
   try {
     const url = new URL(value);
+    if (url.hostname.includes("*")) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "must use an exact hostname without wildcards",
+      });
+    }
     if (
       url.protocol !== "https:" ||
       url.username ||

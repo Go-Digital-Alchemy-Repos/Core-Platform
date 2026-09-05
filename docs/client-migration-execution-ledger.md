@@ -242,6 +242,28 @@ monotonic deadline, with a bounded HTTP probe, and records observation timeouts.
 the container or extend the deadline. Diagnostic log timeouts are also contained so cleanup/report
 writing still runs. The next hosted run must prove the corrected gate succeeds.
 
+### Preview policy and scoped upload migration planning checkpoint
+
+Core preview frame policy now permits only the public origin from an explicitly configured,
+validated client manifest. Missing configuration preserves standalone restrictions; invalid explicit
+configuration rejects startup before migrations/listening. Independent review found a coherent
+wildcard-host manifest bypass; new shared-validator and middleware regressions reproduced it and
+now reject both wildcard origins. Content editors can reach the client-site-content router before
+the blanket admin guard while unrelated admin routes remain denied. These source and mounted-route
+checks do not yet prove the real two-origin Better Farms preview/save/publish journey.
+
+A server-only legacy upload migration planner now requires explicit stack/bucket/source ownership
+attestation, exact source keys with content identities, the current destination namespace and a
+stable plan digest. It rejects conflicting mappings and preserves originals; it can classify copy,
+verified-resume and source/destination conflicts without performing storage operations. Twenty-eight
+focused tests passed. Ownership attestation is not verified access authority. The apply service,
+actual same-stack inventory/ownership evidence and verified copy rehearsal remain required; no
+unscoped fallback or production object movement was introduced.
+
+Combined checkpoint validation passed 717 tests, with 19 opt-in database tests skipped in that ordinary
+run; TypeScript, lint, formatting, build and bundle budgets passed. The added backup database case
+was separately exercised earlier. See the hosted run for the next exact-candidate gate evidence.
+
 ## Current Program State
 
 | Milestone                             | Status      | Evidence                                                                                                                                                                                                         | Remaining gate                                                                                                                                                                               |

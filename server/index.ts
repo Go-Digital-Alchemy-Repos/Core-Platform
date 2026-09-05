@@ -11,6 +11,7 @@ import { WebhookHandlers } from "./webhooks/stripe.handler";
 import {
   enforceRequiredSecrets,
   securityHeaders,
+  configuredSecurityHeaders,
   apiLimiter,
   originCheck,
 } from "./middleware/security";
@@ -45,7 +46,8 @@ const runtime = createRuntimeLifecycle({
 });
 runtime.installSignalHandlers(process);
 
-app.use(securityHeaders());
+let activeSecurityHeaders = securityHeaders();
+app.use((req, res, next) => activeSecurityHeaders(req, res, next));
 app.use(requestIdMiddleware);
 app.use(runtime.admission);
 
@@ -261,6 +263,12 @@ app.use((req, res, next) => {
 });
 
 const startup = (async () => {
+  activeSecurityHeaders = await configuredSecurityHeaders(
+    process.env.CLIENT_SITE_MANIFEST_PATH,
+    process.env.CLIENT_SITE_CORE_VERSION || "1.0.0",
+  );
+  if (runtime.isStopping()) return;
+
   if (process.env.NODE_ENV === "production") {
     const { runMigrations } = await import("./migrate");
     await runMigrations();

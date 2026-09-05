@@ -45,6 +45,14 @@ router.use(authenticateToken);
 // CRM editors must reach their scoped router before the admin-only root mounts.
 router.use("/crm", requireCrmEnabled, requireAdminPermission("crm"), crmRoutes);
 
+// Content editors need the same scoped access before the admin-only root mounts.
+router.use(
+  "/client-site-content",
+  requireCmsEnabled,
+  requireAdminPermission("content"),
+  clientSiteContentRoutes,
+);
+
 router.use("/", requireRole("admin"), dashboardRoutes);
 router.use(
   "/therapists",
@@ -63,12 +71,6 @@ router.use("/events", requireEventsEnabled, requireAdminPermission("content"), e
 router.use("/blog", requireBlogEnabled, requireAdminPermission("content"), blogRoutes);
 router.use("/", requireAdminPermission("content"), registrationRoutes);
 router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsRoutes);
-router.use(
-  "/client-site-content",
-  requireCmsEnabled,
-  requireAdminPermission("content"),
-  clientSiteContentRoutes,
-);
 router.use("/client-stack-onboarding", requireRole("admin"), clientStackOnboardingRoutes);
 router.use(
   "/cms",

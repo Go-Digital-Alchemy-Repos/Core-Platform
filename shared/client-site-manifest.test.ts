@@ -29,6 +29,31 @@ describe("client site manifest", () => {
     }
   });
 
+  it("rejects coherent wildcard public and dashboard origins as non-exact hosts", async () => {
+    const input = await fixture();
+    input.origins = {
+      ...(input.origins as Record<string, unknown>),
+      publicSite: "https://*.example",
+      admin: "https://dashboard.*.example",
+    };
+    const result = validateClientSiteManifest(input);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: "origins.publicSite",
+            message: "must use an exact hostname without wildcards",
+          }),
+          expect.objectContaining({
+            path: "origins.admin",
+            message: "must use an exact hostname without wildcards",
+          }),
+        ]),
+      );
+    }
+  });
+
   it("fails closed on an unknown schema version", async () => {
     const input = await fixture();
     input.schemaVersion = "2.0";
