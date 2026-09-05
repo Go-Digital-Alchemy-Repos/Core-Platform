@@ -30,10 +30,11 @@ incident, not the broader ecommerce completion workstream. The fix is also merge
 
 Disposable form-outbox tests exposed local-time Date binding against PostgreSQL timestamp-without-
 timezone columns. The form worker correction is in progress. The same pattern requires a separate
-ecommerce fix: `server/storage/ecommerce.storage.ts` raw inventory-expiry and notification claim
-queries pass Date values directly. Notification schema declares timezone-aware dates while SQL
-migration `0050` creates timezone-naive columns. Reconcile the actual migration/schema contract and
-test claims/expiry under a non-UTC process timezone before accepting the ecommerce worker gate.
+ecommerce fix: `server/storage/ecommerce.storage.ts:1378` passes a Date directly when comparing
+inventory reservation expiry against a timestamp-without-timezone column. Follow-up inspection of
+the fully migrated disposable database confirmed migration `0052` converts notification claim and
+next-attempt timestamps to timezone-aware columns, so that claim predicate does not share the expiry
+defect. Test reservation expiry under a non-UTC process timezone before accepting that worker gate.
 
 The Project Owner appointed task `01a073ab-f0d7-74b2-a649-4f69e49248ab` as the new Orchestrator,
 adopted `/Users/mike/Desktop/ORCHESTRATOR.md`, and authorized autonomous implementation within the
