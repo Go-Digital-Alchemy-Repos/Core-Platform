@@ -30,8 +30,12 @@ function proxyFormHandler(slug: "contact-form" | "newsletter-signup", source: st
     const result = await submitManagedFormBySlug(slug, req.body, {
       baseUrl,
       source: `client-stack:${stackId}:${source}`,
+      idempotencyKey: req.get("idempotency-key") ?? undefined,
     });
-    res.status(201).json({ message: result.successMessage, submissionId: result.submission.id });
+    res.status(result.duplicate ? 200 : 201).json({
+      message: result.successMessage,
+      submissionId: result.submission.id,
+    });
   });
 }
 

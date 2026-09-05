@@ -419,7 +419,7 @@ async function maybeCreateCrmLead(
 export async function submitManagedFormBySlug(
   slug: string,
   data: unknown,
-  options: { baseUrl?: string; source?: string } = {},
+  options: { baseUrl?: string; source?: string; idempotencyKey?: string } = {},
 ) {
   const form = await storage.forms.getPublicBySlug(slug);
   if (!form) {
@@ -428,22 +428,33 @@ export async function submitManagedFormBySlug(
 
   const validated = validateSubmissionData(form, data);
 
+  const idempotencyKey = options.idempotencyKey?.trim();
+  if (idempotencyKey && idempotencyKey.length > 128) {
+    throw new AppError("Idempotency key must be 128 characters or fewer", 400);
+  }
+
   const submissionPayload: InsertCmsFormSubmission = {
     formId: form.id,
     data: validated,
     source: options.source ?? null,
+    idempotencyKey: idempotencyKey || null,
   };
 
-  const submission = await storage.forms.createSubmission(submissionPayload);
+  const result = idempotencyKey
+    ? await storage.forms.createIdempotentSubmission({ ...submissionPayload, idempotencyKey })
+    : { submission: await storage.forms.createSubmission(submissionPayload), created: true };
 
-  await maybeSyncFormToMailchimp(form, validated);
-  await handleContactFormEffects(form, validated, options.baseUrl);
-  await maybeCreateCrmLead(form, validated, submission.id);
-  await notifyAssignedUsers(form, validated, options.baseUrl);
+  if (result.created) {
+    await maybeSyncFormToMailchimp(form, validated);
+    await handleContactFormEffects(form, validated, options.baseUrl);
+    await maybeCreateCrmLead(form, validated, result.submission.id);
+    await notifyAssignedUsers(form, validated, options.baseUrl);
+  }
 
   return {
     form,
-    submission,
+    submission: result.submission,
+    duplicate: !result.created,
     successMessage: normalizeFormSettings(form).successMessage,
   };
 }

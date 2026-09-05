@@ -1120,3 +1120,16 @@ and budgets remain green.
   monitoring, and content evidence remain required and pending.
 - **Safety boundary:** this hosted verification did not change Railway, R2, DNS, client data, backups,
   restores, or production infrastructure.
+
+### 2026-09-05 — Managed form idempotency hardening
+
+- **Implemented:** public managed forms and authorized client-form proxy submissions now accept a durable
+  `Idempotency-Key`. The key is unique per form, and a retry returns the original submission without repeating
+  CRM ingestion, notifications, contact-message creation, or external audience synchronization. The bundled
+  public form renderer preserves one key across a retry and resets it after a successful submission.
+- **Migration safety:** the schema reconciliation path applies the additive form-submission column and unique
+  index for both journaled and legacy databases.
+- **Evidence:** focused form and migration tests, TypeScript, lint, the full suite (113 files, 540 tests),
+  production build, and bundle budgets passed locally.
+- **Safety boundary:** this change does not submit forms, alter client records, or access Railway, R2, DNS,
+  backups, restores, or production infrastructure.

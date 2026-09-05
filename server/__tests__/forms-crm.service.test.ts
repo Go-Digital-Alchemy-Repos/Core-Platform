@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockGetPublicBySlug = vi.fn();
 const mockGetPublicById = vi.fn();
 const mockCreateSubmission = vi.fn();
+const mockCreateIdempotentSubmission = vi.fn();
 const mockCreateCrmLeadFromFormSubmission = vi.fn();
 
 vi.mock("../storage", () => ({
@@ -11,6 +12,7 @@ vi.mock("../storage", () => ({
       getPublicBySlug: mockGetPublicBySlug,
       getPublicById: mockGetPublicById,
       createSubmission: mockCreateSubmission,
+      createIdempotentSubmission: mockCreateIdempotentSubmission,
     },
     users: {
       getFormNotificationUsers: vi.fn().mockResolvedValue([]),
@@ -79,6 +81,16 @@ describe("forms CRM ingestion", () => {
       data: {},
       source: "public",
     });
+    mockCreateIdempotentSubmission.mockResolvedValue({
+      submission: {
+        id: "submission-1",
+        formId: "form-1",
+        data: {},
+        source: "public",
+        idempotencyKey: "form-request-1",
+      },
+      created: true,
+    });
   });
 
   it("creates a CRM lead when the form setting is enabled", async () => {
@@ -101,6 +113,35 @@ describe("forms CRM ingestion", () => {
     const { submitManagedFormBySlug } = await import("../services/forms.service");
     await submitManagedFormBySlug("lead-form", { name: "Lin", email: "lin@example.com" });
 
+    expect(mockCreateCrmLeadFromFormSubmission).not.toHaveBeenCalled();
+  });
+
+  it("does not repeat CRM effects for an idempotent submission retry", async () => {
+    mockCreateIdempotentSubmission.mockResolvedValue({
+      submission: {
+        id: "submission-1",
+        formId: "form-1",
+        data: {},
+        source: "public",
+        idempotencyKey: "form-request-1",
+      },
+      created: false,
+    });
+
+    const { submitManagedFormBySlug } = await import("../services/forms.service");
+    const result = await submitManagedFormBySlug(
+      "lead-form",
+      { name: "Lin", email: "lin@example.com" },
+      { idempotencyKey: "form-request-1" },
+    );
+
+    expect(result.duplicate).toBe(true);
+    expect(mockCreateIdempotentSubmission).toHaveBeenCalledWith({
+      formId: "form-1",
+      data: { name: "Lin", email: "lin@example.com" },
+      source: null,
+      idempotencyKey: "form-request-1",
+    });
     expect(mockCreateCrmLeadFromFormSubmission).not.toHaveBeenCalled();
   });
 

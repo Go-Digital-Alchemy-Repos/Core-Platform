@@ -514,6 +514,12 @@ async function ensureCareerDirectoryLocations(migrationsFolder: string) {
   }
 }
 
+async function ensureManagedFormSubmissionSchema(migrationsFolder: string) {
+  if (await tableExists("cms_form_submissions")) {
+    await runSqlMigrationFile(migrationsFolder, "0058_cms_form_submission_idempotency.sql");
+  }
+}
+
 async function ensureClientSiteContentTables(migrationsFolder: string) {
   if (
     !(await tableExists("client_site_content")) ||
@@ -552,6 +558,7 @@ async function reconcileSchema(migrationsFolder: string) {
   await ensureCmsGalleryTables(migrationsFolder);
   await ensureCareerDirectoryLocations(migrationsFolder);
   await ensureClientSiteContentTables(migrationsFolder);
+  await ensureManagedFormSubmissionSchema(migrationsFolder);
   await ensureWooImportLifecycleTables(migrationsFolder);
 }
 

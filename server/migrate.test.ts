@@ -102,6 +102,21 @@ describe("runMigrations", () => {
     );
   });
 
+  it("reconciles idempotent managed-form submissions on an existing schema", async () => {
+    mockExecute
+      .mockResolvedValueOnce({ rows: [{ exists: true }] })
+      .mockResolvedValueOnce({ rows: [{ count: 1 }] })
+      .mockResolvedValue({ rows: [{ exists: true }] });
+
+    const { runMigrations } = await import("./migrate");
+    await runMigrations();
+
+    expect(mockReadFile).toHaveBeenCalledWith(
+      expect.stringContaining("0058_cms_form_submission_idempotency.sql"),
+      "utf8",
+    );
+  });
+
   it("recognizes the default Drizzle journal schema on an existing database", async () => {
     mockExecute
       .mockResolvedValueOnce({ rows: [{ exists: true }] })

@@ -102,6 +102,37 @@ export class FormsStorage {
     return submission;
   }
 
+  async createIdempotentSubmission(
+    data: InsertCmsFormSubmission & { idempotencyKey: string },
+  ): Promise<{ submission: CmsFormSubmission; created: boolean }> {
+    const [created] = await db
+      .insert(cmsFormSubmissions)
+      .values(data)
+      .onConflictDoNothing({
+        target: [cmsFormSubmissions.formId, cmsFormSubmissions.idempotencyKey],
+      })
+      .returning();
+
+    if (created) return { submission: created, created: true };
+
+    const [existing] = await db
+      .select()
+      .from(cmsFormSubmissions)
+      .where(
+        and(
+          eq(cmsFormSubmissions.formId, data.formId),
+          eq(cmsFormSubmissions.idempotencyKey, data.idempotencyKey),
+        ),
+      )
+      .limit(1);
+
+    if (!existing) {
+      throw new Error("Unable to resolve idempotent form submission");
+    }
+
+    return { submission: existing, created: false };
+  }
+
   async getSubmissionsByFormId(formId: string): Promise<CmsFormSubmission[]> {
     return db
       .select()
