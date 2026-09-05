@@ -1099,3 +1099,13 @@ and budgets remain green.
   `DATABASE_URL` is configured in this isolated workspace. Migration verification remains part of the
   isolated Railway environment gate; no database connection was borrowed or created.
 - **Safety boundary:** this local dependency update did not access or modify external infrastructure or data.
+
+### 2026-09-05 — Production dependency audit reconciliation
+
+- **Implemented:** applied the package manager's compatible dependency-graph remediation after direct security
+  upgrades. The resulting lockfile resolves the remaining transitive production advisories without a source
+  change.
+- **Evidence:** `npm audit --omit=dev` reports zero vulnerabilities. TypeScript, lint, the full suite
+  (113 files, 538 tests), production build, and bundle budgets passed against the resolved graph.
+- **Safety boundary:** dependency reconciliation and validation used the local repository only; no external
+  infrastructure, client data, or production configuration was accessed or changed.
