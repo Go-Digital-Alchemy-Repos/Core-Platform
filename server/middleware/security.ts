@@ -151,6 +151,19 @@ export const apiLimiter = rateLimit({
   skip: () => isDev,
 });
 
+export const crmInboundRateLimitPolicy = {
+  windowMs: 10 * 60 * 1000,
+  max: 60,
+  message: { message: "Too many CRM intake requests. Please try again shortly." },
+};
+
+export const crmInboundLimiter = rateLimit({
+  ...crmInboundRateLimitPolicy,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => isDev,
+});
+
 export const ecommerceCheckoutRateLimitPolicy = {
   windowMs: 10 * 60 * 1000,
   max: 20,

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  crmInboundRateLimitPolicy,
   ecommerceCheckoutRateLimitPolicy,
   ecommerceOrderLookupRateLimitPolicy,
   ecommercePricingRateLimitPolicy,
@@ -7,6 +8,13 @@ import {
 } from "./security";
 
 describe("sensitive ecommerce rate limit policies", () => {
+  it("constrains external CRM intake below the general API limit", () => {
+    expect(crmInboundRateLimitPolicy).toMatchObject({
+      windowMs: 10 * 60 * 1000,
+      max: 60,
+    });
+  });
+
   it("keeps checkout PaymentIntent creation tighter than the general API limit", () => {
     expect(ecommerceCheckoutRateLimitPolicy).toMatchObject({
       windowMs: 10 * 60 * 1000,

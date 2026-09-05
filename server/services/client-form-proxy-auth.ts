@@ -1,4 +1,4 @@
-import { timingSafeEqual } from "node:crypto";
+import { constantTimeSecretEquals } from "../utils/constant-time-secret";
 
 export interface ClientFormProxyAuthorizationInput {
   requestedStackId: string;
@@ -11,12 +11,6 @@ export type ClientFormProxyAuthorization =
   | { allowed: true }
   | { allowed: false; configured: false }
   | { allowed: false; configured: true };
-
-function equalTokens(left: string, right: string) {
-  const leftBuffer = Buffer.from(left);
-  const rightBuffer = Buffer.from(right);
-  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
-}
 
 export function authorizeClientFormProxy(
   input: ClientFormProxyAuthorizationInput,
@@ -31,7 +25,7 @@ export function authorizeClientFormProxy(
     return { allowed: false, configured: true };
   }
 
-  return equalTokens(input.presentedToken, expectedToken)
+  return constantTimeSecretEquals(input.presentedToken, expectedToken)
     ? { allowed: true }
     : { allowed: false, configured: true };
 }

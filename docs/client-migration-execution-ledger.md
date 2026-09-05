@@ -1158,3 +1158,13 @@ and budgets remain green.
   and bundle budgets passed locally.
 - **Safety boundary:** this local code change did not receive or alter client lead records, CRM credentials,
   Railway, R2, DNS, backups, restores, or production infrastructure.
+
+### 2026-09-05 — CRM external boundary hardening
+
+- **Implemented:** the externally callable CRM intake route now applies a dedicated production rate limit and
+  uses shared constant-time secret comparison for its configured API key. The same comparison utility now
+  backs the client-form proxy token check.
+- **Evidence:** secret-comparison, proxy-authorization, and rate-limit tests passed; the full suite passed
+  114 files and 543 tests, with TypeScript, lint, production build, and bundle budgets also passing locally.
+- **Safety boundary:** no CRM credential, lead payload, client data, Railway, R2, DNS, backup, restore, or
+  production infrastructure was accessed or changed.
