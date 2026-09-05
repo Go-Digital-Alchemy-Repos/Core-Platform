@@ -111,6 +111,27 @@ bounded implementation: configurable labels, preset colors and display order ove
 immutable stage keys, admin-only writes, permitted editor reads and generic settings bypass
 protection. This is accepted design, not a claim that the feature has shipped.
 
+### Next infrastructure and CRM checkpoint
+
+Hosted run `33997734605` succeeded for `9bf61dd7ceb92fb5e518389b0b7b983aa5377cd4`,
+including repeated migrations and the explicit reliability database tests under both timezones.
+
+The Orchestrator is implementing an explicit [database transport policy](runbooks/database-transport.md).
+Sanitized production configuration inspection confirmed the private Railway database hostname,
+explicit `sslmode=disable`, and both Railway project/environment identity variables. No secrets were
+printed or variables changed. The proposed policy preserves that explicit private-network mode and
+removes the unverified-certificate fallback for remote connections. Forty policy tests and
+TypeScript/lint passed. Independent real PostgreSQL TLS testing caught an IP-host certificate mismatch
+accepted by the driver's default identity handling. An explicit URL-bound identity callback corrected
+it. The same fixture then passed trusted-CA encryption, untrusted-CA rejection, incorrect-host
+rejection and explicit local plaintext checks. The policy is accepted as a candidate for integration;
+it has not been deployed.
+
+The engineering specialist owns graceful startup/shutdown and seven worker drains, with actual
+HTTP/worker tests required. The CRM specialist owns CRM-1 implementation against the accepted
+contract, including actual mounted permission tests and browser acceptance. These in-progress
+candidates are not release evidence and remain subject to Orchestrator integration review.
+
 ## Current Program State
 
 | Milestone                             | Status      | Evidence                                                                                                                                                                                                         | Remaining gate                                                                                                                                                                               |
