@@ -1058,3 +1058,17 @@ and budgets remain green.
   fail-closed on database, backup, restore, health, security, monitoring, and content evidence.
 - **Safety boundary:** this checkpoint did not access or modify Railway, R2, DNS, client data, backups,
   restores, or production infrastructure.
+
+### 2026-09-05 — Compatible production dependency security updates
+
+- **Implemented:** upgraded compatible direct runtime dependencies for multipart handling, uploads, CSS
+  processing, sanitization, WebSocket handling, and rate limiting. The production dependency audit decreased
+  from 28 advisories (18 high) to 20 (12 high), with no critical advisories.
+- **Evidence:** TypeScript and lint passed; the full suite passed 113 files and 538 tests; production build
+  and bundle-budget checks passed.
+- **Remaining dependency gate:** direct high-severity advisories remain in `drizzle-orm`, `nodemailer`, and
+  `sharp`; each available fix is a major-version upgrade and requires focused compatibility and migration
+  review before integration. Transitive high-severity advisories must be resolved through their owning
+  dependency paths.
+- **Safety boundary:** dependency updates and validation used the local repository only. No client data,
+  Railway, R2, DNS, backups, restores, or production infrastructure was accessed or changed.
