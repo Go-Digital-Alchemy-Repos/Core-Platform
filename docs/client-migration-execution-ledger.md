@@ -18,6 +18,23 @@ Initial source evidence: the menu generates `/admin/ecommerce/settings/<section>
 registers only `/admin/ecommerce/:view` and `/admin/ecommerce`. A minimal release-branch hotfix is
 being isolated from the larger integration program.
 
+**Resolved in production:** PR #8 merged as `119383598aec848640a1a4ee08804c99c5fdeef9` and Railway
+deployment `8d422058-5bcc-4785-8f8c-1db5ee59c8a8` reached SUCCESS. The five-line route addition retains
+admin and feature gates. Against exact locked dependencies, TypeScript, lint, formatting, 386 tests,
+production build and bundle budgets passed; independent review accepted it. The live authenticated
+admin browser loaded all five screens and their Save controls after release. No settings values were
+changed. `/api/health/ready` reported database connected at 2026-09-05T22:54:04Z. This closes the routing
+incident, not the broader ecommerce completion workstream. The fix is also merged into remediation.
+
+### Runtime-discovered follow-up: database timestamp consistency
+
+Disposable form-outbox tests exposed local-time Date binding against PostgreSQL timestamp-without-
+timezone columns. The form worker correction is in progress. The same pattern requires a separate
+ecommerce fix: `server/storage/ecommerce.storage.ts` raw inventory-expiry and notification claim
+queries pass Date values directly. Notification schema declares timezone-aware dates while SQL
+migration `0050` creates timezone-naive columns. Reconcile the actual migration/schema contract and
+test claims/expiry under a non-UTC process timezone before accepting the ecommerce worker gate.
+
 The Project Owner appointed task `01a073ab-f0d7-74b2-a649-4f69e49248ab` as the new Orchestrator,
 adopted `/Users/mike/Desktop/ORCHESTRATOR.md`, and authorized autonomous implementation within the
 program goal. Routine decisions must not stall development; when one workstream is blocked, continue

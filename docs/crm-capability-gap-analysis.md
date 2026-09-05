@@ -1,6 +1,6 @@
 # Digital Alchemy CRM capability gap analysis
 
-Date: 2026-09-05. Status: investigation complete; proposed backlog awaits Orchestrator acceptance. No CRM implementation or shared-contract changes are included.
+Date: 2026-09-05. Status: investigation reviewed and staged backlog accepted by the Orchestrator for the owner-authorized CRM improvement workstream. No CRM implementation or shared-contract changes are included. Start CRM-1 after the active reliability fixes; later increments retain their stated design and validation requirements.
 
 ## Evidence and boundaries
 
