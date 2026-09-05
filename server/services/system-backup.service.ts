@@ -538,6 +538,10 @@ async function restoreBackupSnapshotWithClient(
         );
       }
     });
+    // A same-process admin restore must not keep serving pre-restore settings.
+    // Invalidate only after the transaction commits; rollback retains its cache.
+    const { storage: applicationStorage } = await import("../storage/index");
+    applicationStorage.settings.invalidateAll();
     logger.backup.info("Backup restore completed", {
       key: snapshot.manifest.key,
       createdAt: snapshot.manifest.createdAt,

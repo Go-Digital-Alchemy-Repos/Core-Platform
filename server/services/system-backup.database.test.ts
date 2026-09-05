@@ -15,10 +15,17 @@ if (testUrl) {
 
 vi.mock("../db", async () => {
   const { Pool } = await import("pg");
-  return { pool: new Pool({ connectionString: process.env.BACKUP_TEST_DATABASE_URL, max: 6 }) };
+  const { drizzle } = await import("drizzle-orm/node-postgres");
+  const schema = await import("@shared/schema");
+  const pool = new Pool({ connectionString: process.env.BACKUP_TEST_DATABASE_URL, max: 6 });
+  return { pool, db: drizzle(pool, { schema }) };
 });
 vi.mock("../utils/logger", () => ({
-  logger: { backup: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } },
+  logger: {
+    backup: { warn: vi.fn(), info: vi.fn(), error: vi.fn() },
+    app: { warn: vi.fn(), info: vi.fn(), error: vi.fn() },
+    db: { warn: vi.fn() },
+  },
 }));
 vi.mock("./backup-storage.service", () => ({
   deleteBackupObject: vi.fn(),
@@ -29,7 +36,25 @@ vi.mock("./backup-storage.service", () => ({
   uploadBackupObject: vi.fn(),
 }));
 
+vi.mock("../storage", async () => {
+  const { SettingsStorage } = await import("../storage/settings.storage");
+  return { storage: { settings: new SettingsStorage() } };
+});
+
+// The application uses both directory and explicit-index imports for this singleton.
+vi.mock("../storage/index", async () => import("../storage"));
+
 import { pool } from "../db";
+import { storage as applicationStorage } from "../storage";
+import {
+  CRM_PIPELINE_COLORS,
+  CRM_PIPELINE_SETTING_KEY,
+  DEFAULT_CRM_PIPELINE_CONFIG,
+  crmPipelineConfigSchema,
+} from "@shared/crm-pipeline-settings";
+import { CRM_LEAD_STAGES } from "@shared/schema/crm";
+import { SettingsStorage } from "../storage/settings.storage";
+import { getCrmPipelineSettings, saveCrmPipelineSettings } from "./crm-pipeline-settings.service";
 import * as storage from "./backup-storage.service";
 import {
   restoreBackupSnapshot,
@@ -75,7 +100,8 @@ describe.skipIf(!testUrl)("system backup disposable PostgreSQL", () => {
     });
     vi.mocked(storage.listBackupObjects).mockResolvedValue([]);
     vi.mocked(storage.uploadBackupObject).mockImplementation(async (key) => ({ key }));
-    await pool.query("DROP TABLE IF EXISTS z_children, a_parents CASCADE");
+    applicationStorage.settings.invalidateAll();
+    await pool.query("DROP TABLE IF EXISTS system_settings, z_children, a_parents CASCADE");
     await pool.query("CREATE TABLE a_parents (id integer PRIMARY KEY)");
     await pool.query(
       "CREATE TABLE z_children (id integer PRIMARY KEY, parent_id integer REFERENCES a_parents(id))",
@@ -208,6 +234,81 @@ describe.skipIf(!testUrl)("system backup disposable PostgreSQL", () => {
       schemaVersion: 1,
     });
     expect((await pool.query("SELECT * FROM a_parents")).rows).toEqual([{ id: 1 }]);
+    await assertLockAvailable();
+  });
+
+  it("restores saved CRM stage presentation and immutable keys through real settings reads", async () => {
+    await pool.query(`CREATE TABLE system_settings (
+      id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
+      key text NOT NULL UNIQUE,
+      value text NOT NULL,
+      category text NOT NULL,
+      is_secret boolean NOT NULL DEFAULT false,
+      updated_at timestamp DEFAULT now()
+    )`);
+    const savedConfig = crmPipelineConfigSchema.parse({
+      version: 1,
+      stages: DEFAULT_CRM_PIPELINE_CONFIG.stages
+        .map((stage, index) => ({
+          key: stage.key,
+          label: `Saved stage ${index + 1} & ready`,
+          color: CRM_PIPELINE_COLORS[(index + 2) % CRM_PIPELINE_COLORS.length],
+        }))
+        .reverse(),
+    });
+    const changedConfig = crmPipelineConfigSchema.parse({
+      version: 1,
+      stages: DEFAULT_CRM_PIPELINE_CONFIG.stages.map((stage, index) => ({
+        ...stage,
+        label: `Changed stage ${index + 1}`,
+      })),
+    });
+    await saveCrmPipelineSettings(savedConfig, "synthetic-backup-admin");
+    expect(await getCrmPipelineSettings()).toEqual({
+      config: savedConfig,
+      source: "stored",
+      issue: null,
+    });
+    await runSystemBackup();
+    const snapshot = exportedSnapshot();
+    const savedRow = snapshot.tables
+      .find((table) => table.name === "system_settings")
+      ?.rows.find((row) => row.key === CRM_PIPELINE_SETTING_KEY);
+    expect(savedRow).toMatchObject({
+      category: "crm",
+      is_secret: false,
+      value: JSON.stringify(savedConfig),
+    });
+
+    await saveCrmPipelineSettings(changedConfig, "synthetic-backup-admin");
+    expect((await getCrmPipelineSettings()).config).toEqual(changedConfig);
+    // Prime both the key cache and category cache before restoring in this process.
+    expect(
+      (await applicationStorage.settings.getDecryptedCategory("crm"))[CRM_PIPELINE_SETTING_KEY],
+    ).toBe(JSON.stringify(changedConfig));
+    vi.mocked(storage.downloadBackupObject).mockResolvedValue(gzipSync(JSON.stringify(snapshot)));
+    await restoreSystemBackupFromKey("db/synthetic-crm-config");
+
+    const restoredRow = (
+      await pool.query("SELECT value FROM system_settings WHERE key=$1", [CRM_PIPELINE_SETTING_KEY])
+    ).rows[0];
+    expect(JSON.parse(restoredRow.value)).toEqual(savedConfig);
+    // A new process and the current admin process must both observe restored data.
+    const freshSettings = new SettingsStorage();
+    expect(JSON.parse((await freshSettings.getSetting(CRM_PIPELINE_SETTING_KEY))!)).toEqual(
+      savedConfig,
+    );
+    expect(await getCrmPipelineSettings()).toEqual({
+      config: savedConfig,
+      source: "stored",
+      issue: null,
+    });
+    expect(
+      (await applicationStorage.settings.getDecryptedCategory("crm"))[CRM_PIPELINE_SETTING_KEY],
+    ).toBe(JSON.stringify(savedConfig));
+    expect([...savedConfig.stages.map((stage) => stage.key)].sort()).toEqual(
+      [...CRM_LEAD_STAGES].sort(),
+    );
     await assertLockAvailable();
   });
 });

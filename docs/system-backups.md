@@ -93,6 +93,10 @@ npm run backup:restore -- --file "./backup.json.gz" --yes
   After a duplicate-environment review, use `--allow-legacy-backup` with `--yes` to acknowledge that limited
   provenance. This flag never overrides an identified stack mismatch.
 - Use a duplicate Railway environment first whenever possible.
+- After a successful restore, the serving process clears its settings key/category caches so CRM
+  presentation and other settings immediately reflect restored values. Failed/rolled-back restores
+  retain the existing cache. Other running replicas must be restarted or allowed to expire their
+  own caches; this invalidation is local to the process performing the restore.
 - After restore, verify logins, CMS pages, menus, events, media references, and email settings.
 - If the failure also affects app code, use Railway deployment rollback in addition to database restore.
 

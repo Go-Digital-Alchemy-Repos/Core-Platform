@@ -160,6 +160,16 @@ the new hosted browser gate is awaiting its first run. CRM saved-config backup/r
 conversion and the rest of the detailed CRM acceptance contract remain open. These changes are
 committed candidates, not a claim of production deployment or full program completion.
 
+### CRM restore acceptance found and corrected stale settings
+
+A real disposable PostgreSQL restore exported configured CRM labels/colors/reversed stage order,
+changed the settings and primed the serving process caches, then restored the snapshot. The database
+and fresh storage returned restored data, but the warm singleton still served the changed settings.
+The shared restore entry point now invalidates settings key/category caches only after commit.
+Seventeen focused checks passed, including seven real database tests proving immediate restored
+reads and preservation of the six immutable stage keys. This invalidation is process-local; other
+replicas require restart/cache expiry. No production restore or data operation occurred.
+
 ## Current Program State
 
 | Milestone                             | Status      | Evidence                                                                                                                                                                                                         | Remaining gate                                                                                                                                                                               |
