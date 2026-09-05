@@ -188,6 +188,25 @@ of platform grace for the 30-second application drain. Current Railway runtime i
 (Railpack 0.39.0). Effective config and a real replacement still require verification after a gated
 release; no production configuration was changed in this verification work.
 
+### CRM-1 acceptance and compiled Linux smoke completed
+
+CRM-1's expanded real-app browser acceptance passed 18 combined desktop/mobile cases, followed
+by both enhanced configured-editor cases. Evidence covers saved stage presentation across board,
+list/filter and both selectors; renamed won conversion with concurrent retries creates exactly one
+client; a customer-looking nonterminal label creates none. Editor access, invalid/generic writes,
+disabled/re-enabled CRM, malformed/future-version fixture recovery, failed-request retry, and both
+themes were exercised. The tests found mobile control clipping; a minimal fieldset width/control
+wrapping fix resolved it. Badge contrast met 4.5:1 in both themes. The separate real backup restore
+test closes saved-config recovery. CRM-1 is accepted in source, not deployed.
+
+The compiled production artifact then passed a separate Linux smoke on Railway's Node 22.23.2:
+Node was PID 1, readiness 200 reported connected, actual PostgreSQL sessions used TLS 1.3, and SIGTERM
+produced draining/drained then exit 0 in 0.088s. Tested artifact SHA256:
+`ca568353328ab354e4fa0546f3d157fe7943af9e65f75a46487c9cb507d4493d`.
+The image must retain docs and installed production dependencies alongside dist. This disposable
+fixture proves the artifact/start command locally; live config adoption remains a release gate.
+The engineering specialist is converting the fixture into a reproducible CI production-start gate.
+
 ## Current Program State
 
 | Milestone                             | Status      | Evidence                                                                                                                                                                                                         | Remaining gate                                                                                                                                                                               |

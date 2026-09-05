@@ -1,6 +1,6 @@
 # CRM-1: pipeline presentation settings implementation plan
 
-Status: accepted by Orchestrator for bounded implementation; runtime candidate implemented; initial browser acceptance passed, extended acceptance remains open. Date: 2026-09-05.
+Status: accepted by Orchestrator for bounded implementation; runtime implemented and CRM-1 acceptance passed; production release pending. Date: 2026-09-05.
 Inspected Core HEAD: `ac1d1edfdcd027eabb4df9efbb83951638c5c3d4`; concurrent reliability changes remain outside this design.
 Scope: labels, color presets and order over the six existing lead stages. No new stages, custom fields, lifecycle rules, tenancy, dependencies or schema migration.
 

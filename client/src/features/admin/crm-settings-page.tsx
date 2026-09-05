@@ -84,7 +84,7 @@ function SettingsEditor() {
           if (!locked && parsed.success) mutation.mutate(parsed.data);
         }}
       >
-        <fieldset disabled={locked} className="space-y-4">
+        <fieldset disabled={locked} className="min-w-0 space-y-4">
           {draft?.stages.map((stage, index) => (
             <div
               key={stage.key}
@@ -169,7 +169,7 @@ function SettingsEditor() {
             </div>
           ))}
           {draft && !parsed.success && <p role="alert">{parsed.error.issues[0]?.message}</p>}
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <Button type="submit" disabled={locked || !parsed.success}>
               Save pipeline settings
             </Button>
