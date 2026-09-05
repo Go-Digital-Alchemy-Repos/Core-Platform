@@ -1,4 +1,5 @@
 import { getDashboardOriginPolicyError } from "../../shared/client-origin-policy";
+import { getClientBackupPrefix } from "../../shared/client-backup-policy";
 
 export interface ClientStackRequirements {
   ecommerce?: boolean;
@@ -167,8 +168,16 @@ export function validateClientStackEnvironment(
       errors,
     );
     const prefix = env.BACKUP_R2_PREFIX?.trim();
-    if (stackId && prefix && !prefix.split("/").includes(stackId)) {
-      errors.push("BACKUP_R2_PREFIX must contain CLIENT_STACK_ID as a complete path segment");
+    if (prefix) {
+      const expectedPrefix = getClientBackupPrefix(
+        stackId ?? undefined,
+        publicSiteOrigin ?? undefined,
+      );
+      if (prefix.replace(/^\/+|\/+$/g, "") !== expectedPrefix) {
+        errors.push(
+          "BACKUP_R2_PREFIX must exactly match the client backup namespace derived from PUBLIC_SITE_ORIGIN",
+        );
+      }
     }
   }
 

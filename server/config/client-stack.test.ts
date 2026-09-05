@@ -22,7 +22,7 @@ function completeEnvironment(): NodeJS.ProcessEnv {
     BACKUP_R2_ACCESS_KEY_ID: "access",
     BACKUP_R2_SECRET_ACCESS_KEY: "secret",
     BACKUP_R2_BUCKET_NAME: "client-backups",
-    BACKUP_R2_PREFIX: "production/pilot-acme",
+    BACKUP_R2_PREFIX: "clients/pilot-acme/backups",
     METRICS_ENABLED: "true",
     METRICS_BEARER_TOKEN: "a-dedicated-metrics-token-that-is-long-enough",
     CLIENT_FORM_PROXY_TOKEN: "client-form-proxy-token-placeholder",
@@ -45,12 +45,12 @@ describe("validateClientStackEnvironment", () => {
     });
   });
 
-  it("rejects non-canonical origins, weak secrets, and a shared backup prefix", () => {
+  it("rejects non-canonical origins, weak secrets, and an incorrect backup namespace", () => {
     const env = completeEnvironment();
     env.SESSION_SECRET = "short";
     env.APP_URL = "https://shop.example.com/store";
     env.TRUSTED_ORIGINS = "https://other.example.com/,https://other.example.com/";
-    env.BACKUP_R2_PREFIX = "production/shared";
+    env.BACKUP_R2_PREFIX = "clients/other-client/backups";
 
     const result = validateClientStackEnvironment(env, { backups: true });
 
@@ -60,7 +60,7 @@ describe("validateClientStackEnvironment", () => {
         expect.stringContaining("APP_URL must be an origin only"),
         expect.stringContaining("TRUSTED_ORIGINS must include the exact APP_URL"),
         expect.stringContaining("duplicate origins"),
-        expect.stringContaining("BACKUP_R2_PREFIX must contain CLIENT_STACK_ID"),
+        expect.stringContaining("BACKUP_R2_PREFIX must exactly match"),
       ]),
     );
   });
@@ -126,6 +126,32 @@ describe("validateClientStackEnvironment", () => {
 
     expect(
       validateClientStackEnvironment(env, { separatePublicAndAdminOrigins: true }).errors,
+    ).toEqual([]);
+  });
+
+  it("requires the backup namespace to use the configured public client domain", () => {
+    const env = completeEnvironment();
+    env.APP_URL = "https://dashboard.example.com";
+    env.PUBLIC_SITE_ORIGIN = "https://www.example.com";
+    env.CORE_PLATFORM_ADMIN_ORIGIN = "https://dashboard.example.com";
+    env.TRUSTED_ORIGINS = "https://www.example.com,https://dashboard.example.com";
+    env.BACKUP_R2_PREFIX = "clients/pilot-acme/backups";
+
+    expect(
+      validateClientStackEnvironment(env, {
+        backups: true,
+        separatePublicAndAdminOrigins: true,
+      }).errors,
+    ).toContain(
+      "BACKUP_R2_PREFIX must exactly match the client backup namespace derived from PUBLIC_SITE_ORIGIN",
+    );
+
+    env.BACKUP_R2_PREFIX = "clients/example.com/backups";
+    expect(
+      validateClientStackEnvironment(env, {
+        backups: true,
+        separatePublicAndAdminOrigins: true,
+      }).errors,
     ).toEqual([]);
   });
 

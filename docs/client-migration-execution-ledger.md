@@ -1179,3 +1179,14 @@ and budgets remain green.
   suite (115 files, 545 tests), production build, and bundle budgets passed locally.
 - **Safety boundary:** no R2 account, bucket, object, backup, restore, Railway environment, DNS record, or
   client data was accessed or changed.
+
+### 2026-09-05 — Domain-derived backup namespace release gate
+
+- **Implemented:** the deployment preflight now requires an explicitly configured `BACKUP_R2_PREFIX` to
+  exactly equal the namespace derived from the active client public origin. A client stack with
+  `PUBLIC_SITE_ORIGIN=https://www.example.com` must use `clients/example.com/backups`; a stack ID alone is
+  no longer sufficient to approve a different folder in the shared bucket.
+- **Evidence:** configuration, storage-policy, and backup-isolation tests passed. TypeScript, lint, the full
+  suite (115 files, 546 tests), production build, formatting, and bundle budgets passed locally.
+- **Safety boundary:** no R2 account, bucket, object, backup, restore, Railway environment, DNS record, or
+  client data was accessed or changed.
