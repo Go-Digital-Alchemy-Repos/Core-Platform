@@ -52,7 +52,10 @@ describe("read-only migration command input", () => {
       await rm(directory, { recursive: true, force: true });
     }
   });
-  it("rejects URL session overrides before creating a database pool", async () => {
+  it.each([
+    "options=-c%20default_transaction_read_only=off",
+    "statement_timeout=0&query_timeout=0",
+  ])("rejects URL session overrides before creating a database pool: %s", async (query) => {
     const directory = await mkdtemp(join(tmpdir(), "migration-readonly-test-"));
     const output = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     const pool = vi.spyOn(pg, "Pool");
@@ -63,8 +66,7 @@ describe("read-only migration command input", () => {
       await writeFile(approval, "{}", { mode: 0o600 });
       expect(
         await main(["--plan", plan, "--approval", approval], {
-          DATABASE_URL:
-            "postgresql://user:secret@localhost/core?options=-c%20default_transaction_read_only=off",
+          DATABASE_URL: `postgresql://user:secret@localhost/core?${query}`,
         }),
       ).toBe(1);
       expect(pool).not.toHaveBeenCalled();

@@ -5,6 +5,30 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Exact-object apply tooling reviewed and verified
+
+Root reviewed the new separate apply command and obtained a second bounded review with no blocking
+finding. The command requires explicit exact-object approval, independently bound source/target
+and writer-drain attestation, current frozen runtime, and separate bounded0600 inputs. A new
+exclusive ledger fsyncs its header and dispatch intent before conditional PUT; retries use a new
+ledger and reverify actual objects, preserving ambiguous remote writes and all sources. There is
+no delete/list/overwrite path or normal-application startup hook. Attestation remains operator
+trust, not command-certified writer drainage. No production copy is approved or performed here.
+
+Root passed all126 migration/planner/storage/source/command tests, full build and detached checks
+for both actual Node artifacts. Apply SHA256:
+`3aafee4cd8b950aebde3e9c42732c531a1f4d7c96d4da5e87822ee5a4609b3ba`;
+dry-run SHA256: `2760976f1c20deee6334ad7c46c8e7dc2f64cde05cc2cdf1a09922b5038e7f9d`.
+The detached tests prove argument rejection without sources/TSX, not provider acceptance. Root
+also found query/statement deadline overrides in PostgreSQL URL parameters; both operator
+commands now accept only the centrally validated sslmode query parameter, with regression tests
+proving rejection before connection. CI includes the separate apply-artifact check after build.
+See [operator contract](legacy-upload-apply-command.md) for exact inputs and failure handling.
+
+Hosted run34004914446 completed successfully for checkpoint59af4a4, including all22 Linux pilot
+cases and the dependent full Core Verify job. Final checks on the newly integrated tooling remain
+required before release. Production is unchanged.
+
 ### Integrated release draft opened
 
 [Draft PR11](https://github.com/Go-Digital-Alchemy-Repos/Core-Platform/pull/11) now exposes the

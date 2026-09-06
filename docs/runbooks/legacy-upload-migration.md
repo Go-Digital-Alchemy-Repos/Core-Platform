@@ -181,3 +181,14 @@ The latter does not establish consistency through a cached public domain. These 
 support the selected copy primitive, but do not establish a writer barrier or authorize a
 production media copy. The final migration still requires fresh source verification and
 post-copy destination hashing through the direct S3 API.
+
+
+### Separate explicit apply tooling
+
+The reviewed preparation now includes `dist/operations/apply-legacy-upload-migration.mjs`.
+Its [operator contract](../legacy-upload-apply-command.md) specifies separate copy approval,
+operator drain attestation and a new durable ledger for each attempt. The read-only verifier
+remains separate. Building or testing the apply tool grants no production-copy authority; all
+writer-barrier, refreshed inventory, exact-plan and post-copy/cutover gates above still apply.
+Both operator commands reject database URL query parameters other than centrally validated
+sslmode so URL values cannot disable their session policy or query deadlines.
