@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const mockSend = vi.fn();
 const MockS3Client = vi.fn(() => ({ send: mockSend }));
@@ -34,6 +34,17 @@ vi.mock("../storage/index", () => ({
 }));
 
 describe("R2 service", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it("freeze throws before configuration/SDK work instead of returning fallback sentinels", async () => {
+    vi.stubEnv("UPLOAD_MUTATIONS_FROZEN", "true");
+    const mod = await import("../services/r2.service");
+    await expect(
+      mod.uploadFile("test.png", Buffer.from("data"), "image/png"),
+    ).rejects.toMatchObject({ statusCode: 503 });
+    await expect(mod.deleteFile("test.png")).rejects.toMatchObject({ statusCode: 503 });
+    expect(mockGetDecryptedCategory).not.toHaveBeenCalled();
+    expect(mockSend).not.toHaveBeenCalled();
+  });
   beforeEach(async () => {
     vi.clearAllMocks();
     MockS3Client.mockClear();

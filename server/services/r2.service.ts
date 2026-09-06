@@ -1,3 +1,4 @@
+import { assertUploadMutationsAllowed } from "./upload-mutation-policy";
 import {
   S3Client,
   PutObjectCommand,
@@ -167,6 +168,7 @@ export async function uploadFile(
   buffer: Buffer,
   contentType: string,
 ): Promise<string | null> {
+  assertUploadMutationsAllowed();
   const r2 = await getClient();
   if (!r2) {
     logger.r2.warn("Not configured — cannot upload file", { key });
@@ -198,6 +200,7 @@ export async function uploadFile(
 }
 
 export async function deleteFile(key: string): Promise<boolean> {
+  assertUploadMutationsAllowed();
   const r2 = await getClient();
   if (!r2) return false;
 
