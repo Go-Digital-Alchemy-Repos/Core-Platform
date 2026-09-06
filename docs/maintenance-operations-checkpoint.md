@@ -395,3 +395,22 @@ Independent source review found no additional issue. Root committed the single
 producer file as 99e0540 on the rehearsal branch; it depends on the pending shared
 helper and is not yet integrated or pushed. Receipt crm-populated-01.json records
 dirty development provenance accurately; final candidate rehearsal remains due.
+
+### Runtime and backup evidence corrections — continued
+
+Root adapted the compiled-runtime smoke to the same exact ownership and
+exclusive receipt pattern. Actual build and smoke passed: verified TLS1.3 for
+six database connections, direct Node PID1 readiness, SIGTERM drain exit0 in
+0.068seconds, both captured containers absent and the captured DB anonymous
+volume absent. Receipt runtime-01.json is development evidence, not final-head
+release approval. Backup adapter143db6e23a passed a fresh one-row synthetic
+restore plus four input/report safety checks; broad recovery remains separately
+covered by populated rehearsals and still must run on the release candidate.
+
+Root independently passed10 Python cleanup tests and5 pilot helper tests.
+A subsequent real pilot shutdown caught group-wide TERM interrupting the app's
+drain; the failed pilot-02 receipt is preserved. Engineering is changing the
+graceful phase to signal the leader first, then escalate remaining owned group
+processes and verify full absence. Combined independent review and integration
+remain pending. GitHub registration still displays Confirm access; no release
+protection or deployment changes occurred.
