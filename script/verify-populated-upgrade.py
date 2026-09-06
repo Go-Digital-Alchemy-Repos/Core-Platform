@@ -71,6 +71,15 @@ def main(output, baseline):
                 require(sql('upgrade_clean','SELECT count(*) FROM cms_form_effect_jobs;')=='0','Historical form effects replayed')
                 require(sql('upgrade_clean','SELECT count(*) FROM ecommerce_notification_jobs;')=='0','Historical notifications replayed')
             report['upgrade_runs']=2; report['legacy_data_preserved']=True; report['historical_jobs_replayed']=False
+            # Current valid jobs must survive startup reconciliation after real business activity.
+            sql('upgrade_clean', "INSERT INTO ecommerce_notification_jobs(id,type,order_id,deduplication_key) SELECT 'upgrade-job-'||kind,kind,'upgrade-order','upgrade-job-'||kind FROM unnest(ARRAY['order_confirmation','refund_confirmation','shipment_confirmation','order_status']) AS kind;")
+            jobs_query = "SELECT json_agg(t ORDER BY id) FROM ecommerce_notification_jobs t;"
+            jobs_before = json.loads(sql('upgrade_clean',jobs_query))
+            for attempt in (1,2):
+                migrate(ROOT,'upgrade_clean')
+                require(json.loads(sql('upgrade_clean',jobs_query))==jobs_before,'Notification history changed during restart')
+                require(snapshot('upgrade_clean',columns)[0]==original,'Legacy rows changed during restart')
+            report['populated_notification_restart']={'runs':2,'job_types_preserved':sorted(row['type'] for row in jobs_before),'all_job_values_preserved':True}
             # Real constraint checks inside rolled-back transactions leave history unchanged.
             checks=(ROOT/'script/fixtures/upgrade-constraints.sql').read_text()
             sql('upgrade_clean',checks)

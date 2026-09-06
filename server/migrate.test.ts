@@ -77,17 +77,12 @@ describe("runMigrations", () => {
       "utf8",
     );
     expect(mockReadFile).toHaveBeenCalledWith(
-      expect.stringContaining("0052_ecommerce_refund_notification_jobs.sql"),
+      expect.stringContaining("0060_ecommerce_notification_reconciliation.sql"),
       "utf8",
     );
-    expect(mockReadFile).toHaveBeenCalledWith(
-      expect.stringContaining("0053_ecommerce_shipment_notification_jobs.sql"),
-      "utf8",
-    );
-    expect(mockReadFile).toHaveBeenCalledWith(
-      expect.stringContaining("0054_ecommerce_order_status_notification_jobs.sql"),
-      "utf8",
-    );
+    for (const historical of ["0052_", "0053_", "0054_"]) {
+      expect(mockReadFile).not.toHaveBeenCalledWith(expect.stringContaining(historical), "utf8");
+    }
     expect(mockReadFile).toHaveBeenCalledWith(
       expect.stringContaining("0055_woo_import_disposition_evidence.sql"),
       "utf8",

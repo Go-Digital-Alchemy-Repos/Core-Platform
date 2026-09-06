@@ -5,6 +5,24 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Populated notification restart failure corrected and rehearsed
+
+The offline-commerce browser workflow created a valid order-status notification that prevented
+subsequent startup: reconciliation replayed the narrower historical 0052/0053 type constraints.
+The runner now applies a consolidated current notification schema in 0060, preserving the
+historical migration files, refund/shipment columns, timestamp conversion and full type constraint.
+No notification data is deleted or rewritten. Root independently rehearsed an upgrade from actual
+main `a006f36`, then two restarts containing all four notification types: every job value and all
+11 original rows across ten tables were preserved. The existing duplicate-paid-history negative
+case still rejected and preserved both duplicate records. The owned database and volume were
+removed. See [exact migration hash evidence](release-evidence/core-notification-restart-upgrade-2026-09-06.json).
+
+The expanded populated-upgrade CI runner now retains this regression. Root also passed all 858
+unit tests (24 database tests intentionally skipped in this invocation), types and scoped lint.
+The actual browser run passed desktop/mobile plus restart of its retained populated fixture;
+final review is strengthening the cancelled-fulfillment assertion before integration. These are
+candidate fixes, not production deployment evidence.
+
 ### Browser-discovered refund validation response corrected
 
 The actual offline-commerce browser run found that an amount exceeding the remaining refundable
