@@ -271,12 +271,16 @@ export function CreateLeadSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" size="lg">
-        <SheetHeader>
+      <SheetContent
+        side="right"
+        size="lg"
+        className="max-sm:!animate-none left-0 right-auto h-[100dvh] w-[100dvw] max-w-[100dvw] overflow-hidden sm:left-auto sm:right-0 sm:w-full"
+      >
+        <SheetHeader className="shrink-0">
           <SheetTitle>Create Lead</SheetTitle>
           <SheetDescription>Add a manual CRM lead to the pipeline.</SheetDescription>
         </SheetHeader>
-        <SheetBody className="space-y-4">
+        <SheetBody className="min-h-0 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Name</Label>
@@ -327,7 +331,7 @@ export function CreateLeadSheet({
             <p role="alert">Creation failed. Your entries are retained. {mutation.error.message}</p>
           )}
         </SheetBody>
-        <SheetFooter>
+        <SheetFooter className="shrink-0">
           <Button
             onClick={() => mutation.mutate()}
             disabled={!form.name.trim() || !customFields.ready || mutation.isPending}
@@ -393,12 +397,16 @@ function LeadDetailSheet({ leadId, onClose }: { leadId: string | null; onClose: 
 
   return (
     <Sheet open={Boolean(leadId)} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" size="xl">
-        <SheetHeader>
+      <SheetContent
+        side="right"
+        size="xl"
+        className="max-sm:!animate-none left-0 right-auto h-[100dvh] w-[100dvw] max-w-[100dvw] overflow-hidden sm:left-auto sm:right-0 sm:w-full"
+      >
+        <SheetHeader className="shrink-0">
           <SheetTitle>{lead?.name ?? "Lead"}</SheetTitle>
           <SheetDescription>{lead?.email || lead?.phone || "No contact info"}</SheetDescription>
         </SheetHeader>
-        <SheetBody className="space-y-5">
+        <SheetBody className="min-h-0 space-y-5">
           {lead ? (
             <>
               <CrmRecordCustomFields key={lead.id} scope="lead" id={lead.id} />
@@ -414,7 +422,7 @@ function LeadDetailSheet({ leadId, onClose }: { leadId: string | null; onClose: 
                     <SelectTrigger data-testid="select-crm-lead-stage">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-sm:!animate-none">
                       {presentation.stages.map((stage) => (
                         <SelectItem key={stage} value={stage}>
                           {presentation.labels[stage]}

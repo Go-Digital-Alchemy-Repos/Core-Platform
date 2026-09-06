@@ -41,12 +41,16 @@ export function CreateCrmClientSheet({ onClose }: { onClose: () => void }) {
         if (!open) onClose();
       }}
     >
-      <SheetContent side="right" size="lg">
-        <SheetHeader>
+      <SheetContent
+        side="right"
+        size="lg"
+        className="max-sm:!animate-none left-0 right-auto h-[100dvh] w-[100dvw] max-w-[100dvw] overflow-hidden sm:left-auto sm:right-0 sm:w-full"
+      >
+        <SheetHeader className="shrink-0">
           <SheetTitle>Create client</SheetTitle>
           <SheetDescription>Create the client profile and custom values together.</SheetDescription>
         </SheetHeader>
-        <SheetBody className="space-y-4">
+        <SheetBody className="min-h-0 space-y-4">
           <fieldset disabled={mutation.isPending} className="space-y-3">
             <Label htmlFor="new-client-name">Name</Label>
             <Input id="new-client-name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -67,7 +71,7 @@ export function CreateCrmClientSheet({ onClose }: { onClose: () => void }) {
             <p role="alert">Creation failed. Your entries are retained. {mutation.error.message}</p>
           )}
         </SheetBody>
-        <SheetFooter>
+        <SheetFooter className="shrink-0">
           <Button
             disabled={!name.trim() || !customFields.ready || mutation.isPending}
             onClick={() => mutation.mutate()}

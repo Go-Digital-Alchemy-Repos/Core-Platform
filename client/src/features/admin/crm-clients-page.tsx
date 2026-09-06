@@ -369,8 +369,12 @@ function ClientDetailSheet({
 
   return (
     <Sheet open={Boolean(clientId)} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" size="xl">
-        <SheetHeader>
+      <SheetContent
+        side="right"
+        size="xl"
+        className="max-sm:!animate-none left-0 right-auto h-[100dvh] w-[100dvw] max-w-[100dvw] overflow-hidden sm:left-auto sm:right-0 sm:w-full"
+      >
+        <SheetHeader className="shrink-0">
           <SheetTitle>{client?.name ?? "Client"}</SheetTitle>
           <SheetDescription>
             {client
@@ -378,7 +382,7 @@ function ClientDetailSheet({
               : "Loading client..."}
           </SheetDescription>
         </SheetHeader>
-        <SheetBody className="space-y-5">
+        <SheetBody className="min-h-0 space-y-5">
           {client ? (
             <>
               <CrmRecordCustomFields key={client.id} scope="client" id={client.id} />
@@ -869,8 +873,8 @@ function CrmClientsContent() {
         </Select>
       </div>
 
-      <div className="rounded-lg border">
-        <div className="grid grid-cols-[1fr_120px_140px_150px_120px] gap-3 border-b px-4 py-3 text-xs font-medium text-muted-foreground">
+      <div className="overflow-x-auto rounded-lg border">
+        <div className="grid min-w-[800px] grid-cols-[1fr_120px_140px_150px_120px] gap-3 border-b px-4 py-3 text-xs font-medium text-muted-foreground">
           <span>
             <UserRound className="mr-1 inline h-3 w-3" />
             Client
@@ -891,7 +895,7 @@ function CrmClientsContent() {
             key={client.id}
             type="button"
             onClick={() => setSelectedClientId(client.id)}
-            className="grid w-full grid-cols-[1fr_120px_140px_150px_120px] gap-3 px-4 py-3 text-left text-sm hover:bg-muted/40"
+            className="grid min-w-[800px] w-full grid-cols-[1fr_120px_140px_150px_120px] gap-3 px-4 py-3 text-left text-sm hover:bg-muted/40"
           >
             <span className="min-w-0">
               <span className="block truncate font-medium">{client.name}</span>
