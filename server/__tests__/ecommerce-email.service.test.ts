@@ -55,6 +55,56 @@ describe("ecommerce email service", () => {
     );
   });
 
+  it("describes only the linked shipped subset and escapes product names", async () => {
+    const { sendEcommerceShipmentEmail } = await import("../services/ecommerce-email.service");
+    const order = {
+      id: "order-partial",
+      lookupToken: "synthetic",
+      customer: { email: "buyer@example.test", name: "Buyer" },
+      items: [
+        { id: "item1", productName: "<Apple>", quantity: 5 },
+        { id: "item2", productName: "Unshipped", quantity: 2 },
+      ],
+      fulfillments: [{ shipmentId: "ship1", items: [{ orderItemId: "item1", quantity: 1 }] }],
+    } as unknown as EcommerceOrderWithDetails;
+    await sendEcommerceShipmentEmail(order, { id: "ship1", carrier: "UPS" } as EcommerceShipment);
+    expect(mockSendEmail).toHaveBeenCalledWith(
+      "buyer@example.test",
+      "Shipment update #order-pa",
+      expect.stringContaining("&lt;Apple&gt; x 1"),
+    );
+    expect(mockRenderEmailShell.mock.calls[0][1]).not.toContain("Unshipped");
+    expect(mockRenderEmailShell.mock.calls[0][1]).not.toContain("Your order has shipped");
+  });
+
+  it("escapes shipment text and attributes and drops unsafe legacy tracking links", async () => {
+    const { sendEcommerceShipmentEmail } = await import("../services/ecommerce-email.service");
+    const order = {
+      id: "order",
+      lookupToken: "token",
+      customer: { email: "buyer@example.test", name: '<img src=x onerror="bad">' },
+      items: [],
+      fulfillments: [],
+    } as unknown as EcommerceOrderWithDetails;
+    const shipment = {
+      id: "ship",
+      carrier: "<b>evil</b>",
+      trackingNumber: '"><img src=x>',
+      trackingUrl: "javascript:alert(1)",
+    } as EcommerceShipment;
+    await sendEcommerceShipmentEmail(order, shipment);
+    const html = mockRenderEmailShell.mock.calls[0][1];
+    expect(html).toContain("&lt;img");
+    expect(html).toContain("&lt;b&gt;evil&lt;/b&gt;");
+    expect(html).not.toContain("<img");
+    expect(html).not.toContain("javascript:");
+    await sendEcommerceShipmentEmail(order, {
+      ...shipment,
+      trackingUrl: 'https://track.example.test/?a=1&b="quoted"',
+    });
+    expect(mockRenderEmailShell.mock.calls[1][1]).toContain("a=1&amp;b=%22quoted%22");
+  });
+
   it("uses the public site origin for customer order-status links", async () => {
     const originalPublicSiteOrigin = process.env.PUBLIC_SITE_ORIGIN;
     const originalAppUrl = process.env.APP_URL;
