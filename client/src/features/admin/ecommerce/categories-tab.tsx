@@ -63,13 +63,17 @@ export function CategoriesTab() {
 
   const collectDescendantIds = (categoryId: string): Set<string> => {
     const descendants = new Set<string>();
-    const visit = (parentId: string) => {
+    const pending = [categoryId];
+    const visited = new Set<string>([categoryId]);
+    while (pending.length) {
+      const parentId = pending.pop()!;
       for (const child of childrenByParent.get(parentId) ?? []) {
+        if (visited.has(child.id)) continue;
+        visited.add(child.id);
         descendants.add(child.id);
-        visit(child.id);
+        pending.push(child.id);
       }
-    };
-    visit(categoryId);
+    }
     return descendants;
   };
 
@@ -77,11 +81,17 @@ export function CategoriesTab() {
     const rows: Array<Category & { depth: number }> = [];
     const visited = new Set<string>();
     const visit = (items: Category[], depth: number) => {
-      for (const category of sortCategories(items)) {
+      const pending = sortCategories(items)
+        .reverse()
+        .map((category) => ({ category, depth }));
+      while (pending.length) {
+        const { category, depth } = pending.pop()!;
         if (visited.has(category.id)) continue;
         visited.add(category.id);
         rows.push({ ...category, depth });
-        visit(childrenByParent.get(category.id) ?? [], depth + 1);
+        for (const child of sortCategories(childrenByParent.get(category.id) ?? []).reverse()) {
+          if (!visited.has(child.id)) pending.push({ category: child, depth: depth + 1 });
+        }
       }
     };
     visit(childrenByParent.get("root") ?? [], 0);
@@ -89,6 +99,11 @@ export function CategoriesTab() {
       (category) => category.parentId && !categoryMap.has(category.parentId),
     );
     visit(orphaned, 0);
+    // Closed cycles have no root or orphan entry point. Keep them visible for parent repair.
+    visit(
+      categories.filter((category) => !visited.has(category.id)),
+      0,
+    );
     return rows;
   })();
 
