@@ -1,0 +1,40 @@
+{
+  "status": "passed",
+  "baseline": "a99bb7efeb4c007789c20da91ff0e2d395452836",
+  "fixture": "core-crm-upgrade-91c6cc8d8929",
+  "candidate": "caa8a74f569dfd681dc2c4369cd74c0418ecd941",
+  "sourceSha256": {
+    "server/migrate.ts": "c8429e491bd56c88b935b8f0909857db7258bde7558e71f0b2051f097a58f623",
+    "package-lock.json": "dd130ae66bd332d461313d51766abddf704af41f1a68846b144b3a1eb0d9dd34",
+    "script/verify-crm-populated-upgrade.py": "684e145b1a9546425a66a990ba71d43d9752c97ba1a212f202c2b8b994be4bb3",
+    "script/fixtures/crm-upgrade-legacy.sql": "236a6b28b896fc833f290fc556d2b7fd982302a3ceecf1e4febd621a440d18e2",
+    "script/fixtures/crm-populated-upgrade.ts": "f90e9250ddad93d6866710a577f637737ec9fe0f95bac77fcbadcc7cb2f640d0"
+  },
+  "migrationSqlSha256": "070f7d81fd24a3b9fd85393620941a682d2dc3931d145bd07f25207704dc0132",
+  "baselineDependencyInstall": "npm ci from exact baseline package-lock; lifecycle scripts disabled",
+  "baselineMigrationRunnerSha256": "8f2683f89d591ed249c76cf5753a9668159f5f188f875d5f6ae21139d9cb7295",
+  "baselineRows": {
+    "system_settings": 2,
+    "cms_forms": 1,
+    "cms_form_submissions": 1,
+    "cms_form_effect_jobs": 1,
+    "crm_leads": 1,
+    "crm_lead_notes": 1,
+    "crm_clients": 1,
+    "crm_client_notes": 1,
+    "ecommerce_products": 1,
+    "ecommerce_product_variants": 1,
+    "ecommerce_customers": 1,
+    "ecommerce_orders": 1,
+    "ecommerce_inventory_adjustments": 1,
+    "ecommerce_notification_jobs": 1
+  },
+  "baselineColumnsPreservedAcrossTwoStarts": true,
+  "customLeadAndClientValuesUsable": true,
+  "mappingUsable": true,
+  "populatedCandidateRestarts": 2,
+  "legacyPendingJobUnchanged": true,
+  "historicalEcommerceUnchanged": true,
+  "explicitClientPreferenceAndNullsPreserved": true,
+  "fixtureRemoved": true
+}

@@ -1,0 +1,14 @@
+INSERT INTO system_settings(id,key,value,category) VALUES ('upgrade-setting','upgrade_fixture','{"preserve":true}','general');
+INSERT INTO cms_forms(id,name,slug,fields,settings) VALUES ('upgrade-form','Synthetic legacy contact','upgrade-contact','[{"id":"legacy-email","key":"email","label":"Email","type":"email","options":[],"config":{}}]','{"createCrmLead":true,"notifyAdmins":false,"mailchimpEnabled":false,"storeAsContactMessage":false}');
+INSERT INTO cms_form_submissions(id,form_id,data,source,idempotency_key) VALUES ('upgrade-submission','upgrade-form','{"email":"legacy@example.test","message":"Preserve legacy submission"}','upgrade-rehearsal','legacy-upgrade-key');
+INSERT INTO cms_form_effect_jobs(id,submission_id,deduplication_key,payload,status) VALUES ('upgrade-pending','upgrade-submission','crm_intake','{"kind":"crm_intake"}','queued');
+INSERT INTO crm_leads(id,name,email,form_submission_id,form_data,metadata) VALUES ('upgrade-lead','Synthetic legacy lead','legacy@example.test','upgrade-submission','{"legacy":true}','{"preserve":42}');
+INSERT INTO crm_lead_notes(id,lead_id,body) VALUES ('upgrade-note','upgrade-lead','Preserve historical note');
+INSERT INTO crm_clients(id,name,email,company,client_type,preferred_contact_method,primary_email,client_since) VALUES ('upgrade-client','Synthetic legacy client','client@example.test','Legacy company','individual','no_preference',NULL,NULL);
+INSERT INTO crm_client_notes(id,client_id,body) VALUES ('upgrade-client-note','upgrade-client','Preserve client note');
+INSERT INTO ecommerce_products(id,name,price,url_slug) VALUES ('upgrade-product','Synthetic product',2500,'upgrade-product');
+INSERT INTO ecommerce_product_variants(id,product_id,inventory_quantity,track_inventory,is_default) VALUES ('upgrade-variant','upgrade-product',8,true,true);
+INSERT INTO ecommerce_customers(id,name,email) VALUES ('upgrade-customer','Synthetic customer','buyer@example.test');
+INSERT INTO ecommerce_orders(id,customer_id,status,payment_status,total_amount,subtotal_amount) VALUES ('upgrade-order','upgrade-customer','processing','paid',5000,5000);
+INSERT INTO ecommerce_inventory_adjustments(id,product_id,variant_id,order_id,delta,quantity_after,reason) VALUES ('upgrade-adjustment','upgrade-product','upgrade-variant','upgrade-order',-2,8,'order_paid');
+INSERT INTO ecommerce_notification_jobs(id,type,order_id,deduplication_key) VALUES ('upgrade-notification','shipment_confirmation','upgrade-order','upgrade-shipment');
