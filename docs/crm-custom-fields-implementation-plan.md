@@ -2,6 +2,16 @@
 
 Status: design accepted by Orchestrator for isolated CRM-2 implementation; not implemented or release-approved. Inspected Core `62d904450bd39bda845f94847cc4d1cbf7b91c20`, 2026-09-06 UTC.
 
+## Shared-contract checkpoint
+
+On 2026-09-06 the Orchestrator accepted the initial pure contracts in this isolated branch.
+Four shared files cover scalar normalization, definitions/revision transitions, limits,
+manual defaults/required behavior, archived accepted values, and strict mapping save envelopes.
+Root independently passed all43 focused tests after correcting revision exhaustion and C1
+control-character boundaries. TypeScript and scoped lint passed. No persistence, form adapters,
+API, UI, migration or production behavior is implemented by this checkpoint. Transactional
+serialization, exact retained revision selection and the rest of this plan remain required.
+
 ## Source constraints
 
 - `shared/schema/crm.ts` has separate lead/client records, untyped `metadata`/`formData`, six fixed stages and unique client `sourceLeadId`. Custom fields must not reinterpret those existing JSON records.
