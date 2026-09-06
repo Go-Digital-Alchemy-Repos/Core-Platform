@@ -1,3 +1,4 @@
+import { getSafeEcommerceTrackingUrl } from "@shared/ecommerce-tracking-url";
 import { type ElementType, FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -2766,20 +2767,18 @@ export function OrdersTab() {
                                       {formatOptionalDateTime(shipment.shippedAt, storeTimezone)}
                                     </p>
                                   </div>
-                                  {shipment.trackingNumber ? (
-                                    shipment.trackingUrl ? (
-                                      <Button asChild size="sm" variant="outline">
-                                        <a
-                                          href={shipment.trackingUrl}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                        >
-                                          {shipment.trackingNumber}
-                                        </a>
-                                      </Button>
-                                    ) : (
-                                      <Badge variant="outline">{shipment.trackingNumber}</Badge>
-                                    )
+                                  {getSafeEcommerceTrackingUrl(shipment.trackingUrl) ? (
+                                    <Button asChild size="sm" variant="outline">
+                                      <a
+                                        href={getSafeEcommerceTrackingUrl(shipment.trackingUrl)!}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                      >
+                                        {shipment.trackingNumber || "Track package"}
+                                      </a>
+                                    </Button>
+                                  ) : shipment.trackingNumber ? (
+                                    <Badge variant="outline">{shipment.trackingNumber}</Badge>
                                   ) : (
                                     <Badge variant="secondary">No tracking</Badge>
                                   )}

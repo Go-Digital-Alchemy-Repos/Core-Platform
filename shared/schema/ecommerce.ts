@@ -12,6 +12,10 @@ import {
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import {
+  ecommerceTrackingUrlSchema,
+  optionalEcommerceTrackingUrlSchema,
+} from "../ecommerce-tracking-url";
 import { cmsMedia } from "./cms-media";
 import { users } from "./users";
 
@@ -1368,24 +1372,28 @@ export const insertEcommerceShippingRateSchema = createInsertSchema(ecommerceShi
   createdAt: true,
   updatedAt: true,
 });
-export const insertEcommerceShipmentSchema = createInsertSchema(ecommerceShipments).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertEcommerceShipmentSchema = createInsertSchema(ecommerceShipments)
+  .extend({ trackingUrl: optionalEcommerceTrackingUrlSchema })
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  });
 export const insertEcommerceFulfillmentLocationSchema = createInsertSchema(
   ecommerceFulfillmentLocations,
 ).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertEcommerceShippingProviderSchema = createInsertSchema(
   ecommerceShippingProviders,
 ).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertEcommerceFulfillmentSchema = createInsertSchema(ecommerceFulfillments).omit({
-  requestKey: true,
-  requestHash: true,
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertEcommerceFulfillmentSchema = createInsertSchema(ecommerceFulfillments)
+  .extend({ trackingUrl: optionalEcommerceTrackingUrlSchema })
+  .omit({
+    requestKey: true,
+    requestHash: true,
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  });
 export const insertEcommerceFulfillmentItemSchema = createInsertSchema(
   ecommerceFulfillmentItems,
 ).omit({ id: true });
@@ -1465,14 +1473,7 @@ export const atomicEcommerceFulfillmentSchema = z
   .object({
     carrier: z.string().trim().max(100).nullable().default(null),
     trackingNumber: z.string().trim().max(200).nullable().default(null),
-    trackingUrl: z
-      .string()
-      .trim()
-      .max(2048)
-      .url()
-      .refine((value) => /^https?:\/\//.test(value), "Use an HTTP(S) tracking URL")
-      .nullable()
-      .default(null),
+    trackingUrl: ecommerceTrackingUrlSchema.nullable().default(null),
     locationId: z.string().min(1).max(128).nullable().default(null),
     serviceLevel: z.string().trim().max(200).nullable().default(null),
     items: z

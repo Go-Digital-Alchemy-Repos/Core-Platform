@@ -1,3 +1,4 @@
+import { getSafeEcommerceTrackingUrl } from "@shared/ecommerce-tracking-url";
 import { FormEvent, useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { CheckCircle2, Clock3, ExternalLink, Package, Truck } from "lucide-react";
@@ -275,9 +276,13 @@ export default function OrderStatusPage() {
                         </div>
                         <Badge variant="outline">{shipment.status}</Badge>
                       </div>
-                      {shipment.trackingUrl ? (
+                      {getSafeEcommerceTrackingUrl(shipment.trackingUrl) ? (
                         <Button asChild variant="outline" className="mt-4">
-                          <a href={shipment.trackingUrl} target="_blank" rel="noreferrer">
+                          <a
+                            href={getSafeEcommerceTrackingUrl(shipment.trackingUrl)!}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
                             <ExternalLink className="mr-2 h-4 w-4" />
                             Track package
                           </a>

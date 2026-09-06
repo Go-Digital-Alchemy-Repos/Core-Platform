@@ -1,3 +1,4 @@
+import { optionalEcommerceTrackingUrlSchema } from "@shared/ecommerce-tracking-url";
 import { z } from "zod";
 import { atomicEcommerceFulfillmentSchema } from "@shared/schema";
 import { inferCarrierTrackingUrl } from "../services/ecommerce-shipping-carrier.service";
@@ -2078,6 +2079,7 @@ export class EcommerceStorage {
   }
 
   async createShipment(data: InsertEcommerceShipment): Promise<EcommerceShipment> {
+    data = { ...data, trackingUrl: optionalEcommerceTrackingUrlSchema.parse(data.trackingUrl) };
     const [shipment] = await db.insert(ecommerceShipments).values(data).returning();
     return shipment;
   }
@@ -2085,6 +2087,7 @@ export class EcommerceStorage {
   async createShipmentAndMarkOrderShipped(
     data: InsertEcommerceShipment,
   ): Promise<EcommerceShipment> {
+    data = { ...data, trackingUrl: optionalEcommerceTrackingUrlSchema.parse(data.trackingUrl) };
     return db.transaction(async (tx) => {
       await tx.execute(sql`SELECT id FROM ecommerce_orders WHERE id = ${data.orderId} FOR UPDATE`);
       const [current] = await tx
@@ -2125,6 +2128,7 @@ export class EcommerceStorage {
     id: string,
     data: Partial<InsertEcommerceShipment>,
   ): Promise<EcommerceShipment | undefined> {
+    data = { ...data, trackingUrl: optionalEcommerceTrackingUrlSchema.parse(data.trackingUrl) };
     const [shipment] = await db
       .update(ecommerceShipments)
       .set({ ...data, updatedAt: new Date() })
@@ -2184,6 +2188,7 @@ export class EcommerceStorage {
     data: InsertEcommerceFulfillment,
     items: Array<Omit<InsertEcommerceFulfillmentItem, "fulfillmentId">> = [],
   ): Promise<EcommerceFulfillmentWithItems> {
+    data = { ...data, trackingUrl: optionalEcommerceTrackingUrlSchema.parse(data.trackingUrl) };
     return db.transaction(async (tx) => {
       await this.validateLockedFulfillment(
         tx,
