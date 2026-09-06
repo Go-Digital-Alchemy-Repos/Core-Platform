@@ -5,6 +5,33 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Settings and release checkpoint — 2026-09-06 UTC
+
+All five Ecommerce Settings destinations were corrected and verified in production by the
+settings routing release. The broader ecommerce completion scope remains active: reliable
+configuration, checkout and refund correctness, inventory concurrency, provider reconciliation,
+and operator recovery must be verified before claiming ecommerce launch readiness.
+
+The follow-up settings candidate passed hosted Verify, including 34 application browser cases
+and transactional settings database coverage. Subsequent backup recovery, Better Farms retry,
+and exact-object migration checkpoints also passed hosted Verify (`34000858616`, `34001067799`,
+`34001429853`). These results establish candidate validation, not production deployment.
+
+The isolated default-off media mutation guard is committed as `2f6f0224f3de34af13e21e22f82314772dc5ac26`
+and proposed in [draft PR #10](https://github.com/Go-Digital-Alchemy-Repos/Core-Platform/pull/10).
+Both branch and PR Verify checks passed (`34001574491`, `34001616162`); independent review found
+no must-fix issue. All 393 baseline tests, types, lint, formatting, build and bundle budgets passed.
+Its integration into the broader candidate is `176af77`; the candidate's local full checks also
+passed. The PR remains unmerged and the production freeze flag remains unset. Admission guards
+do not replace the required old-writer drain and final inventory reconciliation.
+
+Read-only production inspection at 00:30:40 UTC found no `ecommerce_stripe` settings rows.
+The ecommerce Stripe service reads those settings rather than an environment fallback. Existing
+order status counts do not establish provider acceptance or prove that the orders are demos.
+No Stripe request or configuration mutation was performed. Sandbox payment, cancellation,
+delayed webhook and refund acceptance remain outstanding; they must not be inferred from
+synthetic browser or database tests.
+
 ### Exact-record media migration and controlled cutover preparation
 
 The upload planner now supports v2 ownership tied to one exact legacy CMS object, preserving
@@ -27,8 +54,8 @@ New-client origin-derived preflight remains a distinct deployment contract.
 
 Source review found no existing media freeze. Making R2 unavailable would trigger old-main local
 fallbacks, and a false delete result would not prevent deletion of the CMS row. An isolated,
-default-off throwing freeze guard is being prepared across upload, replacement and deletion
-paths. Old writers/in-flight operations must be drained before final inventory; a flag alone is
+default-off throwing freeze guard is implemented across upload, replacement and deletion
+paths (draft PR #10; not deployed). Old writers/in-flight operations must be drained before final inventory; a flag alone is
 not a barrier. Keep writes frozen through cutover acceptance. After reopening writes, rollback
 requires a namespace-compatible artifact or explicit reverse-copy reconciliation rather than
 blindly returning to raw-key old main.
