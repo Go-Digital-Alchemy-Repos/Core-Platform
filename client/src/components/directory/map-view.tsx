@@ -1,42 +1,12 @@
-import { useEffect, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { useMemo, useState, Fragment } from "react";
+import { Marker, Popup } from "react-map-gl/maplibre";
+import { BaseMap, MapPin } from "@/components/shared/base-map";
+import { hasMapCoordinates } from "@/lib/map-style";
 import { Link } from "wouter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getFirstSentence } from "@/lib/html";
-import {
-  LEAFLET_SIMPLIFIED_TILE_ATTRIBUTION,
-  LEAFLET_SIMPLIFIED_TILE_URL,
-} from "@/lib/leaflet-map-style";
 import type { TherapistProfile } from "@shared/schema/therapist-profiles";
 import type { User } from "@shared/schema/users";
-
-const pinSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40" fill="none">
-  <path d="M14 0C6.268 0 0 6.268 0 14c0 10.5 14 26 14 26s14-15.5 14-26C28 6.268 21.732 0 14 0z" fill="#1e3a5f"/>
-  <circle cx="14" cy="14" r="7" fill="white"/>
-</svg>`;
-
-const pinHighlightSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="48" viewBox="0 0 34 48" fill="none">
-  <path d="M17 0C7.611 0 0 7.611 0 17c0 12.75 17 31 17 31s17-18.25 17-31C34 7.611 26.389 0 17 0z" fill="#2d8a7e"/>
-  <circle cx="17" cy="17" r="8.5" fill="white"/>
-</svg>`;
-
-const pinIcon = L.divIcon({
-  html: pinSvg,
-  className: "",
-  iconSize: [28, 40],
-  iconAnchor: [14, 40],
-  popupAnchor: [0, -36],
-});
-
-const pinHighlightIcon = L.divIcon({
-  html: pinHighlightSvg,
-  className: "",
-  iconSize: [34, 48],
-  iconAnchor: [17, 48],
-  popupAnchor: [0, -44],
-});
 
 interface TherapistWithUser {
   profile: TherapistProfile;
@@ -53,32 +23,6 @@ interface MapViewProps {
   highlightedId?: string | null;
 }
 
-function MapSizeInvalidator() {
-  const map = useMap();
-
-  useEffect(() => {
-    const container = map.getContainer();
-    const invalidate = () => {
-      window.requestAnimationFrame(() => {
-        map.invalidateSize();
-      });
-    };
-
-    invalidate();
-
-    const timeout = window.setTimeout(invalidate, 120);
-    const resizeObserver = new ResizeObserver(() => invalidate());
-    resizeObserver.observe(container);
-
-    return () => {
-      window.clearTimeout(timeout);
-      resizeObserver.disconnect();
-    };
-  }, [map]);
-
-  return null;
-}
-
 export function MapView({
   therapists,
   height = "500px",
@@ -88,13 +32,9 @@ export function MapView({
   center: centerProp,
   highlightedId,
 }: MapViewProps) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const markered = useMemo(
-    () =>
-      therapists.filter(
-        (t) =>
-          Number.isFinite(Number(t.profile.latitude)) &&
-          Number.isFinite(Number(t.profile.longitude)),
-      ),
+    () => therapists.filter((t) => hasMapCoordinates(t.profile.latitude, t.profile.longitude)),
     [therapists],
   );
 
@@ -118,74 +58,79 @@ export function MapView({
       className="h-full w-full overflow-hidden border isolate"
       data-testid="map-container"
     >
-      <MapContainer
-        center={center}
-        zoom={zoom}
-        scrollWheelZoom={interactive}
-        dragging={interactive}
-        zoomControl={interactive}
-        className="h-full w-full"
-      >
-        <MapSizeInvalidator />
-        <TileLayer
-          attribution={LEAFLET_SIMPLIFIED_TILE_ATTRIBUTION}
-          url={LEAFLET_SIMPLIFIED_TILE_URL}
-          referrerPolicy="strict-origin-when-cross-origin"
-        />
+      <BaseMap center={center} zoom={zoom} interactive={interactive}>
         {markered.map((t) => {
           const fullName =
             [t.user.firstName, t.user.lastName].filter(Boolean).join(" ") || "Verified Provider";
           const isHighlighted = highlightedId === t.profile.id;
           return (
-            <Marker
-              key={t.profile.id}
-              position={[Number(t.profile.latitude), Number(t.profile.longitude)]}
-              icon={isHighlighted ? pinHighlightIcon : pinIcon}
-              zIndexOffset={isHighlighted ? 1000 : 0}
-            >
-              <Popup>
-                <div className="flex gap-2.5 max-w-[240px]" data-testid={`popup-${t.profile.id}`}>
-                  <Avatar
-                    className="h-10 w-10 shrink-0"
-                    data-testid={`popup-avatar-${t.profile.id}`}
-                  >
-                    {t.user.profileImageUrl && (
-                      <AvatarImage src={t.user.profileImageUrl} alt={fullName} />
-                    )}
-                    <AvatarFallback className="text-xs">
-                      {`${(t.user.firstName || "")[0] || ""}${(t.user.lastName || "")[0] || ""}`.toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col gap-0.5 min-w-0">
-                    <span
-                      className="font-semibold text-sm leading-tight"
-                      data-testid={`popup-name-${t.profile.id}`}
+            <Fragment key={t.profile.id}>
+              <Marker
+                latitude={Number(t.profile.latitude)}
+                longitude={Number(t.profile.longitude)}
+                anchor="bottom"
+                style={{ zIndex: isHighlighted ? 1000 : 0 }}
+              >
+                <MapPin
+                  highlighted={isHighlighted}
+                  label={`View ${fullName}`}
+                  onClick={() => setSelectedId(t.profile.id)}
+                />
+              </Marker>
+              {selectedId === t.profile.id && (
+                <Popup
+                  latitude={Number(t.profile.latitude)}
+                  longitude={Number(t.profile.longitude)}
+                  anchor="bottom"
+                  offset={40}
+                  closeOnClick={false}
+                  onClose={() => setSelectedId(null)}
+                >
+                  <div className="flex gap-2.5 max-w-[240px]" data-testid={`popup-${t.profile.id}`}>
+                    <Avatar
+                      className="h-10 w-10 shrink-0"
+                      data-testid={`popup-avatar-${t.profile.id}`}
                     >
-                      {fullName}
-                    </span>
-                    {t.profile.title && (
-                      <span className="text-xs text-gray-500 leading-tight">{t.profile.title}</span>
-                    )}
-                    {t.profile.bio && (
-                      <span className="text-xs text-gray-600 leading-snug mt-0.5 line-clamp-2">
-                        {getFirstSentence(t.profile.bio)}
+                      {t.user.profileImageUrl && (
+                        <AvatarImage src={t.user.profileImageUrl} alt={fullName} />
+                      )}
+                      <AvatarFallback className="text-xs">
+                        {`${(t.user.firstName || "")[0] || ""}${(t.user.lastName || "")[0] || ""}`.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span
+                        className="font-semibold text-sm leading-tight"
+                        data-testid={`popup-name-${t.profile.id}`}
+                      >
+                        {fullName}
                       </span>
-                    )}
-                    <Link
-                      href={`/directory/${t.profile.id}`}
-                      className="text-xs font-medium mt-1"
-                      style={{ color: "#2d8a7e" }}
-                      data-testid={`popup-link-${t.profile.id}`}
-                    >
-                      View Profile →
-                    </Link>
+                      {t.profile.title && (
+                        <span className="text-xs text-gray-500 leading-tight">
+                          {t.profile.title}
+                        </span>
+                      )}
+                      {t.profile.bio && (
+                        <span className="text-xs text-gray-600 leading-snug mt-0.5 line-clamp-2">
+                          {getFirstSentence(t.profile.bio)}
+                        </span>
+                      )}
+                      <Link
+                        href={`/directory/${t.profile.id}`}
+                        className="text-xs font-medium mt-1"
+                        style={{ color: "#2d8a7e" }}
+                        data-testid={`popup-link-${t.profile.id}`}
+                      >
+                        View Profile →
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              </Popup>
-            </Marker>
+                </Popup>
+              )}
+            </Fragment>
           );
         })}
-      </MapContainer>
+      </BaseMap>
     </div>
   );
 }
