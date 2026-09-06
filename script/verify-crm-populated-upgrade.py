@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 import time
 import uuid
+from rehearsal_cleanup import ChildRuns, capture, cleanup, exclusive_report, persist, LABEL
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 BASELINE = 'a99bb7efeb4c007789c20da91ff0e2d395452836'
@@ -20,12 +21,15 @@ TABLES = ['system_settings', 'cms_forms', 'cms_form_submissions', 'cms_form_effe
 def main(output):
     name = 'core-crm-upgrade-' + uuid.uuid4().hex[:12]
     report = {'status': 'failed', 'baseline': BASELINE, 'fixture': name}
+    report_fd = exclusive_report(output)
+    children = ChildRuns()
+    owned_identity = None
     owned = False
     stage = 'local-docker-check'
     docker = ['docker']
 
     def run(args, cwd=ROOT, env=None, data=None, timeout=60, check=True):
-        result = subprocess.run(args, cwd=cwd, env=env, input=data, text=True, capture_output=True, timeout=timeout)
+        result = children.run(args, cwd=cwd, env=env, input=data, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
         if check and result.returncode:
             raise RuntimeError('command-failed')
         return result
@@ -44,6 +48,8 @@ def main(output):
         docker = ['docker', '--host', endpoint]
         require(run(['git', 'rev-parse', BASELINE+'^{commit}']).stdout.strip() == BASELINE)
         report['candidate'] = run(['git', 'rev-parse', 'HEAD']).stdout.strip()
+        report['workingTreeClean'] = not run(['git', 'status', '--porcelain']).stdout.strip()
+        report['producerSha256'] = {p: hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in ['script/verify-crm-populated-upgrade.py', 'script/rehearsal_cleanup.py']}
         paths = ['server/migrate.ts', 'package-lock.json', 'script/verify-crm-populated-upgrade.py', 'script/fixtures/crm-upgrade-legacy.sql', 'script/fixtures/crm-populated-upgrade.ts']
         report['sourceSha256'] = {p: hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in paths}
         report['migrationSqlSha256'] = hashlib.sha256(b''.join(p.name.encode()+b'\0'+p.read_bytes() for p in sorted((ROOT/'migrations').glob('*.sql')))).hexdigest()
@@ -62,7 +68,11 @@ def main(output):
             stage = 'fixture-start'
             password = secrets.token_hex(24)
             owned = True
-            run(docker + ['run', '-d', '--name', name, '-p', '127.0.0.1::5432', '-e', 'POSTGRES_USER=upgrade', '-e', 'POSTGRES_PASSWORD='+password, '-e', 'POSTGRES_DB=core_crm_upgrade', 'postgres:16-alpine'])
+            created = run(docker + ['run', '-d', '--label', LABEL+'='+name, '--name', name, '-p', '127.0.0.1::5432', '-e', 'POSTGRES_USER=upgrade', '-e', 'POSTGRES_PASSWORD='+password, '-e', 'POSTGRES_DB=core_crm_upgrade', 'postgres:16-alpine'])
+            owned_identity = capture(run, docker, name, created.stdout.strip())
+            identity_fd = exclusive_report(output.with_name(output.name+'.ownership.json'))
+            try: persist(identity_fd, owned_identity)
+            finally: os.close(identity_fd)
             port = run(docker + ['port', name, '5432']).stdout.strip().rsplit(':', 1)[1]
             deadline = time.monotonic()+30
             while run(docker + ['exec', name, 'pg_isready', '-U', 'upgrade', '-d', 'core_crm_upgrade'], check=False, timeout=5).returncode:
@@ -116,20 +126,16 @@ def main(output):
     finally:
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
-        if owned:
-            try:
-                removed = run(docker + ['rm', '--force', '--volumes', name], check=False)
-                inventory = run(docker + ['container', 'ls', '--all', '--format', '{{.Names}}'])
-                report['fixtureRemoved'] = removed.returncode == 0 and name not in inventory.stdout.splitlines()
-            except Exception:
-                report['fixtureRemoved'] = False
-            if not report['fixtureRemoved']:
-                report['status'] = 'failed'
-        output.parent.mkdir(parents=True, exist_ok=True)
-        with os.fdopen(os.open(output, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600), 'w') as target:
-            os.fchmod(target.fileno(), 0o600)
-            json.dump(report, target, indent=2)
-            target.write('\n')
+        before_cleanup = children.finish()
+        report['cleanup'] = cleanup(run, docker, owned_identity) if owned_identity else {'passed': not owned, 'containersRemoved': not owned, 'volumesRemoved': not owned, 'error': 'No verified ownership inventory; no container removed.'}
+        after_cleanup = children.finish()
+        report['cleanup']['processesStopped'] = before_cleanup['processesStopped'] and after_cleanup['processesStopped']
+        report['cleanup']['processChecks'] = {'beforeCleanup': before_cleanup, 'afterCleanup': after_cleanup}
+        report['fixtureRemoved'] = report['cleanup']['containersRemoved']
+        if not report['cleanup']['passed'] or not report['cleanup']['processesStopped']:
+            report['status'] = 'failed'
+        try: persist(report_fd, report)
+        finally: os.close(report_fd)
         print(json.dumps(report, indent=2))
     return 0 if report['status'] == 'passed' else 1
 

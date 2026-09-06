@@ -14,6 +14,7 @@ import sys
 import tempfile
 import time
 import uuid
+from rehearsal_cleanup import ChildRuns, capture, cleanup, exclusive_report, persist, LABEL
 
 
 def verify(output: Path, bundle: Path | None = None) -> int:
@@ -24,13 +25,19 @@ def verify(output: Path, bundle: Path | None = None) -> int:
     db_container = prefix + "-db"
     app_container = prefix + "-app"
     created = []
+    identities = []
+    children = ChildRuns()
+    docker = ["docker"]
+    report_fd = exclusive_report(output)
     private_values = [secrets.token_hex(24) for _ in range(3)]
     password, session_secret, setup_token = private_values
     report = {"status": "failed", "command": "env NODE_ENV=production node dist/index.cjs"}
     phase = "preflight"
 
     def command(args, timeout=30, check=True):
-        result = subprocess.run(args, cwd=root, text=True, capture_output=True, timeout=timeout)
+        if args[0] == "docker":
+            args = docker + args[1:]
+        result = children.run(args, cwd=root, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
         if check and result.returncode:
             # Never emit argv, which may contain disposable credentials.
             message = result.stderr.strip() or result.stdout.strip()
@@ -38,6 +45,13 @@ def verify(output: Path, bundle: Path | None = None) -> int:
                 message = message.replace(value, "[redacted]")
             raise RuntimeError(f"{args[0]} command failed: {message[-1500:]}")
         return result
+
+    def record_owned(name, container_id):
+        identity = capture(command, ["docker"], name, container_id.strip())
+        identities.append(identity)
+        descriptor = exclusive_report(output.with_name(output.name+"."+name+".ownership.json"))
+        try: persist(descriptor, identity)
+        finally: os.close(descriptor)
 
     try:
         for binary in ("docker", "openssl"):
@@ -49,6 +63,10 @@ def verify(output: Path, bundle: Path | None = None) -> int:
         ).stdout.strip()
         if not endpoint.startswith("unix://"):
             raise RuntimeError("Production smoke only supports a local Docker Unix socket")
+        docker = ["docker", "--host", endpoint]
+        report["candidate"] = command(["git", "rev-parse", "HEAD"]).stdout.strip()
+        report["workingTreeClean"] = not command(["git", "status", "--porcelain"]).stdout.strip()
+        report["producerSha256"] = {p: hashlib.sha256((root/p).read_bytes()).hexdigest() for p in ["script/verify-production-runtime.py", "script/rehearsal_cleanup.py"]}
         for relative in ("dist/index.cjs", "dist/public/index.html", "package-lock.json", "package.json", "docs"):
             if not (root / relative).exists():
                 raise RuntimeError(f"Required build input missing: {relative}; run npm run build first")
@@ -66,8 +84,9 @@ def verify(output: Path, bundle: Path | None = None) -> int:
             command(["openssl", "req", "-newkey", "rsa:2048", "-nodes", "-subj", "/CN=localhost", "-keyout", str(temp / "server.key"), "-out", str(temp / "server.csr")])
             (temp / "extensions.cnf").write_text("subjectAltName=IP:127.0.0.1,DNS:localhost\nextendedKeyUsage=serverAuth\nkeyUsage=digitalSignature,keyEncipherment\n")
             command(["openssl", "x509", "-req", "-in", str(temp / "server.csr"), "-CA", str(temp / "ca.crt"), "-CAkey", str(temp / "ca.key"), "-CAcreateserial", "-days", "1", "-extfile", str(temp / "extensions.cnf"), "-out", str(temp / "server.crt")])
-            command(["docker", "create", "--name", db_container, "-e", "POSTGRES_USER=runtime_smoke", "-e", f"POSTGRES_PASSWORD={password}", "-e", f"POSTGRES_DB={db_name}", "--entrypoint", "/bin/sh", "postgres:16-alpine", "-c", "chown postgres:postgres /tmp/server.key /tmp/server.crt && chmod 600 /tmp/server.key && exec docker-entrypoint.sh postgres -c ssl=on -c ssl_cert_file=/tmp/server.crt -c ssl_key_file=/tmp/server.key"])
             created.append(db_container)
+            database_created = command(["docker", "create", "--label", LABEL+"="+db_container, "--name", db_container, "-e", "POSTGRES_USER=runtime_smoke", "-e", f"POSTGRES_PASSWORD={password}", "-e", f"POSTGRES_DB={db_name}", "--entrypoint", "/bin/sh", "postgres:16-alpine", "-c", "chown postgres:postgres /tmp/server.key /tmp/server.crt && chmod 600 /tmp/server.key && exec docker-entrypoint.sh postgres -c ssl=on -c ssl_cert_file=/tmp/server.crt -c ssl_key_file=/tmp/server.key"])
+            record_owned(db_container, database_created.stdout)
             for name in ("server.key", "server.crt"):
                 command(["docker", "cp", str(temp / name), f"{db_container}:/tmp/{name}"])
             command(["docker", "start", db_container])
@@ -90,12 +109,13 @@ def verify(output: Path, bundle: Path | None = None) -> int:
                 "APP_URL": "http://127.0.0.1:5000",
                 "CLIENT_STACK_ID": "runtime-shutdown-smoke",
             }
-            args = ["docker", "create", "--name", app_container, "--network", f"container:{db_container}", "--workdir", "/app", "--entrypoint", "/bin/sh"]
+            args = ["docker", "create", "--label", LABEL+"="+app_container, "--name", app_container, "--network", f"container:{db_container}", "--workdir", "/app", "--entrypoint", "/bin/sh"]
             for key, value in env.items():
                 args += ["-e", f"{key}={value}"]
             args += ["node:22-alpine", "-c", "npm ci --omit=dev --no-audit --no-fund && exec env NODE_ENV=production node dist/index.cjs"]
-            command(args)
             created.append(app_container)
+            application_created = command(args)
+            record_owned(app_container, application_created.stdout)
             for name in ("package.json", "package-lock.json", "dist", "docs"):
                 command(["docker", "cp", str(root / name), f"{app_container}:/app/{name}"], timeout=60)
             if bundle != root / "dist/index.cjs":
@@ -158,7 +178,7 @@ def verify(output: Path, bundle: Path | None = None) -> int:
         report["error"] = message
         if app_container in created:
             try:
-                result = subprocess.run(["docker", "logs", "--tail", "15", app_container], text=True, capture_output=True, timeout=10)
+                result = command(["docker", "logs", "--tail", "15", app_container], timeout=10, check=False)
                 log = result.stdout + result.stderr
                 for value in private_values:
                     log = log.replace(value, "[redacted]")
@@ -168,18 +188,17 @@ def verify(output: Path, bundle: Path | None = None) -> int:
     finally:
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
         signal.signal(signal.SIGINT, signal.SIG_IGN)
-        cleanup = []
-        for name in reversed(created):
-            try:
-                result = subprocess.run(["docker", "rm", "--force", "--volumes", name], text=True, capture_output=True, timeout=30)
-                cleanup.append({"container": name, "removed": result.returncode == 0})
-            except Exception:
-                cleanup.append({"container": name, "removed": False})
-        report["cleanup"] = cleanup
-        if any(not item["removed"] for item in cleanup):
+        before_cleanup = children.finish()
+        cleanup_results = [cleanup(command, ["docker"], identity) for identity in reversed(identities)]
+        after_cleanup = children.finish()
+        report["cleanup"] = cleanup_results
+        report["processChecks"] = {"beforeCleanup": before_cleanup, "afterCleanup": after_cleanup}
+        report["processesStopped"] = before_cleanup["processesStopped"] and after_cleanup["processesStopped"]
+        report["ownershipComplete"] = len(identities) == len(created)
+        if not report["ownershipComplete"] or not report["processesStopped"] or any(not item["passed"] for item in cleanup_results):
             report["status"] = "failed"
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(json.dumps(report, indent=2) + "\n")
+        try: persist(report_fd, report)
+        finally: os.close(report_fd)
         print(json.dumps(report, indent=2), flush=True)
     return 0 if report["status"] == "passed" else 1
 

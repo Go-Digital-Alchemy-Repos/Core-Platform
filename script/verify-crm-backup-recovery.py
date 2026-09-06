@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 import time
 import uuid
+from rehearsal_cleanup import ChildRuns, capture, cleanup, exclusive_report, persist, LABEL
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -18,12 +19,15 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 def main(output):
     name = 'core-crm-recovery-' + uuid.uuid4().hex[:12]
     report = {'status': 'failed', 'fixture': name}
+    report_fd = exclusive_report(output)
+    children = ChildRuns()
+    owned_identity = None
     owned = False
     stage = 'local-docker-check'
     docker = ['docker']
 
     def run(args, env=None, timeout=60, check=True):
-        result = subprocess.run(args, cwd=ROOT, env=env, text=True, capture_output=True, timeout=timeout)
+        result = children.run(args, cwd=ROOT, env=env, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
         if check and result.returncode:
             raise RuntimeError('command-failed')
         return result
@@ -35,11 +39,17 @@ def main(output):
             raise RuntimeError('local-unix-socket-required')
         docker = ['docker', '--host', endpoint]
         report['candidate'] = run(['git', 'rev-parse', 'HEAD']).stdout.strip()
+        report['workingTreeClean'] = not run(['git', 'status', '--porcelain']).stdout.strip()
+        report['producerSha256'] = {p: hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in ['script/verify-crm-backup-recovery.py', 'script/rehearsal_cleanup.py']}
         report['sourceSha256'] = {path: hashlib.sha256((ROOT/path).read_bytes()).hexdigest() for path in ['server/migrate.ts', 'server/services/system-backup.service.ts', 'server/storage/crm-custom-fields.storage.ts', 'server/services/form-effect-jobs.service.ts', 'script/fixtures/crm-backup-recovery.test.ts']}
         password = secrets.token_hex(24)
         stage = 'database-start'
         owned = True
-        run(docker + ['run', '-d', '--name', name, '-p', '127.0.0.1::5432', '-e', 'POSTGRES_USER=recovery', '-e', 'POSTGRES_PASSWORD='+password, '-e', 'POSTGRES_DB=core_crm_recovery', 'postgres:16-alpine'])
+        created = run(docker + ['run', '-d', '--label', LABEL+'='+name, '--name', name, '-p', '127.0.0.1::5432', '-e', 'POSTGRES_USER=recovery', '-e', 'POSTGRES_PASSWORD='+password, '-e', 'POSTGRES_DB=core_crm_recovery', 'postgres:16-alpine'])
+        owned_identity = capture(run, docker, name, created.stdout.strip())
+        identity_fd = exclusive_report(output.with_name(output.name+'.ownership.json'))
+        try: persist(identity_fd, owned_identity)
+        finally: os.close(identity_fd)
         port = run(docker + ['port', name, '5432']).stdout.strip().rsplit(':', 1)[1]
         deadline = time.monotonic()+30
         while run(docker + ['exec', name, 'pg_isready', '-U', 'recovery', '-d', 'core_crm_recovery'], check=False).returncode:
@@ -68,20 +78,16 @@ def main(output):
     finally:
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
-        if owned:
-            try:
-                run(docker + ['rm', '--force', '--volumes', name], check=False)
-                inventory = run(docker + ['container', 'ls', '--all', '--format', '{{.Names}}'])
-                report['fixtureRemoved'] = name not in inventory.stdout.splitlines()
-            except Exception:
-                report['fixtureRemoved'] = False
-            if not report['fixtureRemoved']:
-                report['status'] = 'failed'
-        output.parent.mkdir(parents=True, exist_ok=True)
-        with os.fdopen(os.open(output, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600), 'w') as target:
-            os.fchmod(target.fileno(), 0o600)
-            json.dump(report, target, indent=2)
-            target.write('\n')
+        before_cleanup_processes = children.finish()
+        report['cleanup'] = cleanup(run, docker, owned_identity) if owned_identity else {'passed': not owned, 'containersRemoved': not owned, 'volumesRemoved': not owned, 'error': 'No verified ownership inventory; no container removed.'}
+        process_result = children.finish()
+        report['cleanup'].update(process_result)
+        report['cleanup']['beforeCleanupProcessesStopped'] = before_cleanup_processes['processesStopped']
+        report['fixtureRemoved'] = report['cleanup']['containersRemoved']
+        if not report['cleanup']['passed'] or not process_result['processesStopped'] or not before_cleanup_processes['processesStopped']:
+            report['status'] = 'failed'
+        try: persist(report_fd, report)
+        finally: os.close(report_fd)
         print(json.dumps(report, indent=2))
     return 0 if report['status'] == 'passed' else 1
 

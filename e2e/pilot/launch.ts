@@ -1,5 +1,12 @@
-import { spawn, execFileSync, type ChildProcess } from "node:child_process";
-import { mkdtemp, readFile, writeFile, symlink, rm, stat } from "node:fs/promises";
+import {
+  captureOwnedContainer,
+  removeOwnedContainer,
+  stopOwnedChild,
+  spawnOwnedChild,
+  type OwnedContainer,
+} from "./cleanup";
+import { execFileSync, type ChildProcess } from "node:child_process";
+import { mkdtemp, readFile, writeFile, symlink, rm, stat, open, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -7,7 +14,7 @@ import { createRequire } from "node:module";
 import https from "node:https";
 import http from "node:http";
 import net from "node:net";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 
 const coreRoot = path.resolve(import.meta.dirname, "../..");
 const siteRoot =
@@ -197,7 +204,6 @@ async function main() {
     }).trim()
   )
     throw new Error("Pilot requires an unchanged reviewed Better Farms source tree");
-  const temp = await mkdtemp(path.join(tmpdir(), "core-better-farms-pilot-"));
   const name = `core-better-farms-pilot-${randomUUID()}`;
   const docker = (...args: string[]) =>
     execFileSync("docker", ["--host", dockerEndpoint, ...args], {
@@ -208,57 +214,89 @@ async function main() {
   const children: ChildProcess[] = [];
   let proxy: https.Server | undefined;
   let stopped = false;
-  let containerAttempted = false;
+  let owned: OwnedContainer | undefined;
+  const receiptPath =
+    process.env.PILOT_CLEANUP_RECEIPT_PATH ||
+    path.join(coreRoot, "test-results", `${name}-cleanup.json`);
+  await mkdir(path.dirname(receiptPath), { recursive: true, mode: 0o700 });
+  const receipt = await open(receiptPath, "wx", 0o600);
+  const temp = await mkdtemp(path.join(tmpdir(), "core-better-farms-pilot-"));
+  const candidate = execFileSync("git", ["-C", coreRoot, "rev-parse", "HEAD"], {
+    env: minimal,
+    encoding: "utf8",
+    timeout: 30000,
+  }).trim();
+  const workingTreeClean = !execFileSync("git", ["-C", coreRoot, "status", "--porcelain"], {
+    env: minimal,
+    encoding: "utf8",
+    timeout: 30000,
+  }).trim();
+  const producerSha256 = Object.fromEntries(
+    await Promise.all(
+      ["e2e/pilot/launch.ts", "e2e/pilot/cleanup.ts"].map(async (file) => [
+        file,
+        createHash("sha256")
+          .update(await readFile(path.join(coreRoot, file)))
+          .digest("hex"),
+      ]),
+    ),
+  );
+  let cleanupPromise: Promise<void> | undefined;
   let discoveryCreated = false;
   const apps: ChildProcess[] = [];
-  const cleanup = async () => {
-    if (stopped) return;
+  const cleanup = () => {
+    if (cleanupPromise) return cleanupPromise;
     stopped = true;
-    proxy?.close();
-    await Promise.all(
-      children.map(async (child) => {
-        if (child.exitCode !== null || child.signalCode !== null) return;
-        child.kill("SIGTERM");
-        await Promise.race([
-          new Promise<void>((resolve) => child.once("exit", () => resolve())),
-          new Promise<void>((resolve) =>
-            setTimeout(() => {
-              child.kill("SIGKILL");
-              resolve();
-            }, 15000).unref(),
-          ),
-        ]);
-      }),
-    );
-    try {
-      if (containerAttempted) {
-        let stopError: unknown;
-        try {
-          docker("stop", "--time", "5", name);
-        } catch (error) {
-          stopError = error;
-        }
-        let present = true;
-        for (let attempt = 0; attempt < 20; attempt++) {
-          present = docker("ps", "-a", "--filter", `name=^/${name}$`, "--format", "{{.Names}}")
-            .split("\n")
-            .includes(name);
-          if (!present) break;
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        }
-        if (present)
-          throw new Error(`Owned pilot container ${name} was not removed`, { cause: stopError });
+    cleanupPromise = (async () => {
+      let proxyStopped = !proxy;
+      if (proxy) {
+        const closing = new Promise<boolean>((resolve) => proxy!.close(() => resolve(true)));
+        proxy.closeAllConnections();
+        proxyStopped = await closing;
       }
-    } finally {
+      const childResults = await Promise.all(children.map((child) => stopOwnedChild(child)));
+      const result = owned
+        ? removeOwnedContainer(docker, owned)
+        : { containersRemoved: false, volumesRemoved: false, passed: false };
+      const processesStopped = proxyStopped && childResults.every(Boolean);
+      let temporaryFilesRemoved = true;
       try {
         if (discoveryCreated) await rm(discoveryPath);
-      } finally {
         await rm(temp, { recursive: true, force: true });
+      } catch {
+        temporaryFilesRemoved = false;
       }
-    }
+      const report = {
+        version: 1,
+        candidate,
+        siteRevision,
+        workingTreeClean,
+        producerSha256,
+        ...result,
+        processesStopped,
+        proxyStopped,
+        children: children.map((child, i) => ({
+          pid: child.pid,
+          stopped: childResults[i],
+          exitCode: child.exitCode,
+          signalCode: child.signalCode,
+        })),
+        temporaryFilesRemoved,
+      };
+      report.passed = report.passed && processesStopped && temporaryFilesRemoved;
+      try {
+        await receipt.writeFile(JSON.stringify(report, null, 2) + "\n");
+        await receipt.sync();
+      } finally {
+        await receipt.close();
+      }
+      if (!report.passed) throw new Error("Pilot cleanup evidence incomplete");
+      console.log(`Pilot cleanup receipt: ${receiptPath}`);
+    })();
+    return cleanupPromise;
   };
   for (const signal of ["SIGINT", "SIGTERM"] as const)
-    process.once(signal, () => {
+    process.on(signal, () => {
       void cleanup().then(
         () => process.exit(0),
         (error) => {
@@ -268,7 +306,7 @@ async function main() {
       );
     });
   function child(args: string[], env: NodeJS.ProcessEnv, cwd = coreRoot) {
-    const result = spawn(process.execPath, args, {
+    const result = spawnOwnedChild(process.execPath, args, {
       cwd,
       env: { ...minimal, ...env },
       stdio: "inherit",
@@ -277,11 +315,11 @@ async function main() {
     return result;
   }
   try {
-    containerAttempted = true;
-    docker(
+    const containerId = docker(
       "run",
       "--detach",
-      "--rm",
+      "--label",
+      `core.rehearsal.attempt=${name}`,
       "--name",
       name,
       "--publish",
@@ -294,6 +332,14 @@ async function main() {
       "POSTGRES_DB=core_pilot_test",
       "postgres:16-alpine",
     );
+    owned = captureOwnedContainer(docker, name, containerId);
+    const ownership = await open(`${receiptPath}.ownership.json`, "wx", 0o600);
+    try {
+      await ownership.writeFile(JSON.stringify(owned, null, 2) + "\n");
+      await ownership.sync();
+    } finally {
+      await ownership.close();
+    }
     const port = docker("port", name, "5432/tcp").split(":").pop();
     const databaseUrl = `postgresql://pilot_test:disposable_pilot_test@127.0.0.1:${port}/core_pilot_test`;
     await writeFile(discoveryPath, JSON.stringify({ databaseUrl }), { flag: "wx", mode: 0o600 });
