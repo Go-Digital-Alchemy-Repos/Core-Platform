@@ -2194,6 +2194,23 @@ export function remainingShipmentQuantity(order: Order, itemId: string) {
   return Math.max(0, ordered - fulfilled);
 }
 
+const emptyShipmentForm = {
+  carrier: "",
+  trackingNumber: "",
+  trackingUrl: "",
+  locationId: "",
+  serviceLevel: "",
+};
+type ShipmentDraft = { form: typeof emptyShipmentForm; quantities: Record<string, number> };
+function shipmentDraftForOrder(order: Order): ShipmentDraft {
+  return {
+    form: { ...emptyShipmentForm },
+    quantities: Object.fromEntries(
+      order.items.map((item) => [item.id, remainingShipmentQuantity(order, item.id)]),
+    ),
+  };
+}
+
 export function OrdersTab() {
   const { toast } = useToast();
   const trackingNumberInputRef = useRef<HTMLInputElement>(null);
@@ -2216,15 +2233,28 @@ export function OrdersTab() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [manualOrderOpen, setManualOrderOpen] = useState(false);
-  const [shipmentForm, setShipmentForm] = useState({
-    carrier: "",
-    trackingNumber: "",
-    trackingUrl: "",
-    locationId: "",
-    serviceLevel: "",
-  });
-  const [shipmentQuantities, setShipmentQuantities] = useState<Record<string, number>>({});
-  const shippingRequest = useRef<{ fingerprint: string; key: string } | null>(null);
+  const [shipmentDrafts, setShipmentDrafts] = useState<Record<string, ShipmentDraft>>({});
+  const shipmentForm = shipmentDrafts[selectedOrderId]?.form ?? emptyShipmentForm;
+  const shipmentQuantities = shipmentDrafts[selectedOrderId]?.quantities ?? {};
+  const setShipmentForm = (update: (form: typeof emptyShipmentForm) => typeof emptyShipmentForm) =>
+    setShipmentDrafts((current) => ({
+      ...current,
+      [selectedOrderId]: {
+        form: update(current[selectedOrderId]?.form ?? emptyShipmentForm),
+        quantities: current[selectedOrderId]?.quantities ?? {},
+      },
+    }));
+  const setShipmentQuantities = (
+    update: (quantities: Record<string, number>) => Record<string, number>,
+  ) =>
+    setShipmentDrafts((current) => ({
+      ...current,
+      [selectedOrderId]: {
+        form: current[selectedOrderId]?.form ?? emptyShipmentForm,
+        quantities: update(current[selectedOrderId]?.quantities ?? {}),
+      },
+    }));
+  const shippingRequests = useRef(new Map<string, { fingerprint: string; key: string }>());
   const [statusForm, setStatusForm] = useState({
     status: "",
     notes: "",
@@ -2275,15 +2305,11 @@ export function OrdersTab() {
 
   useEffect(() => {
     if (selectedOrder) {
-      setShipmentQuantities(
-        Object.fromEntries(
-          selectedOrder.items.map((item) => [
-            item.id,
-            remainingShipmentQuantity(selectedOrder, item.id),
-          ]),
-        ),
+      setShipmentDrafts((current) =>
+        current[selectedOrder.id]
+          ? current
+          : { ...current, [selectedOrder.id]: shipmentDraftForOrder(selectedOrder) },
       );
-      shippingRequest.current = null;
       setStatusForm({ status: selectedOrder.status, notes: "" });
     }
   }, [selectedOrder?.id]);
@@ -2371,43 +2397,42 @@ export function OrdersTab() {
       };
       if (!payload.items.length) throw new Error("Choose at least one remaining item to ship.");
       const fingerprint = JSON.stringify({ orderId: selectedOrder.id, ...payload });
-      if (shippingRequest.current?.fingerprint !== fingerprint)
-        shippingRequest.current = { fingerprint, key: crypto.randomUUID() };
+      const orderId = selectedOrder.id;
+      if (shippingRequests.current.get(orderId)?.fingerprint !== fingerprint)
+        shippingRequests.current.set(orderId, { fingerprint, key: crypto.randomUUID() });
+      const key = shippingRequests.current.get(orderId)!.key;
       const response = await apiRequest(
         "POST",
-        `/api/admin/ecommerce/orders/${selectedOrder.id}/ship-and-fulfill`,
+        `/api/admin/ecommerce/orders/${orderId}/ship-and-fulfill`,
         payload,
-        { headers: { "Idempotency-Key": shippingRequest.current.key } },
+        { headers: { "Idempotency-Key": key } },
       );
-      return response.json() as Promise<{
-        fulfillment: { items: Array<{ orderItemId: string; quantity: number }> };
-      }>;
+      await response.json();
+      return { orderId, key };
     },
-    onSuccess: async (result) => {
-      if (selectedOrder)
-        setShipmentQuantities(
-          Object.fromEntries(
-            selectedOrder.items.map((item) => [
-              item.id,
-              Math.max(
-                0,
-                remainingShipmentQuantity(selectedOrder, item.id) -
-                  (result.fulfillment.items.find((line) => line.orderItemId === item.id)
-                    ?.quantity ?? 0),
-              ),
-            ]),
-          ),
-        );
-      shippingRequest.current = null;
-      await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/orders"] });
-      toast({ title: "Shipment saved", description: "Shipping notification queued." });
-      setShipmentForm({
-        carrier: "",
-        trackingNumber: "",
-        trackingUrl: "",
-        locationId: "",
-        serviceLevel: "",
-      });
+    onSuccess: async ({ orderId, key }) => {
+      // Reconcile against the authoritative post-commit order, never subtract
+      // from a cache that may already include this request after response loss.
+      try {
+        const response = await apiRequest("GET", `/api/admin/ecommerce/orders/${orderId}`);
+        const refreshed = (await response.json()) as Order;
+        if (shippingRequests.current.get(orderId)?.key === key) {
+          setShipmentDrafts((current) => ({
+            ...current,
+            [orderId]: shipmentDraftForOrder(refreshed),
+          }));
+          shippingRequests.current.delete(orderId);
+        }
+        await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/orders"] });
+        toast({ title: "Shipment saved", description: "Shipping notification queued." });
+      } catch {
+        // Keep the accepted request key/draft so retry only reloads its receipt.
+        toast({
+          title: "Shipment saved; refresh unavailable",
+          description: "Your request is retained. Retry to reload remaining quantities safely.",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error) =>
       toast({

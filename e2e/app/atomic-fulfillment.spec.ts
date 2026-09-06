@@ -28,7 +28,12 @@ test("partial shipping survives committed-response loss and retry without duplic
   const db = database();
   const id = randomUUID();
   const itemId = randomUUID();
+  const alternateId = randomUUID();
   try {
+    await db.query(
+      "INSERT INTO ecommerce_orders(id,customer_id,status,payment_status,total_amount) VALUES($1,'browser-manual-customer','paid','paid',0)",
+      [alternateId],
+    );
     await db.query(
       "INSERT INTO ecommerce_orders(id,customer_id,status,payment_status,total_amount) VALUES($1,'browser-manual-customer','paid','paid',5000)",
       [id],
@@ -73,6 +78,23 @@ test("partial shipping survives committed-response loss and retry without duplic
     await expect(page.getByText("Shipment could not be created", { exact: true })).toBeVisible();
     await expect(quantity).toHaveValue("1");
     await expect(drawer.getByLabel("Shipment tracking number")).toHaveValue("SYNTHETIC-ONE");
+    // Moving between orders must retain the original pending request identity.
+    await drawer.getByRole("button", { name: "Close", exact: true }).click();
+    await page.getByPlaceholder("Search order, customer, item, or tracking").fill(alternateId);
+    await page.getByRole("button", { name: "View", exact: true }).click();
+    await drawer.getByRole("button", { name: "Close", exact: true }).click();
+    await page.getByPlaceholder("Search order, customer, item, or tracking").fill(id);
+    await page.getByRole("button", { name: "View", exact: true }).click();
+    await expect(quantity).toHaveValue("1");
+    // Inject the reviewed race: refresh actual server data after commit, before replay.
+    await page.evaluate(async () => {
+      const modulePath = "/src/lib/queryClient.ts";
+      const { queryClient } = await import(modulePath);
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/orders"] });
+    });
+    await expect(
+      drawer.getByLabel(/Atomic browser item: quantity to ship \(1 remaining\)/),
+    ).toBeVisible();
     await drawer.getByRole("button", { name: "Mark shipped", exact: true }).click();
     await expect(page.getByText("Shipment saved", { exact: true })).toBeVisible();
     expect(keys).toHaveLength(2);
@@ -112,7 +134,7 @@ test("partial shipping survives committed-response loss and retry without duplic
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
   } finally {
-    await db.query("DELETE FROM ecommerce_orders WHERE id=$1", [id]);
+    await db.query("DELETE FROM ecommerce_orders WHERE id=ANY($1::varchar[])", [[id, alternateId]]);
     await db.end();
   }
 });
@@ -129,4 +151,82 @@ test("atomic shipping keeps mounted authentication and ecommerce permission gate
   await page.getByTestId("button-login").click();
   await expect(page).not.toHaveURL(/auth\/login/);
   expect((await page.request.post(path, { data: {} })).status()).toBe(403);
+});
+
+test("completion for another order preserves the selected order draft", async ({ page }) => {
+  test.setTimeout(90000);
+  const db = database();
+  const first = randomUUID(),
+    second = randomUUID();
+  const firstItem = randomUUID(),
+    secondItem = randomUUID();
+  let release: () => void = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  try {
+    for (const [id, item, name] of [
+      [first, firstItem, "First item"],
+      [second, secondItem, "Second item"],
+    ]) {
+      await db.query(
+        "INSERT INTO ecommerce_orders(id,customer_id,status,payment_status,total_amount) VALUES($1,'browser-manual-customer','paid','paid',5000)",
+        [id],
+      );
+      await db.query(
+        "INSERT INTO ecommerce_order_items(id,order_id,product_id,product_name,quantity,unit_price,line_total) VALUES($1,$2,'browser-manual-product',$3,2,2500,5000)",
+        [item, id, name],
+      );
+    }
+    await page.goto("/auth/login");
+    await page.getByTestId("input-email").fill("browser-admin@example.test");
+    await page.getByTestId("input-password").fill("CoreBrowserTest!2026");
+    await page.getByTestId("button-login").click();
+    await expect(page).not.toHaveURL(/auth\/login/);
+    await page.goto("/admin/ecommerce/orders");
+    const search = page.getByPlaceholder("Search order, customer, item, or tracking");
+    await search.fill(second);
+    await page.getByRole("button", { name: "View", exact: true }).click();
+    let drawer = page.getByRole("dialog");
+    await drawer.getByLabel(/Second item: quantity to ship/).fill("1");
+    await drawer.getByLabel("Shipment tracking number").fill("KEEP-SECOND-DRAFT");
+    await drawer.getByRole("button", { name: "Close", exact: true }).click();
+    await search.fill(first);
+    await page.getByRole("button", { name: "View", exact: true }).click();
+    drawer = page.getByRole("dialog");
+    await drawer.getByLabel(/First item: quantity to ship/).fill("1");
+    await drawer.getByLabel("Shipment tracking number").fill("FIRST-SHIPMENT");
+    await page.route(`**/orders/${first}/ship-and-fulfill`, async (route) => {
+      const response = await route.fetch();
+      expect(response.ok()).toBe(true);
+      await held;
+      await route.fulfill({ response });
+    });
+    await drawer.getByRole("button", { name: "Mark shipped", exact: true }).click();
+    await expect
+      .poll(async () =>
+        Number(
+          (
+            await db.query(
+              "SELECT count(*)::int AS count FROM ecommerce_shipments WHERE order_id=$1",
+              [first],
+            )
+          ).rows[0].count,
+        ),
+      )
+      .toBe(1);
+    await drawer.getByRole("button", { name: "Close", exact: true }).click();
+    await search.fill(second);
+    await page.getByRole("button", { name: "View", exact: true }).click();
+    await expect(page.getByLabel("Shipment tracking number")).toHaveValue("KEEP-SECOND-DRAFT");
+    release();
+    await expect(page.getByText("Shipment saved", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Shipment tracking number")).toHaveValue("KEEP-SECOND-DRAFT");
+    await expect(page.getByLabel(/Second item: quantity to ship/)).toHaveValue("1");
+  } finally {
+    release();
+    await page.unrouteAll({ behavior: "wait" });
+    await db.query("DELETE FROM ecommerce_orders WHERE id=ANY($1::varchar[])", [[first, second]]);
+    await db.end();
+  }
 });

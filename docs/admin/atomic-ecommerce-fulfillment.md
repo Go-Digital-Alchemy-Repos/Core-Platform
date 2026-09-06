@@ -8,7 +8,7 @@ The order drawer now saves shipment, fulfillment items, shipping status and a qu
 
 The server returns `{shipment,fulfillment,replayed}` with 201 for creation or 200 for replay. A changed normalized body with the same order/key returns 409. The same accepted request returns its original IDs even after a later refund, delivery, or risk-state change. A missing original shipment fails closed instead of recreating effects. Error responses follow existing API validation/status handling.
 
-The canonical hash includes a version, normalized nullable text and sorted/aggregated item quantities. The drawer retains key and payload after a failed response, defaults to remaining quantities, permits partial quantities, and generates a new key only when the submitted body changes or a prior request succeeds. Reloading the page loses its in-memory retry key; operators should inspect saved shipment history before starting a new action after an interrupted session.
+The canonical hash includes a version, normalized nullable text and sorted/aggregated item quantities. The drawer retains per-order key and draft across order selection within the page after a failed response, defaults to remaining quantities, permits partial quantities, and generates a new key only when the submitted body changes or a prior request succeeds. After success, a fresh order read supplies remaining quantities for the submitted order; completion does not reset another order’s draft. If that refresh fails, the accepted request key remains available for safe retry. Reloading the page loses its in-memory retry key; operators should inspect saved shipment history before starting a new action after an interrupted session.
 
 ## Transaction boundary
 
@@ -24,7 +24,7 @@ Order detail responses now include `fulfillments[].items`, fetched in a batch. N
 
 `0063_atomic_ecommerce_fulfillment.sql` adds nullable `request_key` and `request_hash` to existing fulfillments plus a partial unique `(order_id,request_key)` index. It is explicitly registered in the startup reconciliation runner. Historical rows remain null, and generic insert schemas/storage cannot set receipt fields. No existing migration was edited.
 
-Old binaries can read the additive schema, but do not implement atomic replay or the corrected lock validation. Rolling back code therefore loses those behavioral guarantees. Keep the new columns/index and accepted receipts; dropping them would destroy replay identity. Drain writers and pending browser requests before a code rollback and reconcile saved shipments/notifications before resuming old workflows. This change does not authorize a production migration or rollback.
+Old binaries can read the additive schema, but do not implement atomic replay or the corrected lock validation. Rolling back code therefore loses those behavioral guarantees. Keep the new columns/index and accepted receipts; dropping them would destroy replay identity. Drain writers and pending browser requests before a code rollback and reconcile saved shipments/notifications before resuming old workflows. This change does not authorize a production migration or rollback. For a combined CRM release, the stricter CRM rollback policy takes precedence: older normal binaries cannot process pinned CRM mapping jobs; use the retained read-only recovery artifact and roll forward rather than downgrading to an older normal application.
 
 ## Verification
 
