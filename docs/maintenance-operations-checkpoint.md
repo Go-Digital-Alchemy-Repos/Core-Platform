@@ -1,5 +1,9 @@
 # Maintenance operations checkpoint — 2026-09-06
 
+> Historical operations record. For current candidate, production, and remaining gates,
+> see [the next release checkpoint](core-next-release-checkpoint-2026-09-06.md).
+> Do not execute historical cutover steps as a current instruction.
+
 The application release candidate remains immutable at
 `6ea326ae620b5fcd4b5c10ef1cd1f62724e0c230`. Root rechecked hosted run
 [34006542042](https://github.com/Go-Digital-Alchemy-Repos/Core-Platform/actions/runs/34006542042):

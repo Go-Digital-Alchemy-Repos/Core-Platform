@@ -1,5 +1,9 @@
 # Core maintenance release gates — 2026-09-06
 
+> Historical operations record. For current candidate, production, and remaining gates,
+> see [the next release checkpoint](core-next-release-checkpoint-2026-09-06.md).
+> Do not execute historical cutover steps as a current instruction.
+
 Broad integration release remains held. Production is `a006f36`, with the upload guard deployed
 but disabled. Better Farms site launch is a separate decision; no live checkout or DNS cutover
 is authorized for that pilot. This record updates the earlier historical readiness review.
