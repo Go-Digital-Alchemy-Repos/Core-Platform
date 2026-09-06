@@ -80,3 +80,20 @@ not be assumed to provide bucket-administration permission. Probe artifact SHA25
 Use existing authorized administrative access to inspect lifecycle policy; do not broaden the
 application token merely to clear this gate. Actual audit persistence/retrieval acceptance and the
 writer barrier still precede real copy execution.
+
+### Administrative retention inspection — 2026-09-06
+
+Root inspected the authenticated Cloudflare dashboard for the source account and
+`core-platform` bucket, matching the account ID against the actual source database
+configuration. The bucket Settings page showed one enabled lifecycle rule: abort
+incomplete multipart uploads after seven days. No completed-object expiration rule
+was displayed. No bucket lock rules were configured. The public development URL was
+disabled and no custom domain was assigned; default storage class was Standard.
+No bucket settings or objects were changed during this inspection.
+
+This resolves the configured lifecycle uncertainty for completed audit objects at
+inspection time. It does not establish immutable retention against administrative
+deletion or future policy changes. Retain the approved inputs and audit locator
+outside Railway, and complete the separate cross-process exact-key retrieval probe
+before treating the external ledger as operationally accepted. The application
+token's lifecycle-read 403 remains expected and needs no permission expansion.
