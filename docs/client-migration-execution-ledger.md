@@ -5,6 +5,27 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Default-off upload guard release — 2026-09-06 UTC
+
+Orchestrator accepted the isolated hotfix at exact reviewed head `2f6f0224f3de34af13e21e22f82314772dc5ac26`:
+393 baseline tests plus types/lint/format/build/budgets, both hosted Verify checks, independent
+review, no migration/dependency/namespace change, and read-only confirmation of the exact live
+`f09e9d4` baseline with the freeze flag absent. The previous actual backup recovery rehearsal
+remains recorded separately. These are the applicable gates for the default-off guard; this
+acceptance does not waive the broader migration, provider or client-launch gates.
+
+PR #10 merged as `a006f36a3c4f37566c71b278d561844b45fb3b81` at 00:46:51 UTC. Railway automatically
+started deployment `b620280d-6445-4ba8-bb23-b6e9226391d9` for that exact commit; it was BUILDING
+at inspection. Main hosted run `34002181523` was in progress. No flag or namespace was changed.
+Post-deployment verification subsequently passed: Railway reports SUCCESS for the exact commit,
+the old deployment is REMOVED, live SSH confirmed that commit and the compiled guard with the
+flag absent, and readiness returned HTTP200. See
+[deployment evidence](release-evidence/core-upload-guard-release-2026-09-06.json).
+This was read-only verification; no real upload/delete was attempted. The old source
+inventory/plan cannot be treated as current after this deployment; refresh it only after the
+separate writer barrier is established. Upload freezing and object copying are not approved by
+this default-off release checkpoint.
+
 ### Editable content URL normalization fix
 
 Review of the remaining image/CSP mismatch found that both Core and Better Farms accepted
