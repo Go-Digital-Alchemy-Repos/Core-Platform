@@ -494,3 +494,32 @@ lead/client tasks, stable due/kind/id ordering, pinned query time/filter cursor,
 explicit UTC display, eligible-assignee validation and existing assignment/null
 semantics. No migrations, reminders or sends. Root retains integration review.
 The frozen release candidate remains unchanged while this next increment runs.
+
+### Standalone recovery artifact accepted; wrapper in progress
+
+The seven-file recovery artifact is independently reviewed and committed as
+71bd31a on codex/release-recovery-capture, pushed separately from the frozen
+application candidate. Artifact SHA256:
+9c00672b5d26181aa90f601064366628e496c7ff7b1b6318d57a1163ce3f3acb.
+Root reran14 unit and4 detached artifact checks; two real PostgreSQL tests
+prove snapshot consistency, restore format/values/sequences and shared-lock
+refusal. Root checked receipt source hashes and owned resource cleanup at
+Core Platform Operations/core-recovery-capture-754eee26b6/receipt.json.
+
+No live capture has run. A private dispatch wrapper is being implemented under
+Core Platform Operations/recovery-dispatch-tool, with local retained intent,
+exact replica targeting, separate capture/retrieval, independent process
+watchdog, private payload transfer and observed allowlisted cleanup. The CLI's
+180-second deadline uses the event loop and is not strict CPU-time cancellation;
+the wrapper must enforce its own external deadline. It must never treat an SSH
+disconnect as proof that a write did not occur.
+
+Read-only instance observations confirmed replica3c44e31e-b68d-46d0-abc5-adf148bde160
+using explicit Railway --deployment-instance routing, mapping to deployment
+26d0c65b and commita99 with expected project/environment/service. This is an
+instance ID, not a deployment ID; each live invocation must recheck binding.
+GitHub Actions remains disabled, and draft PR14 remains at8a6cdcc.
+
+CRM-3 implementation is in progress on its isolated branch. Initial backend
+tests passed; browser acceptance found an accessible-control naming issue
+being corrected. No new CRM-3 code is integrated into the release candidate.
