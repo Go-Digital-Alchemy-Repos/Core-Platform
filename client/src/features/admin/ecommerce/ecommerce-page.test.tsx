@@ -646,6 +646,66 @@ describe("Ecommerce OrdersTab", () => {
     document.body.innerHTML = "";
   });
 
+  it("retains the pending request key when a refetch reorders the same items", async () => {
+    let currentOrder = {
+      ...orders[0],
+      items: [
+        { ...orders[0].items[0], id: "item-b" },
+        { ...orders[0].items[0], id: "item-a" },
+      ],
+    };
+    useQueryMock.mockImplementation((options: { queryKey?: string[] }) => ({
+      data:
+        options.queryKey?.[0] === "/api/admin/ecommerce/orders"
+          ? [currentOrder]
+          : options.queryKey?.[0] === "/api/admin/ecommerce/settings/store"
+            ? { storeTimezone: "UTC" }
+            : [],
+      isLoading: false,
+    }));
+    const requests: Array<{ key: string; body: string }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, options: RequestInit) => {
+        requests.push({
+          key: new Headers(options.headers).get("Idempotency-Key")!,
+          body: String(options.body),
+        });
+        throw new Error("Synthetic lost response");
+      }),
+    );
+    act(() => {
+      root = createRoot(container);
+      root.render(React.createElement(OrdersTab));
+    });
+    act(() => {
+      container
+        .querySelector("tbody tr")
+        ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    useMutationMock.mockClear();
+    act(() => {
+      root!.render(React.createElement(OrdersTab));
+    });
+    await expect(useMutationMock.mock.calls[1][0].mutationFn()).rejects.toThrow(
+      "Synthetic lost response",
+    );
+    currentOrder = { ...currentOrder, items: [...currentOrder.items].reverse() };
+    useMutationMock.mockClear();
+    act(() => {
+      root!.render(React.createElement(OrdersTab));
+    });
+    await expect(useMutationMock.mock.calls[1][0].mutationFn()).rejects.toThrow(
+      "Synthetic lost response",
+    );
+    expect(requests).toHaveLength(2);
+    expect(requests[0].key).toBeTruthy();
+    expect(requests[1]).toEqual(requests[0]);
+    expect(
+      JSON.parse(requests[0].body).items.map((item: { orderItemId: string }) => item.orderItemId),
+    ).toEqual(["item-a", "item-b"]);
+  });
+
   it("opens the order detail drawer from the row and shows customer and shipping data", () => {
     act(() => {
       root = createRoot(container);

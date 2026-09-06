@@ -2393,7 +2393,8 @@ export function OrdersTab() {
         serviceLevel: shipmentForm.serviceLevel.trim() || null,
         items: selectedOrder.items
           .map((item) => ({ orderItemId: item.id, quantity: shipmentQuantities[item.id] ?? 0 }))
-          .filter((item) => item.quantity > 0),
+          .filter((item) => item.quantity > 0)
+          .sort((a, b) => a.orderItemId.localeCompare(b.orderItemId)),
       };
       if (!payload.items.length) throw new Error("Choose at least one remaining item to ship.");
       const fingerprint = JSON.stringify({ orderId: selectedOrder.id, ...payload });
