@@ -174,3 +174,26 @@ No schema, write contract, private notes, notification or history expansion is
 included. Acceptance requires permission, persistence and UI evidence. New or
 changed opt-in suites need separate verifier inventory review; frozen V3 and
 release evidence remain unchanged.
+
+
+## Next integration increment — not a replacement release baseline
+
+Separate `codex/ecommerce-integrity-integration` at `4e8854343b0c39d8f8599ae88997b24ca19ba5c6`
+combines reviewed category UI repair/accessibility and CRM note attribution atop
+frozen f485330. The checkout is Core Platform Ecommerce Integrity Integration.
+Root installed its own locked dependencies, verified TypeScript and reran seven
+focused tests successfully. Backend category/import changes remain excluded
+pending final independent review and exact-source PostgreSQL evidence.
+
+CRM source `289f0157414568ba4a8477a5e443a0a662984d6d` uses explicit
+LEFT JOIN note projections, current names and existing session-derived actors.
+Root reviewed source and real middleware tests, independently reran the four
+new focused cases, and matched all 121 source hashes in the disposable database
+receipt. Two actual PostgreSQL cases passed with owned resources cleaned up:
+private Operations/crm-note-attribution-pg-20260906T235449Z-ecf45193.
+These are source/fixture acceptance, not a real-browser or release approval.
+Browser create/reload verification remains active in the isolated CRM branch.
+
+Frozen f485330, PR16 and their accepted V3 bundle remain unchanged. This next
+increment needs its own complete integration evidence and reviewed successor
+opt-in suite inventory before promotion.
