@@ -31,7 +31,10 @@ async function createSiteRoot() {
     ...manifest.routes.map((route) => route.componentRef.split("#", 1)[0]),
     ...manifest.assets.map((asset) => asset.sourceRef),
     manifest.theme.tokenSource,
-    ...manifest.puck.editableComponents.map((component) => component.rendererRef.split("#", 1)[0]),
+    ...manifest.puck.editableComponents.flatMap((component) => [
+      component.rendererRef.split("#", 1)[0],
+      component.fieldSchemaRef.split("#", 1)[0],
+    ]),
   ];
   for (const reference of new Set(references)) {
     const target = path.join(directory, reference);

@@ -185,7 +185,7 @@
         "key": "fund-a-farm-page",
         "version": "1.0.0",
         "rendererRef": "client/src/pages/FundAFarm.tsx#FundAFarmPage",
-        "fieldSchemaRef": "contracts/puck/fund-a-farm-hero-v1",
+        "fieldSchemaRef": "client/src/site/fund-a-farm-content.ts#fundAFarmContentSchema",
         "allowedRegions": ["fund-a-farm-hero"],
         "editableFields": ["heading", "copy", "image", "imageAlt", "ctaTarget"],
         "lockedBehaviors": [
@@ -241,7 +241,8 @@
             "path": "heroImage.src",
             "label": "Hero image",
             "type": "image",
-            "required": true
+            "required": true,
+            "allowedImageOrigins": ["https://dashboard.better-farms.example"]
           },
           {
             "path": "heroImage.alt",

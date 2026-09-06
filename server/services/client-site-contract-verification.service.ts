@@ -1,4 +1,4 @@
-import { access } from "node:fs/promises";
+import { realpath, stat } from "node:fs/promises";
 import path from "node:path";
 import type { ClientSiteManifest } from "../../shared/client-site-manifest";
 import { loadClientSiteManifest } from "./client-site-manifest.service";
@@ -19,7 +19,10 @@ function manifestFileRefs(manifest: ClientSiteManifest): string[] {
     ...manifest.routes.map((route) => sourceFileRef(route.componentRef)),
     ...manifest.assets.map((asset) => asset.sourceRef),
     manifest.theme.tokenSource,
-    ...manifest.puck.editableComponents.map((component) => sourceFileRef(component.rendererRef)),
+    ...manifest.puck.editableComponents.flatMap((component) => [
+      sourceFileRef(component.rendererRef),
+      sourceFileRef(component.fieldSchemaRef),
+    ]),
   ];
 }
 
@@ -47,6 +50,7 @@ export async function verifyClientSiteContract(params: {
   const checkedFiles = [...new Set(manifestFileRefs(manifest))].sort();
   const errors: ClientSiteContractVerification["errors"] = [];
 
+  const resolvedRoot = await realpath(params.siteRoot);
   for (const reference of checkedFiles) {
     const target = safeSitePath(params.siteRoot, reference);
     if (!target) {
@@ -54,7 +58,14 @@ export async function verifyClientSiteContract(params: {
       continue;
     }
     try {
-      await access(target);
+      const resolvedTarget = await realpath(target);
+      if (!safeSitePath(resolvedRoot, resolvedTarget)) {
+        errors.push({ ref: reference, message: "resolves outside the site checkout" });
+        continue;
+      }
+      if (!(await stat(resolvedTarget)).isFile()) {
+        errors.push({ ref: reference, message: "must reference a regular file" });
+      }
     } catch {
       errors.push({ ref: reference, message: "does not exist in the site checkout" });
     }

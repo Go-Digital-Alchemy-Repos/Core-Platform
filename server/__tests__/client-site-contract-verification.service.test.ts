@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,7 +19,10 @@ async function createSiteRoot() {
     ...manifest.routes.map((route) => route.componentRef.split("#", 1)[0]),
     ...manifest.assets.map((asset) => asset.sourceRef),
     manifest.theme.tokenSource,
-    ...manifest.puck.editableComponents.map((component) => component.rendererRef.split("#", 1)[0]),
+    ...manifest.puck.editableComponents.flatMap((component) => [
+      component.rendererRef.split("#", 1)[0],
+      component.fieldSchemaRef.split("#", 1)[0],
+    ]),
   ];
   for (const reference of new Set(references)) {
     const target = path.join(root, reference);
@@ -64,4 +67,52 @@ describe("client site contract verification", () => {
       message: "does not exist in the site checkout",
     });
   });
+});
+
+it("rejects source symlinks escaping the checkout", async () => {
+  const siteRoot = await createSiteRoot();
+  const outside = await createSiteRoot();
+  const ref = "client/src/pages/FundAFarm.tsx";
+  await rm(path.join(siteRoot, ref));
+  await symlink(path.join(outside, ref), path.join(siteRoot, ref));
+  const result = await verifyClientSiteContract({
+    manifestPath,
+    siteRoot,
+    corePlatformVersion: "1.0.0",
+  });
+  expect(result.errors).toContainEqual({ ref, message: "resolves outside the site checkout" });
+  expect(result.valid).toBe(false);
+});
+
+it("rejects directories in place of declared files", async () => {
+  const siteRoot = await createSiteRoot();
+  const ref = "client/src/pages/FundAFarm.tsx";
+  await rm(path.join(siteRoot, ref));
+  await mkdir(path.join(siteRoot, ref));
+  const result = await verifyClientSiteContract({
+    manifestPath,
+    siteRoot,
+    corePlatformVersion: "1.0.0",
+  });
+  expect(result.errors).toContainEqual({ ref, message: "must reference a regular file" });
+});
+
+it("checks the declared field schema and permits internal file symlinks", async () => {
+  const siteRoot = await createSiteRoot();
+  const manifest = await loadClientSiteManifest(manifestPath, "1.0.0");
+  const ref = manifest.puck.editableComponents[0].fieldSchemaRef.split("#", 1)[0];
+  await rm(path.join(siteRoot, ref));
+  const missing = await verifyClientSiteContract({
+    manifestPath,
+    siteRoot,
+    corePlatformVersion: "1.0.0",
+  });
+  expect(missing.errors).toContainEqual({ ref, message: "does not exist in the site checkout" });
+  await symlink(path.join(siteRoot, "client/src/pages/FundAFarm.tsx"), path.join(siteRoot, ref));
+  const valid = await verifyClientSiteContract({
+    manifestPath,
+    siteRoot,
+    corePlatformVersion: "1.0.0",
+  });
+  expect(valid.valid).toBe(true);
 });

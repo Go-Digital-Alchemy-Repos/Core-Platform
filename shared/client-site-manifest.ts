@@ -48,6 +48,14 @@ const httpsOrigin = z.string().superRefine((value, context) => {
   }
 });
 
+const exactImageOrigin = httpsOrigin.refine((value) => {
+  try {
+    return new URL(value).origin === value;
+  } catch {
+    return false;
+  }
+}, "must be a canonical exact HTTPS origin");
+
 const secretReferenceId = identifier;
 
 const ownerSchema = z
@@ -83,8 +91,20 @@ const editableComponentSchema = z
             type: z.enum(["text", "textarea", "image", "imageAlt", "ctaTarget"]),
             required: z.boolean(),
             maxLength: z.number().int().positive().optional(),
+            allowedImageOrigins: z
+              .array(exactImageOrigin)
+              .max(8)
+              .refine(
+                (origins) => new Set(origins).size === origins.length,
+                "image origins must be unique",
+              )
+              .optional(),
           })
-          .strict(),
+          .strict()
+          .refine((field) => field.allowedImageOrigins === undefined || field.type === "image", {
+            message: "allowedImageOrigins is only supported on image fields",
+            path: ["allowedImageOrigins"],
+          }),
       )
       .min(1),
     defaultContent: z.record(z.unknown()),

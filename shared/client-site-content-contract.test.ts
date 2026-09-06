@@ -31,3 +31,52 @@ describe("editable URL boundaries", () => {
     });
   }
 });
+
+describe("explicit image origin policy", () => {
+  const component = {
+    fields: [
+      {
+        path: "image",
+        label: "Image",
+        type: "image",
+        required: true,
+        allowedImageOrigins: ["https://dashboard.better-farms.example"],
+      },
+    ],
+  } as ClientSiteEditableComponent;
+  it("accepts internal paths and the exact Core admin image origin", () => {
+    for (const image of [
+      "/images/a.webp",
+      "https://dashboard.better-farms.example/r2/clients/better-farms/uploads/a.webp",
+    ]) {
+      expect(validateClientSiteComponentContent(component, { image })).toEqual({ image });
+    }
+  });
+  it("rejects other hosts, ports, credentials, HTTP and URL normalization tricks", () => {
+    for (const image of [
+      "https://dashboard.better-farms.example.evil.test/a",
+      "https://dashboard.better-farms.example:444/a",
+      "https://user:pass@dashboard.better-farms.example/a",
+      "http://dashboard.better-farms.example/a",
+      "https://other.example/a",
+      String.raw`https://dashboard.better-farms.example\a`,
+      "/\\evil.test/a",
+      "https://dashboard.better-farms.example/\u0000a",
+      "https://dashboard.better-farms.example/\u007fa",
+    ]) {
+      expect(() => validateClientSiteComponentContent(component, { image })).toThrow();
+    }
+  });
+  it("an explicitly empty list permits internal images only", () => {
+    const local = {
+      ...component,
+      fields: component.fields.map((field) => ({ ...field, allowedImageOrigins: [] })),
+    };
+    expect(() =>
+      validateClientSiteComponentContent(local, {
+        image: "https://dashboard.better-farms.example/a",
+      }),
+    ).toThrow();
+    expect(validateClientSiteComponentContent(local, { image: "/a" })).toEqual({ image: "/a" });
+  });
+});

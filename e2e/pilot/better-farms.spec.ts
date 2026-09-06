@@ -28,6 +28,13 @@ test("content editor previews, saves and publishes across actual isolated origin
     publicPage.getByRole("heading", { name: originalHeading, exact: true }),
   ).toBeVisible();
   const updatedHeading = "Synthetic pilot farm support";
+  const coreImage = "https://dashboard.site.localhost:5443/avatars/avatar-14.webp";
+  await page.getByLabel("Hero image", { exact: true }).fill(coreImage);
+  const previewImage = iframe.locator(`img[src="${coreImage}"]`);
+  await expect(previewImage).toBeVisible();
+  await expect
+    .poll(() => previewImage.evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBeGreaterThan(0);
   await page.locator("#field-heading").fill(updatedHeading);
   await expect(iframe.getByRole("heading", { name: updatedHeading, exact: true })).toBeVisible();
   await publicPage.reload();
@@ -49,6 +56,11 @@ test("content editor previews, saves and publishes across actual isolated origin
   const fresh = await context.newPage();
   await fresh.goto(`${publicOrigin}/fund-a-farm`);
   await expect(fresh.getByRole("heading", { name: updatedHeading, exact: true })).toBeVisible();
+  const publishedImage = fresh.locator(`img[src="${coreImage}"]`);
+  await expect(publishedImage).toBeVisible();
+  await expect
+    .poll(() => publishedImage.evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBeGreaterThan(0);
   const conflict = await page.request.put(`${endpoint}/draft`, {
     data: {
       expectedRevision: current.draftRevision,

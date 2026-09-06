@@ -107,3 +107,47 @@ prefix `system-backups` retained separately. This records an Orchestrator target
 it does not claim any environment changes or production copies have occurred. New client
 activation retains its own namespace/preflight policy. No production inventory belongs in
 synthetic tests or committed fixtures.
+
+## Read-only operator verification command
+
+Run the candidate tooling inside the independently verified source Railway runtime:
+
+```sh
+node --import tsx server/scripts/verify-legacy-upload-migration.ts --plan /private/plan.json --approval /private/approval.json
+```
+
+The source deployment IDs in both reviewed inputs must describe that actual source runtime,
+not the tooling revision or a previously replaced deployment. No apply flag exists. This
+command cannot copy objects: its executor adapter rejects writes and only exact GETs are
+available along the execution path. This does not establish conditional PUT permission.
+
+The independent approval file has exactly `schemaVersion: 1`, `planId`,
+`ownershipReference`, `sourceIdentity`, and `target` (`stackId`, `bucketName`, `uploadPrefix`).
+It must be separately reviewed operator input. Merely copying assertions from the plan into
+a second file is not independent proof. Both files must be owned regular files with mode
+`0600`, at most 64 KiB, with no symlinks. The command rejects shared file identity, FIFOs,
+extra arguments and apply requests.
+
+The verifier compares all five Railway runtime environment identity values with the
+accepted source identity before making database/storage queries. It queries
+`current_database()` and requires `databaseIdentityReference` to equal `sha256:` followed
+by SHA256 of `projectId|DATABASE_URL.hostname|current_database`. This is a deployment/
+connection binding, not a database-content fingerprint or proof against spoofed environment
+variables. Platform-injected environment provenance and the independently reviewed approval
+remain operational trust boundaries. Do not invoke it with invented Railway variables on a
+local machine and claim that proves production identity.
+
+Database access uses only independently provided runtime `DATABASE_URL` and the existing
+TLS policy. Exact CMS record reads verify ID, R2 key and size before object access and again
+after inspection. Source R2 settings are read from the verified database; encrypted values
+require the actual runtime `SESSION_SECRET`. Decryption fails closed. The account ID creates
+only the Cloudflare R2 endpoint; no endpoint or connection is accepted from a plan. Runtime
+credentials remain in memory and are never included in output. No application server,
+migrations, polling workers, email or Stripe client starts.
+
+Output is one aggregate JSON result: plan ID, dry-run mode, completion, object count and
+statuses, with no keys, row values, credentials or raw errors. Failure is generic and exits
+nonzero. Database statements and storage operations have deadlines. Database idle and
+shutdown errors are contained so raw connection errors cannot escape through those paths.
+The command requires the candidate source and installed dependencies (including `tsx`);
+it is not a dist-only executable. No production invocation or copy is implied by its tests.

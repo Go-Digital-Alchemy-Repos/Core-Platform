@@ -66,8 +66,18 @@ export function validateClientSiteComponentContent(
     if (field.type === "ctaTarget" && !(sitePath.test(value) || isCredentialFreeHttps(value))) {
       throw new Error(`${field.label} must be an internal path or credential-free HTTPS URL`);
     }
-    if (field.type === "image" && !(sitePath.test(value) || isCredentialFreeHttps(value))) {
-      throw new Error(`${field.label} must be an internal path or credential-free HTTPS URL`);
+    if (field.type === "image") {
+      let allowed = sitePath.test(value);
+      if (!allowed && isCredentialFreeHttps(value)) {
+        allowed =
+          field.allowedImageOrigins === undefined ||
+          // Reject browser URL normalization tricks before matching the exact configured origin.
+          // eslint-disable-next-line no-control-regex
+          (!/[\\\s\u0000-\u001f\u007f]/.test(value) &&
+            field.allowedImageOrigins.includes(new URL(value).origin));
+      }
+      if (!allowed)
+        throw new Error(`${field.label} must be an internal path or an allowed HTTPS image URL`);
     }
   }
   return z.record(z.unknown()).parse(input);

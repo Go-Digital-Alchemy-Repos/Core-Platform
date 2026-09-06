@@ -54,6 +54,47 @@ describe("client site manifest", () => {
     }
   });
 
+  it("keeps image origin policy additive and only on image fields", async () => {
+    const input = await fixture();
+    const manifest = input as unknown as {
+      puck: {
+        editableComponents: { fields: { type: string; allowedImageOrigins?: string[] }[] }[];
+      };
+    };
+    const fields = manifest.puck.editableComponents[0].fields;
+    const image = fields.find((field) => field.type === "image")!;
+    delete image.allowedImageOrigins;
+    expect(validateClientSiteManifest(input).success).toBe(true);
+    image.allowedImageOrigins = ["https://dashboard.better-farms.example"];
+    expect(validateClientSiteManifest(input).success).toBe(true);
+    fields[0].allowedImageOrigins = [];
+    expect(validateClientSiteManifest(input).success).toBe(false);
+  });
+
+  it("rejects noncanonical, wildcard, duplicate and oversized image origin lists", async () => {
+    for (const origins of [
+      ["https://*.example"],
+      ["https://HOST.example"],
+      ["https://host.example/"],
+      ["https://host.example:443"],
+      ["http://host.example"],
+      ["https://user:pass@host.example"],
+      ["https://host.example", "https://host.example"],
+      Array.from({ length: 9 }, (_, i) => `https://host${i}.example`),
+    ]) {
+      const input = await fixture();
+      const manifest = input as unknown as {
+        puck: {
+          editableComponents: { fields: { type: string; allowedImageOrigins?: string[] }[] }[];
+        };
+      };
+      manifest.puck.editableComponents[0].fields.find(
+        (field) => field.type === "image",
+      )!.allowedImageOrigins = origins;
+      expect(validateClientSiteManifest(input).success).toBe(false);
+    }
+  });
+
   it("fails closed on an unknown schema version", async () => {
     const input = await fixture();
     input.schemaVersion = "2.0";

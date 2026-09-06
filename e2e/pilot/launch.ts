@@ -182,8 +182,8 @@ async function main() {
     encoding: "utf8",
     timeout: 30000,
   }).trim();
-  if (siteRevision !== "8021f6bab7727b4ffd0614acea8d619ce39a3400")
-    throw new Error("Pilot requires reviewed Better Farms 8021f6b source");
+  if (siteRevision !== "21eeb76b33c1258c75a001296074b880ef85f87f")
+    throw new Error("Pilot requires reviewed Better Farms 21eeb76 source");
   if (
     execFileSync("git", ["-C", siteRoot, "status", "--porcelain", "--untracked-files=no"], {
       env: minimal,
@@ -309,6 +309,11 @@ async function main() {
       ),
     );
     Object.assign(manifest.origins, { publicSite: publicOrigin, admin: adminOrigin });
+    for (const component of manifest.puck.editableComponents) {
+      for (const field of component.fields) {
+        if (field.type === "image") field.allowedImageOrigins = [adminOrigin];
+      }
+    }
     manifest.client.source.revision = siteRevision;
     const manifestPath = path.join(temp, "manifest.json");
     await writeFile(manifestPath, JSON.stringify(manifest));

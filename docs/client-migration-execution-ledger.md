@@ -5,6 +5,36 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Exact-origin images, source-file verification and read-only migration tooling
+
+Site `21eeb76b33c1258c75a001296074b880ef85f87f` now permits hero images from the exact configured
+Core HTTPS origin, matching its CSP. Core's optional image-field allowlist rejects other origins;
+the Better Farms manifest explicitly declares its admin origin. Existing manifest readers must
+be upgraded before using the new property. Build/runtime/manifest origin agreement remains an
+explicit deployment gate; runtime-only changes require a rebuild. Arbitrary CDN hosts are not
+implicitly trusted. Root reviewed and reran focused tests, then passed the three real two-origin
+browser cases in 17.1 seconds, including decoding a Core-hosted image in both preview and the
+published public site. The first attempt was interrupted to correct root's test selector; only
+the subsequent completed run is acceptance evidence.
+
+The site-reference verifier now requires real-path containment and regular files, and includes
+the declared field-schema module. The previously symbolic schema reference now identifies the
+actual Better Farms module. Regression tests reject external symlinks and directories, preserve
+internal file symlinks, and catch missing schemas. Actual site checkout verification passed.
+These are stable-checkout checks, not protection against concurrent hostile filesystem mutation.
+
+The new `verify-legacy-upload-migration.ts` command accepts separate private plan/approval files,
+checks actual runtime/database identity and the exact CMS row, then performs bounded object
+reads through the existing executor with writes disabled. Root reviewed its source and reran all
+18 focused tests. File bounds, ownership/permissions, FIFO/symlink rejection, secret-safe errors
+and source mismatches are covered. It relies on trusted Railway runtime provenance, not remote
+attestation. No production invocation or object copy occurred; the old inventory remains stale.
+
+Combined validation: 849 tests passed, 24 database cases skipped by the default local command;
+types, full lint, formatting, production build and bundle budgets passed. The actual pilot used
+its own disposable database. Site's 38 tests/types/build passed. Hosted CI for this checkpoint
+and live dry-run/provider acceptance remain outstanding.
+
 ### Current-production baseline reconciliation and upgrade rehearsal
 
 Main's post-merge Verify `34002181523` passed. The deployed `a006f36` hotfix was merged into
