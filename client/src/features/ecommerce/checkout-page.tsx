@@ -200,6 +200,7 @@ function CheckoutContent() {
   const [intent, setIntent] = useState<PaymentIntentResponse | null>(null);
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [selectedAddressId, setSelectedAddressId] = useState("custom");
+  const addressSelectionHandled = useRef(false);
   const lastShippingQuoteKey = useRef("");
   const checkoutRequestRef = useRef<{ fingerprint: string; key: string } | null>(null);
   const { toast } = useToast();
@@ -223,7 +224,7 @@ function CheckoutContent() {
   });
   const checkoutSettings = checkoutSettingsQuery.data;
   const settingsReady = checkoutSettingsQuery.isSuccess && Boolean(checkoutSettings);
-  const { data: savedAddresses = [] } = useQuery<AccountAddress[]>({
+  const { data: savedAddresses = [], isSuccess: savedAddressesReady } = useQuery<AccountAddress[]>({
     queryKey: ["/api/ecommerce/account/addresses", user?.id],
     queryFn: async () => (await apiRequest("GET", "/api/ecommerce/account/addresses")).json(),
     enabled: Boolean(user),
@@ -289,6 +290,7 @@ function CheckoutContent() {
     }));
   }, [allowedCountries, form.country, settingsReady]);
   const applySavedAddress = (address: AccountAddress) => {
+    addressSelectionHandled.current = true;
     setSelectedAddressId(address.id);
     setForm((current) => ({
       ...current,
@@ -307,18 +309,21 @@ function CheckoutContent() {
     setIntent(null);
   };
   useEffect(() => {
-    if (
-      !settingsReady ||
-      !user ||
-      selectedAddressId !== "custom" ||
-      form.address ||
-      !eligibleSavedAddresses.length
-    )
-      return;
+    if (!settingsReady || !savedAddressesReady || !user || addressSelectionHandled.current) return;
+    // Initial hydration is separate from an intentional custom/edited address.
+    addressSelectionHandled.current = true;
+    if (selectedAddressId !== "custom" || form.address || !eligibleSavedAddresses.length) return;
     const defaultAddress =
       eligibleSavedAddresses.find((address) => address.isDefault) ?? eligibleSavedAddresses[0];
     applySavedAddress(defaultAddress);
-  }, [eligibleSavedAddresses, form.address, selectedAddressId, user, settingsReady]);
+  }, [
+    eligibleSavedAddresses,
+    form.address,
+    selectedAddressId,
+    user,
+    settingsReady,
+    savedAddressesReady,
+  ]);
   const mutation = useMutation({
     mutationFn: async () => {
       if (!canCreatePayment) throw new Error("Checkout settings are unavailable. Please retry.");
@@ -587,7 +592,10 @@ function CheckoutContent() {
                     label="Full name"
                     value={form.name}
                     disabled={Boolean(intent)}
-                    onChange={(name) => setForm((current) => ({ ...current, name }))}
+                    onChange={(name) => {
+                      addressSelectionHandled.current = true;
+                      setForm((current) => ({ ...current, name }));
+                    }}
                   />
                   <CheckoutTextField
                     id="phone"
@@ -595,7 +603,10 @@ function CheckoutContent() {
                     value={form.phone}
                     required={false}
                     disabled={Boolean(intent)}
-                    onChange={(phone) => setForm((current) => ({ ...current, phone }))}
+                    onChange={(phone) => {
+                      addressSelectionHandled.current = true;
+                      setForm((current) => ({ ...current, phone }));
+                    }}
                   />
                   {user && eligibleSavedAddresses.length ? (
                     <div className="space-y-3 sm:col-span-2">
@@ -608,6 +619,7 @@ function CheckoutContent() {
                       <RadioGroup
                         value={selectedAddressId}
                         onValueChange={(value) => {
+                          addressSelectionHandled.current = true;
                           if (value === "custom") {
                             setSelectedAddressId("custom");
                             return;
@@ -669,14 +681,15 @@ function CheckoutContent() {
                     <Select
                       value={form.country}
                       disabled={Boolean(intent)}
-                      onValueChange={(country) =>
+                      onValueChange={(country) => {
+                        addressSelectionHandled.current = true;
                         setForm((current) => ({
                           ...current,
                           country,
                           state: "",
                           shippingRateId: "",
-                        }))
-                      }
+                        }));
+                      }}
                     >
                       <SelectTrigger id="country">
                         <SelectValue />
@@ -696,7 +709,10 @@ function CheckoutContent() {
                     value={form.address}
                     disabled={Boolean(intent)}
                     className="sm:col-span-2"
-                    onChange={(address) => setForm((current) => ({ ...current, address }))}
+                    onChange={(address) => {
+                      addressSelectionHandled.current = true;
+                      setForm((current) => ({ ...current, address }));
+                    }}
                   />
                   <CheckoutTextField
                     id="line2"
@@ -704,14 +720,20 @@ function CheckoutContent() {
                     value={form.line2}
                     required={false}
                     disabled={Boolean(intent)}
-                    onChange={(line2) => setForm((current) => ({ ...current, line2 }))}
+                    onChange={(line2) => {
+                      addressSelectionHandled.current = true;
+                      setForm((current) => ({ ...current, line2 }));
+                    }}
                   />
                   <CheckoutTextField
                     id="city"
                     label="City"
                     value={form.city}
                     disabled={Boolean(intent)}
-                    onChange={(city) => setForm((current) => ({ ...current, city }))}
+                    onChange={(city) => {
+                      addressSelectionHandled.current = true;
+                      setForm((current) => ({ ...current, city }));
+                    }}
                   />
                   <div className="space-y-2">
                     <Label htmlFor="state">{regionLabel}</Label>
@@ -719,9 +741,10 @@ function CheckoutContent() {
                       <Select
                         value={form.state}
                         disabled={Boolean(intent)}
-                        onValueChange={(state) =>
-                          setForm((current) => ({ ...current, state, shippingRateId: "" }))
-                        }
+                        onValueChange={(state) => {
+                          addressSelectionHandled.current = true;
+                          setForm((current) => ({ ...current, state, shippingRateId: "" }));
+                        }}
                       >
                         <SelectTrigger id="state">
                           <SelectValue placeholder={`Select ${regionLabel.toLowerCase()}`} />
@@ -739,9 +762,10 @@ function CheckoutContent() {
                         id="state"
                         value={form.state}
                         disabled={Boolean(intent)}
-                        onChange={(event) =>
-                          setForm((current) => ({ ...current, state: event.target.value }))
-                        }
+                        onChange={(event) => {
+                          addressSelectionHandled.current = true;
+                          setForm((current) => ({ ...current, state: event.target.value }));
+                        }}
                       />
                     )}
                   </div>
@@ -750,7 +774,10 @@ function CheckoutContent() {
                     label={form.country === "US" ? "ZIP" : "Postal code"}
                     value={form.zip}
                     disabled={Boolean(intent)}
-                    onChange={(zip) => setForm((current) => ({ ...current, zip }))}
+                    onChange={(zip) => {
+                      addressSelectionHandled.current = true;
+                      setForm((current) => ({ ...current, zip }));
+                    }}
                   />
                   <CheckoutTextField
                     id="couponCode"
