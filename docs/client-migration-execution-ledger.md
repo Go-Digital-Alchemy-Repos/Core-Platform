@@ -5,6 +5,22 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### R2 conditional-write semantics verified on the actual provider
+
+Root exercised a single randomly named temporary probe under the approved Core target upload
+namespace. First conditional PUT succeeded; a second different payload with `IfNoneMatch: "*"`
+was rejected with HTTP412. GET returned the original bytes. The probe was deleted and GET404
+confirmed removal. Existing CMS objects and database rows were untouched. See
+[provider evidence](release-evidence/core-r2-conditional-write-2026-09-06.json) and the sourced
+runbook notes. This closes the conditional-operation evidence gap, not freeze/drain/copy or
+namespace cutover acceptance. The actual media source remains preserved and uncopied.
+
+Independent full-release review and the isolated namespace-compatible rollback artifact are
+in progress. Early review identifies provider-backed ecommerce paths that write local records
+before checking absent Stripe configuration; this is a concrete corrective task, not proof that
+unconfigured providers automatically make those mutations safe. Final review and scoped fixes
+remain required before broader release acceptance.
+
 ### Actual deployed-source upload dry run
 
 A fresh read-only observation at 01:04:09 UTC matched the exact deployed `a006f36` service,

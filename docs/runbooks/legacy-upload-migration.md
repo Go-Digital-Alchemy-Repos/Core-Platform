@@ -165,3 +165,19 @@ claim that this tool is available on the current production deployment.
 CI checks missing-input rejection from a detached temporary directory through both the real
 file and a symlink entrypoint. This catches silent entrypoint skips caused by path normalization.
 It proves packaging and sanitized rejection, not a valid live source/provider dry run.
+
+
+### Provider conditional-write verification
+
+On 2026-09-06 the actual configured R2 provider accepted a new random temporary test object
+under Core's target upload namespace, rejected a second `IfNoneMatch: "*"` write with HTTP412,
+and returned the original payload unchanged. The test object was then deleted and its absence
+verified by GET404. Existing CMS objects and database rows were untouched. Aggregate evidence:
+`docs/release-evidence/core-r2-conditional-write-2026-09-06.json`.
+
+Cloudflare documents [PutObject conditional headers](https://developers.cloudflare.com/r2/api/s3/api/)
+and [strong read-after-write consistency through the S3 API](https://developers.cloudflare.com/r2/reference/consistency/).
+The latter does not establish consistency through a cached public domain. These provider facts
+support the selected copy primitive, but do not establish a writer barrier or authorize a
+production media copy. The final migration still requires fresh source verification and
+post-copy destination hashing through the direct S3 API.
