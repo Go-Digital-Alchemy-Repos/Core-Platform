@@ -387,3 +387,11 @@ independent reviewer retains acceptance responsibility for the combined patch.
 A synthetic CRM populated-upgrade rehearsal is running; no result is claimed yet.
 Production-runtime smoke cleanup also needs explicit resource evidence in the
 next release run; its current removal return codes alone are insufficient.
+
+The CRM populated-upgrade cleanup correction passed its actual synthetic
+rehearsal: legacy rows survived two candidate starts, ecommerce history stayed
+unchanged, and exact container/volume absence plus both process checks passed.
+Independent source review found no additional issue. Root committed the single
+producer file as 99e0540 on the rehearsal branch; it depends on the pending shared
+helper and is not yet integrated or pushed. Receipt crm-populated-01.json records
+dirty development provenance accurately; final candidate rehearsal remains due.
