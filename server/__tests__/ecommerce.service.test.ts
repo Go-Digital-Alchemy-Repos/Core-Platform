@@ -2224,7 +2224,34 @@ describe("ecommerce services", () => {
         amount: 4000,
         source: "manual",
       }),
-    ).rejects.toThrow(/exceeds refundable balance/);
+    ).rejects.toMatchObject({
+      message: "Refund amount exceeds refundable balance",
+      statusCode: 400,
+    });
+    expect(mockCreateRefund).not.toHaveBeenCalled();
+  });
+
+  it("returns not found before reserving a refund for a missing order", async () => {
+    const { createEcommerceRefund } = await import("../services/ecommerce-refund.service");
+    mockGetOrderWithDetails.mockResolvedValueOnce(undefined);
+    await expect(
+      createEcommerceRefund({ orderId: "missing", amount: 100, source: "manual" }),
+    ).rejects.toMatchObject({ statusCode: 404 });
+    expect(mockCreateRefund).not.toHaveBeenCalled();
+  });
+
+  it.each([0, -100])("rejects invalid refund amount %s before reserving funds", async (amount) => {
+    const { createEcommerceRefund } = await import("../services/ecommerce-refund.service");
+    mockGetOrderWithDetails.mockResolvedValueOnce({
+      id: "order-paid",
+      status: "paid",
+      paymentStatus: "paid",
+      totalAmount: 5000,
+      refunds: [],
+    });
+    await expect(
+      createEcommerceRefund({ orderId: "order-paid", amount, source: "manual" }),
+    ).rejects.toMatchObject({ statusCode: 400 });
     expect(mockCreateRefund).not.toHaveBeenCalled();
   });
 

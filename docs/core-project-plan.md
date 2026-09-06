@@ -394,6 +394,14 @@ sprint by sprint, including the September 5 infrastructure/engineering fixes, ec
 and compatible CRM improvements. The earlier restriction to the first planning wave is superseded
 by that authorization. Routine development does not require repeated basic approvals.
 
+The September 5 ecommerce request is an explicit part of the active program goal: repair every
+Admin > Ecommerce > Settings destination and verify working load, permissions, persistence, and
+error handling; then complete evidence-backed ecommerce quality work across catalog, checkout,
+payments, inventory, refunds, fulfillment, customer accounts, tax/shipping configuration, accessibility,
+and operations. Track discovered defects through fixes and regression verification in the execution
+ledger and ecommerce backlog. “World class” is an ongoing quality objective, not a claim that all
+bugs are eliminated or that unverified provider capabilities are ready for production.
+
 The current Better Farms intake records an approved seven-route pilot and no source import.
 Live checkout, WooCommerce catalog/media or customer/order history import, and production DNS
 cutover are excluded. It also records Mike as DNS/release operator and approved recovery targets

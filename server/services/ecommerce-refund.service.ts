@@ -97,11 +97,12 @@ export async function createEcommerceRefund(params: {
   processedBy?: string;
 }) {
   const order = await storage.ecommerce.getOrderWithDetails(params.orderId);
-  if (!order) throw new Error("Order not found");
+  if (!order) throw refundError("Order not found", 404);
   assertEcommerceOrderCanRefund(order);
-  if (params.amount <= 0) throw new Error("Refund amount must be greater than zero");
+  if (params.amount <= 0) throw refundError("Refund amount must be greater than zero", 400);
   const refundable = order.totalAmount - computeRefundedAmount(order.refunds);
-  if (params.amount > refundable) throw new Error("Refund amount exceeds refundable balance");
+  if (params.amount > refundable)
+    throw refundError("Refund amount exceeds refundable balance", 400);
 
   const source = params.source ?? (order.stripePaymentIntentId ? "stripe" : "manual");
 

@@ -5,6 +5,17 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Browser-discovered refund validation response corrected
+
+The actual offline-commerce browser run found that an amount exceeding the remaining refundable
+balance was rejected with HTTP500. The service now attaches HTTP400 to that validation error and
+to nonpositive amounts, and HTTP404 to a missing order. This preserves the rejection before any
+refund reservation while allowing the API error handler to return an actionable client error.
+Root passed 75 ecommerce service tests, including explicit status assertions, and scoped lint.
+The full browser workflow remains in progress; this checkpoint does not claim its completion.
+The master plan now explicitly records the settings repair and broader ecommerce quality request
+as part of the active program scope. No production deployment occurred.
+
 ### Stripe configuration preflight before local mutations
 
 Root reviewed and independently passed all 72 ecommerce service tests plus 12 neighboring
