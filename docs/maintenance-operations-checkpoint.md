@@ -277,3 +277,23 @@ Peer PR13 remains90882c2, migration0061. Owner-authorized calendar sample
 seeding was separately reported by that task (238 new/239 total events);
 the next fresh production backup must include the current post-seed state.
 Root did not execute that seed and has not independently verified its rows.
+
+
+Frontend recovery accepted as a candidate through `2738c15` on pushed
+`codex/ecommerce-customer-recovery`: account draft/error recovery, checkout
+settings gating, identity-scoped address cache, and authenticated user-switch/
+logout reset of private checkout/payment state. Anonymous-to-login preserves
+in-progress checkout by design. Root source review found and required the
+already-autofilled identity case; root then independently reran all 15 new
+recovery tests successfully. Worker reported 17 focused tests including two
+existing cases, plus types/lint/format. Combined integration is still pending.
+
+Offline receipt validator candidate `84d840f` is reviewed, committed and pushed
+separately. Root independently reran its 13 standard-library tests. It checks
+versioned gate coverage, source identity, bounded evidence hashes and review
+binding; it explicitly does not authenticate attestation truth or approve a
+release. No credentials/publishing/network features were added. A private
+normalization of the actual8126 evidence is underway with review acceptance
+left false. The policy must be extended for forthcoming0063 fulfillment gates
+before applying it to that later combined candidate. GitHub app registration
+remains at the owner's authentication prompt; no protection change occurred.
