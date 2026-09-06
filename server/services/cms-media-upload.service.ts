@@ -1,3 +1,4 @@
+import { assertUploadMutationsAllowed } from "./upload-mutation-policy";
 import fs from "fs";
 import path from "path";
 import { storage } from "../storage";
@@ -68,6 +69,7 @@ export async function createCmsMediaAssetFromUpload({
   alt,
   optimize = CMS_OPTIONS,
 }: MediaUploadOptions): Promise<CmsMediaAsset> {
+  assertUploadMutationsAllowed();
   const safeName = safeFilename(originalName);
   const baseName = stripExtension(safeName) || "media";
   const originalExtension = path.extname(safeName) || ".bin";

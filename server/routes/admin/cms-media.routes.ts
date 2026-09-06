@@ -1,3 +1,4 @@
+import { assertUploadMutationsAllowed } from "../../services/upload-mutation-policy";
 import { Router } from "express";
 import path from "path";
 import fs from "fs";
@@ -247,6 +248,7 @@ router.post(
   "/media/:id/replace",
   cmsUpload.single("file"),
   asyncHandler(async (req, res) => {
+    assertUploadMutationsAllowed();
     const id = paramString(req.params.id);
     const asset = await storage.cmsMedia.getMedia(id);
     if (!asset) return res.status(404).json({ error: "Media not found" });
@@ -314,6 +316,7 @@ router.patch(
 router.delete(
   "/media/:id",
   asyncHandler(async (req, res) => {
+    assertUploadMutationsAllowed();
     const id = paramString(req.params.id);
     const asset = await storage.cmsMedia.getMedia(id);
     if (!asset) return res.status(404).json({ error: "Media not found" });

@@ -1,3 +1,4 @@
+import { assertUploadMutationsAllowed } from "../services/upload-mutation-policy";
 import { Router } from "express";
 import path from "path";
 import fs from "fs";
@@ -122,6 +123,7 @@ router.post(
   "/attachment",
   attachmentUpload.single("file"),
   asyncHandler(async (req, res) => {
+    assertUploadMutationsAllowed();
     if (!req.file) {
       res.status(400).json({ message: "No file uploaded" });
       return;
