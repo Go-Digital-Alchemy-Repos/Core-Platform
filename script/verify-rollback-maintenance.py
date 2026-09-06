@@ -22,6 +22,7 @@ signal.signal(signal.SIGTERM, interrupted)
 signal.signal(signal.SIGINT, interrupted)
 try:
     configuration=(root/'railway.toml').read_text()
+    require(re.search(r'^drainingSeconds\s*=\s*45\s*$',configuration,re.M), 'Railway drainingSeconds must be numeric 45')
     configured_paths=re.findall(r'^healthcheckPath\s*=\s*"([^"]+)"\s*$',configuration,re.M)
     require(len(configured_paths)==1,'Exactly one configured healthcheck required')
     readiness_path=configured_paths[0]
