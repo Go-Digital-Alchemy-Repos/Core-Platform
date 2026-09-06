@@ -159,3 +159,11 @@ type, lint and formatting checks passing. The remaining UI, atomic creation/won
 conversion, form mapping and durable snapshot integration, populated upgrade and
 backup/restore acceptance remain required before CRM-2 release. This API acceptance
 does not change the separate maintenance release candidate.
+
+The definition settings UI was independently reviewed and root reran all 24
+custom-field/pipeline component tests successfully. It supports all five typed
+defaults, revisioned edits, immutable identity and saved option keys, archive and
+unarchive, and explicit conflict reload while retaining drafts on failures.
+Root adjusted new-field conflict wording to avoid referring to a nonexistent
+saved field. Actual application browser acceptance, record drawers and full
+form-to-client journey remain outstanding; component tests do not replace them.
