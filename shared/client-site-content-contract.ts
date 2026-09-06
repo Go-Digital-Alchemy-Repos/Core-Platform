@@ -3,7 +3,9 @@ import type { ClientSiteManifest } from "./client-site-manifest";
 
 export type ClientSiteEditableComponent = ClientSiteManifest["puck"]["editableComponents"][number];
 
-const sitePath = /^\/(?!\/)[^\s]*$/;
+// Explicitly reject URL controls and backslashes before browser normalization.
+// eslint-disable-next-line no-control-regex
+const sitePath = /^\/(?!\/)[^\s\\\u0000-\u001f\u007f]*$/;
 
 function isCredentialFreeHttps(value: string): boolean {
   try {

@@ -5,6 +5,21 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Editable content URL normalization fix
+
+Review of the remaining image/CSP mismatch found that both Core and Better Farms accepted
+backslash-containing paths as internal URLs. Browser URL parsing can reinterpret a leading
+slash/backslash as an external host, including credential-bearing targets that bypass the
+explicit HTTPS validator. Both validators now reject backslashes and ASCII control characters
+in site paths. Ordinary site paths and explicit credential-free HTTPS targets remain supported.
+Four Core regressions and all 36 site tests passed; both type checks and scoped Core lint passed.
+The site fix is committed separately after `8021f6b`; the two-origin pin remains historical until
+it is refreshed. No production change occurred.
+
+The original HTTPS image/CSP mismatch is still open. Its correct resolution must coordinate
+the editable image contract with the site's permitted image origins, so an editor cannot save
+an image the browser refuses to render. No wildcard image origin was introduced by this fix.
+
 ### Combined pilot acceptance refreshed — 2026-09-06 UTC
 
 Root reran the complete three-case two-origin pilot with the clean site source pinned to
