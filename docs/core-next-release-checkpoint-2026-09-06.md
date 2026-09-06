@@ -98,8 +98,9 @@ storage write, however, so races and direct storage callers can bypass it;
 existing cyclic ancestry can cause unbounded traversal. Backend transaction
 validation and a consistent lock order shared with Woo, plus cycle-safe admin
 repair visibility, are now authorized in isolated worktrees. Preserve inactive
-parent eligibility, soft deletion and existing response semantics. No migration
-or silent rewrite of historical category data is planned.
+parent eligibility, soft deletion and existing response semantics. Historical
+category data will not be silently rewritten. The separate import execution
+constraint migration is described below.
 
 Better Farms content/assets/domain acceptance and final build/runtime origin
 agreement remain open. The reusable website build/deployment playbook follows
@@ -144,6 +145,28 @@ separate supported path. The CLI must select the recorded supported execution
 version for resume while preserving all other identity checks. Regression proof
 must show the old supported resume entrypoint rejects new-version runs before
 resuming status or writing targets. This does not claim protection against an
-operator directly invoking arbitrary old repository internals. No schema migration
-or production import is authorized by this revision; implementation and review
-remain in progress on the isolated category branch.
+operator directly invoking arbitrary old repository internals. Production import
+remains unauthorized; implementation and review remain in progress on the
+isolated category branch.
+
+PostgreSQL testing corrected the initial no-migration assumption: migration 0047
+creates a CHECK constraint accepting only execution `1.0.0`. The Orchestrator
+authorized an additive migration widening that exact constraint to `1.0.0` and
+`1.1.0`, with atomic replacement and existing runner registration. Original
+migrations, rows and checkpoints remain unchanged. Acceptance requires populated
+legacy preservation, new-version acceptance, unknown-version rejection, replay
+and rollback verification. The original failed PostgreSQL attempt is retained.
+This authorization is for implementation and local testing, not deployment.
+
+## CRM note attribution increment
+
+The CRM-4 proposal is approved for separate implementation from frozen f485330.
+Existing lead/client detail responses gain nullable `authorName`, joined from
+current profile first/last names with explicit projections. The UI states that
+notes are visible to everyone with CRM access; unavailable attribution uses a
+neutral fallback. This is current profile attribution, not historical identity.
+Existing requester permissions and session-derived note authors remain intact.
+No schema, write contract, private notes, notification or history expansion is
+included. Acceptance requires permission, persistence and UI evidence. New or
+changed opt-in suites need separate verifier inventory review; frozen V3 and
+release evidence remain unchanged.
