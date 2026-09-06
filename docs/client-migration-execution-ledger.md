@@ -31,6 +31,25 @@ combined-ecommerce-settings-20260906T231039Z-5363a228. Read-only review also fou
 Security Center auxiliary request failures misleadingly render zero activity or
 no fraud blocks. A separate scoped correction is in progress and not deployed.
 
+### Security Center recovery accepted for next release
+
+The additional misleading auxiliary-read state is corrected in `1f5a9c0`,
+independently reviewed and integrated as `f485330`. Failed activity/block reads
+now display explicit errors and retry controls; background failures retain
+acknowledged data with a warning. Successful empty responses still show genuine
+empty states. Three regressions failed the old implementation; 37 focused tests
+and two actual desktop/mobile browser cases passed on the isolated patch.
+Owned fixtures and port 5201 were released. Evidence remains in private
+Operations/security-load-browser-20260906. This correction is not deployed.
+
+Before that UI-only increment, combined `f388911` passed types, lint, format,
+build/budgets and 1,163 ordinary tests. Its 99 opt-in skips are explicitly not
+counted as passes. All 20 Woo rollback/merchant PostgreSQL cases passed against
+that exact clean candidate with strict cleanup; final release evidence remains
+pending. The initial combined tracking test mock failure was corrected to pass
+mutation variables; the retained calendar script now uses explicit ESM imports.
+The seed preview returned 238 events and was not applied to any database.
+
 ### Next combined candidate — 2026-09-06
 
 Root integrated accepted CRM follow-ups, safe tracking links, customer checkout
