@@ -5,6 +5,20 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Hosted pilot gate added
+
+Commit `55a79cc` adds a hosted job that checks out the exact reviewed public Better Farms source
+`7fd1298beb373ee447aa97f578fb11e575faf8f0` with credential persistence disabled and runs the same
+22-case two-origin suite. The existing required Verify job always evaluates the dependency and
+explicitly fails if pilot acceptance did not succeed; failed/skipped pilot work cannot silently
+leave the required check green. Workflow YAML parsed successfully and its site pin agrees with
+the launcher. Hosted run34004810590 is in progress; local acceptance is not substituted for its
+first Linux result. Failure/receipt artifacts are retained14days.
+
+The final recovery candidate `f9036a3` hosted Verify run34004708405 completed successfully,
+including the new compiled maintenance-runtime test. That closes its hosted-artifact gate,
+not live namespace/media/deployment/drain acceptance. Production remains unchanged.
+
 ### Recovery review corrections verified
 
 Independent review of the recovery-only artifact identified database URL host/duplicate-sslmode
