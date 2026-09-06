@@ -101,54 +101,6 @@ describe("crm.service", () => {
     });
   });
 
-  it("creates a client for a won lead", async () => {
-    mockGetClientBySourceLeadId.mockResolvedValue(undefined);
-    mockCreateClient.mockImplementation(async (client) => ({ id: "client-1", ...client }));
-
-    const { ensureClientForWonLead } = await import("../services/crm.service");
-    const client = await ensureClientForWonLead(
-      {
-        id: "lead-1",
-        name: "Ada Lovelace",
-        email: "ada@example.com",
-        phone: "555-0100",
-        company: "Compiler Co",
-        message: "Ready",
-        stage: "won",
-        source: "website_form",
-        externalId: null,
-        formSubmissionId: null,
-        formData: { need: "consulting" },
-        metadata: { campaign: "spring" },
-        ownerId: "admin-1",
-        nextFollowUpAt: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      "admin-1",
-    );
-
-    expect(client.id).toBe("client-1");
-    expect(mockCreateClient).toHaveBeenCalledWith(
-      expect.objectContaining({
-        sourceLeadId: "lead-1",
-        status: "onboarding",
-        name: "Ada Lovelace",
-        source: "website_form",
-        clientType: "business",
-        primaryEmail: "ada@example.com",
-        primaryPhone: "555-0100",
-        preferredContactMethod: "email",
-        companyName: "Compiler Co",
-        onboardingStatus: "not_started",
-      }),
-    );
-    expect(mockCreateNote).toHaveBeenCalledWith(expect.objectContaining({ leadId: "lead-1" }));
-    expect(mockCreateClientNote).toHaveBeenCalledWith(
-      expect.objectContaining({ clientId: "client-1" }),
-    );
-  });
-
   it("moves a lead to won with its client creation in one storage operation", async () => {
     mockUpdateLeadAndCreateWonClient.mockImplementation(async (_id, data, buildClient) => ({
       lead: { id: "lead-atomic", ...data },
@@ -183,40 +135,20 @@ describe("crm.service", () => {
       "admin-1",
     );
     expect(mockUpdateLead).not.toHaveBeenCalled();
-  });
-
-  it("creates an individual client for a won lead without a company", async () => {
-    mockGetClientBySourceLeadId.mockResolvedValue(undefined);
-    mockCreateClient.mockImplementation(async (client) => ({ id: "client-2", ...client }));
-
-    const { ensureClientForWonLead } = await import("../services/crm.service");
-    await ensureClientForWonLead({
-      id: "lead-2",
-      name: "Grace Hopper",
-      email: null,
-      phone: "555-0101",
-      company: null,
-      message: null,
-      stage: "won",
-      source: "manual",
-      externalId: null,
-      formSubmissionId: null,
-      formData: {},
-      metadata: {},
-      ownerId: null,
-      nextFollowUpAt: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+    const build = mockUpdateLeadAndCreateWonClient.mock.calls[0][2];
+    expect(
+      build({ id: "business", name: "Ada", company: "Compiler Co", email: "ada@example.test" }),
+    ).toMatchObject({
+      clientType: "business",
+      companyName: "Compiler Co",
+      primaryEmail: "ada@example.test",
+      preferredContactMethod: "email",
     });
-
-    expect(mockCreateClient).toHaveBeenCalledWith(
-      expect.objectContaining({
-        clientType: "individual",
-        primaryPhone: "555-0101",
-        preferredContactMethod: "phone",
-        companyName: null,
-      }),
-    );
+    expect(build({ id: "individual", name: "Grace", phone: "555-0101" })).toMatchObject({
+      clientType: "individual",
+      primaryPhone: "555-0101",
+      preferredContactMethod: "phone",
+    });
   });
 
   it("validates second-stage client profile update fields", async () => {
@@ -238,35 +170,35 @@ describe("crm.service", () => {
     expect(() => crmClientUpdateSchema.parse({ onboardingStatus: "stalled" })).toThrow();
   });
 
-  it("does not create duplicate clients for the same won lead", async () => {
-    mockGetClientBySourceLeadId.mockResolvedValue({
-      id: "client-1",
-      sourceLeadId: "lead-1",
-      name: "Ada",
+  it("routes the old won helper through the atomic path", async () => {
+    const existing = { id: "client-1", sourceLeadId: "lead-1" };
+    mockUpdateLeadAndCreateWonClient.mockResolvedValue({
+      lead: { id: "lead-1" },
+      client: existing,
     });
-
     const { ensureClientForWonLead } = await import("../services/crm.service");
-    const client = await ensureClientForWonLead({
-      id: "lead-1",
-      name: "Ada",
-      email: null,
-      phone: null,
-      company: null,
-      message: null,
-      stage: "won",
-      source: "manual",
-      externalId: null,
-      formSubmissionId: null,
-      formData: {},
-      metadata: {},
-      ownerId: null,
-      nextFollowUpAt: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    expect(client.id).toBe("client-1");
+    expect(await ensureClientForWonLead({ id: "lead-1" } as never, "actor")).toBe(existing);
+    expect(mockUpdateLeadAndCreateWonClient).toHaveBeenCalledWith(
+      "lead-1",
+      {},
+      expect.any(Function),
+      "actor",
+    );
     expect(mockCreateClient).not.toHaveBeenCalled();
     expect(mockCreateClientNote).not.toHaveBeenCalled();
+  });
+  it("external source manual never enables trusted custom creation", async () => {
+    mockCreateOrUpdateInboundLead.mockResolvedValue({ lead: { id: "external" }, duplicate: false });
+    const { createOrUpdateCrmLead } = await import("../services/crm.service");
+    await createOrUpdateCrmLead({
+      name: "External",
+      source: "manual",
+      customFields: [{ definitionId: "forged", value: "private" }],
+      customValuesRevision: 99,
+    });
+    const payload = mockCreateOrUpdateInboundLead.mock.calls[0][0];
+    expect(payload.source).toBe("manual");
+    expect(payload).not.toHaveProperty("customFields");
+    expect(payload).not.toHaveProperty("customValuesRevision");
   });
 });

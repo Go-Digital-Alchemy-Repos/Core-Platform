@@ -37,6 +37,17 @@ vi.mock("../db", async () => {
 vi.mock("../utils/logger", () => ({
   logger: { app: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } },
 }));
+vi.mock("../storage", async () => {
+  const { CrmStorage } = await import("./crm.storage");
+  return { storage: { crm: new CrmStorage() } };
+});
+import {
+  createManualCrmLead,
+  createManualCrmClient,
+  createOrUpdateCrmLead,
+  updateCrmLead,
+  ensureClientForWonLead,
+} from "../services/crm.service";
 import { db, pool } from "../db";
 import { runMigrations } from "../migrate";
 import { crmClients, insertCrmLeadSchema, insertCrmClientSchema } from "@shared/schema";
@@ -362,5 +373,199 @@ describe.skipIf(!testUrl)("CRM custom field persistence in disposable PostgreSQL
       }),
     ).rejects.toThrow();
     expect((await storage.readValues("lead", "lead")).values).toEqual([]);
+  });
+  it("manual creation applies typed defaults atomically and external manual source does not", async () => {
+    await create("required_text", "text", { requiredOnManualCreate: true });
+    await expect(
+      createManualCrmLead({ name: "Missing", email: "missing@example.test" }),
+    ).rejects.toMatchObject({ statusCode: 400 });
+    await expect(createManualCrmClient({ name: "Missing client" })).rejects.toMatchObject({
+      statusCode: 400,
+    });
+    expect(
+      (await pool.query("SELECT id FROM crm_leads WHERE email='missing@example.test'")).rowCount,
+    ).toBe(0);
+    expect(
+      (await pool.query("SELECT id FROM crm_clients WHERE name='Missing client'")).rowCount,
+    ).toBe(0);
+    const external = await createOrUpdateCrmLead({
+      name: "External",
+      email: "external@example.test",
+      source: "manual",
+      customFields: [{ bogus: true }],
+    });
+    expect((await storage.readValues("lead", external.lead.id)).values).toEqual([]);
+    const field = (await storage.listDefinitions())[0];
+    await create("boolean_default", "boolean", {
+      defaultValue: false,
+      requiredOnManualCreate: true,
+    });
+    const manual = await createManualCrmLead({
+      name: "Manual",
+      customFields: [entry(field, "given")],
+    });
+    expect(
+      (await storage.readValues("lead", manual.lead.id)).values.map((row) => row.value),
+    ).toEqual(expect.arrayContaining(["given", false]));
+    const client = await createManualCrmClient({
+      name: "Manual client",
+      customFields: [entry(field, "given")],
+    });
+    expect(client.source).toBe("manual");
+    expect((await storage.readValues("client", client.id)).values).toHaveLength(2);
+    await expect(
+      createManualCrmClient({ name: "Forged", sourceLeadId: "lead", customValuesRevision: 99 }),
+    ).rejects.toMatchObject({ statusCode: 400 });
+  });
+  it("duplicate manual custom create conflicts without changing existing fields or duplicate metadata", async () => {
+    const field = await create();
+    const initial = await createManualCrmLead({
+      name: "Original",
+      email: "duplicate@example.test",
+      message: "original",
+      customFields: [entry(field, "kept")],
+    });
+    await expect(
+      createManualCrmLead({
+        name: "Retry",
+        email: "duplicate@example.test",
+        message: "changed",
+        customFields: [entry(field, "overwrite")],
+      }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    expect(
+      (await pool.query("SELECT message FROM crm_leads WHERE id=$1", [initial.lead.id])).rows[0]
+        .message,
+    ).toBe("original");
+    expect(
+      (await pool.query("SELECT id FROM crm_lead_notes WHERE lead_id=$1", [initial.lead.id]))
+        .rowCount,
+    ).toBe(0);
+    await storage.reviseDefinition(field.id, {
+      expectedRevision: 1,
+      archived: false,
+      config: { ...field.config, requiredOnManualCreate: true },
+    });
+    const duplicate = await createManualCrmLead({ name: "Retry", email: "duplicate@example.test" });
+    expect(duplicate.duplicate).toBe(true);
+    expect((await storage.readValues("lead", initial.lead.id)).values[0].value).toBe("kept");
+  });
+  it("concurrent won conversion copies once and retry preserves later client edits", async () => {
+    const field = await create("copy_field", "text", { copyOnConversion: true });
+    const initial = await createManualCrmLead({
+      name: "Convert",
+      customFields: [entry(field, "lead value")],
+    });
+    await storage.createDefinition({
+      key: "client_required",
+      type: "text",
+      entityScope: "client",
+      config: { version: 1, label: "Required only manually", requiredOnManualCreate: true },
+    });
+    await Promise.all([
+      updateCrmLead(initial.lead.id, { stage: "won" }),
+      updateCrmLead(initial.lead.id, { stage: "won" }),
+    ]);
+    const clients = (
+      await pool.query("SELECT id FROM crm_clients WHERE source_lead_id=$1", [initial.lead.id])
+    ).rows;
+    expect(clients).toHaveLength(1);
+    const client = clients[0];
+    let read = await storage.readValues("client", client.id);
+    expect(read.values).toHaveLength(1);
+    expect(read.values[0].value).toBe("lead value");
+    await storage.writeValues("client", client.id, {
+      expectedRevision: read.revision,
+      values: [entry(field, "client edit")],
+    });
+    await updateCrmLead(initial.lead.id, { stage: "won" });
+    await ensureClientForWonLead({ ...initial.lead, stage: "won" });
+    read = await storage.readValues("client", client.id);
+    expect(read.values[0].value).toBe("client edit");
+    expect(read.revision).toBe(2);
+    expect(
+      (await pool.query("SELECT id FROM crm_lead_notes WHERE lead_id=$1", [initial.lead.id]))
+        .rowCount,
+    ).toBe(1);
+    expect(
+      (await pool.query("SELECT id FROM crm_client_notes WHERE client_id=$1", [client.id]))
+        .rowCount,
+    ).toBe(1);
+  });
+  it("copies accepting revisions for archived options but preserves archived definitions only on lead", async () => {
+    const choice = await create("choice_copy", "choice", {
+      copyOnConversion: true,
+      choices: [{ key: "blue", label: "Original", archived: false }],
+    });
+    const archived = await create("archived_copy", "text", { copyOnConversion: true });
+    const initial = await createManualCrmLead({
+      name: "History",
+      customFields: [entry(choice, "blue"), entry(archived, "keep lead")],
+    });
+    await storage.reviseDefinition(choice.id, {
+      expectedRevision: 1,
+      archived: false,
+      config: {
+        ...choice.config,
+        choices: [{ key: "blue", label: "Archived option", archived: true }],
+      },
+    });
+    await storage.reviseDefinition(archived.id, {
+      expectedRevision: 1,
+      archived: true,
+      config: archived.config,
+    });
+    await updateCrmLead(initial.lead.id, { stage: "won" });
+    const client = (
+      await pool.query("SELECT id FROM crm_clients WHERE source_lead_id=$1", [initial.lead.id])
+    ).rows[0];
+    const read = await storage.readValues("client", client.id);
+    expect(read.values).toHaveLength(1);
+    expect(read.values[0]).toMatchObject({ definitionRevision: 1, value: "blue" });
+    expect(read.values[0].acceptedConfig.choices[0].label).toBe("Original");
+    expect((await storage.readValues("lead", initial.lead.id)).values).toHaveLength(2);
+  });
+  it("rolls back won stage, client and both notes when a copied value fails", async () => {
+    const field = await create("copy_failure", "text", { copyOnConversion: true });
+    const initial = await createManualCrmLead({
+      name: "Failure",
+      customFields: [entry(field, "value")],
+    });
+    await pool.query(
+      "CREATE FUNCTION crm_test_fail_copy() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'injected_copy'; END $$; CREATE TRIGGER crm_test_fail_copy BEFORE INSERT ON crm_client_custom_field_values FOR EACH ROW EXECUTE FUNCTION crm_test_fail_copy()",
+    );
+    try {
+      await expect(updateCrmLead(initial.lead.id, { stage: "won" })).rejects.toThrow();
+    } finally {
+      await pool.query(
+        "DROP TRIGGER crm_test_fail_copy ON crm_client_custom_field_values; DROP FUNCTION crm_test_fail_copy()",
+      );
+    }
+    expect(
+      (await pool.query("SELECT stage FROM crm_leads WHERE id=$1", [initial.lead.id])).rows[0]
+        .stage,
+    ).toBe("new");
+    expect(
+      (await pool.query("SELECT id FROM crm_clients WHERE source_lead_id=$1", [initial.lead.id]))
+        .rowCount,
+    ).toBe(0);
+    expect(
+      (await pool.query("SELECT id FROM crm_lead_notes WHERE lead_id=$1", [initial.lead.id]))
+        .rowCount,
+    ).toBe(0);
+  });
+  it("new manual won lead includes creation, values and conversion in one operation", async () => {
+    const field = await create("initial_won", "number", {
+      copyOnConversion: true,
+      defaultValue: 0,
+    });
+    const initial = await createManualCrmLead({ name: "Won initially", stage: "won" });
+    const client = (
+      await pool.query("SELECT id FROM crm_clients WHERE source_lead_id=$1", [initial.lead.id])
+    ).rows[0];
+    expect((await storage.readValues("client", client.id)).values[0]).toMatchObject({
+      definitionId: field.id,
+      value: 0,
+    });
   });
 });

@@ -19,6 +19,7 @@ import {
   crmCustomFieldScopeSchema,
   crmCustomFieldTypeSchema,
   normalizeCrmCustomFieldValues,
+  normalizeCrmCustomFieldValue,
   type CrmCustomFieldDefinition,
 } from "@shared/crm-custom-fields";
 export type CrmCustomFieldsTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -228,6 +229,39 @@ export class CrmCustomFieldsStorage {
         .where(eq(entity.id, entityId));
       return { revision, values: parsed.values };
     });
+  }
+  /** Caller owns the conversion transaction and has not exposed the newly inserted client. */
+  async copyLeadValuesToNewClient(
+    leadId: string,
+    clientId: string,
+    tx: CrmCustomFieldsTransaction,
+  ) {
+    const lead = await this.readValues("lead", leadId, tx);
+    const copied = lead.values.filter(
+      (row) =>
+        !row.current.archivedAt &&
+        row.current.entityScope === "both" &&
+        row.current.config.copyOnConversion &&
+        row.value !== null,
+    );
+    for (const row of copied) {
+      const value = normalizeCrmCustomFieldValue(
+        { ...row.current, revision: row.definitionRevision, config: row.acceptedConfig },
+        row.value,
+        "accepted_revision",
+      );
+      await tx.insert(clientValues).values({
+        clientId,
+        definitionId: row.definitionId,
+        definitionRevision: row.definitionRevision,
+        value: sql`${JSON.stringify(value)}::jsonb`,
+      });
+    }
+    if (copied.length)
+      await tx
+        .update(crmClients)
+        .set({ customValuesRevision: 1, updatedAt: new Date() })
+        .where(eq(crmClients.id, clientId));
   }
   /** Returns retained revision config as well as current presentation; no current validation rewrites history. */
   async readValues(

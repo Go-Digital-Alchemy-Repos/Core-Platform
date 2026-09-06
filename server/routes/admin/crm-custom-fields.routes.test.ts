@@ -11,11 +11,14 @@ const state = vi.hoisted(() => ({
   raw: null as string | null,
   enabled: true,
   users: new Map<string, unknown>(),
+  manualLead: vi.fn(),
+  manualClient: vi.fn(),
   saved: vi.fn(),
   deleted: vi.fn(),
 }));
 vi.mock("../../storage", () => ({
   storage: {
+    crm: { createManualLead: state.manualLead, createManualClient: state.manualClient },
     users: { getUser: async (id: string) => state.users.get(id) },
     settings: {
       getSetting: async () => state.raw,
@@ -121,6 +124,11 @@ describe("mounted CRM custom fields API", () => {
     vi.clearAllMocks();
     state.enabled = true;
     state.users.clear();
+    state.manualLead.mockResolvedValue({
+      lead: { id: "created-lead", customValuesRevision: 1 },
+      duplicate: false,
+    });
+    state.manualClient.mockResolvedValue({ id: "created-client", customValuesRevision: 1 });
     vi.spyOn(CrmCustomFieldsStorage.prototype, "listDefinitions").mockResolvedValue([]);
     vi.spyOn(CrmCustomFieldsStorage.prototype, "createDefinition").mockResolvedValue({} as never);
     vi.spyOn(CrmCustomFieldsStorage.prototype, "reviseDefinition").mockResolvedValue({} as never);
@@ -257,5 +265,45 @@ describe("mounted CRM custom fields API", () => {
     expect(
       (await request("/api/admin/dashboard-stats", "editor", "GET", undefined, ["crm"])).status,
     ).toBe(403);
+  });
+  it("permits trusted manual creation only through authenticated CRM routes", async () => {
+    for (const path of ["/api/admin/crm", "/api/admin/crm/clients"]) {
+      expect((await request(path, undefined, "POST", { name: "Synthetic" })).status).toBe(401);
+      expect(
+        (await request(path, "editor", "POST", { name: "Synthetic" }, ["content"])).status,
+      ).toBe(403);
+      expect((await request(path, "editor", "POST", { name: "Synthetic" }, ["crm"])).status).toBe(
+        201,
+      );
+      expect(
+        (
+          await request(path, "editor", "POST", { name: "Synthetic", customValuesRevision: 99 }, [
+            "crm",
+          ])
+        ).status,
+      ).toBe(400);
+    }
+    expect(state.manualLead).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Synthetic" }),
+      [],
+      expect.any(Function),
+      expect.any(String),
+    );
+    expect(state.manualClient).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Synthetic" }),
+      [],
+    );
+    state.enabled = false;
+    expect(
+      (await request("/api/admin/crm/clients", "admin", "POST", { name: "Synthetic" })).status,
+    ).toBe(404);
+  });
+  it("returns actionable manual duplicate conflict without pretending creation succeeded", async () => {
+    state.manualLead.mockRejectedValue(new Error("duplicate_lead_custom_fields"));
+    const response = await request("/api/admin/crm", "editor", "POST", { name: "Duplicate" }, [
+      "crm",
+    ]);
+    expect(response.status).toBe(409);
+    expect((await response.json()).message).toContain("current revision");
   });
 });

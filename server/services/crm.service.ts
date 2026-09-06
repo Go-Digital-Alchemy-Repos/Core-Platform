@@ -1,5 +1,9 @@
+import { z } from "zod";
+import { crmCustomFieldValuesPatchSchema } from "@shared/crm-custom-fields";
+import { runCrmCustomFieldsOperation } from "./crm-custom-fields.errors";
 import {
   crmLeadInputSchema,
+  crmClientUpdateSchema,
   type CrmClient,
   type CrmLead,
   type CrmLeadInput,
@@ -69,6 +73,35 @@ export async function createOrUpdateCrmLead(
   return storage.crm.createOrUpdateInboundLead(payload, createdById);
 }
 
+const manualLeadSchema = crmLeadInputSchema
+  .extend({
+    customFields: crmCustomFieldValuesPatchSchema.innerType().shape.values.optional().default([]),
+  })
+  .strict();
+const manualClientSchema = crmClientUpdateSchema
+  .extend({
+    name: z.string().trim().min(1),
+    customFields: crmCustomFieldValuesPatchSchema.innerType().shape.values.optional().default([]),
+  })
+  .strict();
+export async function createManualCrmLead(input: unknown, createdById?: string | null) {
+  return runCrmCustomFieldsOperation(async () => {
+    const { customFields, ...record } = manualLeadSchema.parse(input);
+    return storage.crm.createManualLead(
+      normalizeCrmLeadInput(record),
+      customFields,
+      buildWonLeadClient,
+      createdById,
+    );
+  }, true);
+}
+export async function createManualCrmClient(input: unknown) {
+  return runCrmCustomFieldsOperation(async () => {
+    const { customFields, ...record } = manualClientSchema.parse(input);
+    return storage.crm.createManualClient(record, customFields);
+  }, true);
+}
+
 export async function createCrmLeadFromFormSubmission({
   formName,
   formSubmissionId,
@@ -135,21 +168,13 @@ export async function ensureClientForWonLead(
   lead: CrmLead,
   createdById?: string | null,
 ): Promise<CrmClient> {
-  const existing = await storage.crm.getClientBySourceLeadId(lead.id);
-  if (existing) return existing;
-
-  const client = await storage.crm.createClient(buildWonLeadClient(lead));
-
-  await storage.crm.createNote({
-    leadId: lead.id,
-    createdById: createdById ?? null,
-    body: "Lead converted to client after moving to Won.",
-  });
-  await storage.crm.createClientNote({
-    clientId: client.id,
-    createdById: createdById ?? null,
-    body: "Client created from won lead.",
-  });
-
-  return client;
+  const result = await storage.crm.updateLeadAndCreateWonClient(
+    lead.id,
+    {},
+    buildWonLeadClient,
+    createdById,
+  );
+  if (!result) throw Object.assign(new Error("Lead not found"), { statusCode: 404 });
+  if (!result.client) throw Object.assign(new Error("Lead is not won"), { statusCode: 409 });
+  return result.client;
 }
