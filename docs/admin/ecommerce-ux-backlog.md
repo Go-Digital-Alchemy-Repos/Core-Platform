@@ -15,3 +15,9 @@ This note captures the next ecommerce experience passes so visible improvements 
 - Keep media values URL-compatible for the current ecommerce schema.
 - Prefer existing CMS upload, media library, and rich text components over ecommerce-specific duplicates.
 - Treat deeper media identity linking through `mediaId` as a future hardening pass.
+
+## Tracking links
+
+Tracking write validation and order-detail rendering share an explicit HTTP(S) URL policy. Unsafe schemes, embedded credentials, backslashes and control characters are rejected on new shipment/fulfillment writes; existing unsafe stored values remain unchanged and are rendered without an active link. Valid HTTP and HTTPS carrier links retain their accepted spelling so fulfillment idempotency fingerprints stay compatible. Blank legacy URL inputs remain an absent optional value; the atomic action retains its existing nonblank URL requirement when a URL is supplied.
+
+A shipment with a URL and no tracking number now offers “Track package” in admin history as well as customer views. Plain tracking numbers remain visible when there is no safe link. This slice does not change carrier/provider requests, tracking events, payment or tax behavior.
