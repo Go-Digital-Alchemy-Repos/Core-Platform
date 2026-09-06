@@ -3,6 +3,34 @@
 This ledger records verified execution against the [Client Migration Master Plan](core-project-plan.md).
 Statuses describe repository evidence and do not imply production release approval.
 
+## Active goal supplement — ecommerce completion
+
+The owner explicitly added all Admin > Ecommerce > Settings 404 failures and
+completion of the ecommerce solution to the ongoing orchestration goal. Treat
+this as continuing delivery scope, with evidence-backed increments: all five
+settings destinations, direct navigation and reload, safe persistence and error
+recovery, authorization, catalog and inventory integrity, checkout and customer
+accounts, order/payment/refund/fulfillment correctness, shipping and tax behavior,
+and operational recovery. Track discovered defects and unresolved capabilities;
+“world class” is an aspiration, not evidence that every bug has been eliminated.
+Production release and provider activation retain their existing safety gates.
+
+### Next combined candidate — 2026-09-06
+
+Root integrated accepted CRM follow-ups, safe tracking links, customer checkout
+and lookup recovery, onboarding evidence scoping, Woo rollback and merchant
+concurrency preservation, and the retained calendar seed script into isolated
+`codex/next-client-release` at `346359b`. The one order-status import conflict was
+resolved by preserving both the tracking helper and request-ownership ref.
+Frozen `8a6cdcc`, PR14, and production remain unchanged. The calendar script was
+retained, not applied again. This new candidate requires its own validation;
+previous 26-gate and snapshot-restore evidence does not certify the new head.
+
+Settings routing and persistence regression checks are being repeated against
+this candidate. Broader tests must explicitly account for new opt-in CRM and Woo
+PostgreSQL cases. The GitHub release-control authentication dependency remains
+pending; Actions remains disabled and protections remain intact.
+
 ## Orchestrator transition and current sprint — 2026-09-05
 
 ### Final candidate formatting gate corrected
