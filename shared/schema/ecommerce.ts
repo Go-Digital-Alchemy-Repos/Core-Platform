@@ -1100,6 +1100,8 @@ export const ecommerceFulfillments = pgTable(
     orderId: varchar("order_id")
       .notNull()
       .references(() => ecommerceOrders.id, { onDelete: "cascade" }),
+    requestKey: varchar("request_key", { length: 128 }),
+    requestHash: varchar("request_hash", { length: 64 }),
     locationId: varchar("location_id").references(() => ecommerceFulfillmentLocations.id, {
       onDelete: "set null",
     }),
@@ -1123,6 +1125,9 @@ export const ecommerceFulfillments = pgTable(
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
   (table) => [
+    uniqueIndex("idx_ecommerce_fulfillments_request")
+      .on(table.orderId, table.requestKey)
+      .where(sql`${table.requestKey} IS NOT NULL`),
     index("idx_ecommerce_fulfillments_order").on(table.orderId),
     index("idx_ecommerce_fulfillments_location").on(table.locationId),
     index("idx_ecommerce_fulfillments_provider").on(table.providerId),
@@ -1375,6 +1380,8 @@ export const insertEcommerceShippingProviderSchema = createInsertSchema(
   ecommerceShippingProviders,
 ).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertEcommerceFulfillmentSchema = createInsertSchema(ecommerceFulfillments).omit({
+  requestKey: true,
+  requestHash: true,
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -1452,3 +1459,33 @@ export type InsertEcommerceFulfillment = z.infer<typeof insertEcommerceFulfillme
 export type EcommerceFulfillmentItem = typeof ecommerceFulfillmentItems.$inferSelect;
 export type InsertEcommerceFulfillmentItem = z.infer<typeof insertEcommerceFulfillmentItemSchema>;
 export type EcommerceCartItem = z.infer<typeof ecommerceCartItemSchema>;
+
+/** Server owns lifecycle/actor/receipt fields for the atomic manual shipping action. */
+export const atomicEcommerceFulfillmentSchema = z
+  .object({
+    carrier: z.string().trim().max(100).nullable().default(null),
+    trackingNumber: z.string().trim().max(200).nullable().default(null),
+    trackingUrl: z
+      .string()
+      .trim()
+      .max(2048)
+      .url()
+      .refine((value) => /^https?:\/\//.test(value), "Use an HTTP(S) tracking URL")
+      .nullable()
+      .default(null),
+    locationId: z.string().min(1).max(128).nullable().default(null),
+    serviceLevel: z.string().trim().max(200).nullable().default(null),
+    items: z
+      .array(
+        z
+          .object({
+            orderItemId: z.string().min(1).max(128),
+            quantity: z.number().int().min(1).max(2147483647),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(200),
+  })
+  .strict();
+export type AtomicEcommerceFulfillmentInput = z.infer<typeof atomicEcommerceFulfillmentSchema>;

@@ -2184,6 +2184,16 @@ function ManualOrderWizard({
   );
 }
 
+export function remainingShipmentQuantity(order: Order, itemId: string) {
+  const ordered = order.items.find((item) => item.id === itemId)?.quantity ?? 0;
+  const fulfilled = (order.fulfillments ?? [])
+    .filter((fulfillment) => !["failed", "cancelled", "canceled"].includes(fulfillment.status))
+    .flatMap((fulfillment) => fulfillment.items ?? [])
+    .filter((item) => item.orderItemId === itemId)
+    .reduce((sum, item) => sum + item.quantity, 0);
+  return Math.max(0, ordered - fulfilled);
+}
+
 export function OrdersTab() {
   const { toast } = useToast();
   const trackingNumberInputRef = useRef<HTMLInputElement>(null);
@@ -2213,6 +2223,8 @@ export function OrdersTab() {
     locationId: "",
     serviceLevel: "",
   });
+  const [shipmentQuantities, setShipmentQuantities] = useState<Record<string, number>>({});
+  const shippingRequest = useRef<{ fingerprint: string; key: string } | null>(null);
   const [statusForm, setStatusForm] = useState({
     status: "",
     notes: "",
@@ -2263,6 +2275,15 @@ export function OrdersTab() {
 
   useEffect(() => {
     if (selectedOrder) {
+      setShipmentQuantities(
+        Object.fromEntries(
+          selectedOrder.items.map((item) => [
+            item.id,
+            remainingShipmentQuantity(selectedOrder, item.id),
+          ]),
+        ),
+      );
+      shippingRequest.current = null;
       setStatusForm({ status: selectedOrder.status, notes: "" });
     }
   }, [selectedOrder?.id]);
@@ -2338,38 +2359,48 @@ export function OrdersTab() {
   const shipmentMutation = useMutation({
     mutationFn: async () => {
       if (!selectedOrder) throw new Error("Select an order first.");
-      const shipmentResponse = await apiRequest(
+      const payload = {
+        carrier: shipmentForm.carrier.trim() || null,
+        trackingNumber: shipmentForm.trackingNumber.trim() || null,
+        trackingUrl: shipmentForm.trackingUrl.trim() || null,
+        locationId: shipmentForm.locationId || null,
+        serviceLevel: shipmentForm.serviceLevel.trim() || null,
+        items: selectedOrder.items
+          .map((item) => ({ orderItemId: item.id, quantity: shipmentQuantities[item.id] ?? 0 }))
+          .filter((item) => item.quantity > 0),
+      };
+      if (!payload.items.length) throw new Error("Choose at least one remaining item to ship.");
+      const fingerprint = JSON.stringify({ orderId: selectedOrder.id, ...payload });
+      if (shippingRequest.current?.fingerprint !== fingerprint)
+        shippingRequest.current = { fingerprint, key: crypto.randomUUID() };
+      const response = await apiRequest(
         "POST",
-        `/api/admin/ecommerce/orders/${selectedOrder.id}/shipments`,
-        {
-          carrier: shipmentForm.carrier.trim() || null,
-          trackingNumber: shipmentForm.trackingNumber.trim() || null,
-          trackingUrl: shipmentForm.trackingUrl.trim() || null,
-          status: "shipped",
-        },
+        `/api/admin/ecommerce/orders/${selectedOrder.id}/ship-and-fulfill`,
+        payload,
+        { headers: { "Idempotency-Key": shippingRequest.current.key } },
       );
-      const shipment = (await shipmentResponse.json()) as { id: string };
-      await apiRequest("POST", `/api/admin/ecommerce/orders/${selectedOrder.id}/fulfillments`, {
-        fulfillment: {
-          shipmentId: shipment.id,
-          locationId: shipmentForm.locationId || null,
-          status: "fulfilled",
-          method: "manual",
-          serviceLevel: shipmentForm.serviceLevel.trim() || null,
-          carrier: shipmentForm.carrier.trim() || null,
-          trackingNumber: shipmentForm.trackingNumber.trim() || null,
-          trackingUrl: shipmentForm.trackingUrl.trim() || null,
-          fulfilledAt: new Date().toISOString(),
-        },
-        items: selectedOrder.items.map((item) => ({
-          orderItemId: item.id,
-          quantity: item.quantity,
-        })),
-      });
+      return response.json() as Promise<{
+        fulfillment: { items: Array<{ orderItemId: string; quantity: number }> };
+      }>;
     },
-    onSuccess: async () => {
+    onSuccess: async (result) => {
+      if (selectedOrder)
+        setShipmentQuantities(
+          Object.fromEntries(
+            selectedOrder.items.map((item) => [
+              item.id,
+              Math.max(
+                0,
+                remainingShipmentQuantity(selectedOrder, item.id) -
+                  (result.fulfillment.items.find((line) => line.orderItemId === item.id)
+                    ?.quantity ?? 0),
+              ),
+            ]),
+          ),
+        );
+      shippingRequest.current = null;
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/orders"] });
-      toast({ title: "Order marked shipped" });
+      toast({ title: "Shipment saved", description: "Shipping notification queued." });
       setShipmentForm({
         carrier: "",
         trackingNumber: "",
@@ -2949,97 +2980,127 @@ export function OrdersTab() {
                         submitShipment();
                       }}
                     >
-                      <div>
-                        <h3 className="text-sm font-semibold">Fulfillment</h3>
-                        <p className="text-xs text-muted-foreground">
-                          Creates a shipment, fulfillment record, and customer shipping email.
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Fulfillment location</Label>
-                        <Select
-                          value={shipmentForm.locationId || "__none"}
-                          onValueChange={(locationId) =>
-                            setShipmentForm((current) => ({
-                              ...current,
-                              locationId: locationId === "__none" ? "" : locationId,
-                            }))
-                          }
+                      <fieldset disabled={shipmentMutation.isPending} className="contents">
+                        <div>
+                          <h3 className="text-sm font-semibold">Fulfillment</h3>
+                          <p className="text-xs text-muted-foreground">
+                            Saves selected quantities and queues a shipping notification. The order
+                            is marked shipped when all units are fulfilled.
+                          </p>
+                        </div>
+                        {selectedOrder.items.map((item) => (
+                          <div key={item.id} className="space-y-2">
+                            <Label htmlFor={`ship-quantity-${item.id}`}>
+                              {item.productName}: quantity to ship (
+                              {remainingShipmentQuantity(selectedOrder, item.id)} remaining)
+                            </Label>
+                            <Input
+                              id={`ship-quantity-${item.id}`}
+                              type="number"
+                              min={0}
+                              max={Math.max(
+                                remainingShipmentQuantity(selectedOrder, item.id),
+                                shipmentQuantities[item.id] ?? 0,
+                              )}
+                              step={1}
+                              value={shipmentQuantities[item.id] ?? 0}
+                              onChange={(event) =>
+                                setShipmentQuantities((current) => ({
+                                  ...current,
+                                  [item.id]: Number(event.target.value),
+                                }))
+                              }
+                            />
+                          </div>
+                        ))}
+                        <div className="space-y-2">
+                          <Label>Fulfillment location</Label>
+                          <Select
+                            value={shipmentForm.locationId || "__none"}
+                            onValueChange={(locationId) =>
+                              setShipmentForm((current) => ({
+                                ...current,
+                                locationId: locationId === "__none" ? "" : locationId,
+                              }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none">No location</SelectItem>
+                              {locations.map((location) => (
+                                <SelectItem key={location.id} value={location.id}>
+                                  {location.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label>Carrier</Label>
+                            <Input
+                              aria-label="Shipment carrier"
+                              value={shipmentForm.carrier}
+                              onChange={(event) =>
+                                setShipmentForm((current) => ({
+                                  ...current,
+                                  carrier: event.target.value,
+                                }))
+                              }
+                              placeholder="UPS"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Service</Label>
+                            <Input
+                              value={shipmentForm.serviceLevel}
+                              onChange={(event) =>
+                                setShipmentForm((current) => ({
+                                  ...current,
+                                  serviceLevel: event.target.value,
+                                }))
+                              }
+                              placeholder="Ground"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Tracking number</Label>
+                          <Input
+                            ref={trackingNumberInputRef}
+                            aria-label="Shipment tracking number"
+                            value={shipmentForm.trackingNumber}
+                            onChange={(event) =>
+                              setShipmentForm((current) => ({
+                                ...current,
+                                trackingNumber: event.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Tracking URL</Label>
+                          <Input
+                            value={shipmentForm.trackingUrl}
+                            onChange={(event) =>
+                              setShipmentForm((current) => ({
+                                ...current,
+                                trackingUrl: event.target.value,
+                              }))
+                            }
+                            placeholder="https://..."
+                          />
+                        </div>
+                        <Button
+                          type="submit"
+                          disabled={shipmentMutation.isPending || selectedOrder.items.length === 0}
                         >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__none">No location</SelectItem>
-                            {locations.map((location) => (
-                              <SelectItem key={location.id} value={location.id}>
-                                {location.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label>Carrier</Label>
-                          <Input
-                            value={shipmentForm.carrier}
-                            onChange={(event) =>
-                              setShipmentForm((current) => ({
-                                ...current,
-                                carrier: event.target.value,
-                              }))
-                            }
-                            placeholder="UPS"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Service</Label>
-                          <Input
-                            value={shipmentForm.serviceLevel}
-                            onChange={(event) =>
-                              setShipmentForm((current) => ({
-                                ...current,
-                                serviceLevel: event.target.value,
-                              }))
-                            }
-                            placeholder="Ground"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Tracking number</Label>
-                        <Input
-                          ref={trackingNumberInputRef}
-                          value={shipmentForm.trackingNumber}
-                          onChange={(event) =>
-                            setShipmentForm((current) => ({
-                              ...current,
-                              trackingNumber: event.target.value,
-                            }))
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Tracking URL</Label>
-                        <Input
-                          value={shipmentForm.trackingUrl}
-                          onChange={(event) =>
-                            setShipmentForm((current) => ({
-                              ...current,
-                              trackingUrl: event.target.value,
-                            }))
-                          }
-                          placeholder="https://..."
-                        />
-                      </div>
-                      <Button
-                        type="submit"
-                        disabled={shipmentMutation.isPending || selectedOrder.items.length === 0}
-                      >
-                        <Save className="mr-2 h-4 w-4" />
-                        Mark shipped
-                      </Button>
+                          <Save className="mr-2 h-4 w-4" />
+                          Mark shipped
+                        </Button>
+                      </fieldset>
                     </form>
                   </div>
                 </div>

@@ -67,20 +67,43 @@ export async function sendEcommerceShipmentEmail(
   shipment: EcommerceShipment,
 ): Promise<boolean> {
   if (!order.customer?.email) return false;
-  const trackingMarkup = shipment.trackingUrl
-    ? `<p><a href="${shipment.trackingUrl}">Track your shipment</a></p>`
+  const shippedItems = (order.fulfillments ?? [])
+    .filter((fulfillment) => fulfillment.shipmentId === shipment.id)
+    .flatMap((fulfillment) => fulfillment.items ?? []);
+  const escape = (value: string) =>
+    value.replace(
+      /[&<>"']/g,
+      (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!,
+    );
+  let trackingUrl: string | null = null;
+  try {
+    const parsed = new URL(shipment.trackingUrl ?? "");
+    if (["https:", "http:"].includes(parsed.protocol)) trackingUrl = parsed.href;
+  } catch {
+    /* Legacy malformed tracking values remain plain text. */
+  }
+  const trackingMarkup = trackingUrl
+    ? `<p><a href="${escape(trackingUrl)}">Track your shipment</a></p>`
     : shipment.trackingNumber
-      ? `<p><strong>Tracking number:</strong> ${shipment.trackingNumber}</p>`
+      ? `<p><strong>Tracking number:</strong> ${escape(shipment.trackingNumber)}</p>`
       : "";
+  const itemMarkup = shippedItems.length
+    ? `<ul>${shippedItems.map((item) => `<li>${escape(order.items.find((line) => line.id === item.orderItemId)?.productName ?? "Item")} x ${item.quantity}</li>`).join("")}</ul>`
+    : "";
   const body = `
-    <p>Hi ${order.customer.name || "there"},</p>
-    <p>Your order has shipped.</p>
-    <p><strong>Carrier:</strong> ${shipment.carrier || "Carrier pending"}</p>
+    <p>Hi ${escape(order.customer.name || "there")},</p>
+    <p>${shippedItems.length ? "A shipment for your order is on its way." : "Your order has shipped."}</p>
+    ${itemMarkup}
+    <p><strong>Carrier:</strong> ${escape(shipment.carrier || "Carrier pending")}</p>
     ${trackingMarkup}
-    <p><a href="${orderUrl(order, order.customer.email)}">View order status</a></p>
+    <p><a href="${escape(orderUrl(order, order.customer.email))}">View order status</a></p>
   `;
   const html = await renderEmailShell("Shipping notification", body);
-  const ok = await sendEmail(order.customer.email, `Order shipped #${order.id.slice(0, 8)}`, html);
+  const ok = await sendEmail(
+    order.customer.email,
+    `${shippedItems.length ? "Shipment update" : "Order shipped"} #${order.id.slice(0, 8)}`,
+    html,
+  );
   if (!ok)
     logger.email.warn("Failed to send ecommerce shipment notification", {
       orderId: order.id,

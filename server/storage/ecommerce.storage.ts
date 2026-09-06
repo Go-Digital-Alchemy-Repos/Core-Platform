@@ -1,3 +1,11 @@
+import { z } from "zod";
+import { atomicEcommerceFulfillmentSchema } from "@shared/schema";
+import { inferCarrierTrackingUrl } from "../services/ecommerce-shipping-carrier.service";
+import {
+  assertOrderShippable,
+  assertRemainingFulfillmentQuantities,
+  fulfillmentError,
+} from "../services/ecommerce-fulfillment-validation";
 import { and, desc, eq, gte, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { createHash, randomUUID } from "node:crypto";
 import { db } from "../db";
@@ -93,7 +101,7 @@ export interface EcommerceOrderWithDetails extends EcommerceOrder {
   items: EcommerceOrderItem[];
   refunds: EcommerceRefund[];
   shipments: EcommerceShipment[];
-  fulfillments: EcommerceFulfillment[];
+  fulfillments: EcommerceFulfillmentWithItems[];
   internalNotes: EcommerceOrderNoteWithAuthor[];
 }
 
@@ -1110,7 +1118,7 @@ export class EcommerceStorage {
       db.select().from(ecommerceOrderItems).where(eq(ecommerceOrderItems.orderId, id)),
       db.select().from(ecommerceRefunds).where(eq(ecommerceRefunds.orderId, id)),
       db.select().from(ecommerceShipments).where(eq(ecommerceShipments.orderId, id)),
-      db.select().from(ecommerceFulfillments).where(eq(ecommerceFulfillments.orderId, id)),
+      this.getFulfillmentsForOrder(id),
       this.getOrderNotes(id),
     ]);
     return {
@@ -2079,6 +2087,11 @@ export class EcommerceStorage {
   ): Promise<EcommerceShipment> {
     return db.transaction(async (tx) => {
       await tx.execute(sql`SELECT id FROM ecommerce_orders WHERE id = ${data.orderId} FOR UPDATE`);
+      const [current] = await tx
+        .select()
+        .from(ecommerceOrders)
+        .where(eq(ecommerceOrders.id, data.orderId));
+      assertOrderShippable(current);
       const [order] = await tx
         .update(ecommerceOrders)
         .set({ status: "shipped", updatedAt: new Date() })
@@ -2172,7 +2185,17 @@ export class EcommerceStorage {
     items: Array<Omit<InsertEcommerceFulfillmentItem, "fulfillmentId">> = [],
   ): Promise<EcommerceFulfillmentWithItems> {
     return db.transaction(async (tx) => {
-      const [fulfillment] = await tx.insert(ecommerceFulfillments).values(data).returning();
+      await this.validateLockedFulfillment(
+        tx,
+        data.orderId,
+        items,
+        data.locationId,
+        data.shipmentId,
+      );
+      const [fulfillment] = await tx
+        .insert(ecommerceFulfillments)
+        .values({ ...data, requestKey: null, requestHash: null })
+        .returning();
       if (items.length) {
         await tx.insert(ecommerceFulfillmentItems).values(
           items.map((item) => ({
@@ -2189,6 +2212,183 @@ export class EcommerceStorage {
     });
   }
 
+  private async validateLockedFulfillment(
+    tx: EcommerceDbTransaction,
+    orderId: string,
+    items: Array<{ orderItemId: string; quantity: number }>,
+    locationId?: string | null,
+    shipmentId?: string | null,
+  ) {
+    const [order] = await tx
+      .select()
+      .from(ecommerceOrders)
+      .where(eq(ecommerceOrders.id, orderId))
+      .for("update");
+    assertOrderShippable(order);
+    const ordered = await tx
+      .select()
+      .from(ecommerceOrderItems)
+      .where(eq(ecommerceOrderItems.orderId, orderId));
+    const fulfilled = await tx
+      .select({
+        orderItemId: ecommerceFulfillmentItems.orderItemId,
+        quantity: ecommerceFulfillmentItems.quantity,
+        status: ecommerceFulfillments.status,
+      })
+      .from(ecommerceFulfillmentItems)
+      .innerJoin(
+        ecommerceFulfillments,
+        eq(ecommerceFulfillmentItems.fulfillmentId, ecommerceFulfillments.id),
+      )
+      .where(eq(ecommerceFulfillments.orderId, orderId));
+    const remaining = assertRemainingFulfillmentQuantities(items, ordered, fulfilled);
+    if (
+      locationId &&
+      !(
+        await tx
+          .select({ id: ecommerceFulfillmentLocations.id })
+          .from(ecommerceFulfillmentLocations)
+          .where(eq(ecommerceFulfillmentLocations.id, locationId))
+      ).length
+    )
+      throw fulfillmentError("Fulfillment location not found");
+    if (
+      shipmentId &&
+      !(
+        await tx
+          .select({ id: ecommerceShipments.id })
+          .from(ecommerceShipments)
+          .where(
+            and(eq(ecommerceShipments.id, shipmentId), eq(ecommerceShipments.orderId, orderId)),
+          )
+      ).length
+    )
+      throw fulfillmentError("Shipment does not belong to this order");
+    return remaining;
+  }
+
+  async shipAndFulfillOrder(
+    orderId: string,
+    requestKey: string,
+    input: unknown,
+    actorId: string | null,
+  ) {
+    z.string().uuid().parse(requestKey);
+    const parsed = atomicEcommerceFulfillmentSchema.parse(input);
+    const quantities = new Map<string, number>();
+    for (const item of parsed.items)
+      quantities.set(item.orderItemId, (quantities.get(item.orderItemId) ?? 0) + item.quantity);
+    const normalized = {
+      ...parsed,
+      carrier: parsed.carrier || null,
+      trackingNumber: parsed.trackingNumber || null,
+      serviceLevel: parsed.serviceLevel || null,
+      items: [...quantities]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([orderItemId, quantity]) => ({ orderItemId, quantity })),
+    };
+    const requestHash = createHash("sha256")
+      .update(JSON.stringify({ version: 1, ...normalized }))
+      .digest("hex");
+    return db.transaction(async (tx) => {
+      const [order] = await tx
+        .select()
+        .from(ecommerceOrders)
+        .where(eq(ecommerceOrders.id, orderId))
+        .for("update");
+      if (!order) throw fulfillmentError("Order not found", 404);
+      const [receipt] = await tx
+        .select()
+        .from(ecommerceFulfillments)
+        .where(
+          and(
+            eq(ecommerceFulfillments.orderId, orderId),
+            eq(ecommerceFulfillments.requestKey, requestKey),
+          ),
+        );
+      if (receipt) {
+        if (receipt.requestHash !== requestHash)
+          throw fulfillmentError(
+            "This shipping request key was already used for different details",
+            409,
+          );
+        const [shipment] = receipt.shipmentId
+          ? await tx
+              .select()
+              .from(ecommerceShipments)
+              .where(
+                and(
+                  eq(ecommerceShipments.id, receipt.shipmentId),
+                  eq(ecommerceShipments.orderId, orderId),
+                ),
+              )
+          : [];
+        if (!shipment) throw fulfillmentError("The original shipping result is unavailable", 409);
+        const items = await tx
+          .select()
+          .from(ecommerceFulfillmentItems)
+          .where(eq(ecommerceFulfillmentItems.fulfillmentId, receipt.id));
+        return { shipment, fulfillment: { ...receipt, items }, replayed: true };
+      }
+      const remaining = await this.validateLockedFulfillment(
+        tx,
+        orderId,
+        normalized.items,
+        normalized.locationId,
+      );
+      const trackingUrl = inferCarrierTrackingUrl(normalized);
+      const [shipment] = await tx
+        .insert(ecommerceShipments)
+        .values({
+          orderId,
+          carrier: normalized.carrier,
+          trackingNumber: normalized.trackingNumber,
+          trackingUrl,
+          status: "shipped",
+          shippedBy: actorId,
+        })
+        .returning();
+      const [fulfillment] = await tx
+        .insert(ecommerceFulfillments)
+        .values({
+          orderId,
+          shipmentId: shipment.id,
+          locationId: normalized.locationId,
+          carrier: normalized.carrier,
+          trackingNumber: normalized.trackingNumber,
+          trackingUrl,
+          serviceLevel: normalized.serviceLevel,
+          method: "manual",
+          status: "fulfilled",
+          fulfilledAt: new Date(),
+          requestKey,
+          requestHash,
+        })
+        .returning();
+      const items = await tx
+        .insert(ecommerceFulfillmentItems)
+        .values(normalized.items.map((item) => ({ ...item, fulfillmentId: fulfillment.id })))
+        .returning();
+      // A partially fulfilled order remains paid; mark shipped only when no units remain.
+      if ([...remaining.values()].every((quantity) => quantity === 0))
+        await tx
+          .update(ecommerceOrders)
+          .set({ status: "shipped", updatedAt: new Date() })
+          .where(eq(ecommerceOrders.id, orderId));
+      await tx
+        .insert(ecommerceNotificationJobs)
+        .values({
+          type: "shipment_confirmation",
+          status: "queued",
+          orderId,
+          shipmentId: shipment.id,
+          deduplicationKey: `shipment_confirmation:${shipment.id}`,
+        })
+        .onConflictDoNothing({ target: ecommerceNotificationJobs.deduplicationKey });
+      return { shipment, fulfillment: { ...fulfillment, items }, replayed: false };
+    });
+  }
+
   async getFulfillmentsForOrder(orderId: string): Promise<EcommerceFulfillmentWithItems[]> {
     const fulfillments = await db
       .select()
@@ -2196,15 +2396,21 @@ export class EcommerceStorage {
       .where(eq(ecommerceFulfillments.orderId, orderId))
       .orderBy(desc(ecommerceFulfillments.createdAt));
 
-    return Promise.all(
-      fulfillments.map(async (fulfillment) => ({
-        ...fulfillment,
-        items: await db
+    const items = fulfillments.length
+      ? await db
           .select()
           .from(ecommerceFulfillmentItems)
-          .where(eq(ecommerceFulfillmentItems.fulfillmentId, fulfillment.id)),
-      })),
-    );
+          .where(
+            inArray(
+              ecommerceFulfillmentItems.fulfillmentId,
+              fulfillments.map((item) => item.id),
+            ),
+          )
+      : [];
+    return fulfillments.map((fulfillment) => ({
+      ...fulfillment,
+      items: items.filter((item) => item.fulfillmentId === fulfillment.id),
+    }));
   }
 
   async claimWebhookProcessing(

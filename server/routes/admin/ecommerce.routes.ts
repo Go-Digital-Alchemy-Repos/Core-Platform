@@ -877,6 +877,19 @@ router.put(
 );
 
 router.post(
+  "/orders/:orderId/ship-and-fulfill",
+  asyncHandler(async (req, res) => {
+    const result = await storage.ecommerce.shipAndFulfillOrder(
+      paramString(req.params.orderId),
+      req.get("Idempotency-Key") ?? "",
+      req.body,
+      req.user?.id ?? null,
+    );
+    res.status(result.replayed ? 200 : 201).json(result);
+  }),
+);
+
+router.post(
   "/orders/:orderId/shipments",
   asyncHandler(async (req, res) => {
     const orderId = paramString(req.params.orderId);
