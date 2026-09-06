@@ -27,6 +27,19 @@ async function buildAll() {
     logLevel: "info",
   });
 
+  console.log("building recovery maintenance server...");
+  await esbuild({
+    entryPoints: ["server/rollback-maintenance.ts"],
+    platform: "node",
+    bundle: true,
+    format: "cjs",
+    outfile: "dist/rollback-maintenance.cjs",
+    define: { "process.env.NODE_ENV": '\"production\"' },
+    minify: true,
+    packages: "bundle",
+    logLevel: "info",
+  });
+
   console.log("copying migrations...");
   await cp("migrations", "dist/migrations", { recursive: true });
 

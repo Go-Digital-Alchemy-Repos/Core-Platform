@@ -1,9 +1,10 @@
 # Namespace-compatible rollback candidate
 
-This candidate starts from deployed Core revision `a006f36` and ports only the current
-integration R2 service and its shared client-storage-prefix helper. It preserves the
+This candidate starts from deployed Core revision `a006f36` and ports the current
+integration R2 service and its shared client-storage-prefix helper. A separate recovery
+maintenance entrypoint is now included; the normal application entrypoint remains unchanged. It preserves the
 baseline upload mutation freeze guard. No migrations, business services, queue handlers,
-provider behavior, dependency versions or deployment configuration are changed.
+provider business behavior, dependency versions or default deployment configuration are changed.
 
 The purpose is narrow: the older application can resolve the same namespaced media as
 the integration candidate while upload mutations remain frozen. It is not a declaration
@@ -62,3 +63,38 @@ manifest or lockfile changed. Validation passed: all 403 tests across 82 files, 
 repository ESLint, focused formatting, production build and bundle budgets. The focused
 namespace/helper/freeze selection passed 23 tests. The generated artifact has not been
 started against production or deployed; build success is not live rollback acceptance.
+
+## Separate recovery maintenance entrypoint
+
+For a bounded recovery interval, `node dist/rollback-maintenance.cjs` serves only GET/HEAD
+`/health`, `/ready`, and `/r2/<logical-key>`. Every other request returns503 and Retry-After60,
+including business APIs, admin pages, contact submissions and Stripe webhooks. Rejected webhook
+requests are not acknowledged as processed; eventual provider retries/reconciliation remain
+an operator obligation. This entrypoint intentionally does not provide a functioning storefront
+or dashboard. Health/readiness responses explicitly identify `rollback-maintenance` mode.
+
+The entrypoint imports no normal application bootstrap, migrations, sessions, business routes
+or worker startup. It requires UPLOAD_MUTATIONS_FROZEN=true, explicit CLIENT_STACK_ID,
+DATABASE_URL and SESSION_SECRET. Database URL options are rejected; connections receive
+read-only transactions and statement/connect deadlines. External databases require explicit
+verified TLS; the known private Railway database may retain its explicit private-network policy.
+Readiness verifies PostgreSQL actually reports a read-only transaction. Media uses the exact
+namespaced R2 reader; no source fallback or writes are provided. Failures return generic messages.
+SIGTERM stops admission, closes idle HTTP connections and closes the database pool, with a
+30-second hard deadline. Existing R2 reads may still need the shutdown deadline.
+
+This is a separate command, not the default npm start. If selected for an approved recovery,
+record the previous start command, deploy this exact artifact with the frozen namespace settings,
+replace/drain the previous application and its workers, verify the new process command and
+maintenance response, and then verify exact live media reads. Do not claim that merely changing
+an environment flag switches the normal application into this mode. Preserve queues; return to
+the reviewed current application and reconcile provider retries and pending jobs before reopening
+business traffic. No database restoration or source-object deletion is part of this procedure.
+
+Local verification: all405 baseline tests passed; types, scoped lint and build passed. The
+compiled entrypoint ran against an empty disposable PostgreSQL16 instance: read-only readiness
+passed, business requests were503, no bootstrap tables were created, and SIGTERM exited0.
+The fixture/volume were removed. The HTTP tests also cover media reads and error sanitization.
+Run `python3 -O script/verify-rollback-maintenance.py` after building to reproduce the compiled
+check. Aggregate evidence is in `docs/rollback-maintenance-runtime-evidence.json`.
+No production deployment or live-media acceptance has occurred.

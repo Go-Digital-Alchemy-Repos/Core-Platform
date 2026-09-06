@@ -1,0 +1,9 @@
+{
+  "artifact_sha256": "079417c7478f1cd6d18972b5e01029c4353ca2b80d4d0e7d2730a57a58aacc76",
+  "status": "passed",
+  "read_only_database_readiness": true,
+  "business_requests_rejected": true,
+  "no_bootstrap_tables": true,
+  "shutdown_exit": 0,
+  "fixture_removed": true
+}
