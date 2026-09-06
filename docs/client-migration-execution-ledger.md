@@ -5,6 +5,22 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Current-production baseline reconciliation and upgrade rehearsal
+
+Main's post-merge Verify `34002181523` passed. The deployed `a006f36` hotfix was merged into
+the candidate as `9d18400`; the merge introduced no further content diff because the reviewed
+guard was already integrated. CI and the populated-upgrade runner now explicitly pin actual
+production `a006f36a3c4f37566c71b278d561844b45fb3b81` instead of the previous main baseline.
+
+Root ran the updated populated rehearsal under Python optimization. Two candidate migration
+runs preserved eleven synthetic records across ten tables, did not replay historical jobs,
+and verified new constraints. The deliberate duplicate paid-history database rejected the
+unique index while preserving both rows. Cleanup succeeded. Aggregate evidence is recorded in
+[current-baseline upgrade](release-evidence/core-populated-upgrade-2026-09-06.json). This is
+synthetic upgrade evidence; the separately recorded real-backup restore proves a different gate.
+The read-only source-bound upload dry-run command and exact-origin image-policy changes are
+assigned as independent bounded work; neither is accepted until root review and verification.
+
 ### Default-off upload guard release — 2026-09-06 UTC
 
 Orchestrator accepted the isolated hotfix at exact reviewed head `2f6f0224f3de34af13e21e22f82314772dc5ac26`:

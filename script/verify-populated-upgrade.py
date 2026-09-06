@@ -104,7 +104,7 @@ def main(output, baseline):
     return 0 if report['status']=='passed' else 1
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=pathlib.Path,required=True);parser.add_argument('--baseline',default='f09e9d4199ffca634c0bc1df5c4e48d3c63bb762')
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=pathlib.Path,required=True);parser.add_argument('--baseline',default='a006f36a3c4f37566c71b278d561844b45fb3b81')
     args=parser.parse_args()
     def interrupted(number,_frame): raise RuntimeError(f'Upgrade rehearsal interrupted by signal {number}')
     signal.signal(signal.SIGTERM,interrupted);signal.signal(signal.SIGINT,interrupted)

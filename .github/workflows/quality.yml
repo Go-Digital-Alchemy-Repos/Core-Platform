@@ -56,8 +56,8 @@ jobs:
       - name: Rehearse populated production-baseline upgrade
         timeout-minutes: 8
         run: |
-          git fetch --no-tags --depth=1 origin f09e9d4199ffca634c0bc1df5c4e48d3c63bb762
-          python3 script/verify-populated-upgrade.py --baseline f09e9d4199ffca634c0bc1df5c4e48d3c63bb762 --output test-results/populated-upgrade.json
+          git fetch --no-tags --depth=1 origin a006f36a3c4f37566c71b278d561844b45fb3b81
+          python3 script/verify-populated-upgrade.py --baseline a006f36a3c4f37566c71b278d561844b45fb3b81 --output test-results/populated-upgrade.json
 
       - name: Lint
         run: npm run lint
