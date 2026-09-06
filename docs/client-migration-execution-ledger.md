@@ -2074,3 +2074,36 @@ and budgets remain green.
   blockers in these bounded slices. Record editors, explicit form mapping and
   pinned durable intake snapshots are in progress. Whole-journey browser and
   populated backup/restore acceptance remain required before CRM release.
+
+
+### 2026-09-06 — Ecommerce completion review after settings repair
+
+The ecommerce goal remains active after all five settings destinations were
+verified live. The former UX backlog is substantially present in code: order
+drawer sections, tracking/history, customer shipment/address/invoice views,
+country-aware checkout and saved addresses, and CMS media/rich-text controls.
+Do not rebuild those capabilities without a verified gap.
+
+Accepted findings and next slices:
+
+- Fulfillment quantity checks run before the storage transaction; concurrent
+  requests can both pass and exceed ordered quantities. Root confirmed the
+  service precheck and unlocked createFulfillment transaction. Move invariant
+  enforcement under an order lock and verify with concurrent PostgreSQL tests.
+- The admin shipping action separately creates shipment and fulfillment. The
+  first call commits shipped status and a notification before the second can
+  fail; retry can create another shipment. Design one atomic, idempotent
+  operation, including remaining-quantity handling and durable notification.
+  Shared endpoint design is under Orchestrator review before implementation.
+- Checkout settings load/error states are ignored, exposing fallback account
+  and market options while the form can proceed. Implement retryable failure
+  and gate dependent checkout until authoritative settings load.
+- Customer account queries/save errors lack recovery feedback, and background
+  refetch can reset unsaved drafts. Implement error feedback and safe hydration.
+
+Frontend recovery is assigned in isolated codex/ecommerce-customer-recovery;
+CRM codex/crm-custom-fields remains untouched while immutable-head local checks
+run at 8126c8d. Migration rename0062 is accepted at0d484d6, with explicit
+working-tree evidence provenance at4b67fe0. Local release gate runbook8126c8d
+is accepted. Production remains on the verified maintenance release; provider
+transactions stay disabled and branch-protection replacement remains pending.
