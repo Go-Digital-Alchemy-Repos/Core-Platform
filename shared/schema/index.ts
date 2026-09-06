@@ -311,6 +311,7 @@ export {
   insertCmsFormSchema,
   insertCmsFormSubmissionSchema,
   type CmsForm,
+  type PublicCmsForm,
   type CmsFormField,
   type CmsFormFieldConfig,
   type CmsFormFieldOption,

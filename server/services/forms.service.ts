@@ -1,7 +1,27 @@
-import type { CmsForm, CmsFormField, CmsFormEffectPayload } from "@shared/schema";
+import type { CrmMappingError } from "@shared/crm-form-mapping-resolver";
+import { resolveCrmFormMapping } from "@shared/crm-form-mapping-resolver";
+import { crmMappedFormIntakeSchema } from "@shared/crm-form-intake";
+import { CrmCustomFieldsStorage } from "../storage/crm-custom-fields.storage";
+import { isSiteFeatureEnabled } from "./site-features.service";
+import { stringValue, objectValue, validateSubmissionData } from "@shared/managed-form-validation";
+import type { CmsForm, PublicCmsForm, CmsFormEffectPayload } from "@shared/schema";
 import { storage } from "../storage";
 import { syncContactToMailchimp } from "./mailchimp.service";
 import { AppError } from "../middleware/error-handler";
+
+export class MappedFormSubmissionError extends AppError {
+  readonly errors: Array<{
+    sourceFieldId: string | null;
+    code: "invalid_value" | "required_value";
+  }>;
+  constructor(errors: CrmMappingError[]) {
+    super("Please check the mapped form fields and try again", 400);
+    this.errors = errors.map((error) => ({
+      sourceFieldId: error.sourceFieldId,
+      code: error.code === "required_value" ? "required_value" : "invalid_value",
+    }));
+  }
+}
 
 function normalizeFormSettings(form: CmsForm) {
   const settings = (
@@ -22,221 +42,6 @@ function normalizeFormSettings(form: CmsForm) {
     storeAsContactMessage: Boolean(settings.storeAsContactMessage),
     createCrmLead: Boolean(settings.createCrmLead),
   };
-}
-
-function stringValue(value: unknown) {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function booleanValue(value: unknown) {
-  return value === true || value === "true" || value === "on" || value === 1;
-}
-
-function stringArrayValue(value: unknown) {
-  if (Array.isArray(value)) {
-    return value.map((item) => stringValue(item)).filter(Boolean);
-  }
-
-  const single = stringValue(value);
-  return single ? [single] : [];
-}
-
-function objectValue(value: unknown) {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
-function normalizeUrl(value: string) {
-  if (!value) return value;
-  if (/^https?:\/\//i.test(value)) return value;
-  return `https://${value}`;
-}
-
-function validateField(field: CmsFormField, raw: unknown) {
-  const config = (typeof field.config === "object" && field.config ? field.config : {}) as Record<
-    string,
-    unknown
-  >;
-  const selectionMode = config.selectionMode === "multiple" ? "multiple" : "single";
-
-  if (field.type === "html" || field.type === "section" || field.type === "page") {
-    return { value: null };
-  }
-
-  if (field.type === "hidden") {
-    const value =
-      stringValue(raw) || (typeof config.defaultValue === "string" ? config.defaultValue : "");
-    if (field.required && !value) {
-      return { error: `${field.label} is required` };
-    }
-    return { value };
-  }
-
-  if (field.type === "consent") {
-    const checked = booleanValue(raw);
-    if (field.required && !checked) {
-      return { error: `${field.label} is required` };
-    }
-    return { value: checked };
-  }
-
-  if (
-    field.type === "checkbox" ||
-    field.type === "multiselect" ||
-    (field.type === "image-choice" && selectionMode === "multiple")
-  ) {
-    const values = stringArrayValue(raw);
-    if (field.required && values.length === 0) {
-      return { error: `${field.label} is required` };
-    }
-    if (Array.isArray(field.options) && field.options.length > 0) {
-      const validValues = new Set(field.options.map((option) => option.value));
-      const hasInvalid = values.some((value) => !validValues.has(value));
-      if (hasInvalid) {
-        return { error: `${field.label} has an invalid value` };
-      }
-    }
-    return { value: values };
-  }
-
-  if (field.type === "select" || field.type === "radio" || field.type === "image-choice") {
-    const value = stringValue(raw);
-    if (field.required && !value) {
-      return { error: `${field.label} is required` };
-    }
-    if (!value) return { value: "" };
-    if (Array.isArray(field.options) && field.options.length > 0) {
-      const validValues = new Set(field.options.map((option) => option.value));
-      if (!validValues.has(value)) {
-        return { error: `${field.label} has an invalid value` };
-      }
-    }
-    return { value };
-  }
-
-  if (field.type === "name") {
-    if (config.nameFormat === "split") {
-      const value = objectValue(raw);
-      const firstName = stringValue(value.firstName);
-      const lastName = stringValue(value.lastName);
-      if (field.required && !firstName && !lastName) {
-        return { error: `${field.label} is required` };
-      }
-      return { value: { firstName, lastName } };
-    }
-
-    const fullName = stringValue(
-      typeof raw === "object" && raw !== null ? objectValue(raw).fullName : raw,
-    );
-    if (field.required && !fullName) {
-      return { error: `${field.label} is required` };
-    }
-    return { value: { fullName } };
-  }
-
-  if (field.type === "address") {
-    const value = objectValue(raw);
-    const normalized = {
-      street: stringValue(value.street),
-      street2: stringValue(value.street2),
-      city: stringValue(value.city),
-      state: stringValue(value.state),
-      postalCode: stringValue(value.postalCode),
-      country: stringValue(value.country),
-    };
-
-    if (
-      field.required &&
-      !normalized.street &&
-      !normalized.city &&
-      !normalized.state &&
-      !normalized.postalCode &&
-      !normalized.country
-    ) {
-      return { error: `${field.label} is required` };
-    }
-
-    return { value: normalized };
-  }
-
-  if (field.type === "list") {
-    const rows = Array.isArray(raw)
-      ? raw
-          .map((row) => {
-            const record = objectValue(row);
-            return Object.fromEntries(
-              Object.entries(record).map(([key, value]) => [key, stringValue(value)]),
-            );
-          })
-          .filter((row) => Object.values(row).some(Boolean))
-      : [];
-
-    if (field.required && rows.length === 0) {
-      return { error: `${field.label} is required` };
-    }
-
-    return { value: rows };
-  }
-
-  if (field.type === "number") {
-    const value = stringValue(raw);
-    if (field.required && !value) {
-      return { error: `${field.label} is required` };
-    }
-    if (!value) return { value: "" };
-    if (Number.isNaN(Number(value))) {
-      return { error: `${field.label} must be a valid number` };
-    }
-    return { value: Number(value) };
-  }
-
-  let value = stringValue(raw);
-
-  if (field.required && !value) {
-    return { error: `${field.label} is required` };
-  }
-
-  if (!value) {
-    return { value: "" };
-  }
-
-  if (field.type === "email") {
-    const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-    if (!isValid) {
-      return { error: `${field.label} must be a valid email address` };
-    }
-  }
-
-  if (field.type === "website") {
-    try {
-      value = normalizeUrl(value);
-      new URL(value);
-    } catch {
-      return { error: `${field.label} must be a valid URL` };
-    }
-  }
-
-  return { value };
-}
-
-function validateSubmissionData(form: CmsForm, data: unknown) {
-  if (typeof data !== "object" || data === null || Array.isArray(data)) {
-    throw new AppError("Form submission must be an object", 400);
-  }
-
-  const input = data as Record<string, unknown>;
-  const validated: Record<string, unknown> = {};
-
-  for (const field of Array.isArray(form.fields) ? form.fields : []) {
-    const result = validateField(field, input[field.key]);
-    if (result.error) {
-      throw new AppError(result.error, 400);
-    }
-    validated[field.key] = result.value ?? "";
-  }
-
-  return validated;
 }
 
 function extractNameParts(data: Record<string, unknown>) {
@@ -385,28 +190,72 @@ async function buildFormEffects(form: CmsForm, data: Record<string, unknown>, ba
   return effects;
 }
 
-async function submitManagedForm(form: CmsForm, data: unknown, options: SubmissionOptions) {
-  const validated = validateSubmissionData(form, data);
+async function submitManagedForm(form: PublicCmsForm, data: unknown, options: SubmissionOptions) {
   const idempotencyKey = options.idempotencyKey?.trim();
-  if (idempotencyKey && idempotencyKey.length > 128) {
+  if (idempotencyKey && idempotencyKey.length > 128)
     throw new AppError("Idempotency key must be 128 characters or fewer", 400);
-  }
-  const effects = await buildFormEffects(form, validated, options.baseUrl);
-  const result = await storage.forms.createSubmissionWithEffects(
-    {
-      formId: form.id,
-      data: validated,
-      source: options.source ?? null,
-      idempotencyKey: idempotencyKey || null,
-    },
-    effects,
-  );
-  return {
-    form,
-    submission: result.submission,
-    duplicate: !result.created,
-    successMessage: normalizeFormSettings(form).successMessage,
-  };
+  return storage.forms.withSubmissionForm(form.id, async (current, tx) => {
+    const validated = validateSubmissionData(current, data);
+    const existing = idempotencyKey
+      ? await storage.forms.findSubmissionByKey(current.id, idempotencyKey, tx)
+      : undefined;
+    if (existing)
+      return {
+        form,
+        submission: existing,
+        duplicate: true,
+        successMessage: normalizeFormSettings(current).successMessage,
+      };
+    const effects = await buildFormEffects(current, validated, options.baseUrl);
+    if (current.crmMapping !== null) {
+      if (!(await isSiteFeatureEnabled("crmEnabled")))
+        throw new AppError("Form is temporarily unavailable", 503);
+      const mapped = resolveCrmFormMapping({
+        mapping: current.crmMapping,
+        mappingRevision: current.crmMappingRevision,
+        createCrmLead: current.settings.createCrmLead === true,
+        fields: current.fields,
+        definitions: await new CrmCustomFieldsStorage().listDefinitions(tx),
+        validatedData: validated,
+      });
+      if (!mapped.ok) {
+        if (mapped.kind === "configuration_unavailable")
+          throw new AppError("Form is temporarily unavailable", 503);
+        throw new MappedFormSubmissionError(mapped.errors);
+      }
+      if (mapped.mode !== "explicit") throw new AppError("Form is temporarily unavailable", 503);
+      const payload = crmMappedFormIntakeSchema.safeParse({
+        kind: "crm_intake",
+        version: 1,
+        formId: current.id,
+        formName: current.name,
+        mappingRevision: mapped.mappingRevision,
+        normalizedBuiltins: mapped.normalizedBuiltins,
+        customValues: mapped.customValues,
+      });
+      if (!payload.success)
+        throw new MappedFormSubmissionError([{ sourceFieldId: null, code: "invalid_value" }]);
+      const index = effects.findIndex((effect) => effect.kind === "crm_intake");
+      if (index < 0) throw new AppError("Form is temporarily unavailable", 503);
+      effects[index] = payload.data;
+    }
+    const result = await storage.forms.createSubmissionWithEffects(
+      {
+        formId: current.id,
+        data: validated,
+        source: options.source ?? null,
+        idempotencyKey: idempotencyKey || null,
+      },
+      effects,
+      tx,
+    );
+    return {
+      form,
+      submission: result.submission,
+      duplicate: !result.created,
+      successMessage: normalizeFormSettings(current).successMessage,
+    };
+  });
 }
 
 export async function submitManagedFormBySlug(

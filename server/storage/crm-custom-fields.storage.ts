@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, or, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { db } from "../db";
@@ -18,6 +18,7 @@ import {
   crmCustomFieldKeySchema,
   crmCustomFieldScopeSchema,
   crmCustomFieldTypeSchema,
+  crmCustomFieldValuesPatchSchema,
   normalizeCrmCustomFieldValues,
   normalizeCrmCustomFieldValue,
   type CrmCustomFieldDefinition,
@@ -229,6 +230,75 @@ export class CrmCustomFieldsStorage {
         .where(eq(entity.id, entityId));
       return { revision, values: parsed.values };
     });
+  }
+  async writeAcceptedInboundValues(leadId: string, input: unknown, tx: CrmCustomFieldsTransaction) {
+    await lockCrmCustomFieldDefinitions(tx);
+    const [lead] = await tx
+      .select({ revision: crmLeads.customValuesRevision })
+      .from(crmLeads)
+      .where(eq(crmLeads.id, leadId))
+      .for("update");
+    if (!lead) throw notFound();
+    const parsed = crmCustomFieldValuesPatchSchema.parse({
+      expectedRevision: lead.revision,
+      values: input,
+    });
+    if (!parsed.values.length) return;
+    const accepted = await tx
+      .select({ definition: definitions, accepted: revisions })
+      .from(definitions)
+      .innerJoin(revisions, eq(revisions.definitionId, definitions.id))
+      .where(
+        or(
+          ...parsed.values.map((value) =>
+            and(
+              eq(revisions.definitionId, value.definitionId),
+              eq(revisions.revision, value.definitionRevision),
+            ),
+          ),
+        ),
+      );
+    let changed = false;
+    for (const entry of parsed.values) {
+      const row = accepted.find(
+        (row) =>
+          row.definition.id === entry.definitionId &&
+          row.accepted.revision === entry.definitionRevision,
+      );
+      if (!row || row.definition.entityScope === "client")
+        throw new Error("crm_custom_field_revision_missing");
+      const definition = {
+        ...row.definition,
+        archivedAt: row.definition.archivedAt?.toISOString() ?? null,
+        revision: row.accepted.revision,
+        config: row.accepted.config,
+      };
+      const { createdAt: _created, updatedAt: _updated, ...valueDefinition } = definition;
+      const value = normalizeCrmCustomFieldValue(valueDefinition, entry.value, "accepted_revision");
+      if (value === null) continue;
+      await tx
+        .insert(leadValues)
+        .values({
+          leadId,
+          definitionId: entry.definitionId,
+          definitionRevision: entry.definitionRevision,
+          value: sql`${JSON.stringify(value)}::jsonb`,
+        })
+        .onConflictDoUpdate({
+          target: [leadValues.leadId, leadValues.definitionId],
+          set: {
+            definitionRevision: entry.definitionRevision,
+            value: sql`${JSON.stringify(value)}::jsonb`,
+            updatedAt: new Date(),
+          },
+        });
+      changed = true;
+    }
+    if (changed)
+      await tx
+        .update(crmLeads)
+        .set({ customValuesRevision: lead.revision + 1, updatedAt: new Date() })
+        .where(eq(crmLeads.id, leadId));
   }
   /** Caller owns the conversion transaction and has not exposed the newly inserted client. */
   async copyLeadValuesToNewClient(

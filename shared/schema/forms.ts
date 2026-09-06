@@ -1,3 +1,4 @@
+import type { CrmMappedFormIntake } from "../crm-form-intake";
 import type { CrmFormMappingV1 } from "../crm-form-mapping";
 import { sql } from "drizzle-orm";
 import {
@@ -197,10 +198,12 @@ export const insertCmsFormSubmissionSchema = z.object({
 
 export type InsertCmsForm = z.infer<typeof insertCmsFormSchema>;
 export type CmsForm = typeof cmsForms.$inferSelect;
+export type PublicCmsForm = Omit<CmsForm, "crmMapping" | "crmMappingRevision">;
 export type InsertCmsFormSubmission = z.infer<typeof insertCmsFormSubmissionSchema>;
 export type CmsFormSubmission = typeof cmsFormSubmissions.$inferSelect;
 
 export type CmsFormEffectPayload =
+  | CrmMappedFormIntake
   | { kind: "crm_intake"; formName: string }
   | { kind: "contact_message" }
   | { kind: "mailchimp_sync"; email: string; firstName: string; lastName: string; tag: string }
