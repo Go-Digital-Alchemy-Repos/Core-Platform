@@ -16,6 +16,19 @@ start-command overrides were null. This inventory does not yet prove replica cou
 the actual process command, termination of future replaced writers, or absence of
 writers outside this Railway project. No production configuration changed.
 
+Follow-up deployment metadata and read-only SSH inspection confirmed the running
+commit is `a006f36a3c4f37566c71b278d561844b45fb3b81`. Its adopted manifest has one
+replica in `us-east4-eqdc4a`, zero volume mounts, `npm start`, readiness at
+`/api/health/ready`, and no configured drainingSeconds. Actual process inspection
+showed PID 1 `npm start` and a child Node process running `dist/index.cjs`.
+The inspected replica was `76dd0019-32c0-4bc3-9c8b-9b3cffdd5633`; upload freeze was
+false. The two preceding deployments were REMOVED. This confirms the current
+single-replica topology and absence of a persistent application volume; it does
+not prove termination of writers created during the future freeze transition.
+The new transaction activation flag was not true in the environment, but the old
+binary does not implement the candidate's flag guard, so this is not evidence of
+provider transaction admission being disabled in the running application.
+
 Authenticated Cloudflare inspection resolved the completed-object lifecycle
 question as recorded in `legacy-upload-durable-ledger.md`. The application token
 was not expanded. A separately authorized audit-only persistence probe is being
