@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "fixture": "core-recovery-b91349b934d3",
+  "backupSha256": "026352c8c60640ad762a4ae70ca0b01dbd8d48e8f1cb4caa521e858abc53ba2d",
+  "compressedBytes": 174926,
+  "candidate": "1e86467a36ecf6eb5c08affe33546226143d4e99",
+  "restoreSourceSha256": "b4f3ce3db5fe0e157823f07cac996e2aae6f720b38e96375d8aa8e545ff475fc",
+  "migrationFilesSha256": "2566d5a2ab5356af1dd5d41e7ba6a79a7f1c7330c4179dd4c62c148b2b055bec",
+  "migrationRunnerSha256": "8f2683f89d591ed249c76cf5753a9668159f5f188f875d5f6ae21139d9cb7295",
+  "tableCount": 94,
+  "rowCount": 404,
+  "restoredRowsVerified": true,
+  "postRestoreMigrationsVerified": true,
+  "legacyIdentityAcknowledged": true,
+  "fixtureRemoved": true,
+  "productionWrites": false,
+  "backupCreatedAt": "2026-09-06T02:47:54.454Z",
+  "sourceDeploymentId": "0ed9d052-b870-4c72-9e2d-cdc42bac2680",
+  "sourceCommit": "67e1c7ac431db2dab6064c943375009ff5979f1c",
+  "strictRuntimeDecryptionVerified": true
+}

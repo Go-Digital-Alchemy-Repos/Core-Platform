@@ -64,3 +64,29 @@ ledger together with the recorded lifecycle inspection. It does not claim a
 deployment-removal simulation or protection against administrative deletion.
 The later media apply requires its own fresh approval, writer barrier and ledger
 attempt; this probe approval cannot authorize it.
+
+## Production change and refreshed recovery
+
+Production changed to `67e1c7ac431db2dab6064c943375009ff5979f1c` in deployment
+`0ed9d052-b870-4c72-9e2d-cdc42bac2680`, merging PR12's MapLibre/directory fixes.
+The previous deployment was REMOVED. Root merged this current main into the
+maintenance branch at `1e86467a36ecf6eb5c08affe33546226143d4e99`, resolving the
+documentation and lockfile conflicts while preserving both sets of changes.
+Type checking and five map/directory tests passed; hosted runs 34008271905 and
+34008274238 remain pending at this checkpoint. The prior source-bound media plan
+must be regenerated; no stale plan may authorize copying.
+
+Read-only retrieval under the new source binding retained the latest exact backup
+with SHA256 `026352c8c60640ad762a4ae70ca0b01dbd8d48e8f1cb4caa521e858abc53ba2d`.
+Strict runtime decryption passed without exporting the session secret. Root's
+fresh restore rehearsal against candidate `1e86467` preserved 94 tables/404 rows,
+passed post-restore migrations and removed its owned fixture. See
+`release-evidence/core-recovery-latest-2026-09-06.json`. The backup is retained
+mode0600 in the operator-controlled recovery-backups directory outside Railway.
+This replaces the older 391-row snapshot as current recovery evidence.
+
+Recovery branch `a9d21d207320a8462e0adad4fa83c8bf86c76eb6` passed hosted run
+34008130360 after selecting the read-only entrypoint and 45-second drain in its
+Railway configuration. Its compiled artifact hash remains unchanged. Actual
+runtime adoption, writer barrier and live namespaced media verification remain
+the ordered operational work after the refreshed candidate passes its gates.
