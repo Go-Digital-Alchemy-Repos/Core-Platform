@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Offline V1 local release receipt consistency verifier. No publishing or credential handling."""
+"""Offline V2 local release receipt consistency verifier. No publishing or credential handling."""
 import argparse
 import hashlib
 import json
@@ -9,7 +9,7 @@ import re
 import stat
 import subprocess
 
-VERSION = 1
+VERSION = 2
 CORE_GATES = frozenset({
     'locked-dependencies', 'types', 'lint', 'format', 'ordinary-tests',
     'deployment-config-source', 'deployment-config-compiled',
@@ -20,7 +20,11 @@ CORE_GATES = frozenset({
 })
 CRM_GATES = frozenset({'crm-persistence', 'crm-mapping', 'crm-profile-migration',
                        'crm-populated-upgrade', 'crm-capture-restore'})
-DB_GATES = frozenset({'backup-form-reservation-ny', 'backup-form-reservation-utc',
+MIGRATION_GATES = {
+    'migrations/0061_standalone_locations.sql': 'standalone-migration',
+    'migrations/0063_atomic_ecommerce_fulfillment.sql': 'atomic-fulfillment',
+}
+DB_GATES = frozenset(MIGRATION_GATES.values()) | frozenset({'backup-form-reservation-ny', 'backup-form-reservation-utc',
                      'atomic-settings', 'crm-persistence', 'crm-mapping', 'crm-profile-migration'})
 FIXTURE_GATES = DB_GATES | frozenset({'fresh-migrations-twice', 'historical-populated-upgrade',
     'production-runtime', 'application-browser', 'better-farms-pilot', 'crm-populated-upgrade', 'crm-capture-restore'})
@@ -106,13 +110,21 @@ def checkout_identity(checkout, expected):
     require(not git(checkout, 'status', '--porcelain=v1', '--untracked-files=all'), 'dirty-checkout')
     git(checkout, 'merge-base', '--is-ancestor', expected['base'], expected['candidate'])
     tracked = git(checkout, 'ls-tree', '-r', '--name-only', expected['candidate']).splitlines()
-    return 'crm' if 'shared/schema/crm-custom-fields.ts' in tracked else 'core'
+    return checkout_policy(tracked)
+
+def checkout_policy(tracked):
+    # Source presence creates obligations; receipt profile/gate declarations cannot remove them.
+    tracked = frozenset(tracked)
+    profile = 'crm' if {'shared/schema/crm-custom-fields.ts', 'migrations/0062_crm_custom_fields.sql'} & tracked else 'core'
+    migration_gates = frozenset(gate for path, gate in MIGRATION_GATES.items() if path in tracked)
+    return (profile, migration_gates)
 
 def review_digest(manifest):
     body = {key: value for key, value in manifest.items() if key != 'review'}
     return hashlib.sha256(json.dumps(body, sort_keys=True, separators=(',', ':'), ensure_ascii=True).encode()).hexdigest()
 
-def verify(manifest, root, expected, detected_profile):
+def verify(manifest, root, expected, detected_policy):
+    detected_profile, migration_gates = detected_policy
     keys(manifest, {'version', 'profile', 'candidate', 'tree', 'base', 'operator', 'observations', 'gates', 'evidence', 'artifacts', 'review'})
     require(type(manifest['version']) is int and manifest['version'] == VERSION, 'unsupported-version')
     require(manifest['profile'] in ('core', 'crm') and manifest['profile'] == detected_profile, 'invalid-profile')
@@ -135,7 +147,7 @@ def verify(manifest, root, expected, detected_profile):
         require(total <= MAX_TOTAL, 'evidence-too-large')
         require(hashlib.sha256(data).hexdigest() == entry['sha256'], 'evidence-hash-mismatch')
         hashes[entry['path']] = entry['sha256']
-    required = CORE_GATES | (CRM_GATES if detected_profile == 'crm' else frozenset())
+    required = CORE_GATES | (CRM_GATES if detected_profile == 'crm' else frozenset()) | migration_gates
     gates = manifest['gates']
     require(type(gates) is list and len(gates) == len(required), 'missing-or-extra-gates')
     seen = set(); referenced = set()
@@ -178,7 +190,7 @@ def verify(manifest, root, expected, detected_profile):
     require(all(review[key] == expected[key] for key in ('candidate', 'tree', 'base')), 'review-identity-mismatch')
     digest(review['bundleSha256'])
     require(review['bundleSha256'] == review_digest(manifest), 'review-bundle-mismatch')
-    return {'version': VERSION, **expected, 'profile': detected_profile, 'gatesVerified': len(seen), 'evidenceFilesVerified': len(hashes), 'structuralVerification': 'passed', 'attestationTruth': 'not-established', 'releaseApproved': False}
+    return {'version': VERSION, **expected, 'profile': detected_profile, 'migrationGatesRequired': sorted(migration_gates), 'gatesVerified': len(seen), 'evidenceFilesVerified': len(hashes), 'structuralVerification': 'passed', 'attestationTruth': 'not-established', 'releaseApproved': False}
 
 class SafeParser(argparse.ArgumentParser):
     def error(self, _message):

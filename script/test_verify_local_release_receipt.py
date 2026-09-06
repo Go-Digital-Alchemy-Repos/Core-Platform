@@ -32,7 +32,7 @@ class ReceiptTests(unittest.TestCase):
     def make_manifest(self, profile):
         (self.evidence/'evidence.json').write_text('{"synthetic":true}\n')
         gates = v.CORE_GATES | (v.CRM_GATES if profile == 'crm' else frozenset())
-        m = {'version': 1, 'profile': profile, **self.expected, 'operator': 'operator', 'observations': {'cleanBefore': True, 'cleanAfter': True}, 'evidence': [{'path': 'evidence.json', 'sha256': hashlib.sha256((self.evidence/'evidence.json').read_bytes()).hexdigest(), 'sanitized': True}], 'gates': [], 'artifacts': {name:name+'.bin' for name in ('application','deploymentConfig','uploadVerifier','uploadApply')}}
+        m = {'version': v.VERSION, 'profile': profile, **self.expected, 'operator': 'operator', 'observations': {'cleanBefore': True, 'cleanAfter': True}, 'evidence': [{'path': 'evidence.json', 'sha256': hashlib.sha256((self.evidence/'evidence.json').read_bytes()).hexdigest(), 'sanitized': True}], 'gates': [], 'artifacts': {name:name+'.bin' for name in ('application','deploymentConfig','uploadVerifier','uploadApply')}}
         for path in m['artifacts'].values():
             (self.evidence/path).write_text(path)
             m['evidence'].append({'path':path,'sha256':hashlib.sha256(path.encode()).hexdigest(),'sanitized':True})
@@ -45,7 +45,7 @@ class ReceiptTests(unittest.TestCase):
         m['review'] = {'reviewer': 'independent-reviewer', 'accepted': True, **self.expected, 'bundleSha256': v.review_digest(m)}
 
     def check(self, m=None, profile='core'):
-        return v.verify(m or self.manifest, self.evidence, self.expected, profile)
+        return v.verify(m or self.manifest, self.evidence, self.expected, (profile, frozenset()))
 
     def test_valid_core_and_crm(self):
         self.assertEqual(self.check()['gatesVerified'], len(v.CORE_GATES))
@@ -60,7 +60,7 @@ class ReceiptTests(unittest.TestCase):
             with self.subTest(change=change), self.assertRaises(v.InvalidReceipt):self.check(m)
 
     def test_versions_profiles_unknown_fields_and_truthy_values(self):
-        for key,value in [('version',2),('version',True),('profile','unknown'),('profile','crm'),('secret','not-accepted')]:
+        for key,value in [('version',1),('version',3),('version',True),('profile','unknown'),('profile','crm'),('secret','not-accepted')]:
             m=copy.deepcopy(self.manifest);m[key]=value
             with self.subTest(key=key,value=value),self.assertRaises(v.InvalidReceipt):self.check(m)
         m=copy.deepcopy(self.manifest);m['observations']['cleanBefore']='true'
@@ -131,7 +131,7 @@ class ReceiptTests(unittest.TestCase):
             with self.subTest(raw=raw),self.assertRaises(v.InvalidReceipt):v.load_manifest(self.evidence,'manifest.json')
 
     def test_real_checkout_identity_dirty_stale_and_detected_crm(self):
-        self.assertEqual(v.checkout_identity(self.checkout,self.expected),'core')
+        self.assertEqual(v.checkout_identity(self.checkout,self.expected),('core',frozenset()))
         (self.checkout/'untracked').write_text('dirty')
         with self.assertRaisesRegex(v.InvalidReceipt,'dirty-checkout'):v.checkout_identity(self.checkout,self.expected)
         (self.checkout/'untracked').unlink()
@@ -139,7 +139,73 @@ class ReceiptTests(unittest.TestCase):
         with self.assertRaisesRegex(v.InvalidReceipt,'stale-head'):v.checkout_identity(self.checkout,wrong)
         marker=self.checkout/'shared/schema/crm-custom-fields.ts';marker.parent.mkdir(parents=True);marker.write_text('// synthetic')
         self.git('add','.');self.git('commit','-qm','crm');expected={**self.expected,'candidate':self.git('rev-parse','HEAD'),'tree':self.git('rev-parse','HEAD^{tree}')}
-        self.assertEqual(v.checkout_identity(self.checkout,expected),'crm')
+        self.assertEqual(v.checkout_identity(self.checkout,expected),('crm',frozenset()))
+
+    def feature_candidate(self, paths):
+        for path in paths:
+            file=self.checkout/path;file.parent.mkdir(parents=True,exist_ok=True);file.write_text('-- synthetic migration\n')
+        self.git('add','.');self.git('commit','-qm','migration features')
+        self.expected.update(candidate=self.git('rev-parse','HEAD'),tree=self.git('rev-parse','HEAD^{tree}'))
+        return v.checkout_identity(self.checkout,self.expected)
+
+    def add_gate(self, manifest, name):
+        gate=copy.deepcopy(next(g for g in manifest['gates'] if g['id']=='atomic-settings'))
+        gate['id']=name;manifest['gates'].append(gate)
+        self.sign(manifest)
+
+    def test_features_required_independently_of_core_or_crm_profile(self):
+        for profile in ('core','crm'):
+            with self.subTest(profile=profile):
+                tracked=list(v.MIGRATION_GATES)
+                if profile=='crm':tracked.append('migrations/0062_crm_custom_fields.sql')
+                policy=v.checkout_policy(tracked)
+                self.assertEqual(policy[0],profile)
+                m=self.make_manifest(profile)
+                with self.assertRaisesRegex(v.InvalidReceipt,'missing-or-extra-gates'):
+                    v.verify(m,self.evidence,self.expected,policy)
+                self.add_gate(m,'standalone-migration')
+                with self.assertRaisesRegex(v.InvalidReceipt,'missing-or-extra-gates'):
+                    v.verify(m,self.evidence,self.expected,policy)
+                self.add_gate(m,'atomic-fulfillment')
+                result=v.verify(m,self.evidence,self.expected,policy)
+                self.assertEqual(result['migrationGatesRequired'],['atomic-fulfillment','standalone-migration'])
+
+    def test_new_gates_require_positive_counts_zero_skips_and_cleanup(self):
+        policy=v.checkout_policy(list(v.MIGRATION_GATES))
+        m=self.make_manifest('core')
+        for name in v.MIGRATION_GATES.values():self.add_gate(m,name)
+        for name in v.MIGRATION_GATES.values():
+            for field,value in [('testsPassed',0),('testsSkipped',1),('cleanup',None),('exitCode',1)]:
+                broken=copy.deepcopy(m);next(g for g in broken['gates'] if g['id']==name)[field]=value
+                self.sign(broken)
+                with self.subTest(name=name,field=field),self.assertRaises(v.InvalidReceipt):v.verify(broken,self.evidence,self.expected,policy)
+        ordinary=next(g for g in m['gates'] if g['id']=='ordinary-tests')
+        ordinary.update(testsSkipped=2,optInGateExclusions=sorted(v.DB_GATES & (v.CORE_GATES|policy[1])))
+        self.sign(m)
+        self.assertEqual(v.verify(m,self.evidence,self.expected,policy)['structuralVerification'],'passed')
+        ordinary['optInGateExclusions'].remove('atomic-fulfillment');self.sign(m)
+        with self.assertRaisesRegex(v.InvalidReceipt,'invalid-opt-in-exclusions'):v.verify(m,self.evidence,self.expected,policy)
+
+    def test_tracked_migrations_force_cli_gates_not_test_filenames(self):
+        policy=self.feature_candidate(list(v.MIGRATION_GATES))
+        self.assertEqual(policy,('core',frozenset(v.MIGRATION_GATES.values())))
+        self.manifest=self.make_manifest('core')
+        (self.evidence/'manifest.json').write_text(json.dumps(self.manifest))
+        command=['python3',str(SCRIPT),'--evidence-dir',str(self.evidence),'--manifest','manifest.json','--checkout',str(self.checkout)]
+        for key,value in self.expected.items():command.extend(['--expected-'+key,value])
+        result=subprocess.run(command,capture_output=True,text=True)
+        self.assertEqual(result.returncode,1)
+        self.assertIn('missing-or-extra-gates',result.stdout)
+        for name in v.MIGRATION_GATES.values():self.add_gate(self.manifest,name)
+        (self.evidence/'manifest.json').write_text(json.dumps(self.manifest))
+        result=subprocess.run(command,capture_output=True,text=True)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertEqual(v.checkout_policy(['server/migrate-standalone-locations.database.test.ts','server/storage/ecommerce-atomic-fulfillment.database.test.ts']),('core',frozenset()))
+
+    def test_crm_migration_cannot_be_hidden_by_declared_core_profile(self):
+        policy=self.feature_candidate(['migrations/0062_crm_custom_fields.sql',*v.MIGRATION_GATES])
+        with self.assertRaisesRegex(v.InvalidReceipt,'invalid-profile'):
+            v.verify(self.make_manifest('core'),self.evidence,self.expected,policy)
 
     def test_cli_actual_clean_checkout_and_safe_failure(self):
         (self.evidence/'manifest.json').write_text(json.dumps(self.manifest))
