@@ -28,8 +28,10 @@ remains a no-import pilot. Revalidate actual deployment state before a cutover.
 - Types, build and bundle budgets passed at the current head. The predecessor
   passed lint and formatting; exact final-head evidence remains to be assembled.
 - The 16-case settings browser suite passed on `346359b`; the two new Security
-  Center browser cases passed on its isolated patch. A complete browser run on
-  the current combined candidate is in progress; earlier results do not replace it.
+  Center browser cases passed on its isolated patch. The complete browser run on
+  the current combined candidate passed all 66 desktop/mobile cases, with clean
+  before/after source and strict fixture cleanup. Evidence: private Operations/
+  combined-full-app-20260906T231630Z-fe9c2e1b/receipt.json.
 - All 20 Woo and seven CRM follow-up PostgreSQL cases passed on clean `f388911`.
   Their relevant sources are unchanged in the UI-only `f485330` increment.
 - Root restored the existing identity-bound 105-table/671-row production snapshot
@@ -44,9 +46,13 @@ remains a no-import pilot. Revalidate actual deployment state before a cutover.
 - The old V2 evidence verifier requires 26 gates and lacks dedicated obligations
   for the 27 new CRM/Woo tests. A separate V3 is under review. Do not normalize
   the new skips into unrelated old gates or relabel the old accepted bundle.
-- Final compiled runtime, populated migration, database groups, detached artifacts,
-  Better Farms pilot, and independent release acceptance still require a complete
-  candidate-bound evidence package. The checker validates consistency; it cannot
+- Current-head compiled Linux runtime/TLS/readiness/shutdown, historical populated
+  upgrade, CRM populated upgrade, synthetic CRM capture/restore, detached entrypoint
+  rejection checks, and source/compiled TOML preflight passed. Initial preflight
+  invocation named an absent railway.json and was correctly rejected; its failed
+  evidence is retained separately from the passing railway.toml results.
+- Database groups, Better Farms pilot, and independent release acceptance still
+  require a complete candidate-bound evidence package. The checker validates consistency; it cannot
   establish the truth of attestations or authorize release by itself.
 
 GitHub Actions remains disabled under AGENTS section 22. The authenticated
