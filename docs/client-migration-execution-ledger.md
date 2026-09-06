@@ -5,6 +5,24 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Actual deployed-source upload dry run
+
+A fresh read-only observation at 01:04:09 UTC matched the exact deployed `a006f36` service,
+database identity and CMS record against the independently known installation/record. Root
+approved only a one-object read-only plan, `241f66b679a75b138655322090126eabd8311a317f22ffc2d88ca4cb237aceff`,
+with the previously verified digest as an expected value, not an assertion of unchanged bytes.
+The reviewed standalone artifact was hash-checked and delivered into a private temporary runtime
+directory. It then actually reread and hashed the R2 source, checked the target and authoritative
+CMS record, and returned `complete:true`, one `would-copy`, with no storage writes requested.
+The command's runtime files were removed and its process exited successfully. Only aggregate
+[evidence](release-evidence/core-live-upload-dry-run-2026-09-06.json) is committed.
+
+No configuration, object or database mutation occurred. Uploads remain enabled; this is
+point-in-time source/provider read evidence, not a drained-writer barrier or copy approval.
+Freeze/drain, final inventory refresh, conditional-write verification, approved copy, media-read
+acceptance and rollback compatibility remain required before namespace cutover. The older plan
+is superseded for this dry run only and must not be used as an implicit apply authorization.
+
 ### Standalone migration command packaging
 
 The production build now emits `dist/operations/verify-legacy-upload-migration.mjs`, bundling
