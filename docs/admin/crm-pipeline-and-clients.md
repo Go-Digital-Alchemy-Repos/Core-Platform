@@ -6,6 +6,7 @@ The CRM app gives admins a lightweight lead pipeline, lead detail workspace, and
 
 - Lead pipeline: `Admin > CRM > Pipeline`
 - Client records: `Admin > CRM > Clients`
+- Pipeline configuration: `Admin > CRM > Settings` (administrators only)
 - Feature toggle: `Admin > Settings > System Configuration > Enable CRM`
 
 If CRM is disabled in system configuration, CRM navigation should be treated as unavailable for that site. Existing data is preserved when the app is turned off.
@@ -22,6 +23,18 @@ Leads move through these stages:
 - Lost
 
 The pipeline supports drag-and-drop stage changes. Opening a lead shows its details, notes, and tasks. Tasks can be assigned, given due dates, and marked complete.
+
+## Pipeline Settings
+
+Administrators can rename, recolor and reorder the six stages. Save applies the presentation to
+the board, filters and stage selectors; it does not change lead data or lifecycle rules. The `won`
+stage still creates a client even when its display label changes. Restore defaults fills the editor;
+Save confirms the reset. Editors with CRM access see the configured pipeline but cannot change its
+settings. Failed loads prevent saving; unsupported configuration versions require compatibility
+repair before editing.
+
+The Connected settings links open the existing platform integrations, transactional email templates
+and branding pages. These settings apply across the site, rather than to an individual lead.
 
 ## Lead Sources And Deduplication
 

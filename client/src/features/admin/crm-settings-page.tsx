@@ -56,6 +56,45 @@ function SettingsEditor() {
         <p>Customize stage labels, colors and display order. Lead lifecycle rules remain fixed.</p>
       </div>
       <Link href="/admin/crm">Back to Pipeline</Link>
+      <nav aria-label="Related CRM settings" className="rounded-md border p-4">
+        <h2 className="font-semibold">Connected settings</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          These settings apply across this Core Platform site.
+        </p>
+        <ul className="mt-3 space-y-3 text-sm">
+          <li>
+            <Link
+              className="font-medium underline underline-offset-4"
+              href="/admin/settings/integrations"
+            >
+              Integrations
+            </Link>
+            <p className="text-muted-foreground">
+              Manage CRM intake credentials and email providers.
+            </p>
+          </li>
+          <li>
+            <Link
+              className="font-medium underline underline-offset-4"
+              href="/admin/settings/email-templates"
+            >
+              Email templates
+            </Link>
+            <p className="text-muted-foreground">
+              Edit the platform's transactional email templates.
+            </p>
+          </li>
+          <li>
+            <Link
+              className="font-medium underline underline-offset-4"
+              href="/admin/design/branding"
+            >
+              Branding
+            </Link>
+            <p className="text-muted-foreground">Manage site identity and branding assets.</p>
+          </li>
+        </ul>
+      </nav>
       {query.isLoading && <p role="status">Loading pipeline settings…</p>}
       {query.isError && (
         <p role="alert">

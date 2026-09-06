@@ -68,7 +68,7 @@ function StripeActivationNotice({ status }: { status: StripeSettingsStatus | und
         : status?.configured === true && status.providerTransactionsEnabled === true
           ? [
               "New Stripe transactions enabled",
-              "New payments and refunds can use the saved Stripe credentials.",
+              "Operator activation is enabled. Checkout also requires the active publishable key, webhook setup, and provider acceptance.",
             ]
           : [
               "Payment activation status unavailable",

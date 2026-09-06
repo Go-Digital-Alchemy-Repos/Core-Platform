@@ -5,6 +5,18 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### CRM settings navigation completed; activation wording reviewed
+
+CRM settings now links to the existing platform integrations, email templates and branding routes,
+with explicit site-wide scope. Root verified each destination in App routing; all retain their
+existing authorization. The CRM operations guide now documents stage presentation, reset/save,
+editor access and these shared controls. No duplicate credential or branding store was introduced.
+Five existing CRM settings component tests, 24 ecommerce settings tests, TypeScript and scoped
+lint passed. A bounded independent review of62d9044 found no activation bypass or new historical
+recovery regression; its nonblocking wording finding was corrected so an enabled deployment flag
+is not presented as proof of complete checkout/provider readiness. Final hosted checks remain
+required. CRM-2 typed fields and mapping is in design review, with no schema changes yet.
+
 ### Ecommerce provider activation separated from saved credentials
 
 The candidate now requires `ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED=true` for new Stripe

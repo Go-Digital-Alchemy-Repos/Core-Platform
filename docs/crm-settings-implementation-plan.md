@@ -86,4 +86,4 @@ Rollback: revert application code; old code ignores the new row and renders orig
 
 ## Ownership and approval checkpoint
 
-Orchestrator should approve key/category, versioned schema, color presets, admin write/editor read split, generic-route key reservation, fallback behavior and last-save-wins semantics before assigning implementation. Divide shared contract/service ownership from UI only after schema acceptance. This document changes no runtime behavior and does not claim CRM-1 implemented.
+Orchestrator should approve key/category, versioned schema, color presets, admin write/editor read split, generic-route key reservation, fallback behavior and last-save-wins semantics before assigning implementation. Divide shared contract/service ownership from UI only after schema acceptance. This design was accepted and implemented as recorded above; production release remains pending. The original design requirements are retained for traceability.

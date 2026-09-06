@@ -128,6 +128,11 @@ describe("Stripe activation status", () => {
       expect(host.querySelector('[data-testid="stripe-activation-status"]')?.textContent).toContain(
         title,
       );
+      if (configured && enabled) {
+        expect(host.querySelector('[data-testid="stripe-activation-status"]')?.textContent).toContain(
+          "Checkout also requires the active publishable key, webhook setup, and provider acceptance.",
+        );
+      }
       await act(async () => save()!.click());
       await flush();
       const payload = api.request.mock.calls[0][2];
