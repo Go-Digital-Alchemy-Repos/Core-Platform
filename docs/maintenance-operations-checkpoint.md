@@ -202,3 +202,38 @@ release checks and validating additive upgrade/compatibility against the now-liv
 maintenance baseline before any CRM deployment. The durable operator ledger
 branch remains separate; do not accidentally bundle operator tools into that
 release. Core maintenance is already live and upload admission remains open.
+
+
+### CRM candidate and local release policy reconciliation — 2026-09-06
+
+Draft PR14 reached candidate `2884093fe28f566dad7a9c10511703d2bef9da59` after
+integrating live main a99bb7e. Root validation passed 1,075 ordinary tests
+(57 specialized database tests excluded), plus 19 focused preflight tests,
+types, lint, formatting, build and budgets. Independent populated upgrade
+and actual synthetic capture/restore rehearsals passed; desktop/mobile CRM
+and form-mapping journeys passed. These are local evidence, not hosted CI.
+The detached preflight artifact also passed against the actual production
+environment in deployment 26d0c65b, without mutations. It explicitly does
+not claim to prove normal startup.
+
+Repository Actions and its workflow were found manually disabled. The current
+original-checkout AGENTS.md section 22 explicitly requires this and permits
+local validation. Preserve that owner directive: no enabling or dispatching
+Actions. Earlier attempted run 34011137500 was queued with no jobs; it provides
+no validation evidence. Withdraw candidate-only workflow additions and retain
+the checks through the local release process. Existing branch protection
+requires the Actions-bound Verify check, so deployment remains gated pending
+an approved replacement enforcement process. Do not impersonate Verify or
+bypass protection.
+
+Concurrent PR13 uses migration 0061_standalone_locations.sql. Reserve 0061
+for that work; the undeployed CRM migration is being moved to 0062, with
+actual upgrade/recovery checks repeated after the rename. CRM is not live.
+Normal downgrade to the pre-mapping binary is unsafe after mapped submissions;
+retain read-only recovery followed by roll-forward as the fallback.
+
+The ecommerce settings incident remains resolved: all five authenticated live
+settings destinations were rechecked after the maintenance deployment. The
+active goal includes broader ecommerce defect correction and acceptance,
+CRM improvements, client onboarding and subsequent website deployment planning.
+Provider transactions remain disabled.
