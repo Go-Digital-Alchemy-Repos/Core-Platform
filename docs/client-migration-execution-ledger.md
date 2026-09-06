@@ -5,6 +5,19 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Combined pilot acceptance refreshed — 2026-09-06 UTC
+
+Root reran the complete three-case two-origin pilot with the clean site source pinned to
+`8021f6bab7727b4ffd0614acea8d619ce39a3400`. All three passed in 16.6 seconds: CMS preview/draft/
+publish and stale-write/permission boundaries, plus actual post-commit lost-response retries
+for contact and newsletter. Each unchanged retry retained its original receipt and one local
+effect set; a changed accepted payload created a distinct receipt. No outbound provider effects
+were enabled. The local fixture exited and no pilot container remained. Aggregate receipt
+proof is retained in [integration evidence](release-evidence/better-farms-integration-2026-09-06.json).
+Site hosted Verify `34001963412` passed. This refreshes the development-Core/compiled-site
+integration proof; it does not establish production checkout, email delivery, public content
+approval or a deployment. The broader Core hosted runs were still in progress at inspection.
+
 ### Better Farms navigation acceptance follow-up
 
 Site `8021f6b` is committed and pushed on `codex/form-reliability`. It preserves the configured

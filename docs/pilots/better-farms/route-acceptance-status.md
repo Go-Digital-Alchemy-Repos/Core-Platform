@@ -18,7 +18,8 @@ Site `8021f6b` fixes canonical removal/recreation during unknown-route navigatio
 the compiled site with a synthetic public origin: direct unknown route → About SPA navigation
 → Back → Forward correctly removed/recreated exactly one canonical and changed robots metadata.
 No production release or full accessibility approval is implied. Core's two-origin source pin
-still references `cec78df` and must be updated and rerun before accepting the new combined pair.
+now references `8021f6b`; all three integrated cases passed in 16.6 seconds on 2026-09-06 UTC
+(see `docs/release-evidence/better-farms-integration-2026-09-06.json`).
 External hero image policy, approved quotations/identities/assets and broader route interaction
 acceptance remain open.
 
