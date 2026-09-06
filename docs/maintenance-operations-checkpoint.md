@@ -562,3 +562,33 @@ restore verifier targeting clean8a6cdcc in disposable local PostgreSQL, with
 no workers or providers. Snapshot retrieval, restoration and production
 release remain pending. GitHub authentication/protection controls remain
 unchanged; GitHub Actions stays disabled.
+
+
+Root subsequently retained the exact capture metadata separately at private
+Operations/recovery-capture-metadata-637c49c0 and verified its approval/object
+binding. Capture exited0 with child processes stopped; receipt reports105tables,
+671rows and310831compressed bytes, SHA256
+96b1db57984f557c21a43492425170080d1a5db25782688d76ba59e70f550806.
+The original wrapper completed failed-or-uncertain, remoteCleanup=false and
+localPayloadVerified=false. This preserves the distinction between successful
+snapshot acknowledgment and incomplete transport/process cleanup.
+
+A Linux Node-PID1 fixture independently reproduced the original supervisor
+zombie and showed foreground supervision reaped both child and supervisor.
+Evidence is private recovery-dispatch-tool/linux-supervisor-5ab093fe/receipt.json.
+The separate v2 retrieval-only tool remains under validation/review; it must
+retrieve the existing object rather than create a second snapshot.
+
+The private fresh-recovery verifier was source-reviewed by root. Its synthetic
+109table/3row fixture passed row and sequence equivalence, two migration replay
+calls, wrong-hash rejection and exclusive receipt preservation, with owned
+cleanup. Tool SHA2560bac178f0f258ec0972d676b9322b394fea20f504b3396d5037e07e7d08999f3;
+receipt7a265ba4c8f055ca0508cc355ffd31e159670dfd7b097dbefbf021d9b4491b02.
+Those are synthetic results, not the outstanding production-snapshot restore.
+
+CRM-4 source assessment is retained privately in crm4-assessment-20260906.
+It recommends existing note attribution/visibility clarification and a paginated
+view of recorded notes/task creation as smaller possible increments. Multiple
+pipelines, opportunities and restricted notes require demand/contract decisions;
+no schema, permission, financial or notification expansion is authorized by
+that assessment alone. Upstream source-cache limitations are explicitly recorded.
