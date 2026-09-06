@@ -114,6 +114,10 @@ UI repair visibility is committed separately at `cae9edc` on
 iterative traversal preserves normal ordering and excludes invalid parent
 choices. Three component tests pass; the old implementation fails visibility.
 The mutation test captures a mocked root-repair request, not database persistence.
+A root-authored follow-up `515824c` associates all six category editor labels
+with their controls; the same three component cases, focused lint and formatting
+pass. Both UI commits remain separate from the frozen candidate. Browser repair
+and reload acceptance awaits the reviewed backend integration.
 
 The isolated backend initially passed 30 PostgreSQL cases, but independent review
 found an additional stale-ancestry race in Woo apply between batches. A merchant
