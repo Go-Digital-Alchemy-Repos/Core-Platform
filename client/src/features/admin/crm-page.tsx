@@ -1,8 +1,13 @@
+import {
+  CrmRecordCustomFields,
+  ManualCrmCustomFields,
+  type ManualFieldsState,
+} from "./crm-record-custom-fields";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useCrmPipelineSettings, pipelinePresentation } from "@/hooks/use-crm-pipeline-settings";
 import { DEFAULT_CRM_PIPELINE_CONFIG } from "@shared/crm-pipeline-settings";
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState, useEffect } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -230,7 +235,7 @@ function PipelineColumn({
   );
 }
 
-function CreateLeadSheet({
+export function CreateLeadSheet({
   open,
   onOpenChange,
 }: {
@@ -238,10 +243,20 @@ function CreateLeadSheet({
   onOpenChange: (open: boolean) => void;
 }) {
   const { toast } = useToast();
+  const [customFields, setCustomFields] = useState<ManualFieldsState>({ ready: false, values: [] });
+  useEffect(() => {
+    if (!open) setCustomFields({ ready: false, values: [] });
+  }, [open]);
   const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", message: "" });
   const mutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/admin/crm", { ...form, source: "manual" });
+      if (!customFields.ready)
+        throw new Error("Load and complete custom fields before creating a lead.");
+      const response = await apiRequest("POST", "/api/admin/crm", {
+        ...form,
+        source: "manual",
+        customFields: customFields.values,
+      });
       return response.json();
     },
     onSuccess: async () => {
@@ -301,11 +316,21 @@ function CreateLeadSheet({
               onChange={(event) => setForm({ ...form, message: event.target.value })}
             />
           </div>
+          {open && (
+            <ManualCrmCustomFields
+              scope="lead"
+              onChange={setCustomFields}
+              disabled={mutation.isPending}
+            />
+          )}
+          {mutation.isError && (
+            <p role="alert">Creation failed. Your entries are retained. {mutation.error.message}</p>
+          )}
         </SheetBody>
         <SheetFooter>
           <Button
             onClick={() => mutation.mutate()}
-            disabled={!form.name.trim() || mutation.isPending}
+            disabled={!form.name.trim() || !customFields.ready || mutation.isPending}
             data-testid="button-save-crm-lead"
           >
             Create Lead
@@ -376,6 +401,7 @@ function LeadDetailSheet({ leadId, onClose }: { leadId: string | null; onClose: 
         <SheetBody className="space-y-5">
           {lead ? (
             <>
+              <CrmRecordCustomFields key={lead.id} scope="lead" id={lead.id} />
               <div className="grid gap-3 rounded-lg border p-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label>Stage</Label>

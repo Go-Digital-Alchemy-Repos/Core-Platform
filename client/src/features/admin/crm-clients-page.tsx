@@ -1,3 +1,5 @@
+import { CrmRecordCustomFields } from "./crm-record-custom-fields";
+import { CreateCrmClientSheet } from "./crm-create-client-sheet";
 import { useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -379,6 +381,7 @@ function ClientDetailSheet({
         <SheetBody className="space-y-5">
           {client ? (
             <>
+              <CrmRecordCustomFields key={client.id} scope="client" id={client.id} />
               <Tabs defaultValue="overview" className="space-y-4">
                 <TabsList className="flex h-auto flex-wrap justify-start">
                   <TabsTrigger value="overview">
@@ -806,6 +809,7 @@ function ClientDetailSheet({
 }
 
 function CrmClientsContent() {
+  const [creating, setCreating] = useState(false);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<CrmClientStatus | "all">("all");
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
@@ -835,6 +839,8 @@ function CrmClientsContent() {
         </p>
       </div>
 
+      <Button onClick={() => setCreating(true)}>Create client</Button>
+      {creating && <CreateCrmClientSheet onClose={() => setCreating(false)} />}
       <div className="flex flex-wrap gap-3">
         <div className="relative min-w-64 flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -909,7 +915,7 @@ function CrmClientsContent() {
         ))}
         {!isLoading && clients.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">
-            No clients yet. Move a lead to Won to create one.
+            No clients yet. Create a client or move a lead to Won.
           </div>
         ) : null}
       </div>
