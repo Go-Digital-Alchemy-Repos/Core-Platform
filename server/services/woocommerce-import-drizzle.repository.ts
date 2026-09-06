@@ -825,6 +825,24 @@ export class DrizzleWooImportRepository implements WooImportRepositoryV1 {
           .set({ status: "rollback_pending", updatedAt: new Date() })
           .where(eq(wooImportRuns.id, run.id));
 
+        // firstRunId only identifies records this run may delete. Updates to
+        // earlier-owned records need the documented backup/restore procedure;
+        // rejecting before any deletion also preserves mixed create/update runs.
+        const [updatedTarget] = await tx
+          .select({ id: wooImportAuditEntries.id })
+          .from(wooImportAuditEntries)
+          .where(
+            and(
+              eq(wooImportAuditEntries.runId, run.id),
+              eq(wooImportAuditEntries.outcome, "applied"),
+              eq(wooImportAuditEntries.action, "updated"),
+            ),
+          )
+          .limit(1);
+        if (updatedTarget) {
+          throw new WooImportManualReviewError("rollback_requires_preexisting_target_restore");
+        }
+
         const createdMappings = await tx
           .select()
           .from(wooImportMappings)
