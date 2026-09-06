@@ -47,6 +47,10 @@ export default defineConfig({
         manualChunks(id) {
           if (!id.includes("node_modules")) return undefined;
 
+          if (id.includes("/maplibre-gl/") || id.includes("/react-map-gl/") || id.includes("/@vis.gl/react-maplibre/")) {
+            return "maps";
+          }
+
           if (id.includes("/@tiptap/")) {
             return "tiptap";
           }
