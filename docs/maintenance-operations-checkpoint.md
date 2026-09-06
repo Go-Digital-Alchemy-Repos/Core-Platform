@@ -444,3 +444,23 @@ Full application browser suite is still running; detached artifact and preflight
 checks are assigned next. Final normalized independent release review and a
 fresh production backup/restore remain due. GitHub App authentication remains
 pending; Actions stays disabled and no protection bypass is permitted.
+
+### Unified draft release
+
+Draft PR14 now points to the full reviewed integration8a6cdcc: the CRM branch
+was fast-forwarded without rewriting history and the title/body now describe
+CRM fields, ecommerce recovery/fulfillment and standalone locations. Historical
+8126 evidence remains retained against its original commit; the CRM checkout
+HEAD is no longer8126. No main merge or deployment occurred.
+
+Full application browser suite passed52/52 in3.2minutes. Normalization requires
+stronger child-process cleanup proof, so a canonical rerun using reviewed
+ChildRuns/capture/cleanup helpers is in progress; the earlier functional result
+remains valid but is not being substituted for process absence. The locked
+dependency install and all four static/artifact gates passed on clean8a6cdcc.
+All26 local gate inputs are available except that final browser cleanup proof;
+the V2 bundle is being prepared without automatic review acceptance.
+
+Read-only production identity/recovery planning is assigned. A fresh backup
+and local restore still precede any release. Main was independently observed
+as a99bb7efeb4c007789c20da91ff0e2d395452836 via git ls-remote.
