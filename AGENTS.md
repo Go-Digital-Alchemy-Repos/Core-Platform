@@ -512,6 +512,8 @@ Do not merge incompatible solutions merely because both appear locally valid.
 
 ## 22. Release Workflow
 
+GitHub Actions must remain disabled for this project. Do not enable, dispatch, or introduce GitHub Actions workflows unless the Project Owner explicitly changes this instruction. Run required validation locally or through another approved process.
+
 When authorized by project policy, complete all required:
 
 - documentation;
