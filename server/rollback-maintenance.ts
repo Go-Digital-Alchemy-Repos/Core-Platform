@@ -9,24 +9,7 @@ async function start() {
   ) {
     throw new Error("Explicit frozen recovery configuration required");
   }
-  const databaseUrl = new URL(process.env.DATABASE_URL);
-  if (databaseUrl.searchParams.has("options"))
-    throw new Error("Recovery database URL options are not allowed");
-  const privateDatabase =
-    databaseUrl.hostname.endsWith(".railway.internal") ||
-    ["127.0.0.1", "localhost", "[::1]"].includes(databaseUrl.hostname);
-  if (
-    !privateDatabase &&
-    !["verify-full", "verify-ca"].includes(databaseUrl.searchParams.get("sslmode") || "")
-  ) {
-    throw new Error("Verified database TLS required outside private recovery network");
-  }
-  databaseUrl.searchParams.set(
-    "options",
-    "-c default_transaction_read_only=on -c statement_timeout=10000",
-  );
-  databaseUrl.searchParams.set("connect_timeout", "5");
-  process.env.DATABASE_URL = databaseUrl.toString();
+  process.env.CORE_ROLLBACK_READ_ONLY = "true";
   // Lazy imports keep configuration rejection ahead of database/storage initialization.
   const { pool } = await import("./db");
   const { downloadFile } = await import("./services/r2.service");
@@ -56,8 +39,8 @@ async function start() {
     });
     server.closeIdleConnections();
   };
-  process.once("SIGTERM", stop);
-  process.once("SIGINT", stop);
+  process.on("SIGTERM", stop);
+  process.on("SIGINT", stop);
 }
 
 void start().catch(() => {

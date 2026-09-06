@@ -91,10 +91,27 @@ an environment flag switches the normal application into this mode. Preserve que
 the reviewed current application and reconcile provider retries and pending jobs before reopening
 business traffic. No database restoration or source-object deletion is part of this procedure.
 
-Local verification: all405 baseline tests passed; types, scoped lint and build passed. The
+Local verification: all413 baseline tests passed; types, scoped lint and build passed. The
 compiled entrypoint ran against an empty disposable PostgreSQL16 instance: read-only readiness
 passed, business requests were503, no bootstrap tables were created, and SIGTERM exited0.
 The fixture/volume were removed. The HTTP tests also cover media reads and error sanitization.
 Run `python3 -O script/verify-rollback-maintenance.py` after building to reproduce the compiled
 check. Aggregate evidence is in `docs/rollback-maintenance-runtime-evidence.json`.
 No production deployment or live-media acceptance has occurred.
+
+Independent review rejected the first database preflight because URL host overrides/duplicate
+sslmode could bypass its check and query-string connect_timeout was ignored by the driver.
+The correction accepts only one explicit sslmode parameter, rejects every other URL parameter,
+and passes read-only options and connectionTimeoutMillis directly to node-postgres. A real
+stalled loopback PostgreSQL handshake rejects at five seconds. The production database module
+uses this vetted configuration only when the separate entrypoint sets CORE_ROLLBACK_READ_ONLY.
+Normal startup retains its baseline policy. Repeated termination signals now respect the drain
+guard, and the smoke verifier handles interruptions and records failed cleanup explicitly.
+The compiled fixture check was repeated after these corrections; see updated artifact evidence.
+
+The final review also identified numeric-host certificate identity ambiguity. Recovery now rejects
+external IP database hosts and requires verify-full for external DNS hosts (verify-ca is rejected).
+The verifier catches process cleanup failures independently so container removal/reporting still
+run. These corrections passed the full413-test suite, types, scoped lint, rebuilt artifact and
+repeat compiled PostgreSQL smoke check. Live namespaced media and deployment/drain acceptance
+remain outstanding; the smoke uses an empty local database and does not contact R2.

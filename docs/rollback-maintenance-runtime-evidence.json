@@ -1,5 +1,5 @@
 {
-  "artifact_sha256": "079417c7478f1cd6d18972b5e01029c4353ca2b80d4d0e7d2730a57a58aacc76",
+  "artifact_sha256": "4b0b5f1c28c584c7c0071afe17ef1459c2737747fbf3943f29610b61d71bdf09",
   "status": "passed",
   "read_only_database_readiness": true,
   "business_requests_rejected": true,

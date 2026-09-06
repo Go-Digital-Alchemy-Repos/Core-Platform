@@ -1,3 +1,4 @@
+import { rollbackDatabaseConfig } from "./rollback-database-config";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "@shared/schema";
@@ -17,6 +18,9 @@ export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ...(isProduction && !process.env.DATABASE_URL.includes("sslmode=")
     ? { ssl: { rejectUnauthorized: false } }
+    : {}),
+  ...(process.env.CORE_ROLLBACK_READ_ONLY === "true"
+    ? rollbackDatabaseConfig(process.env.DATABASE_URL)
     : {}),
 });
 

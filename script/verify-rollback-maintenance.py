@@ -16,6 +16,10 @@ def request(port,path,method='GET'):
         with urllib.request.urlopen(urllib.request.Request(f'http://127.0.0.1:{port}'+path,method=method),timeout=3) as response:
             return response.status,response.read().decode()
     except urllib.error.HTTPError as error: return error.code,error.read().decode()
+def interrupted(number, _frame):
+    raise RuntimeError(f"Recovery verification interrupted by signal {number}")
+signal.signal(signal.SIGTERM, interrupted)
+signal.signal(signal.SIGINT, interrupted)
 try:
     context=os.environ.get('DOCKER_CONTEXT')
     endpoint=(os.environ.get('DOCKER_HOST') if not context else None) or run(['docker','context','inspect',*([context] if context else []),'--format','{{.Endpoints.docker.Host}}']).stdout.strip()
@@ -52,11 +56,19 @@ try:
 except Exception as error:
     report.update(status='failed',error=str(error).replace(password,'[redacted]'))
 finally:
+    signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
     if process and process.poll() is None:
-        process.kill();process.wait(timeout=5)
+        try:
+            process.kill();process.wait(timeout=5)
+        except Exception:
+            report.update(status="failed",process_cleanup_failed=True)
     if created:
-        result=subprocess.run(['docker','rm','-f','-v',name],capture_output=True,timeout=30)
-        report['fixture_removed']=result.returncode==0
-        if result.returncode: report['status']='failed'
+        try:
+            result=subprocess.run(['docker','rm','-f','-v',name],capture_output=True,timeout=30)
+            report['fixture_removed']=result.returncode==0
+        except Exception:
+            report['fixture_removed']=False
+        if not report['fixture_removed']: report['status']='failed'
     print(json.dumps(report,indent=2))
 raise SystemExit(0 if report.get('status')=='passed' else 1)
