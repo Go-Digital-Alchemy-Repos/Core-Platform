@@ -523,3 +523,42 @@ GitHub Actions remains disabled, and draft PR14 remains at8a6cdcc.
 CRM-3 implementation is in progress on its isolated branch. Initial backend
 tests passed; browser acceptance found an accessible-control naming issue
 being corrected. No new CRM-3 code is integrated into the release candidate.
+
+
+### CRM follow-up review and live recovery lifecycle finding
+
+CRM-3 worklist candidate is committed and pushed separately as
+985e9769a688fc7a5b6c1af1983bebc1dd5b5ce0 on codex/crm-follow-up-worklist.
+Independent review found and the owner corrected stale first-page Refresh and
+loss of unsaved row drafts during background GET errors. Six actual desktop
+and mobile browser cases passed, including both regressions, with strict
+owned cleanup (crm-follow-up-browser-20260906T055133Z-30f5c4e5 in private
+Operations). Root additionally passed ten focused schema/service/route tests
+on the committed candidate. The earlier seven PostgreSQL cases and scoped
+quality checks remain retained. This is an accepted scoped contribution,
+not an integrated release; PR14 and its complete26-gate evidence stay8a6cdcc.
+
+Root independently observed Public Access Disabled for the core-platform
+bucket in the authenticated Cloudflare Digital Alchemy dashboard. No bucket
+settings changed and no backup payload was viewed. The private dispatch
+wrapper schema-order hash issue was corrected and independently reviewed;
+root passed all eight transport tests. Final original wrapper SHA256 is
+f62e4c8bce01eee3e6a446a39a683ae10ba639c75e1c598ba0a1802080954e00.
+
+Authorized fresh capture attempt637c49c0-f42f-4f4f-a282-53ecf58b65dc was then
+dispatched against reverified replica3c44e31e / deployment26d0c65b / commita99.
+The remote inventory contains capture intent, receipt and result, and observes
+the capture child/group absent. However, the detached supervisor PID367 is a
+terminated, unreaped zombie under production Node PID1: /proc records stateZ,
+PPID1; capture child374 is absent. Therefore the original wrapper correctly
+does not claim retrieval or complete process cleanup. The capture must not be
+repeated. Original artifacts and attempt evidence are preserved unchanged.
+
+Infra owns a separately reviewed foreground-supervisor and GET-only recovery
+path, including a Linux Node-PID1 lifecycle fixture. Do not restart production
+to clear this bookkeeping state, label the zombie absent, or rewrite the old
+receipt as success. Engineering independently prepares a private fresh-format
+restore verifier targeting clean8a6cdcc in disposable local PostgreSQL, with
+no workers or providers. Snapshot retrieval, restoration and production
+release remain pending. GitHub authentication/protection controls remain
+unchanged; GitHub Actions stays disabled.
