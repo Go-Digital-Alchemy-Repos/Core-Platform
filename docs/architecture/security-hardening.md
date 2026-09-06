@@ -41,8 +41,8 @@ Content Security Policy directives are configured in `securityHeaders()`:
 
 - Scripts: self + Stripe JS
 - Styles: self + unsafe-inline + Google Fonts
-- Images: self + R2 + OpenStreetMap tiles
-- Connections: self + Stripe API + R2 + OpenStreetMap
+- Images: self + R2 + OpenFreeMap sprites/tiles (legacy OpenStreetMap origin remains allowed)
+- Connections: self + Stripe API + R2 + OpenFreeMap styles, vector tiles, sprites, and glyphs (legacy OpenStreetMap origin remains allowed)
 - Frames: self + Stripe
 - Objects: none
 

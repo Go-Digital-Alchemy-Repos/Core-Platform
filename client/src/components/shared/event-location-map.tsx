@@ -1,23 +1,7 @@
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import L from "leaflet";
-import {
-  LEAFLET_SIMPLIFIED_TILE_ATTRIBUTION,
-  LEAFLET_SIMPLIFIED_TILE_URL,
-} from "@/lib/leaflet-map-style";
-
-const pinSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40" fill="none">
-  <path d="M14 0C6.268 0 0 6.268 0 14c0 10.5 14 26 14 26s14-15.5 14-26C28 6.268 21.732 0 14 0z" fill="#1e3a5f"/>
-  <circle cx="14" cy="14" r="7" fill="white"/>
-  <circle cx="14" cy="14" r="4" fill="#2d8a7e"/>
-</svg>`;
-
-const pinIcon = L.divIcon({
-  html: pinSvg,
-  className: "",
-  iconSize: [28, 40],
-  iconAnchor: [14, 40],
-  popupAnchor: [0, -36],
-});
+import { useState } from "react";
+import { Marker, Popup } from "react-map-gl/maplibre";
+import { BaseMap, MapPin } from "@/components/shared/base-map";
+import { hasMapCoordinates } from "@/lib/map-style";
 
 interface EventLocationMapProps {
   latitude?: string | null;
@@ -34,11 +18,12 @@ export function EventLocationMap({
   address,
   className,
 }: EventLocationMapProps) {
+  const [popupOpen, setPopupOpen] = useState(false);
   const lat = latitude ? parseFloat(latitude) : NaN;
   const lng = longitude ? parseFloat(longitude) : NaN;
   const mapClassName = className ?? "aspect-video max-h-[300px] rounded-xl overflow-hidden border";
 
-  if (isNaN(lat) || isNaN(lng)) {
+  if (!hasMapCoordinates(latitude, longitude)) {
     const query = address || locationName;
     if (!query) return null;
 
@@ -57,27 +42,23 @@ export function EventLocationMap({
 
   return (
     <div className={mapClassName} data-testid="map-event-location">
-      <MapContainer
-        center={[lat, lng]}
-        zoom={14}
-        scrollWheelZoom={false}
-        dragging={false}
-        zoomControl={false}
-        style={{ height: "100%", width: "100%" }}
-      >
-        <TileLayer
-          attribution={LEAFLET_SIMPLIFIED_TILE_ATTRIBUTION}
-          url={LEAFLET_SIMPLIFIED_TILE_URL}
-          referrerPolicy="strict-origin-when-cross-origin"
-        />
-        <Marker position={[lat, lng]} icon={pinIcon}>
-          {locationName && (
-            <Popup>
-              <span className="text-sm font-medium">{locationName}</span>
-            </Popup>
-          )}
+      <BaseMap center={[lat, lng]} zoom={14} interactive={false}>
+        <Marker latitude={lat} longitude={lng} anchor="bottom">
+          <MapPin label={locationName || "Event location"} onClick={() => setPopupOpen(true)} />
         </Marker>
-      </MapContainer>
+        {popupOpen && locationName && (
+          <Popup
+            latitude={lat}
+            longitude={lng}
+            anchor="bottom"
+            offset={40}
+            closeOnClick={false}
+            onClose={() => setPopupOpen(false)}
+          >
+            <span className="text-sm font-medium">{locationName}</span>
+          </Popup>
+        )}
+      </BaseMap>
     </div>
   );
 }

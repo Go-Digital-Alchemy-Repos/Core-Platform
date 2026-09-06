@@ -2,8 +2,9 @@
 
 The pure planning helper is `server/services/legacy-upload-migration-plan.ts`. The separately
 injected executor in `legacy-upload-migration.ts` and S3 adapter in `legacy-upload-storage.ts`
-implement verified, create-only copies. These are library components, not a production CLI
-or deployment approval. No actual storage migration has been performed.
+implement verified, create-only copies. Separate built read-only and apply operator commands
+now exist (documented below); their preparation is not deployment or copy approval. No actual
+production media migration has been performed.
 
 Existing installations may have objects at bucket-root logical keys; current Core prefixes
 uploads with `clients/<public-domain>/uploads`, or the stack ID before a domain is assigned.
@@ -41,10 +42,11 @@ bucket and uses `PutObject` with `IfNoneMatch: "*"`; existing destinations are n
 Resumes re-read both objects. Source changes and destination conflicts stop the plan.
 The adapter limits object bytes and applies a 30-second abort deadline across each GET including
 its body, or each PUT (configurable up to five minutes). A timed-out PUT may already have been
-accepted remotely; recovery must re-read and verify the destination. Conditional writes still
-require verification against the actual provider before operational use.
+accepted remotely; recovery must re-read and verify the destination. Actual R2 conditional-create behavior was verified on 2026-09-06 (see provider evidence below);
+that probe does not establish the writer barrier or verify a production media copy.
 
-Before wiring these libraries into an operator command or running a real migration:
+The operator commands implement the library requirements below; retain these invariants when
+running the still-pending real migration:
 
 1. Default to dry-run; require an explicit apply action and the separately approved exact
    plan ID. Revalidate its serialization, current stack/bucket/prefix and ownership proof.
@@ -149,9 +151,8 @@ Output is one aggregate JSON result: plan ID, dry-run mode, completion, object c
 statuses, with no keys, row values, credentials or raw errors. Failure is generic and exits
 nonzero. Database statements and storage operations have deadlines. Database idle and
 shutdown errors are contained so raw connection errors cannot escape through those paths.
-The command requires the candidate source and installed dependencies (including `tsx`);
-it is not a dist-only executable. No production invocation or copy is implied by its tests.
-
+The source entrypoint requires candidate sources and `tsx`; the built command below does not.
+No production invocation or copy is implied by artifact tests.
 
 ### Built command
 
@@ -165,7 +166,6 @@ claim that this tool is available on the current production deployment.
 CI checks missing-input rejection from a detached temporary directory through both the real
 file and a symlink entrypoint. This catches silent entrypoint skips caused by path normalization.
 It proves packaging and sanitized rejection, not a valid live source/provider dry run.
-
 
 ### Provider conditional-write verification
 
@@ -182,7 +182,6 @@ support the selected copy primitive, but do not establish a writer barrier or au
 production media copy. The final migration still requires fresh source verification and
 post-copy destination hashing through the direct S3 API.
 
-
 ### Separate explicit apply tooling
 
 The reviewed preparation now includes `dist/operations/apply-legacy-upload-migration.mjs`.
@@ -192,3 +191,29 @@ remains separate. Building or testing the apply tool grants no production-copy a
 writer-barrier, refreshed inventory, exact-plan and post-copy/cutover gates above still apply.
 Both operator commands reject database URL query parameters other than centrally validated
 sslmode so URL values cannot disable their session policy or query deadlines.
+
+### Maintenance operating sequence and writer barrier
+
+Follow the ordered [Core maintenance cutover evidence](../core-maintenance-release-gates-2026-09-06.md#ordered-maintenance-cutover-evidence):
+finish final immutable checks and prepare recovery/tool artifacts; freeze admissions on current
+Core without changing its upload namespace; inventory and terminate every previous writer;
+reconcile uncertain admitted writes; refresh deployment-bound exact inventory and independent
+approval; dry-run then conditional-copy and hash both objects; adopt the stable namespace while
+frozen; verify the recovery entrypoint and final application; reconcile historical work before
+reopening admission. Do not wait for unrelated Better Farms launch approvals during the freeze.
+
+Railway's [teardown lifecycle](https://docs.railway.com/deployments/deployment-teardown) sends
+SIGTERM and ultimately SIGKILL after its configured drain. Its
+[deployment reference](https://docs.railway.com/deployments/reference) documents a zero-second
+default and identifies Remove as stopping the running deployment. The candidate's 45-second
+configuration must be checked on the actual deployment. Inventory all relevant services,
+replicas and workers and retain final REMOVED states and logs for old deployments. Termination
+does not undo remote writes already accepted; reconcile their exact records/objects before final
+inventory. Neither elapsed time, one healthy new replica nor a flag alone proves this barrier.
+
+For current-Core maintenance, retain logical database references and original objects, use
+`clients/core-platform/uploads`, keep the public origin absent, and retain the explicit legacy
+backup namespace `system-backups`. This exception is the existing installation's maintenance
+contract, not a future-client preflight waiver or a root-key serving fallback. The recovery-only
+artifact preserves media access while business APIs/webhooks return 503; record and reconcile
+that interval rather than treating old transactions as demo data or restarting incompatible workers.

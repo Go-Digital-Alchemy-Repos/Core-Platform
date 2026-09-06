@@ -18,7 +18,7 @@ A `<Suspense>` wrapper with a `<PageLoader>` spinner displays while chunks load.
 Vite manual chunk rules keep common heavy dependencies out of unrelated routes:
 
 - `stripe` — checkout-only payment libraries
-- `maps` — Leaflet and React Leaflet
+- `maps` — MapLibre and React Map GL; Vite emits a separate `maplibre-gl-worker` asset for vector tile processing
 - `charts` — Recharts
 - `tiptap` and `prosemirror` — CMS/editor tooling
 - `carousel` — Embla carousel

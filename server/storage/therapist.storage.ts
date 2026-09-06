@@ -19,11 +19,7 @@ import type {
   DirectoryFilterOptions,
   SortOption,
 } from "@shared/types/directory";
-import {
-  DIRECTORY_MODE_PROFILE_ALIASES,
-  normalizeDirectoryMode,
-  type DirectoryMode,
-} from "@shared/types/directory-settings";
+import { directoryModeCondition, directoryModeSql } from "../lib/directory-mode-filter";
 
 interface InternalSearchParams {
   search?: string;
@@ -118,22 +114,6 @@ function buildFilterConditions(params: InternalSearchParams): SQL[] {
   }
 
   return conditions;
-}
-
-function directoryModeAliases(mode?: string): string[] {
-  if (!mode) return [];
-  const canonical = normalizeDirectoryMode(mode);
-  return DIRECTORY_MODE_PROFILE_ALIASES[canonical as DirectoryMode] ?? [canonical];
-}
-
-function directoryModeCondition(mode: string): SQL {
-  const aliases = directoryModeAliases(mode);
-  return sql`${therapistProfiles.directoryMode} = ANY(${aliases})`;
-}
-
-function directoryModeSql(mode?: string): SQL {
-  const aliases = directoryModeAliases(mode);
-  return aliases.length ? sql`AND ${therapistProfiles.directoryMode} = ANY(${aliases})` : sql``;
 }
 
 function buildOrderBy(sort: SortOption = "name", _latitude?: number, _longitude?: number) {

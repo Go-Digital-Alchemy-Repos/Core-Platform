@@ -64,20 +64,20 @@ users to sign in again.
 
 Helmet is enabled with the following CSP directives:
 
-| Directive     | Allowed Sources                                                                                               | Reason                                                  |
-| ------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| `default-src` | `'self'`                                                                                                      | Baseline restriction                                    |
-| `script-src`  | `'self'`, `https://js.stripe.com`                                                                             | App scripts + Stripe.js                                 |
-| `style-src`   | `'self'`, `'unsafe-inline'`, `https://fonts.googleapis.com`                                                   | App styles, inline styles (Tiptap/shadcn), Google Fonts |
-| `font-src`    | `'self'`, `https://fonts.gstatic.com`, `data:`                                                                | Google Fonts, embedded fonts                            |
-| `img-src`     | `'self'`, `data:`, `blob:`, `*.r2.cloudflarestorage.com`, `*.r2.dev`, `*.tile.openstreetmap.org`, `unpkg.com` | App images, R2 media, Leaflet tiles/markers             |
-| `connect-src` | `'self'`, `api.stripe.com`, `*.r2.cloudflarestorage.com`, `*.r2.dev`, `*.tile.openstreetmap.org`              | API calls, Stripe, R2 uploads, map tiles                |
-| `frame-src`   | `'self'`, `https://js.stripe.com`, `https://hooks.stripe.com`                                                 | Stripe 3D Secure / Elements iframes                     |
-| `media-src`   | `'self'`, `blob:`, `*.r2.cloudflarestorage.com`, `*.r2.dev`                                                   | Audio/video from R2                                     |
-| `worker-src`  | `'self'`, `blob:`                                                                                             | Service workers                                         |
-| `object-src`  | `'none'`                                                                                                      | Block plugins (Flash, Java)                             |
-| `base-uri`    | `'self'`                                                                                                      | Prevent base tag injection                              |
-| `form-action` | `'self'`                                                                                                      | Restrict form submission targets                        |
+| Directive | Allowed Sources | Reason |
+|---|---|---|
+| `default-src` | `'self'` | Baseline restriction |
+| `script-src` | `'self'`, `https://js.stripe.com` | App scripts + Stripe.js |
+| `style-src` | `'self'`, `'unsafe-inline'`, `https://fonts.googleapis.com` | App styles, inline styles (Tiptap/shadcn), Google Fonts |
+| `font-src` | `'self'`, `https://fonts.gstatic.com`, `data:` | Google Fonts, embedded fonts |
+| `img-src` | `'self'`, `data:`, `blob:`, `*.r2.cloudflarestorage.com`, `*.r2.dev`, `*.tile.openstreetmap.org`, `unpkg.com`, `tiles.openfreemap.org` | App images, R2 media, OpenFreeMap sprites/tiles |
+| `connect-src` | `'self'`, `api.stripe.com`, `*.r2.cloudflarestorage.com`, `*.r2.dev`, `*.tile.openstreetmap.org`, `tiles.openfreemap.org` | API calls, Stripe, R2 uploads, OpenFreeMap styles, vector tiles, sprites, and glyphs |
+| `frame-src` | `'self'`, `https://js.stripe.com`, `https://hooks.stripe.com` | Stripe 3D Secure / Elements iframes |
+| `media-src` | `'self'`, `blob:`, `*.r2.cloudflarestorage.com`, `*.r2.dev` | Audio/video from R2 |
+| `worker-src` | `'self'`, `blob:` | MapLibre worker and service workers |
+| `object-src` | `'none'` | Block plugins (Flash, Java) |
+| `base-uri` | `'self'` | Prevent base tag injection |
+| `form-action` | `'self'` | Restrict form submission targets |
 
 Additional Helmet settings:
 
