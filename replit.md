@@ -60,7 +60,7 @@ Core Platform is a platform dedicated to supporting Third Culture Kids (Core Pla
 
 ## External Dependencies
 - **Stripe**: Subscription and payment processing, application fees, and event registrations.
-- **OpenStreetMap & Leaflet**: Map integration for counselor locations and geographical mapping functionalities.
+- **MapLibre & OpenFreeMap**: Directory and event maps use MapLibre via React Map GL, with OpenFreeMap vector tiles and Logistics Advisor’s light palette. OpenStreetMap attribution is retained; no CARTO API key is required.
 - **Mailgun / Nodemailer**: Transactional email delivery.
 - **Cloudflare R2**: S3-compatible object storage for media assets.
 - **Sharp**: High-performance image processing (WebP conversion, resizing).
