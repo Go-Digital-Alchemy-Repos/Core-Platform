@@ -57,6 +57,7 @@ const AdminUsersPage = lazy(() => import("@/features/admin/users-page"));
 const AdminDirectorySettingsPage = lazy(() => import("@/features/admin/directory-settings-page"));
 const AdminFormsPage = lazy(() => import("@/features/admin/forms-page"));
 const AdminCrmSettingsPage = lazy(() => import("@/features/admin/crm-settings-page"));
+const CrmFollowUpsPage = lazy(() => import("@/features/admin/crm-follow-ups-page"));
 const AdminCrmPage = lazy(() => import("@/features/admin/crm-page"));
 const AdminCrmClientsPage = lazy(() => import("@/features/admin/crm-clients-page"));
 const AdminEventsPage = lazy(() => import("@/features/admin/events-page"));
@@ -609,6 +610,11 @@ function Router() {
         <Route path="/admin/forms">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             <AdminFormsPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/crm/follow-ups">
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["crm"]}>
+            {siteFeatures.crmEnabled ? <CrmFollowUpsPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/crm/settings">
