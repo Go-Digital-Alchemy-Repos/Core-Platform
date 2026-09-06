@@ -5,6 +5,28 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Isolated rollback maintenance artifact prepared
+
+Rollback branch `codex/namespace-rollback` now has candidate `3ccc819`: a separate compiled
+`rollback-maintenance.cjs` entrypoint that serves health/readiness and namespaced media only.
+It does not import normal application bootstrap, migrations, sessions, business routes or worker
+startup. All other requests, including webhooks, return503 for later retry/reconciliation. It
+requires frozen upload configuration, forces read-only database sessions and verifies that state
+in readiness. The normal npm-start entrypoint is unchanged and must not be confused with this mode.
+
+Root passed405 tests, types, scoped lint and build, then ran the compiled artifact against an
+owned empty PostgreSQL16 fixture: read-only readiness passed, business requests were rejected,
+no application tables were created and SIGTERM exited0; fixture and volume were removed.
+Artifact SHA256 `079417c7478f1cd6d18972b5e01029c4353ca2b80d4d0e7d2730a57a58aacc76`.
+Independent review is assigned before acceptance. This is an explicitly limited recovery interval,
+not a working storefront/admin rollback, not deployed, and not proof of live-media acceptance.
+Replacing/draining old writers, exact production start-command verification, media reads and
+return-to-current-version queue/provider reconciliation remain operational gates.
+
+The seven-route Better Farms browser sweep independently passed18/19 cases and found a mobile
+menu focus escape; its bounded fix and repeat route/integration acceptance are now assigned.
+This does not substitute for client copy/domain approval or claim comprehensive WCAG conformance.
+
 ### Actual populated rollback schema rehearsal
 
 Root extended the disposable upgrade runner with an optional immutable `--rollback-ref`. On actual
