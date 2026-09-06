@@ -189,3 +189,16 @@ review accepted it and root reran four PostgreSQL tests successfully; the owned
 fixture was removed. Updated recovery evidence and release integration remain
 pending. None of this later CRM work is claimed as deployed in the maintenance
 release.
+
+
+CRM recovery follow-up is accepted at `f1479fb`: root independently reran the
+actual synthetic capture/restore/worker rehearsal against `ed3ee09`; all 109
+tables/20 rows matched exactly both immediately after restore and after migration
+reruns. Zero/false, archived choice history, pinned pending jobs and idempotent
+replay passed; owned fixtures were removed. R2 transport remains explicitly mocked
+in this CRM-specific rehearsal. The branch is clean and pushed. Next integration
+step is bringing current main `a99bb7e` into this CRM candidate, running final
+release checks and validating additive upgrade/compatibility against the now-live
+maintenance baseline before any CRM deployment. The durable operator ledger
+branch remains separate; do not accidentally bundle operator tools into that
+release. Core maintenance is already live and upload admission remains open.
