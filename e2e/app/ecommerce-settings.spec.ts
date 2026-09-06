@@ -164,6 +164,9 @@ test("synthetic Stripe test configuration saves masked status and blank resave p
   expect(raw).not.toContain(webhook);
   const masked = JSON.parse(raw);
   expect(masked).toMatchObject({
+    providerTransactionsEnabled: false,
+    configured: true,
+    awaitingActivation: true,
     activeMode: "test",
     testPublishableKey: publishable,
     hasTestSecretKey: true,
@@ -171,6 +174,9 @@ test("synthetic Stripe test configuration saves masked status and blank resave p
     hasLiveSecretKey: false,
     hasLiveWebhookSecret: false,
   });
+  await expect(page.getByTestId("stripe-activation-status")).toContainText(
+    "Awaiting payment activation",
+  );
   expect(masked).not.toHaveProperty("testSecretKey");
   expect(masked).not.toHaveProperty("testWebhookSecret");
 
@@ -180,6 +186,10 @@ test("synthetic Stripe test configuration saves masked status and blank resave p
   await saveAndReload(page, api, "Save Stripe settings");
   expect((await resave).postDataJSON()).toMatchObject({ testSecretKey: "", testWebhookSecret: "" });
   expect(await savedSettings(page, api)).toEqual(masked);
+  await expect(page.getByTestId("stripe-activation-status")).toContainText(
+    "Awaiting payment activation",
+  );
+  expect((await resave).postDataJSON()).not.toHaveProperty("providerTransactionsEnabled");
   await expect(testKeys.getByPlaceholder("Secret key saved", { exact: true })).toHaveValue("");
   await expect(testKeys.getByPlaceholder("Webhook secret saved", { exact: true })).toHaveValue("");
 });

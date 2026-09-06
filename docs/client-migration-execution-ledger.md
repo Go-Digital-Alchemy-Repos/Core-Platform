@@ -5,6 +5,21 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Maintenance cutover sequence reconciled; browser activation acceptance passed
+
+Independent operational review reconciled completed Core517a88d/recoveryf9036a3 hosted checks,
+copy-tool evidence and remaining live gates in the maintenance matrix/runbook. Root clarified
+that namespace settings must accompany the namespace-aware recovery artifact/start command;
+a read from the old root-key application cannot establish cutover acceptance. Freeze/drain,
+refreshed exact-object approval, actual copy, live recovery and final rollout remain unperformed.
+Railway still reports b620280d/a006f36 SUCCESS with prior deployments REMOVED. No production
+configuration changed. Better Farms launch and isolated CRM-2 are separate from maintenance.
+
+Real desktop/mobile Stripe settings tests now prove saved synthetic credentials remain awaiting
+activation after save/reload and blank-secret resave; the UI request cannot set the operator flag.
+Both cases passed (13.0 seconds), and the owned PostgreSQL fixture was removed. These tests make
+no provider calls. The maintenance candidate is being stabilized for final hosted validation.
+
 ### CRM-2 contract accepted for isolated implementation
 
 Root accepted [the typed-field/mapping design](crm-custom-fields-implementation-plan.md), including
