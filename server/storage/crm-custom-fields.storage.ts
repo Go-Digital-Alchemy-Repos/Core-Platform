@@ -22,7 +22,7 @@ import {
   type CrmCustomFieldDefinition,
 } from "@shared/crm-custom-fields";
 export type CrmCustomFieldsTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-const createSchema = z
+export const crmCustomFieldCreateSchema = z
   .object({
     key: crmCustomFieldKeySchema,
     entityScope: crmCustomFieldScopeSchema,
@@ -30,7 +30,7 @@ const createSchema = z
     config: crmCustomFieldConfigSchema,
   })
   .strict();
-const reviseSchema = z
+export const crmCustomFieldRevisionSchema = z
   .object({
     expectedRevision: z.number().int().min(1).max(2147483646),
     config: crmCustomFieldConfigSchema,
@@ -93,7 +93,7 @@ export class CrmCustomFieldsStorage {
     actorId?: string | null,
     transaction?: CrmCustomFieldsTransaction,
   ) {
-    const data = createSchema.parse(input);
+    const data = crmCustomFieldCreateSchema.parse(input);
     return transact(transaction, async (tx) => {
       await lockCrmCustomFieldDefinitions(tx, "write");
       const inventory = await this.listDefinitions(tx);
@@ -127,7 +127,7 @@ export class CrmCustomFieldsStorage {
     transaction?: CrmCustomFieldsTransaction,
   ) {
     z.string().uuid().parse(id);
-    const data = reviseSchema.parse(input);
+    const data = crmCustomFieldRevisionSchema.parse(input);
     return transact(transaction, async (tx) => {
       await lockCrmCustomFieldDefinitions(tx, "write");
       const inventory = await this.listDefinitions(tx),

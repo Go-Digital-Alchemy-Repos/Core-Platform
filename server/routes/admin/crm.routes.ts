@@ -1,3 +1,4 @@
+import crmCustomFieldsRoutes from "./crm-custom-fields.routes";
 import { requireRole } from "../../middleware/auth";
 import {
   getCrmPipelineSettings,
@@ -18,6 +19,7 @@ import { paramString } from "../../utils/params";
 import type { CrmClientStatus, CrmLeadStage } from "@shared/schema";
 
 const router = Router();
+router.use(crmCustomFieldsRoutes);
 
 router.get(
   "/settings/pipeline",

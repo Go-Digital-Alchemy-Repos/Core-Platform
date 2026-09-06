@@ -28,6 +28,9 @@ vi.mock("../db", async () => {
   const pool = new Pool({
     connectionString: process.env.CRM_CUSTOM_FIELDS_TEST_DATABASE_URL,
     max: 5,
+    connectionTimeoutMillis: 5000,
+    query_timeout: 15000,
+    statement_timeout: 10000,
   });
   return { pool, db: drizzle(pool, { schema }) };
 });

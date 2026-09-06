@@ -144,3 +144,18 @@ Old code ignores new columns/tables but cannot safely consume new mapped CRM job
 3. Implement mapping preview and submission snapshots with legacy job compatibility; real DB tests cover edit/archive between acceptance and execution, claim retry, duplicate intake/custom-value merge and response-loss replay producing one CRM effect-set.
 4. Actual-app browser: admin creates field → maps a synthetic form → previews invalid/valid values → submits → sees typed lead values → wins lead → verifies copied client values → edits client → retries won without overwrite → archives field and reloads retained values. Verify editor permissions, invalid input retention, failed GET/save, keyboard/mobile/themes. No mocked success responses, client data or provider calls.
 5. Complete populated migration, backup/restore and rollback rehearsal, full required checks and independent review; record exact SHAs/evidence before release. Metadata-only storage, a settings-only editor, or unit tests alone do not satisfy CRM-2.
+
+## API implementation checkpoint — 2026-09-06
+
+Root accepted the definition and record-value API slice after independent review of
+the mounted authentication/feature/permission chain and transactional storage
+composition. Root reran all 38 service, mounted custom-field route and pipeline
+route tests successfully. Definition writes require admin; record edits retain
+existing CRM editor permissions. Strict requests and sanitized errors preserve
+concurrency conflicts without exposing submitted values or database errors.
+
+The implementation worker also reported 18 PostgreSQL/schema checks and scoped
+type, lint and formatting checks passing. The remaining UI, atomic creation/won
+conversion, form mapping and durable snapshot integration, populated upgrade and
+backup/restore acceptance remain required before CRM-2 release. This API acceptance
+does not change the separate maintenance release candidate.
