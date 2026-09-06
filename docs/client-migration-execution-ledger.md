@@ -5,6 +5,21 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Integrated release draft opened
+
+[Draft PR11](https://github.com/Go-Digital-Alchemy-Repos/Core-Platform/pull/11) now exposes the
+integrated client/reliability candidate for review against deployed main. Its body records the
+full scope and explicitly holds merge/deployment for final checks, reviewed copy/barrier/media
+acceptance and recovery operations. It does not authorize imports, DNS, provider activation or
+production storage writes. The separate recovery artifact is not merged into this PR.
+
+The exact-object apply tooling is under bounded implementation/review. Its accepted contract
+requires an explicit copy approval distinct from dry-run approval, a separately bound operator
+writer-drain attestation, current frozen runtime, independent0600 input files and a fresh fsynced
+ledger. Operator attestation is not platform verification. New attempts reverify actual objects
+rather than trusting old ledger markers, and sources are never deleted or overwritten.
+No command has been used to copy a production object.
+
 ### First hosted Linux pilot acceptance passed
 
 Hosted run34004914446, pilot job101410232417, passed all22 browser cases in54.6 seconds at
