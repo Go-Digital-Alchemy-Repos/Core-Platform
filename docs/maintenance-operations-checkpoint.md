@@ -414,3 +414,33 @@ graceful phase to signal the leader first, then escalate remaining owned group
 processes and verify full absence. Combined independent review and integration
 remain pending. GitHub registration still displays Confirm access; no release
 protection or deployment changes occurred.
+
+### Reviewed integration and clean-candidate validation
+
+Independent review accepted all eleven rehearsal changes after the pilot
+leader-first shutdown correction and runtime creation-intent correction.
+Committed623ee9b (plus root99e0540) and merged cleanly into integration
+8a6cdcc6dd008198840c6eee1482d3cf7c0eafa6; both branches pushed.
+
+At that exact clean candidate, root standard checks passed: types, lint,
+formatting, build, budget,1,121 ordinary tests (72 opt-in skipped), and10 Python
+cleanup tests. Separate PostgreSQL matrix passed97 test executions including
+both timezones, settings, CRM persistence/mapping/profile, standalone migration
+and atomic fulfillment; two fresh migration starts passed. Captured fixture
+container/volume absence and final process checks passed, checkout clean.
+
+All22 Better Farms pilot cases passed against pinned site7fd1298 with direct
+logs and independently verified process-group/container/volume absence. All
+three CRM/historical recovery rehearsals passed:109tables/20syntheticrows,
+legacy preservation across two starts, and duplicate-paid-history rejection.
+Root final compiled Linux runtime also passed on clean8a6cdcc with SIGTERM
+exit0 in0.064seconds and explicit cleanup proof. These are individual gate
+results, not permission to deploy or an assertion that the full goal is done.
+
+Private evidence roots: combined-8a6cdcc-checks, combined-db-8a6cdcc,
+combined-runtime-8a6cdcc, release-rehearsals-8a6cdcc-bb94c1bbff, and
+release-validation/pilot-8a6cdcc-2ad59ca6 under Core Platform Operations.
+Full application browser suite is still running; detached artifact and preflight
+checks are assigned next. Final normalized independent release review and a
+fresh production backup/restore remain due. GitHub App authentication remains
+pending; Actions stays disabled and no protection bypass is permitted.
