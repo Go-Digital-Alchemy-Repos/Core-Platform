@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-06T06:05:48.365183+00:00",
+  "sourceCommit": "a99bb7efeb4c007789c20da91ff0e2d395452836",
+  "sourceDeployment": "26d0c65b-0521-4aef-b146-86fb3d12a6ed",
+  "candidate": "8a6cdcc6dd008198840c6eee1482d3cf7c0eafa6",
+  "captureAttempt": "637c49c0-f42f-4f4f-a282-53ecf58b65dc",
+  "backupSha256": "96b1db57984f557c21a43492425170080d1a5db25782688d76ba59e70f550806",
+  "compressedBytes": 310831,
+  "tableCount": 105,
+  "rowCount": 671,
+  "captureAcknowledged": true,
+  "originalWrapper": {
+    "status": "failed-or-uncertain",
+    "remoteCleanup": false,
+    "supervisorDisposition": "terminated-unreaped; PID367 stateZ PPID1; retained unchanged"
+  },
+  "retrieval": {
+    "attempt": "1e06f527-63c6-4c6c-927d-0eb9d253962a",
+    "operation": "retrieve-only",
+    "status": "retrieved-and-cleaned",
+    "captureRepeated": false,
+    "localPayloadVerified": true,
+    "newAttemptRemoteCleanup": true,
+    "outcomeSha256": "e30f6bb441c1d172096c25e66b575510e65dfb4e39bdb7a4f2c6f03cb917de33"
+  },
+  "restore": {
+    "status": "passed",
+    "receiptSha256": "a00950626445445898269c642b9fff7c359f664e2ede20f51b59c7ebfcc227f0",
+    "rowsVerified": true,
+    "sequenceSemanticsVerified": true,
+    "migrationReplayCalls": 2,
+    "httpRestartTest": false,
+    "candidateCleanBeforeAfter": true,
+    "ownedContainersVolumesProcessesRemoved": true,
+    "temporaryPayloadCopiesRemoved": true
+  },
+  "bucketPublicAccessObserved": "Disabled",
+  "productionHealthAfterCapture": 200,
+  "productionReadinessAfterCapture": 200,
+  "releaseApproved": false,
+  "notes": "Private payload and transport retained outside repository. Existing backups not pruned. No production app deployment or provider transactions. Authenticated release-control gates remain pending."
+}

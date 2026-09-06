@@ -592,3 +592,28 @@ view of recorded notes/task creation as smaller possible increments. Multiple
 pipelines, opportunities and restricted notes require demand/contract decisions;
 no schema, permission, financial or notification expansion is authorized by
 that assessment alone. Upstream source-cache limitations are explicitly recorded.
+
+
+### Fresh snapshot retrieval and candidate restore passed
+
+Reviewed v2 retrieval-only attempt1e06f527-63c6-4c6c-927d-0eb9d253962a
+successfully retrieved the existing acknowledged snapshot by exact digest and
+length. It observed its own child/supervisor groups and temporary directory
+absent; capture was not repeated. Original attempt637c49c0 and supervisorZ
+remain explicitly retained. Root independently ran the two Linux v2 lifecycle
+tests before invocation and engineering independently accepted the tool.
+
+Root then restored the private105table/671row snapshot against clean8a6cdcc.
+Every captured row and original column matched; sequence reset semantics and
+two migration replay calls passed. This was not an HTTP app restart and started
+no workers/providers. Exact owned container, volume, process and temporary-copy
+cleanup passed. Receipt SHA256:
+a00950626445445898269c642b9fff7c359f664e2ede20f51b59c7ebfcc227f0.
+Non-sensitive evidence is in release-evidence/core-fresh-recovery-637c49c0.json;
+raw payload stays in private Operations/recovery-retrieval-attempts.
+Health/readiness were both200 after capture. No app deployment occurred.
+
+Draft PR14 now records verified fresh recovery alongside its accepted26 local
+gates. The authenticated release-control gate remains pending; Actions and
+branch protections remain unchanged. CRM follow-up candidate985e976 is separately
+reviewable as draft PR15, stacked on PR14, without changing frozen8a6cdcc.
