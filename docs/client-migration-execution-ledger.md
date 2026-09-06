@@ -5,6 +5,22 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Stripe configuration preflight before local mutations
+
+Root reviewed and independently passed all 72 ecommerce service tests plus 12 neighboring
+webhook/inventory/public-order regressions. Provider-backed manual-order payment links,
+existing-order payment links, standalone payment requests and Stripe refunds now resolve a
+validated Stripe client before customer/order/request/refund writes. The same client is passed
+through dispatch, avoiding a mutable configuration reread after reservation. Missing/mismatched
+configuration leaves no new local records. Deliberate offline draft, mark-paid and manual-refund
+operations do not require Stripe. Ambiguous failures after dispatch retain their draft/pending
+records for reconciliation; this change does not claim remote account/network validation.
+
+Types, scoped lint and formatting passed. The minimal refund-gateway API accepts an optional
+resolved client for this internal flow; existing callers remain supported. No provider request
+or production change occurred. Manual transaction browser acceptance remains in progress and
+provider activation/sandbox acceptance remains a separate release gate.
+
 ### Rollback candidate preserved and release findings assigned
 
 Root reviewed the isolated media rollback port, compared its R2/helper bytes to the integration

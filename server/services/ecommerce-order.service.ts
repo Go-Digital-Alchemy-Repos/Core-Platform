@@ -230,15 +230,19 @@ function getManualDiscounts(data: z.infer<typeof manualOrderSchema>, lines: Pric
   return discounts;
 }
 
-async function createStripeCheckoutSessionForPaymentRequest(params: {
-  paymentRequestId: string;
-  orderId?: string | null;
-  customerEmail: string;
-  title: string;
-  description?: string | null;
-  amount: number;
-}) {
-  const stripe = await getEcommerceStripeClient();
+type ResolvedStripeClient = Awaited<ReturnType<typeof getEcommerceStripeClient>>;
+
+async function createStripeCheckoutSessionForPaymentRequest(
+  params: {
+    paymentRequestId: string;
+    orderId?: string | null;
+    customerEmail: string;
+    title: string;
+    description?: string | null;
+    amount: number;
+  },
+  stripe: ResolvedStripeClient,
+) {
   return stripe.checkout.sessions.create(
     {
       mode: "payment",
@@ -708,6 +712,7 @@ export async function createManualEcommerceOrderDraft(
   }
   const isPaid = data.paymentAction === "mark_paid";
   const isPaymentLink = data.paymentAction === "send_payment_link";
+  const stripe = isPaymentLink ? await getEcommerceStripeClient() : undefined;
   const order = await storage.ecommerce.createOrder(
     {
       customerId: customer.id,
@@ -750,10 +755,14 @@ export async function createManualEcommerceOrderDraft(
 
   let paymentLink: Awaited<ReturnType<typeof createPaymentLinkForOrder>> | null = null;
   if (isPaymentLink) {
-    paymentLink = await createPaymentLinkForOrder(order.id, {
-      reason: data.customReason || data.notes || "Manual order payment link",
-      createdBy: actor?.id,
-    });
+    paymentLink = await createPaymentLinkForOrderWithClient(
+      order.id,
+      {
+        reason: data.customReason || data.notes || "Manual order payment link",
+        createdBy: actor?.id,
+      },
+      stripe,
+    );
   }
 
   const details = await storage.ecommerce.getOrderWithDetails(order.id);
@@ -764,11 +773,20 @@ export async function createPaymentLinkForOrder(
   orderId: string,
   options: { reason?: string; createdBy?: string | null } = {},
 ) {
+  return createPaymentLinkForOrderWithClient(orderId, options);
+}
+
+async function createPaymentLinkForOrderWithClient(
+  orderId: string,
+  options: { reason?: string; createdBy?: string | null },
+  resolvedStripe?: ResolvedStripeClient,
+) {
   const order = await storage.ecommerce.getOrderWithDetails(orderId);
   if (!order) throw httpError("Order not found", 404);
   if (order.totalAmount <= 0)
     throw httpError("Order total must be greater than zero before requesting payment.", 400);
   if (order.paymentStatus === "paid") throw httpError("This order has already been paid.", 400);
+  const stripe = resolvedStripe ?? (await getEcommerceStripeClient());
   const reason = options.reason?.trim() || "Manual order payment link";
   const request = await storage.ecommerce.createPaymentRequest({
     orderId: order.id,
@@ -783,14 +801,17 @@ export async function createPaymentLinkForOrder(
     reason,
     createdBy: options.createdBy ?? null,
   });
-  const session = await createStripeCheckoutSessionForPaymentRequest({
-    paymentRequestId: request.id,
-    orderId: order.id,
-    customerEmail: request.customerEmail,
-    title: request.title,
-    description: request.description,
-    amount: request.amount,
-  });
+  const session = await createStripeCheckoutSessionForPaymentRequest(
+    {
+      paymentRequestId: request.id,
+      orderId: order.id,
+      customerEmail: request.customerEmail,
+      title: request.title,
+      description: request.description,
+      amount: request.amount,
+    },
+    stripe,
+  );
   await storage.ecommerce.updatePaymentRequest(request.id, {
     status: "open",
     stripeSessionId: session.id,
@@ -841,6 +862,7 @@ export async function createStandalonePaymentRequest(
   actor?: Pick<User, "id"> | null,
 ) {
   const data = standalonePaymentRequestSchema.parse(input);
+  const stripe = await getEcommerceStripeClient();
   let customer = data.customerId ? await storage.ecommerce.getCustomer(data.customerId) : undefined;
   if (!customer && data.customer) {
     customer = await storage.ecommerce.findOrCreateCustomer({
@@ -864,13 +886,16 @@ export async function createStandalonePaymentRequest(
     reason: data.reason,
     createdBy: actor?.id ?? null,
   });
-  const session = await createStripeCheckoutSessionForPaymentRequest({
-    paymentRequestId: request.id,
-    customerEmail,
-    title: data.title,
-    description: data.description,
-    amount: data.amount,
-  });
+  const session = await createStripeCheckoutSessionForPaymentRequest(
+    {
+      paymentRequestId: request.id,
+      customerEmail,
+      title: data.title,
+      description: data.description,
+      amount: data.amount,
+    },
+    stripe,
+  );
   const updated = await storage.ecommerce.updatePaymentRequest(request.id, {
     status: "open",
     stripeSessionId: session.id,

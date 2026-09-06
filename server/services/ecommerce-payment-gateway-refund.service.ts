@@ -73,11 +73,12 @@ export function assertPaymentGatewayRefundReady(
 
 export async function createPaymentGatewayRefund(
   params: GatewayRefundParams,
+  resolvedStripe?: Awaited<ReturnType<typeof getEcommerceStripeClient>>,
 ): Promise<GatewayRefundResult> {
   assertPaymentGatewayRefundReady(params.provider, params.order);
 
   if (params.provider === "stripe") {
-    const stripe = await getEcommerceStripeClient();
+    const stripe = resolvedStripe ?? (await getEcommerceStripeClient());
     const refund = await stripe.refunds.create(
       {
         payment_intent: params.order.stripePaymentIntentId!,
