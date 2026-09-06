@@ -1,3 +1,5 @@
+import type { CrmLeadNoteDetail } from "@shared/crm-note-presentation";
+import { CrmNoteList, CrmNoteVisibility } from "./crm-note-list";
 import {
   CrmRecordCustomFields,
   ManualCrmCustomFields,
@@ -25,7 +27,6 @@ import {
   CRM_LEAD_STAGES,
   type CrmLead,
   type CrmClient,
-  type CrmLeadNote,
   type CrmLeadStage,
   type CrmLeadTask,
 } from "@shared/schema";
@@ -69,7 +70,11 @@ import {
   UserRound,
 } from "lucide-react";
 
-type LeadDetail = CrmLead & { notes: CrmLeadNote[]; tasks: CrmLeadTask[]; client?: CrmClient };
+type LeadDetail = CrmLead & {
+  notes: CrmLeadNoteDetail[];
+  tasks: CrmLeadTask[];
+  client?: CrmClient;
+};
 
 const PipelinePresentation = createContext(pipelinePresentation(DEFAULT_CRM_PIPELINE_CONFIG));
 
@@ -477,6 +482,7 @@ function LeadDetailSheet({ leadId, onClose }: { leadId: string | null; onClose: 
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="notes" className="space-y-3">
+                  <CrmNoteVisibility />
                   <Textarea
                     rows={3}
                     placeholder="Add an internal note..."
@@ -490,16 +496,7 @@ function LeadDetailSheet({ leadId, onClose }: { leadId: string | null; onClose: 
                   >
                     Add Note
                   </Button>
-                  <div className="space-y-2">
-                    {lead.notes.map((item) => (
-                      <div key={item.id} className="rounded-md border p-3 text-sm">
-                        <p className="whitespace-pre-wrap">{item.body}</p>
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          {formatDate(item.createdAt)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+                  <CrmNoteList notes={lead.notes} formatDate={formatDate} />
                 </TabsContent>
                 <TabsContent value="tasks" className="space-y-3">
                   <div className="grid gap-2 sm:grid-cols-[1fr_160px_auto]">
