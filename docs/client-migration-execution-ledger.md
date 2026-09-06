@@ -5,6 +5,16 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Better Farms navigation acceptance follow-up
+
+Site `8021f6b` is committed and pushed on `codex/form-reliability`. It preserves the configured
+canonical origin through unknown-route loads, removes canonical links on unknown SPA routes,
+recreates them on valid routes, and removes the explicit browser zoom cap. All 35 site tests,
+types and build passed; the compiled production app passed actual Chromium direct-load,
+SPA-navigation and Back/Forward metadata checks using a synthetic origin. The local browser
+and app were stopped. Hosted CI and the Core two-origin rerun for this new site revision are
+still pending; no site or Core deployment occurred. See the updated route acceptance status.
+
 ### Settings and release checkpoint — 2026-09-06 UTC
 
 All five Ecommerce Settings destinations were corrected and verified in production by the

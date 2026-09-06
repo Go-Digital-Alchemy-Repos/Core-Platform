@@ -7,6 +7,21 @@ This is a React/source audit, not a new seven-route browser approval. The existi
 slice with synthetic data; it does not prove the other routes or form delivery.
 The approved intake covers seven routes and excludes imports, live checkout and production DNS.
 
+## Follow-up verification
+
+Site `cec78df` fixed the contact/newsletter retry gap below; Core's real two-origin browser
+proof verified after-commit response loss and one receipt/effect set on retry (see the execution
+ledger). Those source findings are retained as the original audit, not current open defects.
+
+Site `8021f6b` fixes canonical removal/recreation during unknown-route navigation and removes
+`maximum-scale=1`. Its 35 tests, type check and production build passed. Playwright CLI verified
+the compiled site with a synthetic public origin: direct unknown route → About SPA navigation
+→ Back → Forward correctly removed/recreated exactly one canonical and changed robots metadata.
+No production release or full accessibility approval is implied. Core's two-origin source pin
+still references `cec78df` and must be updated and rerun before accepting the new combined pair.
+External hero image policy, approved quotations/identities/assets and broader route interaction
+acceptance remain open.
+
 ## Route matrix
 
 All seven paths are actually mounted in site `client/src/App.tsx:51`; each renders
