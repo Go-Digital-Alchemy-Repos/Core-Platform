@@ -15,6 +15,22 @@ and operational recovery. Track discovered defects and unresolved capabilities;
 “world class” is an aspiration, not evidence that every bug has been eliminated.
 Production release and provider activation retain their existing safety gates.
 
+### Settings 404 report reverified — 2026-09-06
+
+Root traced the original nested-route omission to the accepted `0fad6e8` fix.
+Read-only inspection of the authenticated production admin now successfully
+opened Store origin/shipping markets, Customer accounts, Security Center, Stripe
+settings, and Tax settings. Tax also loaded after full page refresh. No settings
+were saved during these live checks. This verifies the original report is resolved
+in the observed live session; it does not claim every ecommerce defect is fixed.
+
+The combined `346359b` candidate independently passed all 16 settings browser
+cases on desktop/mobile, including persistence, failure/retry and authorization,
+with owned fixture/process cleanup. Receipt is retained in private Operations/
+combined-ecommerce-settings-20260906T231039Z-5363a228. Read-only review also found
+Security Center auxiliary request failures misleadingly render zero activity or
+no fraud blocks. A separate scoped correction is in progress and not deployed.
+
 ### Next combined candidate — 2026-09-06
 
 Root integrated accepted CRM follow-ups, safe tracking links, customer checkout
