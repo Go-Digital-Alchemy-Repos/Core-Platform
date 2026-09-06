@@ -57,3 +57,9 @@ and donation-to-contact behavior. The mobile drawer regression checks both Tab
 directions, Escape/trigger restoration, background inert restoration and desktop
 resize. All 22 pilot cases passed against the pin above; see
 `docs/pilots/better-farms/route-acceptance-status.md` for scope and remaining gates.
+
+Hosted quality gates check out the exact reviewed public Better Farms revision into an isolated
+checkout with persisted credentials disabled and run this same22-case suite. The existing required
+Verify job explicitly fails if pilot acceptance fails or is cancelled/skipped; adding a separate
+job does not make the pilot an optional release check. The source pin in the workflow and launcher
+must move together after review. Failure traces and synthetic receipt evidence are retained14days.

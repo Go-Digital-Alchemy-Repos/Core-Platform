@@ -9,8 +9,54 @@ permissions:
   contents: read
 
 jobs:
+  pilot-acceptance:
+    name: Better Farms pilot acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out Core
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check out reviewed Better Farms source
+        uses: actions/checkout@v7
+        with:
+          repository: Go-Digital-Alchemy-Repos/Better-Farms
+          ref: 7fd1298beb373ee447aa97f578fb11e575faf8f0
+          path: .pilot-source
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Core dependencies
+        run: npm ci
+
+      - name: Install browser runtime
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify actual two-origin pilot
+        env:
+          PILOT_SITE_ROOT: ${{ github.workspace }}/.pilot-source
+        run: npx playwright test --config playwright.pilot.config.ts
+
+      - name: Preserve pilot failure and receipt evidence
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: better-farms-pilot-evidence
+          path: test-results/pilot/
+          if-no-files-found: warn
+          retention-days: 14
+
   verify:
     name: Verify
+    needs: pilot-acceptance
+    if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
@@ -29,6 +75,11 @@ jobs:
           --health-retries 10
 
     steps:
+      - name: Require successful pilot acceptance
+        env:
+          PILOT_RESULT: ${{ needs.pilot-acceptance.result }}
+        run: test "$PILOT_RESULT" = success
+
       - name: Check out source
         uses: actions/checkout@v7
 
