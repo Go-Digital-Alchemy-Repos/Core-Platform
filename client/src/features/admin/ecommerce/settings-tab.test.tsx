@@ -129,7 +129,9 @@ describe("Stripe activation status", () => {
         title,
       );
       if (configured && enabled) {
-        expect(host.querySelector('[data-testid="stripe-activation-status"]')?.textContent).toContain(
+        expect(
+          host.querySelector('[data-testid="stripe-activation-status"]')?.textContent,
+        ).toContain(
           "Checkout also requires the active publishable key, webhook setup, and provider acceptance.",
         );
       }
