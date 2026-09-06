@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useState } from "react";
+import { getSafeEcommerceTrackingUrl } from "@shared/ecommerce-tracking-url";
+import { FormEvent, useEffect, useState, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { CheckCircle2, Clock3, ExternalLink, Package, Truck } from "lucide-react";
 import { PageLayout } from "@/components/layout/page-layout";
@@ -80,39 +81,84 @@ export default function OrderStatusPage() {
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [linkMessage, setLinkMessage] = useState("");
 
+  const [error, setError] = useState("");
+  const [pending, setPending] = useState<"lookup" | "link" | null>(null);
+  const sequence = useRef(0);
+  const active = useRef<number | null>(null);
+  type Request = { id: number; orderId: string; email: string; token: string };
+  const finish = (_data: unknown, _error: unknown, request: Request) => {
+    if (active.current !== request.id) return;
+    active.current = null;
+    setPending(null);
+  };
   const mutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (request: Request) => {
       const res = await apiRequest("POST", "/api/ecommerce/orders/status", {
-        orderId,
-        email,
-        token,
+        orderId: request.orderId,
+        email: request.email,
+        token: request.token,
       });
       return res.json() as Promise<OrderDetails>;
     },
-    onSuccess: setOrder,
+    onSuccess: (data, request) => {
+      if (active.current === request.id) setOrder(data);
+    },
+    onError: (_error, request) => {
+      if (active.current === request.id)
+        setError("Order could not be loaded. Check your details and try again.");
+    },
+    onSettled: finish,
   });
   const linkMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/ecommerce/orders/status-link", { orderId, email });
+    mutationFn: async (request: Request) => {
+      const res = await apiRequest("POST", "/api/ecommerce/orders/status-link", {
+        orderId: request.orderId,
+        email: request.email,
+      });
       return res.json() as Promise<{ message: string }>;
     },
-    onSuccess: (data) => {
-      setLinkMessage(data.message);
-      setOrder(null);
+    onSuccess: (data, request) => {
+      if (active.current === request.id) setLinkMessage(data.message);
     },
+    onError: (_error, request) => {
+      if (active.current === request.id)
+        setError("Secure status link could not be requested. Please try again.");
+    },
+    onSettled: finish,
   });
-
+  const start = () => {
+    if (active.current !== null) return;
+    const request = { id: ++sequence.current, orderId, email, token };
+    active.current = request.id;
+    setOrder(null);
+    setLinkMessage("");
+    setError("");
+    if (token.trim()) {
+      setPending("lookup");
+      mutation.mutate(request);
+    } else {
+      setPending("link");
+      linkMutation.mutate(request);
+    }
+  };
+  const edit = (setter: (value: string) => void, value: string) => {
+    // Inputs may change while a response is in flight; that response no longer owns the UI.
+    active.current = null;
+    setPending(null);
+    setOrder(null);
+    setLinkMessage("");
+    setError("");
+    setter(value);
+  };
   useEffect(() => {
-    if (orderId && email && token) mutation.mutate();
+    if (orderId && email && token) start();
+    return () => {
+      active.current = null;
+    };
   }, []);
-
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (token.trim()) {
-      mutation.mutate();
-      return;
-    }
-    linkMutation.mutate();
+    start();
   };
 
   return (
@@ -131,36 +177,55 @@ export default function OrderStatusPage() {
           <CardContent>
             <form onSubmit={submit} className="grid gap-4 sm:grid-cols-[1fr_1fr_auto]">
               <div className="space-y-2">
-                <Label>Order ID</Label>
-                <Input value={orderId} onChange={(e) => setOrderId(e.target.value)} required />
-              </div>
-              <div className="space-y-2">
-                <Label>Email</Label>
+                <Label htmlFor="status-order-id">Order ID</Label>
                 <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="status-order-id"
+                  value={orderId}
+                  onChange={(e) => edit(setOrderId, e.target.value)}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label>Secure token</Label>
+                <Label htmlFor="status-email">Email</Label>
                 <Input
+                  id="status-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => edit(setEmail, e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status-token">Secure token</Label>
+                <Input
+                  id="status-token"
                   value={token}
-                  onChange={(e) => setToken(e.target.value)}
+                  onChange={(e) => edit(setToken, e.target.value)}
                   placeholder="Optional if requesting a secure link"
                 />
               </div>
-              <Button
-                type="submit"
-                disabled={mutation.isPending || linkMutation.isPending}
-                className="sm:col-span-3"
-              >
-                {token.trim() ? "Find order" : "Email secure status link"}
+              <Button type="submit" disabled={pending !== null} className="sm:col-span-3">
+                {pending === "lookup"
+                  ? "Finding order…"
+                  : pending === "link"
+                    ? "Requesting secure link…"
+                    : token.trim()
+                      ? "Find order"
+                      : "Email secure status link"}
               </Button>
             </form>
+            {pending ? (
+              <p role="status" className="mt-4">
+                {pending === "lookup" ? "Finding your order…" : "Requesting your secure link…"}
+              </p>
+            ) : null}
+            {error ? (
+              <p role="alert" className="mt-4">
+                {error}
+              </p>
+            ) : null}
             {linkMessage ? (
-              <p className="mt-4 rounded-lg border p-3 text-sm text-muted-foreground">
+              <p role="status" className="mt-4 rounded-lg border p-3 text-sm text-muted-foreground">
                 {linkMessage}
               </p>
             ) : null}
@@ -275,9 +340,13 @@ export default function OrderStatusPage() {
                         </div>
                         <Badge variant="outline">{shipment.status}</Badge>
                       </div>
-                      {shipment.trackingUrl ? (
+                      {getSafeEcommerceTrackingUrl(shipment.trackingUrl) ? (
                         <Button asChild variant="outline" className="mt-4">
-                          <a href={shipment.trackingUrl} target="_blank" rel="noreferrer">
+                          <a
+                            href={getSafeEcommerceTrackingUrl(shipment.trackingUrl)!}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
                             <ExternalLink className="mr-2 h-4 w-4" />
                             Track package
                           </a>

@@ -706,6 +706,48 @@ describe("Ecommerce OrdersTab", () => {
     ).toEqual(["item-a", "item-b"]);
   });
 
+  it("renders URL-only tracking and keeps unsafe legacy URLs inert", () => {
+    const order = {
+      ...orders[0],
+      shipments: [
+        {
+          id: "url-only",
+          status: "shipped",
+          trackingNumber: null,
+          trackingUrl: "https://carrier.example.test/tracking",
+        },
+        {
+          id: "unsafe",
+          status: "shipped",
+          trackingNumber: "UNSAFE-LEGACY",
+          trackingUrl: "javascript:alert(1)",
+        },
+      ],
+    };
+    useQueryMock.mockImplementation((options: { queryKey?: string[] }) => ({
+      data:
+        options.queryKey?.[0] === "/api/admin/ecommerce/orders"
+          ? [order]
+          : options.queryKey?.[0] === "/api/admin/ecommerce/settings/store"
+            ? { storeTimezone: "UTC" }
+            : [],
+      isLoading: false,
+    }));
+    act(() => {
+      root = createRoot(container);
+      root.render(React.createElement(OrdersTab));
+    });
+    act(() => {
+      container
+        .querySelector("tbody tr")
+        ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    const link = document.body.querySelector('a[href="https://carrier.example.test/tracking"]');
+    expect(link?.textContent).toBe("Track package");
+    expect(document.body.textContent).toContain("UNSAFE-LEGACY");
+    expect(document.body.querySelector('a[href^="javascript:"]')).toBeNull();
+  });
+
   it("opens the order detail drawer from the row and shows customer and shipping data", () => {
     act(() => {
       root = createRoot(container);

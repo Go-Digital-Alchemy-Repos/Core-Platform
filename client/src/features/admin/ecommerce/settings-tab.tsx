@@ -724,13 +724,13 @@ export function SettingsTab({ section = "store" }: { section?: EcommerceSettings
 
 function SecurityCenterCard() {
   const { toast } = useToast();
-  const { data: overview } = useQuery<SecurityOverview>({
+  const overviewQuery = useQuery<SecurityOverview>({
     queryKey: ["/api/admin/ecommerce/security/overview"],
   });
   const settingsQuery = useQuery<FraudSettingsStatus>({
     queryKey: ["/api/admin/ecommerce/security/settings"],
   });
-  const { data: blocks = [] } = useQuery<FraudBlock[]>({
+  const blocksQuery = useQuery<FraudBlock[]>({
     queryKey: ["/api/admin/ecommerce/security/blocks"],
   });
   const settingsData = settingsQuery.data;
@@ -822,8 +822,9 @@ function SecurityCenterCard() {
     updateSetting(key, csv(value) as FraudSettingsStatus[typeof key]);
   };
 
-  const summary = overview?.summary ?? { total: 0, blocked: 0, manualReview: 0, velocityBlocks: 0 };
-  const events = overview?.recentEvents ?? [];
+  const summary = overviewQuery.data?.summary;
+  const events = overviewQuery.data?.recentEvents;
+  const blocks = blocksQuery.data;
 
   if (!settings || !settingsQuery.isSuccess) {
     return (
@@ -847,32 +848,35 @@ function SecurityCenterCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6">
-        <div className="grid gap-3 md:grid-cols-4">
-          <SecurityMetric
-            label="Screened today"
-            value={summary.total}
-            icon={Activity}
-            className="text-sky-600 bg-sky-50"
-          />
-          <SecurityMetric
-            label="Blocked"
-            value={summary.blocked}
-            icon={Ban}
-            className="text-rose-600 bg-rose-50"
-          />
-          <SecurityMetric
-            label="Needs review"
-            value={summary.manualReview}
-            icon={ShieldAlert}
-            className="text-amber-600 bg-amber-50"
-          />
-          <SecurityMetric
-            label="Velocity blocks"
-            value={summary.velocityBlocks}
-            icon={AlertTriangle}
-            className="text-violet-600 bg-violet-50"
-          />
-        </div>
+        <SecurityReadState label="Security activity" query={overviewQuery} />
+        {summary ? (
+          <div className="grid gap-3 md:grid-cols-4">
+            <SecurityMetric
+              label="Screened today"
+              value={summary.total}
+              icon={Activity}
+              className="text-sky-600 bg-sky-50"
+            />
+            <SecurityMetric
+              label="Blocked"
+              value={summary.blocked}
+              icon={Ban}
+              className="text-rose-600 bg-rose-50"
+            />
+            <SecurityMetric
+              label="Needs review"
+              value={summary.manualReview}
+              icon={ShieldAlert}
+              className="text-amber-600 bg-amber-50"
+            />
+            <SecurityMetric
+              label="Velocity blocks"
+              value={summary.velocityBlocks}
+              icon={AlertTriangle}
+              className="text-violet-600 bg-violet-50"
+            />
+          </div>
+        ) : null}
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="flex items-center justify-between rounded-lg border p-4">
@@ -1244,61 +1248,66 @@ function SecurityCenterCard() {
             </div>
           </div>
           <div className="mt-4 grid gap-2">
-            {blocks.length ? (
-              blocks.map((block) => (
-                <div
-                  key={block.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted/30 p-3 text-sm"
-                >
-                  <div>
-                    <Badge variant="secondary">{block.type}</Badge>
-                    <span className="ml-2 font-medium">{block.value}</span>
-                    {block.reason ? (
-                      <span className="ml-2 text-muted-foreground">{block.reason}</span>
-                    ) : null}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteBlockMutation.mutate(block.id)}
+            <SecurityReadState label="Manual fraud blocks" query={blocksQuery} />
+            {blocks ? (
+              blocks.length ? (
+                blocks.map((block) => (
+                  <div
+                    key={block.id}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted/30 p-3 text-sm"
                   >
-                    Remove
-                  </Button>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">No active manual fraud blocks.</p>
-            )}
+                    <div>
+                      <Badge variant="secondary">{block.type}</Badge>
+                      <span className="ml-2 font-medium">{block.value}</span>
+                      {block.reason ? (
+                        <span className="ml-2 text-muted-foreground">{block.reason}</span>
+                      ) : null}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteBlockMutation.mutate(block.id)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No active manual fraud blocks.</p>
+              )
+            ) : null}
           </div>
         </div>
 
         <div className="rounded-lg border p-4">
           <h3 className="font-semibold">Recent fraud activity</h3>
           <div className="mt-3 grid gap-2">
-            {events.length ? (
-              events.slice(0, 8).map((event) => (
-                <div
-                  key={event.id}
-                  className="grid gap-2 rounded-lg bg-muted/30 p-3 text-sm md:grid-cols-[160px_1fr_120px_90px]"
-                >
-                  <span className="text-muted-foreground">
-                    {new Date(event.createdAt).toLocaleString()}
-                  </span>
-                  <span>
-                    {event.email || event.ipAddress || "Unknown checkout"}
-                    <span className="ml-2 text-muted-foreground">{event.message}</span>
-                  </span>
-                  <Badge variant={event.decision === "block" ? "destructive" : "outline"}>
-                    {event.decision.replace(/_/g, " ")}
-                  </Badge>
-                  <span className="font-medium">Score {event.score}</span>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                No fraud activity has been logged yet.
-              </p>
-            )}
+            {events ? (
+              events.length ? (
+                events.slice(0, 8).map((event) => (
+                  <div
+                    key={event.id}
+                    className="grid gap-2 rounded-lg bg-muted/30 p-3 text-sm md:grid-cols-[160px_1fr_120px_90px]"
+                  >
+                    <span className="text-muted-foreground">
+                      {new Date(event.createdAt).toLocaleString()}
+                    </span>
+                    <span>
+                      {event.email || event.ipAddress || "Unknown checkout"}
+                      <span className="ml-2 text-muted-foreground">{event.message}</span>
+                    </span>
+                    <Badge variant={event.decision === "block" ? "destructive" : "outline"}>
+                      {event.decision.replace(/_/g, " ")}
+                    </Badge>
+                    <span className="font-medium">Score {event.score}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No fraud activity has been logged yet.
+                </p>
+              )
+            ) : null}
           </div>
         </div>
 
@@ -1312,6 +1321,39 @@ function SecurityCenterCard() {
       </CardContent>
     </Card>
   );
+}
+
+function SecurityReadState({
+  label,
+  query,
+}: {
+  label: string;
+  query: { data: unknown; isError: boolean; isFetching: boolean; refetch: () => Promise<unknown> };
+}) {
+  const retained = query.data !== undefined;
+  if (query.isError)
+    return (
+      <div role="alert" className="rounded-lg border p-3 text-sm">
+        <p>
+          {label} could not be {retained ? "refreshed. Showing previously loaded data." : "loaded."}
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={query.isFetching}
+          onClick={() => void query.refetch()}
+        >
+          Retry {label.toLowerCase()}
+        </Button>
+      </div>
+    );
+  if (!retained || query.isFetching)
+    return (
+      <p role="status" className="text-sm text-muted-foreground">
+        {retained ? "Refreshing" : "Loading"} {label.toLowerCase()}…
+      </p>
+    );
+  return null;
 }
 
 function SecurityMetric(props: {

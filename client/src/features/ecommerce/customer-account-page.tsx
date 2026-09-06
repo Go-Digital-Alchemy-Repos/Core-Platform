@@ -1,3 +1,4 @@
+import { getSafeEcommerceTrackingUrl } from "@shared/ecommerce-tracking-url";
 import { FormEvent, useEffect, useMemo, useState, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -435,9 +436,13 @@ function OrderDetail({ orderId }: { orderId: string }) {
                   </div>
                   <Badge variant="outline">{shipment.status}</Badge>
                 </div>
-                {shipment.trackingUrl ? (
+                {getSafeEcommerceTrackingUrl(shipment.trackingUrl) ? (
                   <Button asChild variant="outline" className="mt-4">
-                    <a href={shipment.trackingUrl} target="_blank" rel="noreferrer">
+                    <a
+                      href={getSafeEcommerceTrackingUrl(shipment.trackingUrl)!}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       Track package
                     </a>
                   </Button>

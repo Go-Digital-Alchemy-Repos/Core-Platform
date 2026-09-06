@@ -1,3 +1,4 @@
+import { getSafeEcommerceTrackingUrl } from "@shared/ecommerce-tracking-url";
 import {
   getShippingProviderDefinition,
   type EcommerceShippingProviderCapability,
@@ -160,7 +161,7 @@ export function inferCarrierTrackingUrl(params: {
   trackingUrl?: string | null;
 }): string | null {
   const explicitUrl = params.trackingUrl?.trim();
-  if (explicitUrl) return explicitUrl;
+  if (explicitUrl) return getSafeEcommerceTrackingUrl(params.trackingUrl);
 
   const trackingNumber = params.trackingNumber?.trim();
   if (!trackingNumber) return null;

@@ -139,6 +139,7 @@ const settings = { customerAccountMode: "required", store: { allowedCountries: [
 const mount = (ui: React.ReactElement) =>
   render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 beforeEach(() => {
+  HTMLElement.prototype.scrollIntoView = vi.fn();
   vi.stubGlobal("React", React);
   vi.stubGlobal(
     "ResizeObserver",
@@ -508,4 +509,122 @@ describe("account recovery", () => {
       ).toBeNull();
     },
   );
+});
+
+describe("deliberate checkout address selection", () => {
+  it.each(["name", "phone", "line2", "city", "zip", "country", "state"])(
+    "preserves a deliberate %s edit before saved addresses arrive",
+    async (field) => {
+      let release!: (value: Response) => void;
+      const addresses = new Promise<Response>((resolve) => {
+        release = resolve;
+      });
+      mocks.api.mockImplementation(async (_method, path) =>
+        path === "/api/ecommerce/account/addresses"
+          ? addresses
+          : response(
+              path === "/api/ecommerce/checkout/settings"
+                ? { ...settings, store: { allowedCountries: ["US", "GB"] } }
+                : path.includes("stripe")
+                  ? {}
+                  : [],
+            ),
+      );
+      mount(<CheckoutPage />);
+      await screen.findByLabelText("Full name");
+      if (field === "country" || field === "state") {
+        await act(async () => {
+          required(host.querySelector(`#${field}`)).dispatchEvent(
+            new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }),
+          );
+        });
+        const option = field === "country" ? "United Kingdom" : "New York";
+        await waitFor(() =>
+          expect(
+            [...document.querySelectorAll('[role="option"]')].some(
+              (el) => el.textContent === option,
+            ),
+          ).toBe(true),
+        );
+        fireEvent.click(
+          required(
+            [...document.querySelectorAll('[role="option"]')].find(
+              (el) => el.textContent === option,
+            ),
+          ),
+        );
+      } else {
+        fireEvent.change(required(host.querySelector(`#${field}`)), {
+          target: { value: "Deliberate draft" },
+        });
+      }
+      await act(async () => {
+        release(
+          response([
+            {
+              id: "late",
+              label: "Late default",
+              name: "Saved name",
+              phone: "5551234567",
+              address: "Late street",
+              line2: "Saved unit",
+              city: "Saved city",
+              state: "NY",
+              zipCode: "10001",
+              country: "US",
+              isDefault: true,
+            },
+          ]),
+        );
+      });
+      await find(() => host.querySelector('[role="radio"][value="late"]'));
+      if (field === "country" || field === "state") {
+        expect(host.querySelector(`#${field}`)?.textContent).toBe(
+          field === "country" ? "United Kingdom" : "New York",
+        );
+      } else
+        expect((host.querySelector(`#${field}`) as HTMLInputElement).value).toBe(
+          "Deliberate draft",
+        );
+      expect((host.querySelector("#address") as HTMLInputElement).value).toBe("");
+      expect(
+        host.querySelector('[role="radio"][value="custom"]')?.getAttribute("aria-checked"),
+      ).toBe("true");
+    },
+  );
+  it("does not reselect the saved default after custom street is cleared or addresses refetch", async () => {
+    mocks.api.mockImplementation(async (_method, path) =>
+      response(
+        path === "/api/ecommerce/account/addresses"
+          ? [
+              {
+                id: "saved",
+                label: "Home",
+                address: "Saved street",
+                city: "City",
+                state: "NY",
+                zipCode: "10001",
+                country: "US",
+                isDefault: true,
+              },
+            ]
+          : path === "/api/ecommerce/checkout/settings"
+            ? settings
+            : path.includes("stripe")
+              ? {}
+              : [],
+      ),
+    );
+    mount(<CheckoutPage />);
+    await screen.findByDisplayValue("Saved street");
+    fireEvent.click(required(host.querySelector('[role="radio"][value="custom"]')));
+    fireEvent.change(required(host.querySelector("#address")), { target: { value: "" } });
+    await act(async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/ecommerce/account/addresses"] });
+    });
+    expect((host.querySelector("#address") as HTMLInputElement).value).toBe("");
+    expect(host.querySelector('[role="radio"][value="custom"]')?.getAttribute("aria-checked")).toBe(
+      "true",
+    );
+  });
 });
