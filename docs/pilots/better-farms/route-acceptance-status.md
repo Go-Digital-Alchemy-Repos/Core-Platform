@@ -7,6 +7,32 @@ This is a React/source audit, not a new seven-route browser approval. The existi
 slice with synthetic data; it does not prove the other routes or form delivery.
 The approved intake covers seven routes and excludes imports, live checkout and production DNS.
 
+## Current source and acceptance checkpoint — September 6
+
+The current accepted site source is `7fd1298beb373ee447aa97f578fb11e575faf8f0`;
+the frozen Core release candidate is `8a6cdcc6dd008198840c6eee1482d3cf7c0eafa6`.
+The complete local pilot suite passed 22 cases against those pinned inputs.
+The original route matrix and findings below are historical unless explicitly
+carried forward here.
+
+Resolved development findings include retry-safe contact/newsletter submission,
+canonical metadata recovery, removal of the zoom restriction, mobile drawer focus
+containment, and the hero-image/CSP mismatch. Site commit `21eeb76` introduced a
+shared exact-origin policy used by both image validation and production CSP;
+Core validates the same declared image origin. Root rechecked this policy in
+current site source. Earlier actual two-origin browser evidence verified that a
+Core-hosted image decodes in preview and the published site. No arbitrary CDN
+origin or wildcard was added. See the execution ledger's exact-origin image
+checkpoint and its retained browser evidence.
+
+Still required before a client release: approved copy, quotations, identities
+and assets; broader accessibility acceptance; actual domain/build/runtime origin
+agreement; provider delivery configuration and acceptance where required; and
+production release evidence. Local form receipt/effect tests do not establish
+external email delivery. Better Farms excludes imports, live checkout and DNS
+cutover from the current development pilot. Do not reopen the completed retry or
+image-policy fixes merely because the original audit below describes them.
+
 ## Follow-up verification
 
 Site `cec78df` fixed the contact/newsletter retry gap below; Core's real two-origin browser
@@ -116,7 +142,7 @@ Site filenames above are under `client/src/pages/` at the pinned source.
   do not establish client authorization. Real domain/configuration and release evidence
   are not supplied by local route completion.
 
-## Recommended next implementation slice
+## Historical recommended implementation slice (subsequently completed)
 
 **Complete retry-safe contact/newsletter delivery through the existing Core form boundary.**
 Do not expand page schemas or add a donation provider. Own site
