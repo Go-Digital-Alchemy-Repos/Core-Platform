@@ -464,3 +464,33 @@ the V2 bundle is being prepared without automatic review acceptance.
 Read-only production identity/recovery planning is assigned. A fresh backup
 and local restore still precede any release. Main was independently observed
 as a99bb7efeb4c007789c20da91ff0e2d395452836 via git ls-remote.
+
+### Local release evidence accepted
+
+Root independently accepted the complete26-gate V2 bundle for clean8a6cdcc,
+tree cb14ba6733039d517308092857178fe727ecad4d, basea99. Canonical digest
+a373b221b1cfd91b133a87aa3133f41899d0666e1faae85eebd92267b5311970.
+All copied evidence and original receipt hashes were verified. The pinned
+verifierb665fbd passed structural validation of30files and26gates, including
+source-derived standalone and atomic fulfillment obligations. It explicitly
+reports releaseApproved=false and attestationTruth=not-established: no GitHub
+App authentication or production approval is inferred from offline structure.
+
+Retained directory: normalized-v2-8a6cdcc-9c5b14ca4a under Core Platform
+Operations. manifest.pending.json remains unchanged; manifest.reviewed.json,
+orchestrator-review.json and directly captured validator-result.json record
+acceptance and its limits. The canonical full browser run passed52/52 with all
+19owned process groups absent. Draft PR14 now records accepted local evidence.
+
+Production metadata and runtime identity match deployment26d0c65b / commita99;
+health and readiness are200. Existing retriever is stale and must not execute.
+Engineering owns isolated codex/release-recovery-capture at8a6cdcc: prepare a
+consistent, immutable recovery snapshot without pruning existing backups or
+changing latest.json. No live capture yet; artifact review precedes execution.
+
+CRM-3 worklist implementation is authorized separately on
+codex/crm-follow-up-worklist at8a6cdcc. Approved contract: paginated union of
+lead/client tasks, stable due/kind/id ordering, pinned query time/filter cursor,
+explicit UTC display, eligible-assignee validation and existing assignment/null
+semantics. No migrations, reminders or sends. Root retains integration review.
+The frozen release candidate remains unchanged while this next increment runs.
