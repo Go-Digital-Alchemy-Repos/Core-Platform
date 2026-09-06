@@ -166,3 +166,145 @@ describe("legacy upload migration execution", () => {
     expect(storage.createOnly).toHaveBeenCalledTimes(2);
   });
 });
+
+const exactSourceIdentity = {
+  railwayProjectId: "project-core",
+  railwayEnvironmentId: "environment-core",
+  railwayServiceId: "service-core",
+  deploymentId: "deployment-core",
+  gitCommitSha: "a".repeat(40),
+  databaseIdentityReference: "verified/core-db",
+};
+function exactObjectFixture() {
+  const old = fixture();
+  const plan = buildLegacyUploadMigrationPlan({
+    stackId: old.plan.stackId,
+    bucketName: old.plan.bucketName,
+    sourcePrefix: "",
+    destinationPrefix: old.plan.destinationPrefix,
+    entries: old.plan.entries.slice(0, 1).map(({ destinationKey: _key, ...entry }) => entry),
+    ownership: {
+      ...old.plan.ownership,
+      scope: "exact-object",
+      sourceIdentity: exactSourceIdentity,
+      record: {
+        table: "cms_media",
+        id: "media-1",
+        r2Key: old.plan.entries[0].sourceKey,
+        sha256: old.plan.entries[0].sha256,
+        byteLength: old.plan.entries[0].byteLength,
+      },
+    },
+  });
+  return {
+    ...old,
+    plan,
+    options: {
+      ...old.options,
+      plan,
+      expectedSourceIdentity: exactSourceIdentity,
+      readSourceRecord: vi.fn(async () => ({
+        id: "media-1",
+        r2Key: plan.entries[0].sourceKey,
+        byteLength: plan.entries[0].byteLength,
+      })),
+    },
+  };
+}
+describe("v2 authoritative exact object execution", () => {
+  it("verifies record before reads and again immediately before copy; resumes with fresh verification", async () => {
+    const { options, storage, plan } = exactObjectFixture();
+    const result = await executeLegacyUploadMigration({
+      ...options,
+      apply: true,
+      approvedPlanId: plan.planId,
+    });
+    expect(result.results[0].status).toBe("verified");
+    expect(options.readSourceRecord).toHaveBeenCalledTimes(2);
+    expect(options.readSourceRecord.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(storage.read).mock.invocationCallOrder[0],
+    );
+    expect(options.readSourceRecord.mock.invocationCallOrder[1]).toBeLessThan(
+      vi.mocked(storage.createOnly).mock.invocationCallOrder[0],
+    );
+    expect(options.readSourceRecord).toHaveBeenCalledWith(exactSourceIdentity, "media-1");
+    const resumed = await executeLegacyUploadMigration({
+      ...options,
+      apply: true,
+      approvedPlanId: plan.planId,
+    });
+    expect(resumed.results[0].status).toBe("verified");
+    expect(storage.createOnly).toHaveBeenCalledOnce();
+    expect(options.readSourceRecord).toHaveBeenCalledTimes(3);
+  });
+  it.each(Object.keys(exactSourceIdentity))(
+    "rejects independent source identity mismatch %s before any reads",
+    async (key) => {
+      const { options, storage } = exactObjectFixture();
+      await expect(
+        executeLegacyUploadMigration({
+          ...options,
+          expectedSourceIdentity: { ...exactSourceIdentity, [key]: "wrong" },
+        }),
+      ).rejects.toThrow();
+      expect(options.readSourceRecord).not.toHaveBeenCalled();
+      expect(storage.read).not.toHaveBeenCalled();
+    },
+  );
+  it("requires independent identity and authoritative reader even for dry run", async () => {
+    const { options, storage } = exactObjectFixture();
+    await expect(
+      executeLegacyUploadMigration({ ...options, expectedSourceIdentity: undefined }),
+    ).rejects.toThrow();
+    await expect(
+      executeLegacyUploadMigration({ ...options, readSourceRecord: undefined }),
+    ).rejects.toThrow();
+    expect(storage.read).not.toHaveBeenCalled();
+  });
+  it.each([
+    null,
+    { id: "different", r2Key: "cms/a.jpg", byteLength: 18 },
+    { id: "media-1", r2Key: "clients/other/a.jpg", byteLength: 18 },
+    { id: "media-1", r2Key: "cms/a.jpg", byteLength: 19 },
+  ])("rejects absent, moved or changed authoritative records %#", async (current) => {
+    const { options, storage } = exactObjectFixture();
+    await expect(
+      executeLegacyUploadMigration({ ...options, readSourceRecord: async () => current }),
+    ).rejects.toThrow();
+    expect(storage.read).not.toHaveBeenCalled();
+    expect(storage.createOnly).not.toHaveBeenCalled();
+  });
+  it("refuses a record changed between dry inspection and write", async () => {
+    const { options, storage, plan } = exactObjectFixture();
+    options.readSourceRecord
+      .mockImplementationOnce(async () => ({
+        id: "media-1",
+        r2Key: plan.entries[0].sourceKey,
+        byteLength: plan.entries[0].byteLength,
+      }))
+      .mockImplementationOnce(async () => ({
+        id: "media-1",
+        r2Key: "changed",
+        byteLength: plan.entries[0].byteLength,
+      }));
+    await expect(
+      executeLegacyUploadMigration({ ...options, apply: true, approvedPlanId: plan.planId }),
+    ).rejects.toThrow();
+    expect(storage.createOnly).not.toHaveBeenCalled();
+  });
+  it("keeps a differing destination intact", async () => {
+    const { options, storage, plan, objects } = exactObjectFixture();
+    objects.set(plan.entries[0].destinationKey, {
+      body: Buffer.from("different"),
+      etag: "different",
+      contentType: "image/jpeg",
+    });
+    const result = await executeLegacyUploadMigration({
+      ...options,
+      apply: true,
+      approvedPlanId: plan.planId,
+    });
+    expect(result.results[0].status).toBe("destination-conflict");
+    expect(storage.createOnly).not.toHaveBeenCalled();
+  });
+});

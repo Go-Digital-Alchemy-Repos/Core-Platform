@@ -162,3 +162,132 @@ describe("legacy upload migration planning", () => {
     expect(() => decide(plan, "not-approved", identity, null)).toThrow();
   });
 });
+
+const sourceIdentity = {
+  railwayProjectId: "project-core",
+  railwayEnvironmentId: "environment-core",
+  railwayServiceId: "service-core",
+  deploymentId: "deployment-core",
+  gitCommitSha: "a".repeat(40),
+  databaseIdentityReference: "verified/core-db",
+};
+function exactFixture() {
+  const input = fixture();
+  return {
+    ...input,
+    ownership: {
+      ...input.ownership,
+      scope: "exact-object",
+      sourceIdentity,
+      record: {
+        table: "cms_media",
+        id: "media-1",
+        r2Key: input.entries[0].sourceKey,
+        sha256: digest,
+        byteLength: 25,
+      },
+    },
+  };
+}
+describe("v2 exact CMS object ownership", () => {
+  it("preserves the existing v1 canonical hash", () => {
+    expect(
+      build({
+        stackId: "core-test",
+        bucketName: "synthetic-media",
+        sourcePrefix: "",
+        destinationPrefix: "clients/core-test/uploads",
+        ownership: {
+          reference: "owned",
+          scope: "dedicated-stack-bucket",
+          stackId: "core-test",
+          sourcePrefix: "",
+        },
+        entries: [{ sourceKey: "cms/a.jpg", sha256: "a".repeat(64), byteLength: 3 }],
+      }).planId,
+    ).toBe("a339b1c7569dfcfe584b9245e831346c4ac932b259080fbd86245a8bf9b5928e");
+  });
+  it("binds one object to immutable source/record evidence and roundtrips", () => {
+    const plan = build(exactFixture());
+    expect(plan.schemaVersion).toBe(2);
+    expect(Object.isFrozen(plan.ownership.sourceIdentity)).toBe(true);
+    expect(Object.isFrozen(plan.ownership.record)).toBe(true);
+    expect(validate(JSON.parse(JSON.stringify(plan)))).toEqual(plan);
+    expect(() => validate({ ...plan, schemaVersion: 1 })).toThrow();
+  });
+  it.each([
+    { table: "system_settings" },
+    { id: "" },
+    { r2Key: "cms/other.jpg" },
+    { sha256: "b".repeat(64) },
+    { byteLength: 26 },
+    { connectionString: "forbidden" },
+  ])("rejects invalid or mismatched record %#", (change) => {
+    const input = exactFixture();
+    expect(() =>
+      build({
+        ...input,
+        ownership: { ...input.ownership, record: { ...input.ownership.record, ...change } },
+      }),
+    ).toThrow();
+  });
+  it.each([
+    "clients/other/uploads/a",
+    "Clients/other/uploads/a",
+    "system-backups/db/a",
+    "SYSTEM-BACKUPS/a",
+    "clients",
+    "cms%2fimages/a",
+    "cms/%2E%2E/a",
+    "cms%5cimage/a",
+    "cms/../a",
+    "cms//a",
+  ])("rejects reserved or ambiguous key %s", (sourceKey) => {
+    const input = exactFixture();
+    expect(() =>
+      build({
+        ...input,
+        entries: [{ ...input.entries[0], sourceKey }],
+        ownership: { ...input.ownership, record: { ...input.ownership.record, r2Key: sourceKey } },
+      }),
+    ).toThrow();
+  });
+  it("does not lowercase ordinary S3 object keys", () => {
+    const input = exactFixture();
+    const sourceKey = "CMS/Images/IMAGE.jpg";
+    expect(
+      build({
+        ...input,
+        entries: [{ ...input.entries[0], sourceKey }],
+        ownership: { ...input.ownership, record: { ...input.ownership.record, r2Key: sourceKey } },
+      }).entries[0].sourceKey,
+    ).toBe(sourceKey);
+  });
+  it("rejects extra keys, nonempty prefix and missing or secret-bearing identity", () => {
+    const input = exactFixture();
+    expect(() =>
+      build({
+        ...input,
+        entries: [...input.entries, { ...input.entries[0], sourceKey: "cms/extra.jpg" }],
+      }),
+    ).toThrow();
+    expect(() =>
+      build({
+        ...input,
+        sourcePrefix: "cms",
+        ownership: { ...input.ownership, sourcePrefix: "cms" },
+      }),
+    ).toThrow();
+    for (const identity of [
+      undefined,
+      { ...sourceIdentity, gitCommitSha: "short" },
+      { ...sourceIdentity, databaseIdentityReference: "" },
+      { ...sourceIdentity, databaseIdentityReference: "postgresql://not-allowed" },
+      { ...sourceIdentity, databaseUrl: "forbidden" },
+    ]) {
+      expect(() =>
+        build({ ...input, ownership: { ...input.ownership, sourceIdentity: identity } }),
+      ).toThrow();
+    }
+  });
+});

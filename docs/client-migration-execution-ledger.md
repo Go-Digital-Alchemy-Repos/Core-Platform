@@ -5,6 +5,34 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Exact-record media migration and controlled cutover preparation
+
+The upload planner now supports v2 ownership tied to one exact legacy CMS object, preserving
+v1 plans and their hashes. It binds the record/key/content digest to independently supplied
+source deployment/service/database identity. The executor requires current record reads before
+storage access and immediately before copying. Reserved client/backup namespaces, extra entries
+and connection fields are rejected. Root reviewed the changes and passed 94 planner/executor/
+adapter regressions plus types, lint and formatting.
+
+A bounded read of the actual R2 image verified its SHA256 and 199,788-byte size, then rechecked
+the authoritative CMS row. The private metadata-only plan is
+`e52c75d19b798e7aaa3bf36b4f2f25c7fa09fb66fbc7f6c5fb4b9661f2d256fb`.
+It is not an apply approval or executed storage dry-run. Its source inventory must be refreshed
+after the writer barrier is established; no production object has been copied.
+
+Orchestrator cutover direction: assign stable current-Core identity `core-platform`, preserve
+the explicitly configured legacy `system-backups` location for this maintenance release, and
+use `clients/core-platform/uploads` for uploads. These are planned settings, not live changes.
+New-client origin-derived preflight remains a distinct deployment contract.
+
+Source review found no existing media freeze. Making R2 unavailable would trigger old-main local
+fallbacks, and a false delete result would not prevent deletion of the CMS row. An isolated,
+default-off throwing freeze guard is being prepared across upload, replacement and deletion
+paths. Old writers/in-flight operations must be drained before final inventory; a flag alone is
+not a barrier. Keep writes frozen through cutover acceptance. After reopening writes, rollback
+requires a namespace-compatible artifact or explicit reverse-copy reconciliation rather than
+blindly returning to raw-key old main.
+
 ### Live storage inspection and actual backup recovery
 
 The settings candidate `9a8bf1a` passed hosted Verify (`34000263302`). Read-only production

@@ -69,3 +69,41 @@ Before wiring these libraries into an operator command or running a real migrati
 are genuine, current or race-free. It does not grant write authority or guarantee successful
 copy. Application integration must enforce the requirements above and preserve cross-stack
 isolation throughout.
+
+## Version 2: one legacy CMS object
+
+Version 1 retains its original fields, validation and canonical plan hashes for explicit
+bucket/prefix ownership. Version 2 is selected by `ownership.scope: "exact-object"` and
+requires exactly one entry with an empty source prefix. This is an exact-key claim, not
+an assertion that the whole bucket or `cms/images` directory belongs to Core.
+
+V2 ownership retains `reference`, `stackId` and `sourcePrefix`, and adds:
+
+- `sourceIdentity`: Railway project, environment, service and deployment IDs; full
+  40-character `gitCommitSha`; and an opaque `databaseIdentityReference`.
+- `record`: `table: "cms_media"`, record `id`, exact `r2Key`, content `sha256` and
+  `byteLength`. Key, digest and length must match the single planned entry.
+
+Connection URLs and credentials are not plan inputs. Source connections must be obtained
+independently by the operator integration. The executor additionally requires an independent
+`expectedSourceIdentity` matching all six identity fields and a `readSourceRecord` callback
+that reads that exact row from an authoritatively source-bound connection. The callback must
+establish the actual service/deployment/database binding, rather than simply echoing its
+arguments or trusting identifiers in the plan. It returns the current ID, R2 key and byte
+length. The executor compares those fields before storage access and again immediately
+before creating an object; missing, moved or changed rows abort. The existing independent
+`verifyOwnership` callback remains mandatory as well. Byte hashing and post-copy source/
+destination verification remain unchanged. Existing matching copies are verified on resume.
+
+The exact-object flow rejects `clients/` and `system-backups/` source namespaces, including
+case variants and ambiguous encoded path separators/dot segments. Ordinary S3 keys retain
+exact case; the planner does not normalize them into a different object. Historical client
+namespace changes still require the version-1 explicit-prefix ownership contract. A CMS row
+pointing at a different client's qualified object does not establish ownership of that object.
+
+For the current Core maintenance release, `core-platform` is the planned stable target stack
+identity, with destination `clients/core-platform/uploads` and the explicit legacy backup
+prefix `system-backups` retained separately. This records an Orchestrator target decision;
+it does not claim any environment changes or production copies have occurred. New client
+activation retains its own namespace/preflight policy. No production inventory belongs in
+synthetic tests or committed fixtures.

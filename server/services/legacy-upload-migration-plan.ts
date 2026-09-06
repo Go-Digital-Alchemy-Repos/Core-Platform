@@ -1,6 +1,23 @@
 import { createHash } from "node:crypto";
 import { getClientStoragePrefix } from "../../shared/client-backup-policy";
 
+export interface LegacyUploadSourceIdentity {
+  readonly railwayProjectId: string;
+  readonly railwayEnvironmentId: string;
+  readonly railwayServiceId: string;
+  readonly deploymentId: string;
+  readonly gitCommitSha: string;
+  readonly databaseIdentityReference: string;
+}
+
+export interface LegacyUploadRecordEvidence {
+  readonly table: "cms_media";
+  readonly id: string;
+  readonly r2Key: string;
+  readonly sha256: string;
+  readonly byteLength: number;
+}
+
 export interface LegacyUploadSource {
   readonly sourceKey: string;
   readonly sha256: string;
@@ -15,7 +32,9 @@ export interface LegacyUploadMigrationInput {
   readonly bucketName: string;
   readonly ownership: {
     readonly reference: string;
-    readonly scope: "dedicated-stack-bucket" | "stack-prefix";
+    readonly scope: "dedicated-stack-bucket" | "stack-prefix" | "exact-object";
+    readonly sourceIdentity?: LegacyUploadSourceIdentity;
+    readonly record?: LegacyUploadRecordEvidence;
     readonly stackId: string;
     readonly sourcePrefix: string;
   };
@@ -25,7 +44,7 @@ export interface LegacyUploadMigrationInput {
 }
 
 export interface LegacyUploadMigrationPlan extends LegacyUploadMigrationInput {
-  readonly schemaVersion: 1;
+  readonly schemaVersion: 1 | 2;
   readonly mode: "dry-run";
   readonly copyOnly: true;
   readonly preserveOriginals: true;
@@ -102,6 +121,31 @@ const inputKeys = [
   "entries",
 ] as const;
 
+const sourceIdentityKeys = [
+  "railwayProjectId",
+  "railwayEnvironmentId",
+  "railwayServiceId",
+  "deploymentId",
+  "gitCommitSha",
+  "databaseIdentityReference",
+] as const;
+
+export function validateLegacyUploadSourceIdentity(input: unknown): LegacyUploadSourceIdentity {
+  const value = record(input, sourceIdentityKeys);
+  const result = Object.fromEntries(
+    sourceIdentityKeys.map((key) => [key, text(value[key])]),
+  ) as unknown as LegacyUploadSourceIdentity;
+  if (!/^[a-f0-9]{40}$/.test(result.gitCommitSha))
+    throw new Error("Expected an exact source revision");
+  if (
+    result.databaseIdentityReference.includes("://") ||
+    /\s/.test(result.databaseIdentityReference)
+  ) {
+    throw new Error("Database identity must be an opaque reference, not a connection string");
+  }
+  return Object.freeze(result);
+}
+
 /** Validates and hashes metadata only. Ownership is an attestation, not verified access authority. */
 export function buildLegacyUploadMigrationPlan(input: unknown): LegacyUploadMigrationPlan {
   const data = record(input, inputKeys);
@@ -123,19 +167,50 @@ export function buildLegacyUploadMigrationPlan(input: unknown): LegacyUploadMigr
   if (destinationPrefix !== `${getClientStoragePrefix(stackId, publicSiteOrigin)}/uploads`) {
     throw new Error("Destination must match the current stack upload namespace");
   }
-  const claim = record(data.ownership, ["reference", "scope", "stackId", "sourcePrefix"]);
+  const claim = record(data.ownership, [
+    "reference",
+    "scope",
+    "stackId",
+    "sourcePrefix",
+    "sourceIdentity",
+    "record",
+  ]);
   const reference = text(claim.reference);
   if (claim.stackId !== stackId || claim.sourcePrefix !== sourcePrefix) {
     throw new Error("Ownership attestation must name this stack and exact source prefix");
   }
-  if (claim.scope !== "dedicated-stack-bucket" && claim.scope !== "stack-prefix") {
+  if (
+    claim.scope !== "dedicated-stack-bucket" &&
+    claim.scope !== "stack-prefix" &&
+    claim.scope !== "exact-object"
+  ) {
     throw new Error("Invalid ownership scope");
   }
-  if (!sourcePrefix && claim.scope !== "dedicated-stack-bucket") {
+  if (!sourcePrefix && claim.scope !== "dedicated-stack-bucket" && claim.scope !== "exact-object") {
     throw new Error("Bucket-root sources require a dedicated same-stack bucket attestation");
   }
   if (!Array.isArray(data.entries) || data.entries.length === 0) {
     throw new Error("Explicit approved source entries are required");
+  }
+  let sourceIdentity: LegacyUploadSourceIdentity | undefined;
+  let recordEvidence: LegacyUploadRecordEvidence | undefined;
+  if (claim.scope === "exact-object") {
+    if (sourcePrefix !== "" || data.entries.length !== 1)
+      throw new Error("Exact-object migration requires one unprefixed legacy object");
+    sourceIdentity = validateLegacyUploadSourceIdentity(claim.sourceIdentity);
+    const evidence = record(claim.record, ["table", "id", "r2Key", "sha256", "byteLength"]);
+    if (evidence.table !== "cms_media")
+      throw new Error("Only a CMS media record can authorize exact-object migration");
+    const content = identity({ sha256: evidence.sha256, byteLength: evidence.byteLength });
+    recordEvidence = Object.freeze({
+      table: "cms_media",
+      id: text(evidence.id),
+      r2Key: objectPath(evidence.r2Key),
+      sha256: content.sha256,
+      byteLength: content.byteLength,
+    });
+  } else if (claim.sourceIdentity !== undefined || claim.record !== undefined) {
+    throw new Error("Record evidence requires the exact-object policy");
   }
   const sourceKeys = new Set<string>();
   const destinationKeys = new Set<string>();
@@ -145,6 +220,21 @@ export function buildLegacyUploadMigrationPlan(input: unknown): LegacyUploadMigr
       const sourceKey = objectPath(item.sourceKey);
       if (sourcePrefix && !sourceKey.startsWith(`${sourcePrefix}/`)) {
         throw new Error("Source is outside the exact approved prefix");
+      }
+      if (recordEvidence) {
+        // Exact S3 keys are not decoded or case-folded. Reject reserved namespace spellings
+        // conservatively as well as encoded separators that could be decoded by a later caller.
+        if (
+          /^(clients|system-backups)(?:\/|$)/i.test(sourceKey) ||
+          /%(?:2f|5c|2e)/i.test(sourceKey)
+        )
+          throw new Error("Reserved or ambiguous legacy source namespace");
+        if (
+          recordEvidence.r2Key !== sourceKey ||
+          recordEvidence.sha256 !== item.sha256 ||
+          recordEvidence.byteLength !== item.byteLength
+        )
+          throw new Error("CMS evidence does not match the exact approved object");
       }
       const suffix = sourcePrefix ? sourceKey.slice(sourcePrefix.length + 1) : sourceKey;
       const destinationKey = `${destinationPrefix}/${suffix}`;
@@ -174,14 +264,20 @@ export function buildLegacyUploadMigrationPlan(input: unknown): LegacyUploadMigr
     throw new Error("Destination overlaps an approved source object");
   }
   const payload = {
-    schemaVersion: 1 as const,
+    schemaVersion: (claim.scope === "exact-object" ? 2 : 1) as 1 | 2,
     mode: "dry-run" as const,
     copyOnly: true as const,
     preserveOriginals: true as const,
     stackId,
     ...(publicSiteOrigin === undefined ? {} : { publicSiteOrigin }),
     bucketName,
-    ownership: Object.freeze({ reference, scope: claim.scope, stackId, sourcePrefix }),
+    ownership: Object.freeze({
+      reference,
+      scope: claim.scope,
+      stackId,
+      sourcePrefix,
+      ...(sourceIdentity ? { sourceIdentity, record: recordEvidence! } : {}),
+    }),
     sourcePrefix,
     destinationPrefix,
     entries: Object.freeze(entries),
@@ -201,7 +297,7 @@ export function validateLegacyUploadMigrationPlan(input: unknown): LegacyUploadM
     "planId",
   ]);
   if (
-    data.schemaVersion !== 1 ||
+    (data.schemaVersion !== 1 && data.schemaVersion !== 2) ||
     data.mode !== "dry-run" ||
     data.copyOnly !== true ||
     data.preserveOriginals !== true
@@ -230,6 +326,8 @@ export function validateLegacyUploadMigrationPlan(input: unknown): LegacyUploadM
     destinationPrefix: data.destinationPrefix,
     entries,
   });
+  if (data.schemaVersion !== rebuilt.schemaVersion)
+    throw new Error("Plan version does not match ownership policy");
   if (data.planId !== rebuilt.planId) throw new Error("Plan digest mismatch");
   for (const original of data.entries) {
     const expected = rebuilt.entries.find((entry) => entry.sourceKey === original.sourceKey);
