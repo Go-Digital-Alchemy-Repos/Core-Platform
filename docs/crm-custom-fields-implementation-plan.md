@@ -12,6 +12,15 @@ control-character boundaries. TypeScript and scoped lint passed. No persistence,
 API, UI, migration or production behavior is implemented by this checkpoint. Transactional
 serialization, exact retained revision selection and the rest of this plan remain required.
 
+## Mapping resolver checkpoint
+
+The pure form resolver is accepted in the isolated branch. Root reviewed source-ID/key binding,
+active type/scope/option checks, false/zero/blank adapters, no heuristic fallthrough in explicit
+mode, safe errors and the 64 KiB normalized-result bound, then independently passed all93 shared
+contract/resolver tests. Full types and scoped lint/formatting also passed. This does not establish
+live mapped intake: the caller still must reuse ordinary validation, pin transaction-consistent
+revisions, bound the full job envelope and commit the snapshot atomically with submission/jobs.
+
 ## Source constraints
 
 - `shared/schema/crm.ts` has separate lead/client records, untyped `metadata`/`formData`, six fixed stages and unique client `sourceLeadId`. Custom fields must not reinterpret those existing JSON records.
