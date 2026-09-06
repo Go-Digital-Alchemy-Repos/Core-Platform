@@ -115,3 +115,11 @@ The verifier catches process cleanup failures independently so container removal
 run. These corrections passed the full413-test suite, types, scoped lint, rebuilt artifact and
 repeat compiled PostgreSQL smoke check. Live namespaced media and deployment/drain acceptance
 remain outstanding; the smoke uses an empty local database and does not contact R2.
+
+The recovery branch's Railway configuration now selects
+`env NODE_ENV=production node dist/rollback-maintenance.cjs` directly, with a
+45-second shutdown drain. Deploying this branch must not use its old `npm start`
+normal-business default. Root checked the configuration lines and confirmed the
+reviewed compiled recovery artifact hash is unchanged. Runtime adoption still
+requires inspection after deployment; namespace configuration and upload freeze
+must be supplied together as specified in the maintenance cutover runbook.
