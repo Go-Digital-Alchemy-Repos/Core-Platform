@@ -1,5 +1,5 @@
 import { spawn, execFileSync, type ChildProcess } from "node:child_process";
-import { mkdtemp, readFile, writeFile, symlink, rm } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile, symlink, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -93,6 +93,11 @@ async function buildSite() {
     NODE_ENV: "production",
     VITE_CORE_PLATFORM_ADMIN_ORIGIN: adminOrigin,
   });
+  if (!(await stat(path.join(siteRoot, "node_modules")).catch(() => null))?.isDirectory()) {
+    throw new Error(
+      "Install the pinned Better Farms dependencies with npm ci before pilot acceptance",
+    );
+  }
   process.chdir(siteRoot);
   const requireSite = createRequire(path.join(siteRoot, "package.json"));
   const { build: viteBuild } = await import(pathToFileURL(requireSite.resolve("vite")).href);

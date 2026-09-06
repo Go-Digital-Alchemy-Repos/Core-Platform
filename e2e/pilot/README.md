@@ -1,7 +1,7 @@
 # Better Farms two-origin acceptance
 
 Run from Core Remediation with `npx playwright test --config playwright.pilot.config.ts`.
-Requires the installed repository dependencies, Chromium, OpenSSL, and local Docker
+Requires npm ci in both the Core and pinned Better Farms checkouts, Chromium, OpenSSL, and local Docker
 via a local Unix-socket Docker context (or `DOCKER_HOST`; an explicit
 `DOCKER_CONTEXT` takes precedence). Remote Docker endpoints are rejected. No existing database URL is used.
 `PILOT_SITE_ROOT` can locate the existing Better Farms checkout; its HEAD must be the

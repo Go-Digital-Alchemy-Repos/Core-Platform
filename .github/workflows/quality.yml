@@ -36,6 +36,10 @@ jobs:
       - name: Install Core dependencies
         run: npm ci
 
+      - name: Install pinned Better Farms dependencies
+        working-directory: .pilot-source
+        run: npm ci
+
       - name: Install browser runtime
         run: npx playwright install --with-deps chromium
 
