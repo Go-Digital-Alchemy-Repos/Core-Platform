@@ -329,3 +329,33 @@ read as direct proof of every volume's absence. No pass status was published.
 Rehearsal producers are being improved to capture exact owned resource IDs and
 verify removal explicitly for the next integrated validation run. Historical
 receipts remain unchanged. GitHub app creation still awaits owner authentication.
+
+### Combined ecommerce candidate — 2026-09-06 follow-up
+
+Root integrated atomic fulfillment 566aa22 and standalone migration fix e1040af
+into 28c3080. At that exact clean head, types, lint, formatting, build and bundle
+budget passed; ordinary tests passed 1,116 with 72 explicitly opt-in skipped.
+Independent PostgreSQL execution passed 15 tests (14 atomic fulfillment plus
+no-journal migration); captured container and anonymous volume absence were
+verified directly after removal. Private receipts: combined-28c3080-checks and
+combined-db-28c3080 under Core Platform Operations. Skipped database tests in
+the ordinary suite are not represented as database acceptance.
+
+Customer browser acceptance bd84711 is reviewed and fast-forward integrated:
+six desktop/mobile cases verify real account persistence, failed-save recovery,
+changed-server-data refresh preserving drafts, session identity isolation and
+checkout settings retry. No payment intent calls occurred. This adds tests and
+two synthetic fixture identities only; production remains unchanged.
+
+Offline receipt validator b665fbd V2 passed 17 independent tests and source review.
+It derives standalone migration and atomic fulfillment gates from candidate
+source, requiring 26 gates for the combined candidate. This is structural receipt
+validation only, not an authenticated release approval or published status.
+GitHub Actions remains disabled by owner directive; dedicated App registration
+still requires GitHub account authentication. No protection bypass is approved.
+
+Improved rehearsal cleanup producers completed actual recovery, historical
+upgrade and pilot-shutdown smoke checks and are under independent review.
+Historical 8126 receipts remain unchanged and are not retrospectively approved.
+The next production release still requires final candidate evidence and a fresh
+backup/restore rehearsal including the peer-reported sample event additions.

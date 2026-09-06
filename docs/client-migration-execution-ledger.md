@@ -2107,3 +2107,15 @@ run at 8126c8d. Migration rename0062 is accepted at0d484d6, with explicit
 working-tree evidence provenance at4b67fe0. Local release gate runbook8126c8d
 is accepted. Production remains on the verified maintenance release; provider
 transactions stay disabled and branch-protection replacement remains pending.
+
+### Ecommerce goal progress — 2026-09-06
+
+The owner's request to fix all Ecommerce Settings 404s and complete ecommerce
+quality remains part of the active program. All five destinations were verified
+live. The four accepted follow-up defects above now have reviewed fixes in
+release integration bd84711: atomic/idempotent shipment plus fulfillment under
+order locks; checkout settings error/retry gating; account recovery with safe
+draft hydration and identity isolation. Full combined checks and independent
+database/browser acceptance passed as recorded in the operations checkpoint.
+These follow-up fixes are not yet deployed. Broader ecommerce acceptance and
+release gates remain active; this is not a claim that every possible bug is fixed.
