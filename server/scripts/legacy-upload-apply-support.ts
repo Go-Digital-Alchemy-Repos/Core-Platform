@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { constants } from "node:fs";
 import { open } from "node:fs/promises";
 import { dirname } from "node:path";
@@ -26,6 +27,7 @@ export async function readApplyInput(path: string) {
     if (length > 65536) throw new Error("Input limit exceeded");
     return {
       value: JSON.parse(buffer.subarray(0, length).toString("utf8")) as unknown,
+      sha256: createHash("sha256").update(buffer.subarray(0, length)).digest("hex"),
       device: stat.dev,
       inode: stat.ino,
     };

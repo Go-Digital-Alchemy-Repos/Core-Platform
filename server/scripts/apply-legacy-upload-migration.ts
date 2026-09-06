@@ -1,3 +1,4 @@
+import { createR2ApplyLedger, validateR2LedgerApproval } from "./legacy-upload-r2-ledger";
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
@@ -116,7 +117,7 @@ export async function main(args: string[], env: NodeJS.ProcessEnv): Promise<numb
       args[1] !== "--plan" ||
       args[3] !== "--approval" ||
       args[5] !== "--writer-drain" ||
-      args[7] !== "--ledger"
+      !["--ledger", "--r2-ledger-approval"].includes(args[7])
     )
       throw new Error("Explicit apply arguments required");
     const assertRuntime = () => {
@@ -130,10 +131,18 @@ export async function main(args: string[], env: NodeJS.ProcessEnv): Promise<numb
       readApplyInput(args[2]),
       readApplyInput(args[4]),
       readApplyInput(args[6]),
+      ...(args[7] === "--r2-ledger-approval" ? [readApplyInput(args[8])] : []),
     ]);
     if (new Set(inputs.map((input) => `${input.device}:${input.inode}`)).size !== inputs.length)
       throw new Error("Independent inputs required");
     const verified = validateApplyInputs(inputs[0].value, inputs[1].value, inputs[2].value);
+    const auditApproval = inputs[3]
+      ? validateR2LedgerApproval(inputs[3].value, {
+          verified,
+          mediaApprovalSha256: inputs[1].sha256,
+          writerDrainSha256: inputs[2].sha256,
+        })
+      : undefined;
     pool = new pg.Pool({
       ...databasePoolConfig(env),
       max: 1,
@@ -157,13 +166,24 @@ export async function main(args: string[], env: NodeJS.ProcessEnv): Promise<numb
       env.SESSION_SECRET,
       verified.approval.target.bucketName,
     );
-    ledger = await createApplyLedger(args[8]);
     client = new S3Client({
       region: "auto",
       endpoint: `https://${config.accountId}.r2.cloudflarestorage.com`,
       credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey },
       maxAttempts: 1,
     });
+    ledger = auditApproval
+      ? createR2ApplyLedger({
+          approval: auditApproval,
+          approvalSha256: inputs[3].sha256,
+          storage: createLegacyUploadStorage(client, config.bucketName, 8192),
+          verifyBeforeWrite: async () => {
+            assertRuntime();
+            await verifier.verify();
+            assertRuntime();
+          },
+        })
+      : await createApplyLedger(args[8]);
     const evidence = await runLegacyUploadApply({
       verifier,
       storage: createLegacyUploadStorage(client, config.bucketName),
@@ -171,7 +191,20 @@ export async function main(args: string[], env: NodeJS.ProcessEnv): Promise<numb
       drain: verified.drain,
       assertRuntime,
     });
-    process.stdout.write(JSON.stringify(evidence) + "\n");
+    process.stdout.write(
+      JSON.stringify({
+        ...evidence,
+        ...(auditApproval
+          ? {
+              auditLedger: {
+                bucketName: auditApproval.bucketName,
+                prefix: auditApproval.prefix,
+                attemptId: auditApproval.attemptId,
+              },
+            }
+          : {}),
+      }) + "\n",
+    );
     return evidence.complete ? 0 : 1;
   } catch {
     process.stdout.write(

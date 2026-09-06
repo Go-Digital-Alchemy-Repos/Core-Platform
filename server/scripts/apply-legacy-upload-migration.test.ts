@@ -252,6 +252,44 @@ describe("exact-object apply preparation", () => {
       await rm(directory, { recursive: true, force: true });
     }
   });
+  it("rejects reuse of a media input as the independent R2 audit approval", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "apply-independent-test-"));
+    const output = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const pool = vi.spyOn(pg, "Pool");
+    try {
+      const path = join(directory, "plan");
+      await writeFile(path, JSON.stringify(fixture().plan), { mode: 0o600 });
+      await writeFile(join(directory, "approval"), JSON.stringify(fixture().applyApproval), {
+        mode: 0o600,
+      });
+      await link(path, join(directory, "audit"));
+      await writeFile(join(directory, "drain"), JSON.stringify(fixture().drain), { mode: 0o600 });
+      expect(
+        await main(
+          [
+            "--apply",
+            "--plan",
+            path,
+            "--approval",
+            join(directory, "approval"),
+            "--writer-drain",
+            join(directory, "drain"),
+            "--r2-ledger-approval",
+            join(directory, "audit"),
+          ],
+          {
+            UPLOAD_MUTATIONS_FROZEN: "true",
+            DATABASE_URL: "postgresql://synthetic:synthetic@localhost/core",
+          },
+        ),
+      ).toBe(1);
+      expect(pool).not.toHaveBeenCalled();
+    } finally {
+      output.mockRestore();
+      pool.mockRestore();
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
   it("creates owned0600 ledger with durable readable lines and refuses existing files/symlinks", async () => {
     const directory = await mkdtemp(join(tmpdir(), "apply-ledger-test-"));
     try {

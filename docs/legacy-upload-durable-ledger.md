@@ -63,3 +63,20 @@ No historical ledger continuation is needed in this slice. This deliberately avo
 Prove: wrong approval/source/target/hash/prefix/attempt/limits and inode collisions fail before audit/media writes; header and intent are acknowledged before media PUT; matching/conflicting conditional races; PUT timeout with matching GET versus missing/stalled GET; hash mismatch/truncated/oversized body; chain/index bounds and concurrent appends; no next-index progression after ambiguity; postcopy result failure reports uncertainty and preserves destination; restart with a new approved prefix verifies existing media without recopy; replaying an old attempt prefix fails before media dispatch; no credentials/raw errors enter audit bytes. Reuse storage deadline tests and add CLI ordering tests with injected synthetic adapters. Build the detached operator artifact and verify missing/invalid arguments with actual Node and no source/TSX.
 
 A real external-storage durability acceptance probe and actual copy remain separately approved actions. Synthetic tests and observed PUT+GET acknowledgment cannot alone certify configured bucket retention or operator access after deployment replacement.
+
+## Implementation checkpoint — 2026-09-06
+
+The operator implementation passed root's88 focused tests and independent bounded review, including
+altered/truncated acknowledgments and a stalled body through the real bounded adapter. TypeScript,
+scoped lint and detached compiled entrypoint checks passed. Artifact SHA256:
+`52872322490186c9f2f6369a4eb1140f31957f01607dba7e94e26c491d69fae1`.
+No production audit or media writes occurred. The maintenance candidate remains separate.
+
+A read-only probe inside the actual source deployment verified the approved source/database/CMS
+record, then received AccessDenied HTTP403 from GetBucketLifecycleConfiguration. Temporary runtime
+files were removed. Retention therefore remains unverified; the existing object credentials must
+not be assumed to provide bucket-administration permission. Probe artifact SHA256:
+`7467a8d634d29ed28e2073bc98148a5d5b8711be521ff1f70ec80dfb47418ec5`.
+Use existing authorized administrative access to inspect lifecycle policy; do not broaden the
+application token merely to clear this gate. Actual audit persistence/retrieval acceptance and the
+writer barrier still precede real copy execution.

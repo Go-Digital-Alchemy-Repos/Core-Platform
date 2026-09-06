@@ -82,3 +82,11 @@ python3 script/verify-upload-apply-artifact.py
 ```
 
 The artifact check runs the actual built Node entry in a temporary directory with dependencies linked, without TypeScript source or TSX loading. It verifies missing/unknown-input rejection only, without database or provider credentials or access.
+
+## External R2 ledger mode
+
+The isolated operator implementation also accepts `--r2-ledger-approval FILE` instead of `--ledger NEWFILE`. This is a fourth separate owned0600 input. It authorizes additional audit writes; the existing media-copy approval remains unchanged. The exact schema, derived eight-key locator, required operator-side retention before invocation, and bucket retention/access preconditions are in [the durable ledger contract](legacy-upload-durable-ledger.md).
+
+Each immutable audit PUT requires an exact bounded GET byte/hash acknowledgment before the append resolves. The header and dispatch intent must be acknowledged before media PUT. An unresolved audit write permanently stops further writes from that sink; after a media dispatch, missing audit results remain ambiguous. Reusing a prior attempt is rejected, even if its header matches the plan. Retry with a newly approved UUID/prefix, preserving all previous locators and revalidating actual media bytes.
+
+No real audit write or media copy has been performed as part of implementing this mode. Bucket lifecycle/privileged deletion and access after deployment replacement remain operational acceptance conditions. `no-store` metadata does not make a public bucket private; records contain whitelisted outcomes and hashes rather than private input text.
