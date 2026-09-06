@@ -2,6 +2,37 @@
 
 Status: design accepted by Orchestrator for isolated CRM-2 implementation; not implemented or release-approved. Inspected Core `62d904450bd39bda845f94847cc4d1cbf7b91c20`, 2026-09-06 UTC.
 
+## Shared-contract checkpoint
+
+On 2026-09-06 the Orchestrator accepted the initial pure contracts in this isolated branch.
+Four shared files cover scalar normalization, definitions/revision transitions, limits,
+manual defaults/required behavior, archived accepted values, and strict mapping save envelopes.
+Root independently passed all43 focused tests after correcting revision exhaustion and C1
+control-character boundaries. TypeScript and scoped lint passed. No persistence, form adapters,
+API, UI, migration or production behavior is implemented by this checkpoint. Transactional
+serialization, exact retained revision selection and the rest of this plan remain required.
+
+## Mapping resolver checkpoint
+
+The pure form resolver is accepted in the isolated branch. Root reviewed source-ID/key binding,
+active type/scope/option checks, false/zero/blank adapters, no heuristic fallthrough in explicit
+mode, safe errors and the 64 KiB normalized-result bound, then independently passed all93 shared
+contract/resolver tests. Full types and scoped lint/formatting also passed. This does not establish
+live mapped intake: the caller still must reuse ordinary validation, pin transaction-consistent
+revisions, bound the full job envelope and commit the snapshot atomically with submission/jobs.
+
+## Persistence checkpoint
+
+The additive persistence slice is accepted in this isolated branch: four definition/revision/value
+tables, entity/form revision columns, explicit0062 reconciliation, typed transaction-aware storage
+and generic creation-schema exclusion of server-owned revisions. Definition locks precede entity
+locks; revisions/limits serialize and reads join retained configuration rather than querying each
+value separately. Root independently passed18 tests (12 PostgreSQL cases and6 guard/schema checks)
+in an owned disposable fixture and verified its removal. Independent bounded review found no
+blocking defect; types and scoped lint/formatting passed. A suggested fixture timeout bound will
+be included with the next integration work. Actual-current-main upgrade, backup/restore, API and
+workflow integration remain required; the synthetic populated rehearsal alone does not prove them.
+
 ## Source constraints
 
 - `shared/schema/crm.ts` has separate lead/client records, untyped `metadata`/`formData`, six fixed stages and unique client `sourceLeadId`. Custom fields must not reinterpret those existing JSON records.
@@ -28,13 +59,13 @@ Use four dedicated tables plus nullable form configuration and monotonic revisio
 
 Maximum 50 active definitions per scope (a `both` definition counts in each), 200 total including archived; enforce limits under transactional serialization. Config limit 16 KiB; values request limit 64 KiB/50 entries. API contracts reject unknown properties. Definition/revision IDs and scalar values are never interpreted as code, HTML, SQL identifiers or object paths.
 
-| Type | Canonical value and validation |
-| --- | --- |
-| text | String, trimmed, at most 2,000 characters; reject NUL/control characters except newline/tab. |
-| number | Finite JSON number, absolute value at most 1e12; no coercion from empty strings, NaN or Infinity. Not a money type. |
-| date | Real Gregorian calendar date `YYYY-MM-DD`, year 0001–9999; never convert through host timezone. |
-| choice | One immutable option key; 1–50 options, each option is `{key,label,archived:boolean}` with a key using field-key grammar and label 1–80 characters. Keys cannot be renamed/reused; options can be archived and relabeled. |
-| boolean | JSON true/false; false is a supplied value, not missing. |
+| Type    | Canonical value and validation                                                                                                                                                                                            |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| text    | String, trimmed, at most 2,000 characters; reject NUL/control characters except newline/tab.                                                                                                                              |
+| number  | Finite JSON number, absolute value at most 1e12; no coercion from empty strings, NaN or Infinity. Not a money type.                                                                                                       |
+| date    | Real Gregorian calendar date `YYYY-MM-DD`, year 0001–9999; never convert through host timezone.                                                                                                                           |
+| choice  | One immutable option key; 1–50 options, each option is `{key,label,archived:boolean}` with a key using field-key grammar and label 1–80 characters. Keys cannot be renamed/reused; options can be archived and relabeled. |
+| boolean | JSON true/false; false is a supplied value, not missing.                                                                                                                                                                  |
 
 Null means cleared/no value, never an implicit default. Absent PATCH entries remain unchanged. Reject duplicate definition IDs. Empty text normalizes to null. Required/default behavior applies only to new manual records: default is applied once when omitted, then required fields are checked. Existing records, legacy intake and conversion are not made invalid by adding a required field. UI names this setting “Required for new manual records”; each form separately declares required mappings. Defaults must validate against the same revision and are not retroactive.
 
@@ -58,13 +89,37 @@ Store mapping through a dedicated admin endpoint with expected monotonic form ma
 
 `POST /api/admin/forms/:id/crm-mapping/preview` accepts a proposed mapping and bounded synthetic sample data; executes the same pure resolver/validator as intake; returns normalized built-ins/custom values, accepting definition revisions, missing/invalid source errors and duplicate-overwrite explanation. No submission, lead, job, provider or log of sample values. Mapping UI shows source→target/type and errors before save, but preview is not mandatory authorization or proof of later production values.
 
+### Verified form scalar adapter boundary
+
+Root inspected `public-form-renderer.tsx` and `forms.service.ts:validateField` on 2026-09-06.
+Core `checkbox` fields are option arrays, not booleans. Only a checkbox with exactly one configured
+option may map to a boolean: validated `[]` becomes false, and exactly `[thatOption.value]`
+becomes true. Reject multiple options, duplicate/unknown values and non-array inputs. The separate
+`consent` field already validates to a boolean and may map directly; this does not grant marketing
+consent or trigger external enrollment. Required mapping means a supplied non-null boolean, so
+false remains valid; required consent enforcement stays with ordinary form validation.
+
+The mapping resolver accepts the ordinary form validator's output, not arbitrary visitor input.
+Numbers are finite JSON numbers after that validation, while optional blank numbers are `""` and
+map to null; the typed bounds still reject Infinity and out-of-range numbers. Dates must pass the
+shared Gregorian-date validator. Single select/radio/image-choice inputs are option strings;
+only image-choice single mode is compatible. Optional blank scalar inputs map to null, and
+required mapped targets reject null. Text-like sources must remain strings. No generic truthiness,
+array flattening, stringification of objects or number coercion belongs in the mapping layer.
+
+Both preview and intake must call the same ordinary form validation before the pure resolver.
+Extract/reuse that validator when implementing mapping; do not implement a different preview-only
+parser or weaken existing fields. Mapping errors return source IDs/codes without submitted values.
+A test must prove checkbox false, numeric zero and optional blank remain distinct across preview,
+submission snapshot, retry and typed-value persistence.
+
 ## Submission, retries and errors
 
 Validate explicit mappings and mapped values before inserting a new submission or any job. Return 400 with stable source-field error codes for invalid visitor values, without echoing submitted values; unavailable/archived mapping configuration returns 503 with a neutral visitor message and a separate safe administrator diagnostic. Existing form public/proxy routes retain authentication, size/rate limits and response shape; expose field errors compatibly without requiring site changes to preserve entries.
 
 Add a mapped variant to the existing `crm_intake` payload: `{kind:"crm_intake", version:1, formId, formName, mappingRevision, normalizedBuiltins, customValues:[{definitionId,definitionRevision,value}]}`. Retain the current unversioned variant for queued legacy jobs. The snapshot `formId` must equal the owning submission/form ID; `formName` is display-only and never mapping identity. Keep deduplication key `crm_intake`; do not create a second CRM effect. Resolve and persist this snapshot atomically with submission/jobs, serializing mapping/definition revisions against concurrent changes. Worker validates the snapshot version/shape and applies pinned values even if fields/options were archived after acceptance; it must not rerun current mappings or defaults. Revision rows are retained, not deleted.
 
-For an existing idempotency key, return the original accepted submission before applying *new mapping* validation. Preserve the existing public replay semantics; do not quietly introduce a payload-conflict API in CRM-2. Retain ordinary form/auth validation and test its existing limitations independently. On concurrent first submissions, database uniqueness chooses one accepted snapshot; losing requests return that submission with no extra effects. Changed payloads require the site's existing fresh-key behavior.
+For an existing idempotency key, return the original accepted submission before applying _new mapping_ validation. Preserve the existing public replay semantics; do not quietly introduce a payload-conflict API in CRM-2. Retain ordinary form/auth validation and test its existing limitations independently. On concurrent first submissions, database uniqueness chooses one accepted snapshot; losing requests return that submission with no extra effects. Changed payloads require the site's existing fresh-key behavior.
 
 Perform lead upsert, custom-value writes and job completion in the existing `completeEffectJob` transaction; claim loss/failure rolls back all. Unknown payload versions or missing retained revisions fail safely into the existing bounded retry/failed-job process with sanitized codes; do not silently run heuristic intake. Explicit administrative retry uses the stored snapshot. Avoid changing external email delivery guarantees or introducing a second worker.
 
@@ -89,3 +144,26 @@ Old code ignores new columns/tables but cannot safely consume new mapped CRM job
 3. Implement mapping preview and submission snapshots with legacy job compatibility; real DB tests cover edit/archive between acceptance and execution, claim retry, duplicate intake/custom-value merge and response-loss replay producing one CRM effect-set.
 4. Actual-app browser: admin creates field → maps a synthetic form → previews invalid/valid values → submits → sees typed lead values → wins lead → verifies copied client values → edits client → retries won without overwrite → archives field and reloads retained values. Verify editor permissions, invalid input retention, failed GET/save, keyboard/mobile/themes. No mocked success responses, client data or provider calls.
 5. Complete populated migration, backup/restore and rollback rehearsal, full required checks and independent review; record exact SHAs/evidence before release. Metadata-only storage, a settings-only editor, or unit tests alone do not satisfy CRM-2.
+
+## API implementation checkpoint — 2026-09-06
+
+Root accepted the definition and record-value API slice after independent review of
+the mounted authentication/feature/permission chain and transactional storage
+composition. Root reran all 38 service, mounted custom-field route and pipeline
+route tests successfully. Definition writes require admin; record edits retain
+existing CRM editor permissions. Strict requests and sanitized errors preserve
+concurrency conflicts without exposing submitted values or database errors.
+
+The implementation worker also reported 18 PostgreSQL/schema checks and scoped
+type, lint and formatting checks passing. The remaining UI, atomic creation/won
+conversion, form mapping and durable snapshot integration, populated upgrade and
+backup/restore acceptance remain required before CRM-2 release. This API acceptance
+does not change the separate maintenance release candidate.
+
+The definition settings UI was independently reviewed and root reran all 24
+custom-field/pipeline component tests successfully. It supports all five typed
+defaults, revisioned edits, immutable identity and saved option keys, archive and
+unarchive, and explicit conflict reload while retaining drafts on failures.
+Root adjusted new-field conflict wording to avoid referring to a nonexistent
+saved field. Actual application browser acceptance, record drawers and full
+form-to-client journey remain outstanding; component tests do not replace them.

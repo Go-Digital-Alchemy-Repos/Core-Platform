@@ -1,3 +1,7 @@
+import {
+  assertOrderShippable,
+  assertRemainingFulfillmentQuantities,
+} from "./ecommerce-fulfillment-validation";
 import { z } from "zod";
 import { storage } from "../storage/index";
 import {
@@ -123,8 +127,6 @@ export const fulfillmentItemsSchema = z
     }),
   )
   .default([]);
-
-const excludedFulfillmentStatuses = new Set(["cancelled", "canceled", "failed"]);
 
 const shippablePaymentStatuses = new Set(["paid", "partially_refunded"]);
 const fulfillmentCompleteStatuses = new Set(["shipped", "delivered"]);
@@ -970,65 +972,23 @@ export async function updateAdminEcommerceOrder(
 }
 
 export async function assertEcommerceOrderCanShip(orderId: string) {
-  const order = await storage.ecommerce.getOrder(orderId);
-  if (!order) throw httpError("Order not found", 404);
-  if (!shippablePaymentStatuses.has(order.paymentStatus)) {
-    throw httpError("Only paid orders can be shipped", 400);
-  }
-  if (order.fraudReviewStatus === "pending" || order.fraudDecision === "manual_review") {
-    throw httpError("Review and approve the order risk before fulfillment", 400);
-  }
-  if (order.status === "cancelled") {
-    throw httpError("Cancelled orders cannot be shipped", 400);
-  }
-  if (order.status === "delivered") {
-    throw httpError("Delivered orders cannot receive new shipments", 400);
-  }
-  return order;
+  return assertOrderShippable(await storage.ecommerce.getOrder(orderId));
 }
 
 export async function assertEcommerceFulfillmentRequest(orderId: string, input: unknown) {
   const items = fulfillmentItemsSchema.parse(input);
   await assertEcommerceOrderCanShip(orderId);
-  if (items.length === 0) return items;
-
+  if (!items.length) return items;
   const details = await storage.ecommerce.getOrderWithDetails(orderId);
   if (!details) throw httpError("Order not found", 404);
-
-  const orderItemsById = new Map(details.items.map((item) => [item.id, item]));
-  const requestedByOrderItemId = new Map<string, number>();
-  for (const item of items) {
-    const orderItem = orderItemsById.get(item.orderItemId);
-    if (!orderItem) {
-      throw httpError("Fulfillment item does not belong to this order", 400);
-    }
-    requestedByOrderItemId.set(
-      item.orderItemId,
-      (requestedByOrderItemId.get(item.orderItemId) ?? 0) + item.quantity,
-    );
-  }
-
   const fulfillments = await storage.ecommerce.getFulfillmentsForOrder(orderId);
-  const fulfilledByOrderItemId = new Map<string, number>();
-  for (const fulfillment of fulfillments) {
-    if (excludedFulfillmentStatuses.has(fulfillment.status)) continue;
-    for (const item of fulfillment.items) {
-      fulfilledByOrderItemId.set(
-        item.orderItemId,
-        (fulfilledByOrderItemId.get(item.orderItemId) ?? 0) + item.quantity,
-      );
-    }
-  }
-
-  for (const [orderItemId, requestedQuantity] of requestedByOrderItemId) {
-    const orderItem = orderItemsById.get(orderItemId);
-    if (!orderItem) continue;
-    const alreadyFulfilled = fulfilledByOrderItemId.get(orderItemId) ?? 0;
-    if (requestedQuantity + alreadyFulfilled > orderItem.quantity) {
-      throw httpError("Fulfillment quantity cannot exceed the remaining ordered quantity", 400);
-    }
-  }
-
+  assertRemainingFulfillmentQuantities(
+    items,
+    details.items,
+    fulfillments.flatMap((fulfillment) =>
+      fulfillment.items.map((item) => ({ ...item, status: fulfillment.status })),
+    ),
+  );
   return items;
 }
 

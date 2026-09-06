@@ -1,3 +1,5 @@
+import type { CrmMappedFormIntake } from "../crm-form-intake";
+import type { CrmFormMappingV1 } from "../crm-form-mapping";
 import { sql } from "drizzle-orm";
 import {
   pgTable,
@@ -133,6 +135,8 @@ export const cmsForms = pgTable(
       .$type<CmsFormField[]>()
       .default(sql`'[]'::jsonb`)
       .notNull(),
+    crmMapping: jsonb("crm_mapping").$type<CrmFormMappingV1 | null>(),
+    crmMappingRevision: integer("crm_mapping_revision").notNull().default(0),
     settings: jsonb("settings")
       .$type<CmsFormSettings>()
       .default(sql`'{}'::jsonb`)
@@ -194,10 +198,12 @@ export const insertCmsFormSubmissionSchema = z.object({
 
 export type InsertCmsForm = z.infer<typeof insertCmsFormSchema>;
 export type CmsForm = typeof cmsForms.$inferSelect;
+export type PublicCmsForm = Omit<CmsForm, "crmMapping" | "crmMappingRevision">;
 export type InsertCmsFormSubmission = z.infer<typeof insertCmsFormSubmissionSchema>;
 export type CmsFormSubmission = typeof cmsFormSubmissions.$inferSelect;
 
 export type CmsFormEffectPayload =
+  | CrmMappedFormIntake
   | { kind: "crm_intake"; formName: string }
   | { kind: "contact_message" }
   | { kind: "mailchimp_sync"; email: string; firstName: string; lastName: string; tag: string }

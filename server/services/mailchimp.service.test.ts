@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+// This worker test supplies its own storage boundary; it must never open a database.
+vi.mock("../db", () => ({ db: {} }));
 const mocks = vi.hoisted(() => ({
   config: vi.fn(),
   fetch: vi.fn(),

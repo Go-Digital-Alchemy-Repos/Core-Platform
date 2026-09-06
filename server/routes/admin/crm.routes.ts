@@ -1,3 +1,4 @@
+import crmCustomFieldsRoutes from "./crm-custom-fields.routes";
 import { requireRole } from "../../middleware/auth";
 import {
   getCrmPipelineSettings,
@@ -13,11 +14,16 @@ import {
 } from "@shared/schema";
 import { asyncHandler } from "../../middleware/error-handler";
 import { storage } from "../../storage";
-import { createOrUpdateCrmLead, updateCrmLead } from "../../services/crm.service";
+import {
+  createManualCrmLead,
+  createManualCrmClient,
+  updateCrmLead,
+} from "../../services/crm.service";
 import { paramString } from "../../utils/params";
 import type { CrmClientStatus, CrmLeadStage } from "@shared/schema";
 
 const router = Router();
+router.use(crmCustomFieldsRoutes);
 
 router.get(
   "/settings/pipeline",
@@ -70,6 +76,13 @@ router.get(
     const query = typeof req.query.q === "string" ? req.query.q : undefined;
     const status = isCrmClientStatus(req.query.status) ? req.query.status : "all";
     res.json(await storage.crm.listClients({ query, status }));
+  }),
+);
+
+router.post(
+  "/clients",
+  asyncHandler(async (req, res) => {
+    res.status(201).json(await createManualCrmClient(req.body));
   }),
 );
 
@@ -142,7 +155,7 @@ router.patch(
 router.post(
   "/",
   asyncHandler(async (req, res) => {
-    const result = await createOrUpdateCrmLead(
+    const result = await createManualCrmLead(
       { ...req.body, source: req.body?.source ?? "manual" },
       req.user?.id,
     );

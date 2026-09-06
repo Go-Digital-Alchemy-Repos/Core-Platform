@@ -10,6 +10,9 @@ import { logger } from "../../utils/logger";
 import * as r2Service from "../../services/r2.service";
 import { enrichTherapistLocationFields } from "../../services/therapist-location.service";
 
+import { getDirectorySettings } from "../../services/directory-settings.service";
+import { getDirectoryExperienceMode } from "@shared/types/directory-settings";
+
 const router = Router();
 
 async function normalizeTherapistResult<
@@ -69,6 +72,22 @@ const createTherapistSchema = z.object({
 router.post(
   "/",
   asyncHandler(async (req, res) => {
+    const directoryMode = getDirectoryExperienceMode(await getDirectorySettings());
+    if (directoryMode === "store_locator") {
+      const data = createTherapistSchema
+        .omit({ email: true, password: true, firstName: true, lastName: true })
+        .extend({ title: z.string().trim().min(1, "Location name is required") })
+        .parse(req.body);
+      const payload = await enrichTherapistLocationFields(data);
+      const profile = await storage.therapists.createProfile({
+        ...payload,
+        userId: null,
+        directoryMode,
+        isApproved: data.isApproved ?? true,
+      });
+      res.status(201).json(await storage.therapists.getProfileWithUser(profile.id));
+      return;
+    }
     const data = createTherapistSchema.parse(req.body);
 
     const existing = await storage.users.getUserByEmail(data.email);
@@ -98,6 +117,7 @@ router.post(
       userId: user.id,
       isApproved: data.isApproved ?? true,
       ...profilePayload,
+      directoryMode,
     });
 
     const profileWithUser = await storage.therapists.getProfileWithUser(profile.id);
@@ -232,13 +252,13 @@ router.put(
       notFound(res, "Profile");
       return;
     }
-    if (firstName !== undefined || lastName !== undefined) {
+    if (profile.userId && (firstName !== undefined || lastName !== undefined)) {
       await storage.users.updateUser(profile.userId, {
         ...(firstName !== undefined && { firstName }),
         ...(lastName !== undefined && { lastName }),
       });
     }
-    await storage.activity.log(profile.userId, "profile_update", "Profile updated by admin");
+    await storage.activity.log(req.user!.id, "profile_update", "Profile updated by admin");
     const profileWithUser = await storage.therapists.getProfileWithUser(profile.id);
     res.json(profileWithUser ? await normalizeTherapistResult(profileWithUser) : profile);
   }),
@@ -278,6 +298,13 @@ router.get(
       notFound(res, "Profile");
       return;
     }
+    if (!profile.userId) {
+      res.json({
+        stats: { lastLoginAt: null, accountCreated: null, profileEditCount: 0, loginCount: 0 },
+        logs: [],
+      });
+      return;
+    }
     const user = await storage.users.getUser(profile.userId);
     const logs = await storage.activity.getByUser(profile.userId, 100);
     const profileEditCount = await storage.activity.countByAction(profile.userId, "profile_update");
@@ -301,6 +328,10 @@ router.get(
     const profile = await storage.therapists.getProfile(paramString(req.params.id));
     if (!profile) {
       notFound(res, "Profile");
+      return;
+    }
+    if (!profile.userId) {
+      res.json(null);
       return;
     }
     const subscription = await storage.subscriptions.getSubscriptionByTherapist(profile.userId);

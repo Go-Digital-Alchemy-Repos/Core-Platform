@@ -1096,8 +1096,7 @@ export function DirectoryBrowserSection({
                   therapists={mapTherapists}
                   height="100%"
                   highlightedId={hoveredId}
-                  zoom={3}
-                  center={[20, 0]}
+                  fitToPins
                 />
               </div>
             </div>

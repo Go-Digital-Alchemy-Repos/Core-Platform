@@ -34,6 +34,14 @@ async function buildAll() {
 
   await buildUploadVerifier();
   await buildUploadApply();
+  await esbuild({
+    entryPoints: ["server/scripts/check-deployment-preflight.ts"],
+    platform: "node",
+    bundle: true,
+    format: "esm",
+    outfile: "dist/operations/check-deployment-preflight.mjs",
+    logLevel: "info",
+  });
 
   console.log("copying migrations...");
   await cp("migrations", "dist/migrations", { recursive: true });

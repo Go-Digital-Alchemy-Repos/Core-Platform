@@ -27,9 +27,7 @@ export const therapistProfiles = pgTable(
     id: varchar("id")
       .primaryKey()
       .default(sql`gen_random_uuid()`),
-    userId: varchar("user_id")
-      .notNull()
-      .references(() => users.id),
+    userId: varchar("user_id").references(() => users.id),
     directoryMode: text("directory_mode").notNull().default("therapists"),
     title: text("title"),
     bio: text("bio"),

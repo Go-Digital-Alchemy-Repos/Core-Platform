@@ -214,6 +214,7 @@ export interface Order {
     emailSentAt?: string | null;
   }>;
   fulfillments?: Array<{
+    items?: Array<{ orderItemId: string; quantity: number }>;
     id: string;
     status: string;
     carrier?: string | null;

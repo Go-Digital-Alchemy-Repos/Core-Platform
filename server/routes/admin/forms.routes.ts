@@ -1,3 +1,4 @@
+import crmFormMappingRoutes from "./crm-form-mapping.routes";
 import { Router } from "express";
 import { insertCmsFormSchema } from "@shared/schema";
 import { asyncHandler } from "../../middleware/error-handler";
@@ -5,6 +6,7 @@ import { storage } from "../../storage";
 import { paramString } from "../../utils/params";
 
 const router = Router();
+router.use(crmFormMappingRoutes);
 
 router.get(
   "/forms",

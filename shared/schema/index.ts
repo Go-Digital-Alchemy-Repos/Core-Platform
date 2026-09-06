@@ -311,6 +311,7 @@ export {
   insertCmsFormSchema,
   insertCmsFormSubmissionSchema,
   type CmsForm,
+  type PublicCmsForm,
   type CmsFormField,
   type CmsFormFieldConfig,
   type CmsFormFieldOption,
@@ -342,3 +343,5 @@ export {
 } from "./provider-applications";
 
 export * from "./client-stack-onboarding";
+
+export * from "./crm-custom-fields";

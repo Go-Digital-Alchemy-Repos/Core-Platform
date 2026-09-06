@@ -1,3 +1,5 @@
+import { CrmCustomFieldSettings } from "./crm-custom-field-settings";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -234,7 +236,18 @@ export default function CrmSettingsPage() {
   return (
     <ProtectedRoute roles={["admin"]}>
       <AdminSidebar>
-        <SettingsEditor />
+        <Tabs defaultValue="pipeline" className="p-4">
+          <TabsList aria-label="CRM settings">
+            <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+            <TabsTrigger value="custom-fields">Custom fields</TabsTrigger>
+          </TabsList>
+          <TabsContent value="pipeline">
+            <SettingsEditor />
+          </TabsContent>
+          <TabsContent value="custom-fields">
+            <CrmCustomFieldSettings canEdit />
+          </TabsContent>
+        </Tabs>
       </AdminSidebar>
     </ProtectedRoute>
   );

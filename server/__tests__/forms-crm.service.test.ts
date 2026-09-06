@@ -1,3 +1,4 @@
+vi.mock("../db", () => ({ db: {} }));
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   getBySlug: vi.fn(),
@@ -11,6 +12,12 @@ vi.mock("../storage", () => ({
       getPublicBySlug: mocks.getBySlug,
       getPublicById: mocks.getById,
       createSubmissionWithEffects: mocks.persist,
+      findSubmissionByKey: async () => undefined,
+      withSubmissionForm: async (
+        _id: string,
+        work: (form: unknown, tx: unknown) => Promise<unknown>,
+      ) =>
+        work({ ...(await mocks.getBySlug()), crmMapping: null, crmMappingRevision: 0 }, undefined),
     },
     users: {
       getFormNotificationUsers: mocks.recipients,
@@ -71,6 +78,7 @@ describe("durable managed form acceptance", () => {
         idempotencyKey: null,
       },
       [{ kind: "crm_intake", formName: "Lead Form" }],
+      undefined,
     );
   });
   it("does not enqueue disabled CRM effects", async () => {
@@ -80,7 +88,7 @@ describe("durable managed form acceptance", () => {
     });
     const { submitManagedFormBySlug } = await import("../services/forms.service");
     await submitManagedFormBySlug("lead-form", { name: "Lin", email: "lin@example.com" });
-    expect(mocks.persist).toHaveBeenCalledWith(expect.any(Object), []);
+    expect(mocks.persist).toHaveBeenCalledWith(expect.any(Object), [], undefined);
   });
   it("preserves duplicate result and key for durable retries", async () => {
     mocks.persist.mockResolvedValue({ submission: { id: "submission-1" }, created: false });
@@ -94,6 +102,7 @@ describe("durable managed form acceptance", () => {
     expect(mocks.persist).toHaveBeenCalledWith(
       expect.objectContaining({ idempotencyKey: "retry-1" }),
       expect.any(Array),
+      undefined,
     );
   });
   it("uses the durable path and optional key for event form intake by ID", async () => {
@@ -106,6 +115,7 @@ describe("durable managed form acceptance", () => {
     expect(mocks.persist).toHaveBeenCalledWith(
       expect.objectContaining({ source: "event:event-1", idempotencyKey: "event-attempt-1" }),
       [{ kind: "crm_intake", formName: "Lead Form" }],
+      undefined,
     );
   });
   it("snapshots independent audience and per-recipient jobs without duplicate recipients", async () => {

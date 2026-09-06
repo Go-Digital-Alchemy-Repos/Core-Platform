@@ -1,3 +1,4 @@
+import { mappedFormErrorHandler } from "./mapped-form-error-handler";
 import { Router } from "express";
 import { asyncHandler } from "../middleware/error-handler";
 import { authorizeClientFormProxy } from "../services/client-form-proxy-auth";
@@ -45,4 +46,5 @@ router.post(
   proxyFormHandler("newsletter-signup", "newsletter-proxy"),
 );
 
+router.use(mappedFormErrorHandler);
 export default router;

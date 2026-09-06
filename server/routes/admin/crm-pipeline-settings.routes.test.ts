@@ -8,6 +8,7 @@ import {
   DEFAULT_CRM_PIPELINE_CONFIG,
   CRM_PIPELINE_SETTING_KEY,
 } from "@shared/crm-pipeline-settings";
+vi.mock("../../db", () => ({ db: {} }));
 const state = vi.hoisted(() => ({
   raw: null as string | null,
   enabled: true,

@@ -1,3 +1,5 @@
+import { assertCrmMappingCompatible } from "./crm-form-mapping.storage";
+import { CrmCustomFieldsStorage, lockCrmCustomFieldDefinitions } from "./crm-custom-fields.storage";
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "../db";
@@ -8,6 +10,7 @@ import {
   type CmsFormEffectPayload,
   cmsFormSubmissions,
   type CmsForm,
+  type PublicCmsForm,
   type CmsFormSubmission,
   type InsertCmsForm,
   type InsertCmsFormSubmission,
@@ -23,11 +26,40 @@ function normalizeForm<T extends CmsForm | undefined>(form: T): T {
   } as T;
 }
 
-function sanitizePublicForm<T extends CmsForm | undefined>(form: T): T {
-  return sanitizePublicCmsContent(normalizeForm(form));
+function sanitizePublicForm(form: CmsForm | undefined): PublicCmsForm | undefined {
+  if (!form) return undefined;
+  const sanitized = sanitizePublicCmsContent(normalizeForm(form));
+  const { crmMapping: _mapping, crmMappingRevision: _revision, ...publicForm } = sanitized;
+  return publicForm;
 }
 
 export class FormsStorage {
+  async withSubmissionForm<T>(
+    id: string,
+    work: (form: CmsForm, tx: Parameters<Parameters<typeof db.transaction>[0]>[0]) => Promise<T>,
+  ): Promise<T> {
+    return db.transaction(async (tx) => {
+      await lockCrmCustomFieldDefinitions(tx);
+      const [form] = await tx.select().from(cmsForms).where(eq(cmsForms.id, id)).for("share");
+      if (!form || !form.isActive || form.kind === "application")
+        throw Object.assign(new Error("Form not found"), { statusCode: 404 });
+      return work(normalizeForm(form)!, tx);
+    });
+  }
+  async findSubmissionByKey(
+    formId: string,
+    key: string,
+    tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  ) {
+    const [submission] = await tx
+      .select()
+      .from(cmsFormSubmissions)
+      .where(
+        and(eq(cmsFormSubmissions.formId, formId), eq(cmsFormSubmissions.idempotencyKey, key)),
+      );
+    return submission;
+  }
+
   async getAll(): Promise<CmsForm[]> {
     const rows = await db
       .select()
@@ -36,7 +68,7 @@ export class FormsStorage {
     return rows.map((row) => normalizeForm(row));
   }
 
-  async getPublicForms(): Promise<CmsForm[]> {
+  async getPublicForms(): Promise<PublicCmsForm[]> {
     const rows = await db
       .select()
       .from(cmsForms)
@@ -44,7 +76,7 @@ export class FormsStorage {
       .orderBy(cmsForms.name);
     return rows
       .map((row) => sanitizePublicForm(row))
-      .filter((row): row is CmsForm => Boolean(row && row.kind !== "application"));
+      .filter((row): row is PublicCmsForm => Boolean(row && row.kind !== "application"));
   }
 
   async getById(id: string): Promise<CmsForm | undefined> {
@@ -52,7 +84,7 @@ export class FormsStorage {
     return normalizeForm(form);
   }
 
-  async getPublicById(id: string): Promise<CmsForm | undefined> {
+  async getPublicById(id: string): Promise<PublicCmsForm | undefined> {
     const [form] = await db
       .select()
       .from(cmsForms)
@@ -68,7 +100,7 @@ export class FormsStorage {
     return normalizeForm(form);
   }
 
-  async getPublicBySlug(slug: string): Promise<CmsForm | undefined> {
+  async getPublicBySlug(slug: string): Promise<PublicCmsForm | undefined> {
     const [form] = await db
       .select()
       .from(cmsForms)
@@ -85,12 +117,28 @@ export class FormsStorage {
   }
 
   async update(id: string, data: Partial<InsertCmsForm>): Promise<CmsForm | undefined> {
-    const [form] = await db
-      .update(cmsForms)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(cmsForms.id, id))
-      .returning();
-    return normalizeForm(form);
+    return db.transaction(async (tx) => {
+      await lockCrmCustomFieldDefinitions(tx);
+      const [current] = await tx.select().from(cmsForms).where(eq(cmsForms.id, id)).for("update");
+      if (!current) return undefined;
+      const {
+        crmMapping: _mapping,
+        crmMappingRevision: _revision,
+        ...safeData
+      } = data as Partial<CmsForm>;
+      const next = { ...current, ...safeData };
+      assertCrmMappingCompatible(
+        next,
+        current.crmMapping === null ? [] : await new CrmCustomFieldsStorage().listDefinitions(tx),
+        current,
+      );
+      const [form] = await tx
+        .update(cmsForms)
+        .set({ ...safeData, updatedAt: new Date() })
+        .where(eq(cmsForms.id, id))
+        .returning();
+      return normalizeForm(form);
+    });
   }
 
   async delete(id: string): Promise<boolean> {
@@ -140,8 +188,9 @@ export class FormsStorage {
   async createSubmissionWithEffects(
     data: InsertCmsFormSubmission,
     effects: CmsFormEffectPayload[],
+    transaction?: Parameters<Parameters<typeof db.transaction>[0]>[0],
   ): Promise<{ submission: CmsFormSubmission; created: boolean }> {
-    return db.transaction(async (tx) => {
+    const apply = async (tx: Parameters<Parameters<typeof db.transaction>[0]>[0]) => {
       const [created] = await tx
         .insert(cmsFormSubmissions)
         .values(data)
@@ -177,7 +226,8 @@ export class FormsStorage {
         );
       }
       return { submission: created, created: true };
-    });
+    };
+    return transaction ? apply(transaction) : db.transaction(apply);
   }
 
   async claimNextEffectJob(now = new Date()): Promise<CmsFormEffectJob | undefined> {

@@ -1,3 +1,5 @@
+import { CrmRecordCustomFields } from "./crm-record-custom-fields";
+import { CreateCrmClientSheet } from "./crm-create-client-sheet";
 import { useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -367,8 +369,12 @@ function ClientDetailSheet({
 
   return (
     <Sheet open={Boolean(clientId)} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" size="xl">
-        <SheetHeader>
+      <SheetContent
+        side="right"
+        size="xl"
+        className="max-sm:!animate-none left-0 right-auto h-[100dvh] w-[100dvw] max-w-[100dvw] overflow-hidden sm:left-auto sm:right-0 sm:w-full"
+      >
+        <SheetHeader className="shrink-0">
           <SheetTitle>{client?.name ?? "Client"}</SheetTitle>
           <SheetDescription>
             {client
@@ -376,9 +382,10 @@ function ClientDetailSheet({
               : "Loading client..."}
           </SheetDescription>
         </SheetHeader>
-        <SheetBody className="space-y-5">
+        <SheetBody className="min-h-0 space-y-5">
           {client ? (
             <>
+              <CrmRecordCustomFields key={client.id} scope="client" id={client.id} />
               <Tabs defaultValue="overview" className="space-y-4">
                 <TabsList className="flex h-auto flex-wrap justify-start">
                   <TabsTrigger value="overview">
@@ -806,6 +813,7 @@ function ClientDetailSheet({
 }
 
 function CrmClientsContent() {
+  const [creating, setCreating] = useState(false);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<CrmClientStatus | "all">("all");
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
@@ -835,6 +843,8 @@ function CrmClientsContent() {
         </p>
       </div>
 
+      <Button onClick={() => setCreating(true)}>Create client</Button>
+      {creating && <CreateCrmClientSheet onClose={() => setCreating(false)} />}
       <div className="flex flex-wrap gap-3">
         <div className="relative min-w-64 flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -863,8 +873,8 @@ function CrmClientsContent() {
         </Select>
       </div>
 
-      <div className="rounded-lg border">
-        <div className="grid grid-cols-[1fr_120px_140px_150px_120px] gap-3 border-b px-4 py-3 text-xs font-medium text-muted-foreground">
+      <div className="overflow-x-auto rounded-lg border">
+        <div className="grid min-w-[800px] grid-cols-[1fr_120px_140px_150px_120px] gap-3 border-b px-4 py-3 text-xs font-medium text-muted-foreground">
           <span>
             <UserRound className="mr-1 inline h-3 w-3" />
             Client
@@ -885,7 +895,7 @@ function CrmClientsContent() {
             key={client.id}
             type="button"
             onClick={() => setSelectedClientId(client.id)}
-            className="grid w-full grid-cols-[1fr_120px_140px_150px_120px] gap-3 px-4 py-3 text-left text-sm hover:bg-muted/40"
+            className="grid min-w-[800px] w-full grid-cols-[1fr_120px_140px_150px_120px] gap-3 px-4 py-3 text-left text-sm hover:bg-muted/40"
           >
             <span className="min-w-0">
               <span className="block truncate font-medium">{client.name}</span>
@@ -909,7 +919,7 @@ function CrmClientsContent() {
         ))}
         {!isLoading && clients.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">
-            No clients yet. Move a lead to Won to create one.
+            No clients yet. Create a client or move a lead to Won.
           </div>
         ) : null}
       </div>

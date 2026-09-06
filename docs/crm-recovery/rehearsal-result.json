@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "fixture": "core-crm-recovery-ce53456e712a",
+  "candidate": "2884093fe28f566dad7a9c10511703d2bef9da59",
+  "sourceSha256": {
+    "server/migrate.ts": "966290c76095f38af8d118967ca0c1f53ca885ad616c10ae69d4c7d9c177f8a8",
+    "server/services/system-backup.service.ts": "b4f3ce3db5fe0e157823f07cac996e2aae6f720b38e96375d8aa8e545ff475fc",
+    "server/storage/crm-custom-fields.storage.ts": "8e645ed43354c7044f932a55854700c63759381acbd337c46e8c0d6bf056b5bc",
+    "server/services/form-effect-jobs.service.ts": "849e2f6d7b0f0abc7090a1afb9d824ce1f513913e36f23d7b25c69e0915def11",
+    "script/fixtures/crm-backup-recovery.test.ts": "5199c258aae52a062d7866d1a924cac8d0f4a51547779334f62289751df008a8"
+  },
+  "passed": true,
+  "tableCount": 109,
+  "rowCount": 20,
+  "allSnapshotRowsEqual": true,
+  "postRestoreMigrationsAllRowsEqual": true,
+  "explicitClientProfileValuesPreserved": true,
+  "customTablesIncluded": true,
+  "zeroFalseAndArchivedChoicePreserved": true,
+  "pinnedPendingJobProcessed": true,
+  "archivedFreshIntakeRejected": true,
+  "replaySameSubmission": true,
+  "workerRetryNoDuplicate": true,
+  "transport": "in-memory backup object adapter; actual capture/gzip/restore/worker",
+  "fixtureRemoved": true
+}

@@ -179,6 +179,20 @@ function CheckoutPaymentForm({ order, email }: { order: PaymentIntentResponse; e
 }
 
 export default function CheckoutPage() {
+  const { user } = useAuth();
+  const identity = user?.id ?? null;
+  const [previousIdentity, setPreviousIdentity] = useState(identity);
+  const [instance, setInstance] = useState(0);
+  if (previousIdentity !== identity) {
+    setPreviousIdentity(identity);
+    // Discard all account-derived address and payment state on account switch/logout.
+    // Anonymous -> login may complete checkout account creation: retain that draft/intent.
+    if (previousIdentity !== null) setInstance((current) => current + 1);
+  }
+  return <CheckoutContent key={instance} />;
+}
+
+function CheckoutContent() {
   const [items, setItems] = useState<CartItem[]>([]);
   const [form, setForm] = useState(initialForm);
   const [shippingRates, setShippingRates] = useState<ShippingRateOption[]>([]);
@@ -204,11 +218,14 @@ export default function CheckoutPage() {
   } = useQuery<StripeConfig>({
     queryKey: ["/api/ecommerce/stripe/config"],
   });
-  const { data: checkoutSettings } = useQuery<CheckoutSettings>({
+  const checkoutSettingsQuery = useQuery<CheckoutSettings>({
     queryKey: ["/api/ecommerce/checkout/settings"],
   });
+  const checkoutSettings = checkoutSettingsQuery.data;
+  const settingsReady = checkoutSettingsQuery.isSuccess && Boolean(checkoutSettings);
   const { data: savedAddresses = [] } = useQuery<AccountAddress[]>({
-    queryKey: ["/api/ecommerce/account/addresses"],
+    queryKey: ["/api/ecommerce/account/addresses", user?.id],
+    queryFn: async () => (await apiRequest("GET", "/api/ecommerce/account/addresses")).json(),
     enabled: Boolean(user),
   });
 
@@ -222,7 +239,7 @@ export default function CheckoutPage() {
   const customerAccountMode = checkoutSettings?.customerAccountMode ?? "optional";
   const isAccountRequired = customerAccountMode === "required";
   const isGuestOnly = customerAccountMode === "guest_only";
-  const canCreatePayment = hasStripeConfig && !isStripeConfigLoading;
+  const canCreatePayment = hasStripeConfig && !isStripeConfigLoading && settingsReady;
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const selectedShippingRate = shippingRates.find((rate) => rate.id === form.shippingRateId);
   const allowedCountries = checkoutSettings?.store?.allowedCountries?.length
@@ -263,14 +280,14 @@ export default function CheckoutPage() {
     setForm((current) => ({ ...current, shippingRateId: "" }));
   }, [shippingQuoteKey, shippingQuoted]);
   useEffect(() => {
-    if (allowedCountries.includes(form.country)) return;
+    if (!settingsReady || allowedCountries.includes(form.country)) return;
     setForm((current) => ({
       ...current,
       country: allowedCountries[0] ?? "US",
       state: "",
       shippingRateId: "",
     }));
-  }, [allowedCountries, form.country]);
+  }, [allowedCountries, form.country, settingsReady]);
   const applySavedAddress = (address: AccountAddress) => {
     setSelectedAddressId(address.id);
     setForm((current) => ({
@@ -290,14 +307,21 @@ export default function CheckoutPage() {
     setIntent(null);
   };
   useEffect(() => {
-    if (!user || selectedAddressId !== "custom" || form.address || !eligibleSavedAddresses.length)
+    if (
+      !settingsReady ||
+      !user ||
+      selectedAddressId !== "custom" ||
+      form.address ||
+      !eligibleSavedAddresses.length
+    )
       return;
     const defaultAddress =
       eligibleSavedAddresses.find((address) => address.isDefault) ?? eligibleSavedAddresses[0];
     applySavedAddress(defaultAddress);
-  }, [eligibleSavedAddresses, form.address, selectedAddressId, user]);
+  }, [eligibleSavedAddresses, form.address, selectedAddressId, user, settingsReady]);
   const mutation = useMutation({
     mutationFn: async () => {
+      if (!canCreatePayment) throw new Error("Checkout settings are unavailable. Please retry.");
       const normalizedAccountMode: CheckoutAccountMode = isGuestOnly
         ? "guest"
         : isAccountRequired
@@ -362,6 +386,7 @@ export default function CheckoutPage() {
   });
   const shippingQuoteMutation = useMutation({
     mutationFn: async () => {
+      if (!settingsReady) throw new Error("Checkout settings are unavailable. Please retry.");
       const quoteKey = shippingQuoteKey;
       const res = await apiRequest("POST", "/api/ecommerce/shipping/rates", {
         items: items.map((item) => ({
@@ -397,7 +422,7 @@ export default function CheckoutPage() {
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (!items.length) return;
+    if (!items.length || !canCreatePayment || mutation.isPending) return;
     mutation.mutate();
   };
 
@@ -415,6 +440,28 @@ export default function CheckoutPage() {
             <Link href="/cart">Back to cart</Link>
           </Button>
         </div>
+        {!settingsReady && items.length > 0 ? (
+          <div
+            role={checkoutSettingsQuery.isError ? "alert" : "status"}
+            className="mb-6 rounded-lg border p-4"
+          >
+            <p>
+              {checkoutSettingsQuery.isError
+                ? "Checkout settings could not be loaded. Your entered details are preserved."
+                : "Loading checkout settings..."}
+            </p>
+            {checkoutSettingsQuery.isError ? (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={checkoutSettingsQuery.isFetching}
+                onClick={() => void checkoutSettingsQuery.refetch()}
+              >
+                Retry checkout settings
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
         {items.length === 0 ? (
           <Card>
             <CardContent className="p-10 text-center">
@@ -425,7 +472,11 @@ export default function CheckoutPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
+          <fieldset
+            disabled={!settingsReady}
+            hidden={!settingsReady}
+            className={settingsReady ? "grid min-w-0 gap-8 lg:grid-cols-[1fr_360px]" : "hidden"}
+          >
             <Card>
               <CardHeader>
                 <CardTitle>Account setup</CardTitle>
@@ -867,7 +918,7 @@ export default function CheckoutPage() {
                 ) : null}
               </CardContent>
             </Card>
-          </div>
+          </fieldset>
         )}
       </div>
     </PageLayout>

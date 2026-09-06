@@ -16,6 +16,8 @@ import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import { EditorSaveIndicator } from "@/components/shared/editor-save-indicator";
 import { AdminSidebar } from "./admin-sidebar";
 import { apiRequest, queryClient, STALE_TIMES } from "@/lib/queryClient";
+import { CrmFormMappingEditor } from "./crm-form-mapping-editor";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -72,7 +74,7 @@ import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 import { useEditorSaveState } from "@/hooks/use-editor-save-state";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 
-type EditableForm = Omit<CmsForm, "createdAt" | "updatedAt">;
+type EditableForm = Omit<CmsForm, "createdAt" | "updatedAt" | "crmMapping" | "crmMappingRevision">;
 
 type FieldLibraryItem = {
   type: CmsFormFieldType;
@@ -694,6 +696,8 @@ export default function AdminFormsPage() {
 }
 
 function FormsPageContent() {
+  const { user } = useAuth();
+  const [mappingDirty, setMappingDirty] = useState(false);
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<"builder" | "entries">("builder");
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
@@ -830,7 +834,7 @@ function FormsPageContent() {
     isSaving,
   });
   const unsavedChangesGuard = useUnsavedChangesGuard({
-    isDirty: activeTab === "builder" && isDirty,
+    isDirty: activeTab === "builder" && (isDirty || mappingDirty),
     message: "You have unsaved changes to this form. Leave without saving?",
   });
   saveFeedbackRef.current = saveState;
@@ -1536,6 +1540,17 @@ function FormsPageContent() {
                       </CardContent>
                     ) : null}
                   </Card>
+                  {user?.role === "admin" && (
+                    <CrmFormMappingEditor
+                      key={draft.id}
+                      formId={draft.id}
+                      fields={draft.fields}
+                      createCrmLead={Boolean(draft.settings.createCrmLead)}
+                      hasUnsavedFormChanges={isDirty}
+                      readOnly={editorLock.isReadOnly}
+                      onDirtyChange={setMappingDirty}
+                    />
+                  )}
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base">Form Canvas</CardTitle>

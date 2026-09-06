@@ -1,3 +1,4 @@
+import { mappedFormErrorHandler } from "./mapped-form-error-handler";
 import { Router } from "express";
 import { asyncHandler } from "../middleware/error-handler";
 import { storage } from "../storage";
@@ -48,4 +49,5 @@ router.post(
   }),
 );
 
+router.use(mappedFormErrorHandler);
 export default router;

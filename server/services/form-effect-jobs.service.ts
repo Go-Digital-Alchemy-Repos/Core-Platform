@@ -1,3 +1,8 @@
+import { crmMappedFormIntakeSchema } from "@shared/crm-form-intake";
+import {
+  CrmCustomFieldsStorage,
+  lockCrmCustomFieldDefinitions,
+} from "../storage/crm-custom-fields.storage";
 import { startStoppableWorker } from "../utils/runtime-lifecycle";
 import { type CmsFormEffectJob } from "@shared/schema";
 import { storage } from "../storage";
@@ -23,14 +28,24 @@ async function applyJob(job: CmsFormEffectJob, clock: () => Date) {
       clock,
       async (tx, submission) => {
         if (payload.kind === "crm_intake") {
+          const mapped = "version" in payload ? crmMappedFormIntakeSchema.parse(payload) : null;
+          if (mapped && mapped.formId !== submission.formId)
+            throw new Error("mapped_form_identity_mismatch");
+          if (mapped) await lockCrmCustomFieldDefinitions(tx);
           const input = normalizeCrmLeadInput({
-            ...inferCrmLeadFromFormData(submission.data),
+            ...(mapped ? mapped.normalizedBuiltins : inferCrmLeadFromFormData(submission.data)),
             source: "website_form",
             formSubmissionId: submission.id,
             formData: submission.data,
             metadata: { formName: payload.formName },
           });
-          await storage.crm.createOrUpdateInboundLead(input, undefined, tx);
+          const result = await storage.crm.createOrUpdateInboundLead(input, undefined, tx);
+          if (mapped)
+            await new CrmCustomFieldsStorage().writeAcceptedInboundValues(
+              result.lead.id,
+              mapped.customValues,
+              tx,
+            );
         } else {
           const { name, email, subject, message } = submission.data;
           if (

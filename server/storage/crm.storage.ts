@@ -1,3 +1,4 @@
+import { CrmCustomFieldsStorage, lockCrmCustomFieldDefinitions } from "./crm-custom-fields.storage";
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../db";
 import {
@@ -178,6 +179,57 @@ export class CrmStorage {
     return undefined;
   }
 
+  async createManualLead(
+    data: InsertCrmLead,
+    customFields: unknown[],
+    buildClient: (lead: CrmLead) => InsertCrmClient,
+    createdById?: string | null,
+  ) {
+    return db.transaction(async (tx) => {
+      await lockCrmCustomFieldDefinitions(tx);
+      const result = await this.createOrUpdateInboundLead(
+        { ...data, customValuesRevision: 0 },
+        createdById,
+        tx,
+      );
+      if (result.duplicate) {
+        if (customFields.length)
+          throw Object.assign(new Error("duplicate_lead_custom_fields"), { statusCode: 409 });
+        return result;
+      }
+      await new CrmCustomFieldsStorage().writeValues(
+        "lead",
+        result.lead.id,
+        { expectedRevision: 0, values: customFields },
+        "manual_create",
+        tx,
+      );
+      if (result.lead.stage === "won")
+        await this.updateLeadAndCreateWonClient(result.lead.id, {}, buildClient, createdById, tx);
+      const [lead] = await tx.select().from(crmLeads).where(eq(crmLeads.id, result.lead.id));
+      return { lead, duplicate: false };
+    });
+  }
+
+  async createManualClient(data: InsertCrmClient, customFields: unknown[]) {
+    return db.transaction(async (tx) => {
+      await lockCrmCustomFieldDefinitions(tx);
+      const [client] = await tx
+        .insert(crmClients)
+        .values({ ...data, sourceLeadId: null, source: "manual", customValuesRevision: 0 })
+        .returning();
+      await new CrmCustomFieldsStorage().writeValues(
+        "client",
+        client.id,
+        { expectedRevision: 0, values: customFields },
+        "manual_create",
+        tx,
+      );
+      const [refreshed] = await tx.select().from(crmClients).where(eq(crmClients.id, client.id));
+      return refreshed;
+    });
+  }
+
   async createLead(data: InsertCrmLead): Promise<CrmLead> {
     const [lead] = await db.insert(crmLeads).values(data).returning();
     return lead;
@@ -197,8 +249,10 @@ export class CrmStorage {
     data: Partial<InsertCrmLead>,
     buildClient: (lead: CrmLead) => InsertCrmClient,
     createdById?: string | null,
+    transaction?: CrmDbTransaction,
   ): Promise<{ lead: CrmLead; client: CrmClient | undefined } | undefined> {
-    return db.transaction(async (tx: CrmDbTransaction) => {
+    const apply = async (tx: CrmDbTransaction) => {
+      await lockCrmCustomFieldDefinitions(tx);
       await tx.execute(sql`SELECT id FROM crm_leads WHERE id = ${id} FOR UPDATE`);
       const [lead] = await tx
         .update(crmLeads)
@@ -206,6 +260,7 @@ export class CrmStorage {
         .where(eq(crmLeads.id, id))
         .returning();
       if (!lead) return undefined;
+      if (lead.stage !== "won") throw Object.assign(new Error("lead_not_won"), { statusCode: 409 });
 
       const [existingClient] = await tx
         .select()
@@ -215,6 +270,7 @@ export class CrmStorage {
       if (existingClient) return { lead, client: existingClient };
 
       const [client] = await tx.insert(crmClients).values(buildClient(lead)).returning();
+      await new CrmCustomFieldsStorage().copyLeadValuesToNewClient(lead.id, client.id, tx);
       await tx.insert(crmLeadNotes).values({
         leadId: lead.id,
         createdById: createdById ?? null,
@@ -225,8 +281,13 @@ export class CrmStorage {
         createdById: createdById ?? null,
         body: "Client created from won lead.",
       });
-      return { lead, client };
-    });
+      const [refreshedClient] = await tx
+        .select()
+        .from(crmClients)
+        .where(eq(crmClients.id, client.id));
+      return { lead, client: refreshedClient };
+    };
+    return transaction ? apply(transaction) : db.transaction(apply);
   }
 
   async listNotes(leadId: string): Promise<CrmLeadNote[]> {

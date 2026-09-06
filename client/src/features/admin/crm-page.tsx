@@ -1,8 +1,13 @@
+import {
+  CrmRecordCustomFields,
+  ManualCrmCustomFields,
+  type ManualFieldsState,
+} from "./crm-record-custom-fields";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useCrmPipelineSettings, pipelinePresentation } from "@/hooks/use-crm-pipeline-settings";
 import { DEFAULT_CRM_PIPELINE_CONFIG } from "@shared/crm-pipeline-settings";
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState, useEffect } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -230,7 +235,7 @@ function PipelineColumn({
   );
 }
 
-function CreateLeadSheet({
+export function CreateLeadSheet({
   open,
   onOpenChange,
 }: {
@@ -238,10 +243,20 @@ function CreateLeadSheet({
   onOpenChange: (open: boolean) => void;
 }) {
   const { toast } = useToast();
+  const [customFields, setCustomFields] = useState<ManualFieldsState>({ ready: false, values: [] });
+  useEffect(() => {
+    if (!open) setCustomFields({ ready: false, values: [] });
+  }, [open]);
   const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", message: "" });
   const mutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/admin/crm", { ...form, source: "manual" });
+      if (!customFields.ready)
+        throw new Error("Load and complete custom fields before creating a lead.");
+      const response = await apiRequest("POST", "/api/admin/crm", {
+        ...form,
+        source: "manual",
+        customFields: customFields.values,
+      });
       return response.json();
     },
     onSuccess: async () => {
@@ -256,12 +271,16 @@ function CreateLeadSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" size="lg">
-        <SheetHeader>
+      <SheetContent
+        side="right"
+        size="lg"
+        className="max-sm:!animate-none left-0 right-auto h-[100dvh] w-[100dvw] max-w-[100dvw] overflow-hidden sm:left-auto sm:right-0 sm:w-full"
+      >
+        <SheetHeader className="shrink-0">
           <SheetTitle>Create Lead</SheetTitle>
           <SheetDescription>Add a manual CRM lead to the pipeline.</SheetDescription>
         </SheetHeader>
-        <SheetBody className="space-y-4">
+        <SheetBody className="min-h-0 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Name</Label>
@@ -301,11 +320,21 @@ function CreateLeadSheet({
               onChange={(event) => setForm({ ...form, message: event.target.value })}
             />
           </div>
+          {open && (
+            <ManualCrmCustomFields
+              scope="lead"
+              onChange={setCustomFields}
+              disabled={mutation.isPending}
+            />
+          )}
+          {mutation.isError && (
+            <p role="alert">Creation failed. Your entries are retained. {mutation.error.message}</p>
+          )}
         </SheetBody>
-        <SheetFooter>
+        <SheetFooter className="shrink-0">
           <Button
             onClick={() => mutation.mutate()}
-            disabled={!form.name.trim() || mutation.isPending}
+            disabled={!form.name.trim() || !customFields.ready || mutation.isPending}
             data-testid="button-save-crm-lead"
           >
             Create Lead
@@ -368,14 +397,19 @@ function LeadDetailSheet({ leadId, onClose }: { leadId: string | null; onClose: 
 
   return (
     <Sheet open={Boolean(leadId)} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" size="xl">
-        <SheetHeader>
+      <SheetContent
+        side="right"
+        size="xl"
+        className="max-sm:!animate-none left-0 right-auto h-[100dvh] w-[100dvw] max-w-[100dvw] overflow-hidden sm:left-auto sm:right-0 sm:w-full"
+      >
+        <SheetHeader className="shrink-0">
           <SheetTitle>{lead?.name ?? "Lead"}</SheetTitle>
           <SheetDescription>{lead?.email || lead?.phone || "No contact info"}</SheetDescription>
         </SheetHeader>
-        <SheetBody className="space-y-5">
+        <SheetBody className="min-h-0 space-y-5">
           {lead ? (
             <>
+              <CrmRecordCustomFields key={lead.id} scope="lead" id={lead.id} />
               <div className="grid gap-3 rounded-lg border p-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label>Stage</Label>
@@ -388,7 +422,7 @@ function LeadDetailSheet({ leadId, onClose }: { leadId: string | null; onClose: 
                     <SelectTrigger data-testid="select-crm-lead-stage">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-sm:!animate-none">
                       {presentation.stages.map((stage) => (
                         <SelectItem key={stage} value={stage}>
                           {presentation.labels[stage]}

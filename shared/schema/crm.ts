@@ -1,5 +1,14 @@
 import { sql } from "drizzle-orm";
-import { boolean, index, jsonb, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { cmsFormSubmissions } from "./forms";
@@ -77,6 +86,7 @@ export const crmLeads = pgTable(
     formSubmissionId: varchar("form_submission_id").references(() => cmsFormSubmissions.id, {
       onDelete: "set null",
     }),
+    customValuesRevision: integer("custom_values_revision").notNull().default(0),
     formData: jsonb("form_data")
       .$type<Record<string, unknown>>()
       .default(sql`'{}'::jsonb`)
@@ -155,6 +165,7 @@ export const crmClients = pgTable(
       .notNull(),
     status: text("status").$type<CrmClientStatus>().notNull().default("onboarding"),
     source: text("source").notNull().default("manual"),
+    customValuesRevision: integer("custom_values_revision").notNull().default(0),
     formData: jsonb("form_data")
       .$type<Record<string, unknown>>()
       .default(sql`'{}'::jsonb`)
@@ -284,6 +295,7 @@ export const crmLeadInputSchema = z.object({
 });
 
 export const insertCrmLeadSchema = createInsertSchema(crmLeads).omit({
+  customValuesRevision: true,
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -298,6 +310,7 @@ export const insertCrmLeadTaskSchema = createInsertSchema(crmLeadTasks).omit({
   updatedAt: true,
 });
 export const insertCrmClientSchema = createInsertSchema(crmClients).omit({
+  customValuesRevision: true,
   id: true,
   createdAt: true,
   updatedAt: true,
