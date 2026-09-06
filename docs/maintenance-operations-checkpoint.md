@@ -90,3 +90,31 @@ Recovery branch `a9d21d207320a8462e0adad4fa83c8bf86c76eb6` passed hosted run
 Railway configuration. Its compiled artifact hash remains unchanged. Actual
 runtime adoption, writer barrier and live namespaced media verification remain
 the ordered operational work after the refreshed candidate passes its gates.
+
+
+## Live cutover checkpoint — 2026-09-06
+
+The normal application is healthy in frozen deployment `a7218714-d94d-4dd5-b9d9-94bcbdbc7613`
+at source `67e1c7ac431db2dab6064c943375009ff5979f1c`. The prior writer deployment was
+REMOVED, with stop evidence at 03:25:25Z. Authenticated empty upload admission
+returned 503 under the verified freeze. A fresh source-bound v2 media plan was
+retained after this barrier.
+
+Media migration attempt `03a556f5-4714-4ba3-a74a-670b994e1c04` completed. Separate
+read-only verification confirmed the sole source and namespaced destination have
+199,788 bytes and SHA256 `3c9b308d185aaed85f6aa6c14fd37b8122532c2e5aacb2597d9861f6851787dc`.
+Four audit records form the bound start/intent/verified/complete chain; unused
+slots are absent. Original media and database references remain unchanged.
+Evidence is retained outside Railway under the private maintenance-cutover
+`apply-96cbc3dc-5a1d-4021-8f92-d0bd09c98d85` directory. The earlier invalid-timestamp
+attempt was independently reconciled as no-write before this fresh attempt.
+
+Namespace variables are staged with uploads frozen and provider transactions
+explicitly disabled. Recovery deployment `545a4b0b-a122-4ae3-ac7a-ddfbfa50ac37`
+failed before build: Railway requires numeric `drainingSeconds`, not a string.
+It did not replace the healthy frozen application. Recovery commit `f92d5bf`
+and maintenance commit `35a1ef3` correct the type; fresh hosted checks are pending.
+Recovery's local executable verification passed, including `/ready`, business 503,
+read-only database behavior, clean shutdown and fixture cleanup. Remaining gates:
+actual recovery deployment/media read, then maintenance deployment and runtime
+checks, then reopening uploads. Do not treat the media copy as release completion.
