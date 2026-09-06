@@ -70,7 +70,10 @@ export function validateR2LedgerApproval(
   return approval;
 }
 
-type Approval = ReturnType<typeof validateR2LedgerApproval>;
+type Approval = Pick<
+  ReturnType<typeof validateR2LedgerApproval>,
+  "planId" | "attemptId" | "prefix" | "bucketName" | "maxRecordBytes"
+>;
 export function r2LedgerKeys(approval: Approval) {
   return Array.from(
     { length: 8 },

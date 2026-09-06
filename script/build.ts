@@ -1,3 +1,4 @@
+import { buildUploadLedgerProbe } from "./build-upload-ledger-probe";
 import { buildUploadApply } from "./build-upload-apply";
 import { build as esbuild } from "esbuild";
 import { buildUploadVerifier } from "./build-upload-verifier";
@@ -34,6 +35,7 @@ async function buildAll() {
 
   await buildUploadVerifier();
   await buildUploadApply();
+  await buildUploadLedgerProbe();
 
   console.log("copying migrations...");
   await cp("migrations", "dist/migrations", { recursive: true });

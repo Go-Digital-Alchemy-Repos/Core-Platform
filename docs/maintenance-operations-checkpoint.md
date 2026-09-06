@@ -39,3 +39,28 @@ remain prerequisites for media migration, not for this audit-only probe.
 CRM custom-field API work was accepted independently on its isolated branch at
 `64b98ef`; it is not part of this maintenance candidate. Definition UI and atomic
 manual creation/conversion remain in progress under separate ownership.
+
+## External audit persistence accepted
+
+Root reviewed the isolated audit-only probe and reran 22 probe/sink tests plus the
+detached compiled entrypoint checks. Artifact SHA256:
+`867b7d39cc1366fb612e009cced656eb8e3c075a7e7738f09403572c6fb2c25d`.
+Under the user's autonomous maintenance authorization, root prepared a fresh
+probe-only approval and retained exact inputs and artifact outside Railway in an
+operator-owned directory. Two separate Railway SSH invocations delivered owned
+temporary files, checked artifact/input hashes, executed distinct Node processes,
+and removed their temporary runtime directories in finally blocks.
+
+The first returned exit 0, complete true and two audit-record hashes. The second
+returned exit 0, complete true and `fresh-process-exact-GET`, validating both exact
+records against the independently retained receipt. Attempt UUID:
+`2dda8b0c-a1e9-49ed-bd2e-ca05bf7ece04`. Inputs and both receipts are retained under
+`/Users/mike/Documents/Core Platform Operations/ledger-probe-2dda8b0c-a1e9-49ed-bd2e-ca05bf7ece04`.
+Only the two approved audit objects were written; no media copying, database
+mutation, freeze change, listing, deletion or bucket configuration change occurred.
+
+This accepts external persistence and separate-process retrieval for the operator
+ledger together with the recorded lifecycle inspection. It does not claim a
+deployment-removal simulation or protection against administrative deletion.
+The later media apply requires its own fresh approval, writer barrier and ledger
+attempt; this probe approval cannot authorize it.
