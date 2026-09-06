@@ -24,7 +24,7 @@ revisions, bound the full job envelope and commit the snapshot atomically with s
 ## Persistence checkpoint
 
 The additive persistence slice is accepted in this isolated branch: four definition/revision/value
-tables, entity/form revision columns, explicit0061 reconciliation, typed transaction-aware storage
+tables, entity/form revision columns, explicit0062 reconciliation, typed transaction-aware storage
 and generic creation-schema exclusion of server-owned revisions. Definition locks precede entity
 locks; revisions/limits serialize and reads join retained configuration rather than querying each
 value separately. Root independently passed18 tests (12 PostgreSQL cases and6 guard/schema checks)
@@ -59,13 +59,13 @@ Use four dedicated tables plus nullable form configuration and monotonic revisio
 
 Maximum 50 active definitions per scope (a `both` definition counts in each), 200 total including archived; enforce limits under transactional serialization. Config limit 16 KiB; values request limit 64 KiB/50 entries. API contracts reject unknown properties. Definition/revision IDs and scalar values are never interpreted as code, HTML, SQL identifiers or object paths.
 
-| Type | Canonical value and validation |
-| --- | --- |
-| text | String, trimmed, at most 2,000 characters; reject NUL/control characters except newline/tab. |
-| number | Finite JSON number, absolute value at most 1e12; no coercion from empty strings, NaN or Infinity. Not a money type. |
-| date | Real Gregorian calendar date `YYYY-MM-DD`, year 0001–9999; never convert through host timezone. |
-| choice | One immutable option key; 1–50 options, each option is `{key,label,archived:boolean}` with a key using field-key grammar and label 1–80 characters. Keys cannot be renamed/reused; options can be archived and relabeled. |
-| boolean | JSON true/false; false is a supplied value, not missing. |
+| Type    | Canonical value and validation                                                                                                                                                                                            |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| text    | String, trimmed, at most 2,000 characters; reject NUL/control characters except newline/tab.                                                                                                                              |
+| number  | Finite JSON number, absolute value at most 1e12; no coercion from empty strings, NaN or Infinity. Not a money type.                                                                                                       |
+| date    | Real Gregorian calendar date `YYYY-MM-DD`, year 0001–9999; never convert through host timezone.                                                                                                                           |
+| choice  | One immutable option key; 1–50 options, each option is `{key,label,archived:boolean}` with a key using field-key grammar and label 1–80 characters. Keys cannot be renamed/reused; options can be archived and relabeled. |
+| boolean | JSON true/false; false is a supplied value, not missing.                                                                                                                                                                  |
 
 Null means cleared/no value, never an implicit default. Absent PATCH entries remain unchanged. Reject duplicate definition IDs. Empty text normalizes to null. Required/default behavior applies only to new manual records: default is applied once when omitted, then required fields are checked. Existing records, legacy intake and conversion are not made invalid by adding a required field. UI names this setting “Required for new manual records”; each form separately declares required mappings. Defaults must validate against the same revision and are not retroactive.
 
@@ -119,7 +119,7 @@ Validate explicit mappings and mapped values before inserting a new submission o
 
 Add a mapped variant to the existing `crm_intake` payload: `{kind:"crm_intake", version:1, formId, formName, mappingRevision, normalizedBuiltins, customValues:[{definitionId,definitionRevision,value}]}`. Retain the current unversioned variant for queued legacy jobs. The snapshot `formId` must equal the owning submission/form ID; `formName` is display-only and never mapping identity. Keep deduplication key `crm_intake`; do not create a second CRM effect. Resolve and persist this snapshot atomically with submission/jobs, serializing mapping/definition revisions against concurrent changes. Worker validates the snapshot version/shape and applies pinned values even if fields/options were archived after acceptance; it must not rerun current mappings or defaults. Revision rows are retained, not deleted.
 
-For an existing idempotency key, return the original accepted submission before applying *new mapping* validation. Preserve the existing public replay semantics; do not quietly introduce a payload-conflict API in CRM-2. Retain ordinary form/auth validation and test its existing limitations independently. On concurrent first submissions, database uniqueness chooses one accepted snapshot; losing requests return that submission with no extra effects. Changed payloads require the site's existing fresh-key behavior.
+For an existing idempotency key, return the original accepted submission before applying _new mapping_ validation. Preserve the existing public replay semantics; do not quietly introduce a payload-conflict API in CRM-2. Retain ordinary form/auth validation and test its existing limitations independently. On concurrent first submissions, database uniqueness chooses one accepted snapshot; losing requests return that submission with no extra effects. Changed payloads require the site's existing fresh-key behavior.
 
 Perform lead upsert, custom-value writes and job completion in the existing `completeEffectJob` transaction; claim loss/failure rolls back all. Unknown payload versions or missing retained revisions fail safely into the existing bounded retry/failed-job process with sanitized codes; do not silently run heuristic intake. Explicit administrative retry uses the stored snapshot. Avoid changing external email delivery guarantees or introducing a second worker.
 
