@@ -17,12 +17,12 @@ is authorized for that pilot. This record updates the earlier historical readine
 | Namespace cutover | Target direction is clients/core-platform/uploads; explicit legacy backup prefix system-backups | Apply/reconcile approved copies and verify application URLs/deletion targeting while frozen |
 | Media rollback | Isolated candidate `704cabf` ports exact namespace algorithms onto deployed-main code; 403 tests passed, root independently passed 23 focused checks | Hosted check, database/queue/business compatibility and actual frozen read acceptance; no full rollback readiness claim |
 | Missing provider configuration | Reviewed correction resolves the same validated client before mutations; root passed 72 service and 12 neighboring regressions | Exact-candidate hosted checks and manual workflow browser acceptance; remote provider acceptance remains separate |
-| Manual ecommerce acceptance | Service/DB evidence covers settlement, inventory and outbox; current app browser suite emphasizes settings | Add offline order/payment/refund/guard browser workflow with actual disposable DB evidence |
+| Manual ecommerce acceptance | Desktop/mobile offline wizard, concurrent paid retries, inventory/outbox, refund UI feedback and cancellation/fulfillment guards passed against disposable PostgreSQL | Final hosted browser run for immutable candidate; provider-backed acceptance remains separate |
 | New provider transactions | Actual production ecommerce Stripe settings absent; no provider-backed acceptance | Before activation, sandbox/provider correctness and an explicit activation decision/control; merely saving keys must not be mistaken for release acceptance |
 | Better Farms integration | Three actual two-origin cases pass including Core image decoding, CMS publish and response-loss retries | Final site build/runtime/manifest origin agreement; content/assets/domains and whole-site launch acceptance separately |
 
-The next executable work is configuration-before-write correction, manual commerce browser
-acceptance and rollback compatibility preparation. Do not freeze production uploads merely to
+Configuration-before-write and manual commerce browser corrections are implemented and locally
+verified. Next work includes final hosted acceptance and rollback compatibility preparation. Do not freeze production uploads merely to
 wait for unrelated development. Storage copying remains gated and no historical orders are
 assumed to be demos. Historical webhook reconciliation/recovery must be considered separately
 from allowing new provider transactions.

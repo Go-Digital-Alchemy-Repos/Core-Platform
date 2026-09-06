@@ -5,6 +5,15 @@ phases under the canonical [Client Migration Master Plan](core-project-plan.md) 
 [ADR-005](adr/005-isolated-client-stacks.md). It does not declare the current module a general
 WooCommerce replacement or define a shared multi-tenant architecture.
 
+## Verified offline-commerce acceptance — September 6, 2026
+
+The actual desktop/mobile app workflow now verifies cash order creation, concurrent payment retries
+with one inventory effect, visible refund success/error feedback, over-refund rejection without a
+second refund record, duplicate fulfillment rejection, and paid/refunded cancellation boundaries.
+The browser test exposed and led to corrections for refund HTTP500 validation and notification
+constraint replay on restart. These candidate results do not establish Stripe sandbox acceptance
+or production readiness; see the current execution ledger and release gate matrix.
+
 ## Status Language
 
 - **Gate:** must pass before the stated launch.

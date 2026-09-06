@@ -83,6 +83,16 @@ async function startIsolatedApp() {
     const settings = new SettingsStorage();
     await settings.upsertSetting("enable_crm", "true", "system_configuration", false);
     await settings.upsertSetting("enable_ecommerce", "true", "system_configuration", false);
+    // Synthetic offline transaction fixture, confined to the guarded browser-test database.
+    await pool.query(
+      "INSERT INTO ecommerce_products (id,name,price,url_slug,status,active) VALUES ('browser-manual-product','Browser offline product',2500,'browser-offline-product','published',true) ON CONFLICT (id) DO UPDATE SET status='published',active=true",
+    );
+    await pool.query(
+      "INSERT INTO ecommerce_product_variants (id,product_id,inventory_quantity,track_inventory,is_default) VALUES ('browser-manual-variant','browser-manual-product',100,true,true) ON CONFLICT (id) DO NOTHING",
+    );
+    await pool.query(
+      "INSERT INTO ecommerce_customers (id,name,email) VALUES ('browser-manual-customer','Browser offline customer','offline-buyer@example.test') ON CONFLICT (id) DO NOTHING",
+    );
     console.log("Starting synthetic browser-test app at http://127.0.0.1:5201");
     // Import the actual Express/Vite application, bypassing loadLocalEnv entirely.
     await import("../index");

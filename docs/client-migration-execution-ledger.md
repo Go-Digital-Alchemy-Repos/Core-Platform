@@ -5,6 +5,25 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Offline commerce desktop/mobile acceptance integrated
+
+Root reviewed the final actual-app spec and its guarded synthetic fixture seeds. Both desktop and
+mobile passed (2/2, 14.1 seconds) on a fresh disposable PostgreSQL database. The workflow creates a
+cash order through the wizard, repeats payment confirmation concurrently and proves one stock
+deduction and one confirmation job. The Refunds UI now renders accessible success and rejection
+messages and clears the amount after success; the browser confirms a successful manual refund,
+visible over-balance rejection, and exactly one persisted refund. Input labels are associated.
+
+Fulfillment checks reject repeated quantities. The cancellation sequence rejects captured-payment
+cancellation, fully refunds before successful cancellation, rejects shipping with a real order item,
+and rejects reactivation with the cancellation-specific message. The cancelled/refunded shipping
+request hits the payment guard first; the test documents this rather than claiming an unreachable
+status branch. No provider request or production mutation occurred. Fixture containers/volumes were
+removed and port 5201 closed. Types and scoped lint passed; full unit validation earlier in this
+checkpoint passed 858 tests, with separate database suites intentionally skipped in that invocation.
+The new browser spec is discovered by the existing desktop/mobile CI suite. Final hosted validation
+and broader release gates remain pending.
+
 ### Populated notification restart failure corrected and rehearsed
 
 The offline-commerce browser workflow created a valid order-status notification that prevented
