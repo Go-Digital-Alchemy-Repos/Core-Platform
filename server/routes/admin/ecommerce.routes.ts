@@ -24,7 +24,10 @@ import {
   validateStripeSettingsKeyModes,
   type EcommerceStripeMode,
 } from "../../services/ecommerce-stripe.service";
-import { createEcommerceRefund } from "../../services/ecommerce-refund.service";
+import {
+  createEcommerceRefund,
+  reconcileEcommerceRefund,
+} from "../../services/ecommerce-refund.service";
 import { ECOMMERCE_REFUND_PROVIDERS } from "../../services/ecommerce-payment-gateway-refund.service";
 import {
   adminOrderUpdateSchema,
@@ -41,7 +44,7 @@ import {
   standalonePaymentRequestSchema,
   updateAdminEcommerceOrder,
 } from "../../services/ecommerce-order.service";
-import { sendEcommerceShipmentEmail } from "../../services/ecommerce-email.service";
+import { replayEcommerceStripeWebhook } from "../../webhooks/ecommerce-stripe.handler";
 import {
   ECOMMERCE_SHIPPING_PROVIDER_REGISTRY,
   getMissingShippingProviderCredentialLabels,
@@ -81,6 +84,50 @@ const router = Router();
 
 router.use(requireEcommerceEnabled);
 router.use(noStorePrivateResponse);
+
+function toWebhookDeliverySummary(delivery: {
+  eventId: string;
+  eventType: string;
+  status: string;
+  attemptCount: number;
+  startedAt: Date;
+  completedAt: Date | null;
+  processedAt: Date | null;
+  lastError: string | null;
+}) {
+  return {
+    eventId: delivery.eventId,
+    eventType: delivery.eventType,
+    status: delivery.status,
+    attemptCount: delivery.attemptCount,
+    startedAt: delivery.startedAt,
+    completedAt: delivery.completedAt,
+    processedAt: delivery.processedAt,
+    hasFailure: Boolean(delivery.lastError),
+  };
+}
+
+function toNotificationJobSummary(job: {
+  id: string;
+  type: string;
+  status: string;
+  orderId: string;
+  attemptCount: number;
+  createdAt: Date;
+  failedAt: Date | null;
+  lastErrorCode: string | null;
+}) {
+  return {
+    id: job.id,
+    type: job.type,
+    status: job.status,
+    orderId: job.orderId,
+    attemptCount: job.attemptCount,
+    createdAt: job.createdAt,
+    failedAt: job.failedAt,
+    hasFailure: Boolean(job.lastErrorCode),
+  };
+}
 
 const productPayloadSchema = insertEcommerceProductSchema.extend({
   categoryIds: z.array(z.string()).default([]),
@@ -503,6 +550,70 @@ router.post(
   }),
 );
 
+router.post(
+  "/refunds/:id/reconcile",
+  asyncHandler(async (req, res) => {
+    res.json(await reconcileEcommerceRefund(paramString(req.params.id)));
+  }),
+);
+
+router.get(
+  "/webhooks/stripe",
+  asyncHandler(async (req, res) => {
+    const query = z
+      .object({
+        status: z.enum(["processing", "processed", "failed"]).optional(),
+        limit: z.coerce.number().int().min(1).max(100).optional(),
+      })
+      .parse(req.query);
+    const deliveries = await storage.ecommerce.listWebhookProcessing({
+      provider: "stripe",
+      status: query.status,
+      limit: query.limit,
+    });
+    res.json(deliveries.map(toWebhookDeliverySummary));
+  }),
+);
+
+router.get(
+  "/notification-jobs",
+  asyncHandler(async (req, res) => {
+    const rawLimit = typeof req.query.limit === "string" ? Number(req.query.limit) : 50;
+    const limit = Number.isSafeInteger(rawLimit) ? Math.min(Math.max(rawLimit, 1), 200) : 50;
+    const jobs = await storage.ecommerce.getEcommerceNotificationJobs({ status: "failed", limit });
+    res.json(jobs.map(toNotificationJobSummary));
+  }),
+);
+
+router.post(
+  "/notification-jobs/:id/retry",
+  asyncHandler(async (req, res) => {
+    const jobId = z.string().uuid().parse(req.params.id);
+    const job = await storage.ecommerce.requeueFailedEcommerceNotificationJob(
+      jobId,
+      req.user?.id ?? null,
+    );
+    if (!job) {
+      res.status(404).json({ message: "A failed notification job was not found" });
+      return;
+    }
+    res.json(toNotificationJobSummary(job));
+  }),
+);
+
+router.post(
+  "/webhooks/stripe/:eventId/replay",
+  asyncHandler(async (req, res) => {
+    const eventId = z
+      .string()
+      .trim()
+      .regex(/^evt_[A-Za-z0-9]+$/)
+      .max(255)
+      .parse(req.params.eventId);
+    res.json(await replayEcommerceStripeWebhook(eventId));
+  }),
+);
+
 router.get(
   "/shipping/zones",
   asyncHandler(async (_req, res) => {
@@ -775,19 +886,10 @@ router.post(
       orderId,
       shippedBy: req.user?.id,
     });
-    const shipment = await storage.ecommerce.createShipment({
+    const shipment = await storage.ecommerce.createShipmentAndMarkOrderShipped({
       ...shipmentPayload,
       trackingUrl: inferCarrierTrackingUrl(shipmentPayload),
     });
-    await storage.ecommerce.updateOrder(orderId, { status: "shipped" });
-    const details = await storage.ecommerce.getOrderWithDetails(orderId);
-    if (details && (await sendEcommerceShipmentEmail(details, shipment))) {
-      const updatedShipment = await storage.ecommerce.updateShipment(shipment.id, {
-        emailSentAt: new Date(),
-      });
-      res.status(201).json(updatedShipment ?? shipment);
-      return;
-    }
     res.status(201).json(shipment);
   }),
 );
@@ -857,65 +959,23 @@ router.put(
       return;
     }
 
-    const writes = [
-      storage.settings.upsertSetting("active_mode", data.activeMode, "ecommerce_stripe", false),
+    const writes: { key: string; value: string; category: string; isSecret: boolean }[] = [
+      { key: "active_mode", value: data.activeMode, category: "ecommerce_stripe", isSecret: false },
     ];
-    if (data.testPublishableKey !== undefined)
-      writes.push(
-        storage.settings.upsertSetting(
-          "test_publishable_key",
-          data.testPublishableKey,
-          "ecommerce_stripe",
-          false,
-        ),
-      );
-    if (data.livePublishableKey !== undefined)
-      writes.push(
-        storage.settings.upsertSetting(
-          "live_publishable_key",
-          data.livePublishableKey,
-          "ecommerce_stripe",
-          false,
-        ),
-      );
-    if (data.testSecretKey)
-      writes.push(
-        storage.settings.upsertSetting(
-          "test_secret_key",
-          data.testSecretKey,
-          "ecommerce_stripe",
-          true,
-        ),
-      );
-    if (data.liveSecretKey)
-      writes.push(
-        storage.settings.upsertSetting(
-          "live_secret_key",
-          data.liveSecretKey,
-          "ecommerce_stripe",
-          true,
-        ),
-      );
-    if (data.testWebhookSecret)
-      writes.push(
-        storage.settings.upsertSetting(
-          "test_webhook_secret",
-          data.testWebhookSecret,
-          "ecommerce_stripe",
-          true,
-        ),
-      );
-    if (data.liveWebhookSecret)
-      writes.push(
-        storage.settings.upsertSetting(
-          "live_webhook_secret",
-          data.liveWebhookSecret,
-          "ecommerce_stripe",
-          true,
-        ),
-      );
-    await Promise.all(writes);
-    storage.settings.invalidateCategory("ecommerce_stripe");
+    const fields = [
+      ["testPublishableKey", "test_publishable_key", false],
+      ["livePublishableKey", "live_publishable_key", false],
+      ["testSecretKey", "test_secret_key", true],
+      ["liveSecretKey", "live_secret_key", true],
+      ["testWebhookSecret", "test_webhook_secret", true],
+      ["liveWebhookSecret", "live_webhook_secret", true],
+    ] as const;
+    for (const [field, key, isSecret] of fields) {
+      const value = data[field];
+      if (value !== undefined && (!isSecret || value))
+        writes.push({ key, value, category: "ecommerce_stripe", isSecret });
+    }
+    await storage.settings.upsertSettings(writes);
     res.json(await getMaskedEcommerceStripeStatus());
   }),
 );

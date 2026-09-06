@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Activity,
@@ -41,6 +41,9 @@ import {
 } from "@shared/ecommerce-shipping-settings";
 
 interface StripeSettingsStatus {
+  providerTransactionsEnabled: boolean;
+  configured: boolean;
+  awaitingActivation: boolean;
   activeMode: "test" | "live";
   testPublishableKey: string;
   livePublishableKey: string;
@@ -48,6 +51,39 @@ interface StripeSettingsStatus {
   hasLiveSecretKey: boolean;
   hasTestWebhookSecret: boolean;
   hasLiveWebhookSecret: boolean;
+}
+
+function StripeActivationNotice({ status }: { status: StripeSettingsStatus | undefined }) {
+  const [title, description] =
+    status?.configured === false
+      ? [
+          "Stripe credentials required",
+          "Save the keys for the active mode before using Stripe payments.",
+        ]
+      : status?.configured === true && status.providerTransactionsEnabled === false
+        ? [
+            "Awaiting payment activation",
+            "Credentials are saved. New Stripe payments and refunds remain disabled until your deployment operator activates them.",
+          ]
+        : status?.configured === true && status.providerTransactionsEnabled === true
+          ? [
+              "New Stripe transactions enabled",
+              "Operator activation is enabled. Checkout also requires the active publishable key, webhook setup, and provider acceptance.",
+            ]
+          : [
+              "Payment activation status unavailable",
+              "Reload these settings to check payment activation.",
+            ];
+  return (
+    <div
+      role="status"
+      data-testid="stripe-activation-status"
+      className="rounded-lg border bg-muted/40 p-4 text-sm"
+    >
+      <p className="font-medium">{title}</p>
+      <p className="mt-1 text-muted-foreground">{description}</p>
+    </div>
+  );
 }
 
 interface TaxSettingsStatus {
@@ -148,18 +184,38 @@ function csv(value: string): string[] {
 }
 
 export function SettingsTab({ section = "store" }: { section?: EcommerceSettingsSection }) {
-  const { data } = useQuery<StripeSettingsStatus>({
+  const stripeQuery = useQuery<StripeSettingsStatus>({
     queryKey: ["/api/admin/ecommerce/settings/stripe"],
   });
-  const { data: taxData } = useQuery<TaxSettingsStatus>({
+  const taxQuery = useQuery<TaxSettingsStatus>({
     queryKey: ["/api/admin/ecommerce/settings/tax"],
   });
-  const { data: customerAccountData } = useQuery<CustomerAccountSettingsStatus>({
+  const customerQuery = useQuery<CustomerAccountSettingsStatus>({
     queryKey: ["/api/admin/ecommerce/settings/customer-accounts"],
   });
-  const { data: storeData } = useQuery<EcommerceStoreSettings>({
+  const storeQuery = useQuery<EcommerceStoreSettings>({
     queryKey: ["/api/admin/ecommerce/settings/store"],
   });
+  const data = stripeQuery.data;
+  const taxData = taxQuery.data;
+  const customerAccountData = customerQuery.data;
+  const storeData = storeQuery.data;
+  const initialized = useRef(new Set<EcommerceSettingsSection>());
+  const [hydrated, setHydrated] = useState<Partial<Record<EcommerceSettingsSection, boolean>>>({});
+  const markHydrated = (name: EcommerceSettingsSection) => {
+    initialized.current.add(name);
+    setHydrated((current) => ({ ...current, [name]: true }));
+  };
+  const queries = {
+    stripe: stripeQuery,
+    tax: taxQuery,
+    "customer-accounts": customerQuery,
+    store: storeQuery,
+  };
+  const requireLoaded = (name: keyof typeof queries) => {
+    if (!hydrated[name] || !queries[name].isSuccess)
+      throw new Error("Load settings successfully before saving.");
+  };
   const { toast } = useToast();
   const [activeMode, setActiveMode] = useState("test");
   const [testPublishableKey, setTestPublishableKey] = useState("");
@@ -187,14 +243,16 @@ export function SettingsTab({ section = "store" }: { section?: EcommerceSettings
     useState<EcommerceShippingDestinationMode>("us_only");
   const [allowedCountries, setAllowedCountries] = useState("US");
   useEffect(() => {
-    if (data) {
+    if (data && !initialized.current.has("stripe")) {
+      markHydrated("stripe");
       setActiveMode(data.activeMode || "test");
       setTestPublishableKey(data.testPublishableKey || "");
       setLivePublishableKey(data.livePublishableKey || "");
     }
   }, [data]);
   useEffect(() => {
-    if (taxData) {
+    if (taxData && !initialized.current.has("tax")) {
+      markHydrated("tax");
       setTaxEnabled(taxData.enabled);
       setManualRate((taxData.manualRateBps / 100).toFixed(2).replace(/\.00$/, ""));
       setTaxShipping(taxData.taxShipping);
@@ -202,12 +260,14 @@ export function SettingsTab({ section = "store" }: { section?: EcommerceSettings
     }
   }, [taxData]);
   useEffect(() => {
-    if (customerAccountData) {
+    if (customerAccountData && !initialized.current.has("customer-accounts")) {
+      markHydrated("customer-accounts");
       setCustomerAccountMode(customerAccountData.customerAccountMode);
     }
   }, [customerAccountData]);
   useEffect(() => {
-    if (storeData) {
+    if (storeData && !initialized.current.has("store")) {
+      markHydrated("store");
       setStoreOrigin(storeData.storeOrigin);
       setStoreTimezone(storeData.storeTimezone);
       setShippingDestinationMode(storeData.shippingDestinationMode);
@@ -215,8 +275,9 @@ export function SettingsTab({ section = "store" }: { section?: EcommerceSettings
     }
   }, [storeData]);
   const mutation = useMutation({
-    mutationFn: async () =>
-      apiRequest("PUT", "/api/admin/ecommerce/settings/stripe", {
+    mutationFn: async () => {
+      requireLoaded("stripe");
+      return apiRequest("PUT", "/api/admin/ecommerce/settings/stripe", {
         activeMode,
         testPublishableKey,
         testSecretKey,
@@ -224,30 +285,56 @@ export function SettingsTab({ section = "store" }: { section?: EcommerceSettings
         livePublishableKey,
         liveSecretKey,
         liveWebhookSecret,
-      }),
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Settings could not be saved",
+        description: "Your entries have been kept. Please retry saving.",
+        variant: "destructive",
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/settings/stripe"] });
       toast({ title: "Stripe settings saved" });
     },
   });
   const taxMutation = useMutation({
-    mutationFn: async () =>
-      apiRequest("PUT", "/api/admin/ecommerce/settings/tax", {
+    mutationFn: async () => {
+      requireLoaded("tax");
+      return apiRequest("PUT", "/api/admin/ecommerce/settings/tax", {
         enabled: taxEnabled,
         manualRateBps: Math.round((Number(manualRate) || 0) * 100),
         taxShipping,
         stripeTaxEnabled,
-      }),
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Settings could not be saved",
+        description: "Your entries have been kept. Please retry saving.",
+        variant: "destructive",
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/settings/tax"] });
       toast({ title: "Tax settings saved" });
     },
   });
   const customerAccountMutation = useMutation({
-    mutationFn: async () =>
-      apiRequest("PUT", "/api/admin/ecommerce/settings/customer-accounts", {
+    mutationFn: async () => {
+      requireLoaded("customer-accounts");
+      return apiRequest("PUT", "/api/admin/ecommerce/settings/customer-accounts", {
         customerAccountMode,
-      }),
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Settings could not be saved",
+        description: "Your entries have been kept. Please retry saving.",
+        variant: "destructive",
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["/api/admin/ecommerce/settings/customer-accounts"],
@@ -256,8 +343,9 @@ export function SettingsTab({ section = "store" }: { section?: EcommerceSettings
     },
   });
   const storeMutation = useMutation({
-    mutationFn: async () =>
-      apiRequest("PUT", "/api/admin/ecommerce/settings/store", {
+    mutationFn: async () => {
+      requireLoaded("store");
+      return apiRequest("PUT", "/api/admin/ecommerce/settings/store", {
         storeOrigin,
         storeTimezone,
         shippingDestinationMode,
@@ -265,7 +353,15 @@ export function SettingsTab({ section = "store" }: { section?: EcommerceSettings
           shippingDestinationMode === "custom"
             ? csv(allowedCountries).map((country) => country.toUpperCase())
             : getCountriesForShippingMode(shippingDestinationMode),
-      }),
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Settings could not be saved",
+        description: "Your entries have been kept. Please retry saving.",
+        variant: "destructive",
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/settings/store"] });
       queryClient.invalidateQueries({ queryKey: ["/api/ecommerce/checkout/settings"] });
@@ -273,6 +369,18 @@ export function SettingsTab({ section = "store" }: { section?: EcommerceSettings
     },
   });
   const originRegionOptions = getRegionOptions(storeOrigin.country);
+  if (section !== "security") {
+    const selectedQuery = queries[section];
+    if (!hydrated[section] || !selectedQuery.isSuccess) {
+      return (
+        <SettingsLoadState
+          failed={selectedQuery.isError}
+          retrying={selectedQuery.isFetching}
+          onRetry={() => void selectedQuery.refetch()}
+        />
+      );
+    }
+  }
   return (
     <div className="space-y-6">
       {section === "store" ? (
@@ -500,6 +608,7 @@ export function SettingsTab({ section = "store" }: { section?: EcommerceSettings
             <CardDescription>Secret values are encrypted and masked after save.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
+            <StripeActivationNotice status={data} />
             <div className="space-y-2">
               <Label>Active mode</Label>
               <Select value={activeMode} onValueChange={setActiveMode}>
@@ -618,12 +727,14 @@ function SecurityCenterCard() {
   const { data: overview } = useQuery<SecurityOverview>({
     queryKey: ["/api/admin/ecommerce/security/overview"],
   });
-  const { data: settingsData } = useQuery<FraudSettingsStatus>({
+  const settingsQuery = useQuery<FraudSettingsStatus>({
     queryKey: ["/api/admin/ecommerce/security/settings"],
   });
   const { data: blocks = [] } = useQuery<FraudBlock[]>({
     queryKey: ["/api/admin/ecommerce/security/blocks"],
   });
+  const settingsData = settingsQuery.data;
+  const initialized = useRef(false);
   const [settings, setSettings] = useState<FraudSettingsStatus | null>(null);
   const [maxMindLicenseKey, setMaxMindLicenseKey] = useState("");
   const [blockForm, setBlockForm] = useState({
@@ -633,15 +744,26 @@ function SecurityCenterCard() {
   });
 
   useEffect(() => {
-    if (settingsData) setSettings(settingsData);
+    if (settingsData && !initialized.current) {
+      initialized.current = true;
+      setSettings(settingsData);
+    }
   }, [settingsData]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!settings) throw new Error("Security settings are still loading.");
+      if (!settings || !settingsQuery.isSuccess)
+        throw new Error("Load security settings successfully before saving.");
       return apiRequest("PUT", "/api/admin/ecommerce/security/settings", {
         ...settings,
         maxMindLicenseKey: maxMindLicenseKey.trim() || undefined,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Settings could not be saved",
+        description: "Your entries have been kept. Please retry saving.",
+        variant: "destructive",
       });
     },
     onSuccess: () => {
@@ -703,16 +825,13 @@ function SecurityCenterCard() {
   const summary = overview?.summary ?? { total: 0, blocked: 0, manualReview: 0, velocityBlocks: 0 };
   const events = overview?.recentEvents ?? [];
 
-  if (!settings) {
+  if (!settings || !settingsQuery.isSuccess) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-emerald-600" /> Security Center
-          </CardTitle>
-          <CardDescription>Loading fraud prevention settings.</CardDescription>
-        </CardHeader>
-      </Card>
+      <SettingsLoadState
+        failed={settingsQuery.isError}
+        retrying={settingsQuery.isFetching}
+        onRetry={() => void settingsQuery.refetch()}
+      />
     );
   }
 
@@ -1362,5 +1481,35 @@ function StripeModeFields(props: {
         onChange={(e) => props.setWebhook(e.target.value)}
       />
     </div>
+  );
+}
+
+function SettingsLoadState({
+  failed,
+  retrying,
+  onRetry,
+}: {
+  failed: boolean;
+  retrying: boolean;
+  onRetry: () => void;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Settings</CardTitle>
+        <CardDescription role={failed ? "alert" : "status"}>
+          {failed
+            ? "Settings could not be loaded. Retry before editing or saving."
+            : "Loading settings…"}
+        </CardDescription>
+      </CardHeader>
+      {failed && (
+        <CardContent>
+          <Button onClick={onRetry} disabled={retrying}>
+            {retrying ? "Retrying…" : "Retry"}
+          </Button>
+        </CardContent>
+      )}
+    </Card>
   );
 }

@@ -54,4 +54,37 @@ describe("ecommerce email service", () => {
       expect.stringContaining("https://track.example.com/1Z999"),
     );
   });
+
+  it("uses the public site origin for customer order-status links", async () => {
+    const originalPublicSiteOrigin = process.env.PUBLIC_SITE_ORIGIN;
+    const originalAppUrl = process.env.APP_URL;
+    process.env.PUBLIC_SITE_ORIGIN = "https://www.example.com";
+    process.env.APP_URL = "https://admin.example.com";
+    try {
+      const { sendEcommerceOrderStatusLinkEmail } =
+        await import("../services/ecommerce-email.service");
+      const order = {
+        id: "order-12345678",
+        lookupToken: "lookup-token",
+        customer: { id: "customer-1", email: "buyer@example.com", name: "Buyer" },
+        items: [],
+        refunds: [],
+        shipments: [],
+        fulfillments: [],
+      } as unknown as EcommerceOrderWithDetails;
+
+      await sendEcommerceOrderStatusLinkEmail(order);
+
+      expect(mockSendEmail).toHaveBeenCalledWith(
+        "buyer@example.com",
+        "Order status link #order-12",
+        expect.stringContaining("https://www.example.com/orders/status?"),
+      );
+    } finally {
+      if (originalPublicSiteOrigin === undefined) delete process.env.PUBLIC_SITE_ORIGIN;
+      else process.env.PUBLIC_SITE_ORIGIN = originalPublicSiteOrigin;
+      if (originalAppUrl === undefined) delete process.env.APP_URL;
+      else process.env.APP_URL = originalAppUrl;
+    }
+  });
 });

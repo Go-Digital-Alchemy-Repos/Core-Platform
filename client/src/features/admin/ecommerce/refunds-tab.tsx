@@ -31,6 +31,7 @@ export function RefundsTab() {
         source,
         type: "partial",
       }),
+    onSuccess: () => setAmount(""),
   });
   return (
     <Card>
@@ -61,25 +62,28 @@ export function RefundsTab() {
         </div>
         <div className="grid gap-4 sm:grid-cols-[1fr_180px_260px_auto]">
           <div className="space-y-2">
-            <Label>Order ID</Label>
+            <Label htmlFor="refund-order-id">Order ID</Label>
             <Input
+              id="refund-order-id"
               placeholder="Order ID"
               value={orderId}
               onChange={(e) => setOrderId(e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label>Amount</Label>
+            <Label htmlFor="refund-amount">Amount</Label>
             <Input
+              id="refund-amount"
+              inputMode="decimal"
               placeholder="Amount"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label>Refund source</Label>
+            <Label htmlFor="refund-source">Refund source</Label>
             <Select value={source} onValueChange={setSource}>
-              <SelectTrigger>
+              <SelectTrigger id="refund-source">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -104,6 +108,16 @@ export function RefundsTab() {
             </Button>
           </div>
         </div>
+        {mutation.isError && (
+          <p role="alert" className="text-sm text-destructive">
+            {mutation.error instanceof Error ? mutation.error.message : "Unable to record refund."}
+          </p>
+        )}
+        {mutation.isSuccess && (
+          <p role="status" className="text-sm">
+            Refund request recorded.
+          </p>
+        )}
       </CardContent>
     </Card>
   );

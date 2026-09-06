@@ -3,6 +3,7 @@ export {
   therapistProfiles,
   directoryProfileMedia,
   insertTherapistProfileSchema,
+  updateOwnTherapistProfileSchema,
   insertDirectoryProfileMediaSchema,
   type InsertTherapistProfile,
   type TherapistProfile,
@@ -116,6 +117,7 @@ export {
   type SystemSetting,
 } from "./system-settings";
 export * from "./ecommerce";
+export * from "./woocommerce-import";
 export * from "./membership";
 export * from "./careers";
 export * from "./portfolio";
@@ -187,6 +189,12 @@ export {
   type EventRegistration,
 } from "./event-registrations";
 export { cmsPages, insertCmsPageSchema, type InsertCmsPage, type CmsPage } from "./cms-pages";
+export {
+  clientSiteContent,
+  clientSiteContentRevisions,
+  type ClientSiteContent,
+  type ClientSiteContentRevision,
+} from "./client-site-content";
 export {
   cmsPageRevisions,
   insertCmsPageRevisionSchema,
@@ -290,6 +298,9 @@ export {
 export {
   cmsForms,
   cmsFormSubmissions,
+  cmsFormEffectJobs,
+  type CmsFormEffectJob,
+  type CmsFormEffectPayload,
   CMS_FORM_KINDS,
   CMS_FORM_FIELD_TYPES,
   cmsFormFieldOptionSchema,
@@ -329,3 +340,5 @@ export {
   type ProviderInterview,
   type ProviderApplicationDecision,
 } from "./provider-applications";
+
+export * from "./client-stack-onboarding";

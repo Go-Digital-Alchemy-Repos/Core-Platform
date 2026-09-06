@@ -3,8 +3,11 @@ import { db } from "../db";
 import { contactMessages, type ContactMessage, type InsertContactMessage } from "@shared/schema";
 
 export class ContactStorage {
-  async createMessage(data: InsertContactMessage): Promise<ContactMessage> {
-    const [msg] = await db.insert(contactMessages).values(data).returning();
+  async createMessage(
+    data: InsertContactMessage,
+    transaction?: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  ): Promise<ContactMessage> {
+    const [msg] = await (transaction ?? db).insert(contactMessages).values(data).returning();
     return msg;
   }
 

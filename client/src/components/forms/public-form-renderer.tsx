@@ -1,5 +1,5 @@
 import { STALE_TIMES } from "@/lib/queryClient";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { CmsForm, CmsFormField, CmsFormListColumn } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -583,6 +583,7 @@ export function PublicFormRenderer({
   const { toast } = useToast();
   const [values, setValues] = useState<FormValues>({});
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const submissionKeyRef = useRef<string | null>(null);
 
   const { data: form, isLoading } = useQuery<CmsForm>({
     queryKey: ["/api/forms", slug],
@@ -609,6 +610,7 @@ export function PublicFormRenderer({
   useEffect(() => {
     setValues(buildInitialValues(fields));
     setCurrentPageIndex(0);
+    submissionKeyRef.current = null;
   }, [fields, slug]);
 
   const description =
@@ -627,9 +629,11 @@ export function PublicFormRenderer({
 
   const mutation = useMutation({
     mutationFn: async () => {
+      const idempotencyKey = submissionKeyRef.current ?? crypto.randomUUID();
+      submissionKeyRef.current = idempotencyKey;
       const response = await fetch(submitUrl ?? `/api/forms/${slug}/submit`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
         credentials: "include",
         body: JSON.stringify(buildSubmitBody ? buildSubmitBody(values) : values),
       });
@@ -651,6 +655,7 @@ export function PublicFormRenderer({
       });
       setValues(buildInitialValues(fields));
       setCurrentPageIndex(0);
+      submissionKeyRef.current = null;
       onSubmitSuccess?.();
     },
     onError: (error: Error) => {

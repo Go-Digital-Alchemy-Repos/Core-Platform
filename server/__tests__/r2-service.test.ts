@@ -48,6 +48,8 @@ describe("R2 service", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     MockS3Client.mockClear();
+    delete process.env.CLIENT_STACK_ID;
+    delete process.env.PUBLIC_SITE_ORIGIN;
     const mod = await import("../services/r2.service");
     mod.resetClient();
   });
@@ -138,6 +140,27 @@ describe("R2 service", () => {
 
     const mod = await import("../services/r2.service");
     const url = await mod.uploadFile("images/photo.jpg", Buffer.from("data"), "image/jpeg");
-    expect(url).toBe("https://cdn.example.com/images/photo.jpg");
+    expect(url).toBe("https://cdn.example.com/system-backups/uploads/images/photo.jpg");
+  });
+
+  it("stores uploads under the activated client domain namespace", async () => {
+    process.env.CLIENT_STACK_ID = "better-farms-foundation";
+    process.env.PUBLIC_SITE_ORIGIN = "https://www.better-farms.org";
+    mockGetDecryptedCategory.mockResolvedValue({
+      r2_account_id: "acct",
+      r2_access_key_id: "key",
+      r2_secret_access_key: "secret",
+      r2_bucket_name: "core-platform-website-backups",
+      r2_public_url: "",
+    });
+    mockSend.mockResolvedValue({});
+
+    const mod = await import("../services/r2.service");
+    const url = await mod.uploadFile("cms/media/photo.jpg", Buffer.from("data"), "image/jpeg");
+
+    expect(url).toBe("/r2/cms/media/photo.jpg");
+    expect(mockSend).toHaveBeenCalledWith(
+      expect.objectContaining({ Key: "clients/better-farms.org/uploads/cms/media/photo.jpg" }),
+    );
   });
 });

@@ -1,5 +1,22 @@
 # Core Platform — Architecture Overview
 
+## Deployment and Public-Site Model
+
+Near-term delivery follows the canonical [Client Migration Master Plan](../core-project-plan.md): one
+Core Platform application and database per client, paired with one separately built static React site.
+This is not a shared multi-tenant runtime. Imported sites supply versioned manifests, Puck registrations,
+and design-system adapters so enabled bolt-on pages inherit the client's visual system.
+
+The current repository still bundles its existing public SPA with the dashboard/API. Separating the
+client public site is target architecture and remains behind the manifest, origin, route, authentication,
+publishing, and release contracts in Milestones 1–3.
+
+The target routes the public site's browser API calls through same-origin `/api` to Core Platform where
+feasible, while the dashboard remains on a protected admin subdomain with its own same-origin API path.
+The onboarding domain wizard produces exact provider-neutral DNS instructions and performs read-only
+DNS/TLS/routing verification. An operator applies the records manually at the chosen provider; Core
+Platform neither requests provider credentials nor mutates DNS.
+
 ## Tech Stack
 
 | Layer            | Technology                             | Notes                                                                                          |
@@ -9,8 +26,8 @@
 | State / Data     | TanStack Query v5                      | Global defaults: `staleTime: 5min`, `gcTime: 10min`                                            |
 | UI Framework     | shadcn/ui + Tailwind CSS               | Dark mode via class strategy, theme presets system                                             |
 | Backend          | Express 5 (TypeScript)                 | Runs on Node.js with HTTP server                                                               |
-| ORM              | Drizzle ORM                            | PostgreSQL driver via `pg` and `drizzle-orm/node-postgres`                                      |
-| Database         | PostgreSQL                             | Hosted on Railway, with application access over Railway private networking                      |
+| ORM              | Drizzle ORM                            | PostgreSQL driver via `pg` and `drizzle-orm/node-postgres`                                     |
+| Database         | PostgreSQL                             | Hosted on Railway, with application access over Railway private networking                     |
 | Auth             | JWT (HTTP-only cookies)                | `bcryptjs` for password hashing, 7-day token expiry                                            |
 | Payments         | Stripe                                 | Directory application fees, membership subscriptions, ecommerce checkout, and webhook handling |
 | File Storage     | Cloudflare R2                          | For media uploads, career resumes, images, recordings, and public asset delivery               |

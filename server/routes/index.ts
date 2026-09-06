@@ -27,6 +27,8 @@ import ecommerceRoutes from "./ecommerce.routes";
 import careersRoutes from "./careers.routes";
 import portfolioRoutes from "./portfolio.routes";
 import membershipRoutes from "./membership.routes";
+import clientSiteContentRoutes from "./client-site-content.routes";
+import clientFormsRoutes from "./client-forms.routes";
 import {
   requireBlogEnabled,
   requireCareersEnabled,
@@ -39,6 +41,7 @@ import {
 } from "../middleware/site-features";
 import { searchPublicSite } from "../services/public-search.service";
 import { buildRobotsTxtPayload } from "../services/robots-txt.service";
+import { getEffectivePublicSiteOrigin } from "../config/client-stack-origins";
 import { storage } from "../storage/index";
 import { getEventPath } from "@shared/event-url";
 import {
@@ -85,6 +88,8 @@ export function registerApiRoutes(app: Express) {
   app.use("/api/events", requireEventsEnabled, guestRegistrationRoutes);
   app.use("/api/events", requireEventsEnabled, registrationRoutes);
   app.use("/api/cms", requireCmsEnabled, cmsPublicRoutes);
+  app.use("/api/client-site-content", requireCmsEnabled, clientSiteContentRoutes);
+  app.use("/api/client-forms", clientFormsRoutes);
   app.use("/api/contact-professional", requireDirectoryEnabled, contactProfessionalRoutes);
   app.use("/api/setup", setupRoutes);
   app.use("/api/therapist/application", requireDirectoryEnabled, applicationRoutes);
@@ -250,7 +255,7 @@ export function registerApiRoutes(app: Express) {
           storage.portfolio.getProjects({ publicOnly: true }),
         ]);
 
-      const base = seoSettings?.siteUrl?.replace(/\/$/, "") || "";
+      const base = getEffectivePublicSiteOrigin(seoSettings?.siteUrl) || "";
 
       const urls: Array<{ loc: string; lastmod?: string; changefreq?: string; priority?: string }> =
         [];

@@ -45,33 +45,32 @@ export async function saveEcommerceTaxSettings(
   input: EcommerceTaxSettings,
 ): Promise<EcommerceTaxSettings> {
   const settings = ecommerceTaxSettingsSchema.parse(input);
-  await Promise.all([
-    storage.settings.upsertSetting(
-      "ecommerce_tax_enabled",
-      String(settings.enabled),
-      TAX_CATEGORY,
-      false,
-    ),
-    storage.settings.upsertSetting(
-      "ecommerce_tax_manual_rate_bps",
-      String(settings.manualRateBps),
-      TAX_CATEGORY,
-      false,
-    ),
-    storage.settings.upsertSetting(
-      "ecommerce_tax_shipping",
-      String(settings.taxShipping),
-      TAX_CATEGORY,
-      false,
-    ),
-    storage.settings.upsertSetting(
-      "ecommerce_stripe_tax_enabled",
-      String(settings.stripeTaxEnabled),
-      TAX_CATEGORY,
-      false,
-    ),
+  await storage.settings.upsertSettings([
+    {
+      key: "ecommerce_tax_enabled",
+      value: String(settings.enabled),
+      category: TAX_CATEGORY,
+      isSecret: false,
+    },
+    {
+      key: "ecommerce_tax_manual_rate_bps",
+      value: String(settings.manualRateBps),
+      category: TAX_CATEGORY,
+      isSecret: false,
+    },
+    {
+      key: "ecommerce_tax_shipping",
+      value: String(settings.taxShipping),
+      category: TAX_CATEGORY,
+      isSecret: false,
+    },
+    {
+      key: "ecommerce_stripe_tax_enabled",
+      value: String(settings.stripeTaxEnabled),
+      category: TAX_CATEGORY,
+      isSecret: false,
+    },
   ]);
-  storage.settings.invalidateCategory(TAX_CATEGORY);
   return settings;
 }
 

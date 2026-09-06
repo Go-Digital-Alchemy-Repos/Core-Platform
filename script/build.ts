@@ -1,4 +1,6 @@
+import { buildUploadApply } from "./build-upload-apply";
 import { build as esbuild } from "esbuild";
+import { buildUploadVerifier } from "./build-upload-verifier";
 import { build as viteBuild } from "vite";
 import { rm, cp, readFile } from "fs/promises";
 
@@ -24,8 +26,14 @@ async function buildAll() {
     },
     minify: true,
     packages: "bundle",
+    // Sharp loads native bindings relative to its package. Bundling its ESM
+    // loader into CJS erases import.meta.url and crashes before server startup.
+    external: ["sharp"],
     logLevel: "info",
   });
+
+  await buildUploadVerifier();
+  await buildUploadApply();
 
   console.log("copying migrations...");
   await cp("migrations", "dist/migrations", { recursive: true });

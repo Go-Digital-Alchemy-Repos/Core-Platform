@@ -27,6 +27,15 @@ The admin ecommerce area includes tabs for:
 - Refunds
 - Stripe settings
 
+The **Settings** menu opens Store origin and shipping markets, Customer accounts, Security Center,
+Stripe settings, and Tax settings. Their direct paths are `/admin/ecommerce/settings/store`,
+`/admin/ecommerce/settings/customer-accounts`, `/admin/ecommerce/settings/security`,
+`/admin/ecommerce/settings/stripe`, and `/admin/ecommerce/settings/tax`.
+
+Wait for the saved values to load before editing. If loading fails, use **Retry**; the form remains
+unavailable until the load succeeds. If saving fails, the page keeps your entries and displays a
+failure message so you can retry. Background refreshes preserve edits already in progress.
+
 Products support draft or published status, active/inactive visibility, price and sale price, SKU, tags, feature lists, included-item lists, images, URL slug, and SEO metadata. Public product listings only show products that are both active and published.
 
 Categories support active/inactive state, slug, description, image, parent ID, and sort order. Products can be associated to one or more categories.
@@ -38,12 +47,15 @@ The cart pricing service calculates:
 - Subtotal
 - Discounts
 - Shipping
-- Tax placeholder values
+- Tax calculated from the configured manual rate and taxable lines, with optional shipping tax
 - Total
 
 Coupons support fixed amount, percentage, and free-shipping types. Coupon rules include minimum order amount, maximum discount amount, maximum redemptions, per-customer limit, active windows, and optional guardrail fields for affiliate/VIP/margin handling.
 
 Checkout creates ecommerce orders and Stripe payment intents. Stripe confirmation is handled through the ecommerce Stripe webhook flow before orders are marked paid.
+
+The **Prepare Stripe Tax** setting records future provider intent. It does not activate automatic
+Stripe Tax calculations; current tax calculation uses the configured manual rate.
 
 ## Orders, Refunds, And Shipping
 

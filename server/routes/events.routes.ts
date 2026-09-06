@@ -5,32 +5,13 @@ import { paramString } from "../utils/params";
 import { optionalAuth, authenticateToken } from "../middleware/auth";
 import type { Event } from "@shared/schema/events";
 import * as r2Service from "../services/r2.service";
+import {
+  applyEventAccessEntitlements,
+  canAccessPublicEvent,
+  redactEventAccessFields,
+} from "../services/public-event.service";
 
 const router = Router();
-
-const SENSITIVE_FIELDS = [
-  "virtualJoinUrl",
-  "zoomLink",
-  "virtualDialInInfo",
-  "recordingUrl",
-] as const;
-
-function canAccessEvent(event: Event, userRole: string | null): boolean {
-  if (!event.visibility || event.visibility === "public") return true;
-  if (!userRole) return false;
-  if (userRole === "admin") return true;
-  if (event.visibility === "members_only") return userRole === "therapist" || userRole === "client";
-  if (event.visibility === "counselors_only") return userRole === "therapist";
-  return false;
-}
-
-function redactSensitiveFields(event: Event): Event {
-  const redacted = { ...event } as Event & Record<(typeof SENSITIVE_FIELDS)[number], null>;
-  for (const field of SENSITIVE_FIELDS) {
-    redacted[field] = null;
-  }
-  return redacted;
-}
 
 async function normalizeEventImage(event: Event): Promise<Event> {
   return {
@@ -43,7 +24,11 @@ router.get(
   "/",
   asyncHandler(async (_req, res) => {
     const eventsList = await storage.events.getUpcomingEvents();
-    res.json(await Promise.all(eventsList.map(normalizeEventImage)));
+    res.json(
+      await Promise.all(
+        eventsList.map((event) => normalizeEventImage(redactEventAccessFields(event))),
+      ),
+    );
   }),
 );
 
@@ -51,7 +36,11 @@ router.get(
   "/all",
   asyncHandler(async (_req, res) => {
     const eventsList = await storage.events.getPublishedEvents();
-    res.json(await Promise.all(eventsList.map(normalizeEventImage)));
+    res.json(
+      await Promise.all(
+        eventsList.map((event) => normalizeEventImage(redactEventAccessFields(event))),
+      ),
+    );
   }),
 );
 
@@ -72,16 +61,17 @@ router.get(
     }
 
     const filtered = eventsList
-      .filter((event) => canAccessEvent(event, userRole))
-      .map((event) => {
-        if (event.recordingAccess === "paid" && event.recordingPrice) {
-          if (userRole === "admin" || purchasedEventIds.has(event.id)) {
-            return event;
-          }
-          return { ...event, recordingUrl: null };
-        }
-        return event;
-      });
+      .filter((event) => canAccessPublicEvent(event, userRole))
+      .map((event) =>
+        applyEventAccessEntitlements(event, {
+          canJoin: false,
+          canViewRecording:
+            userRole === "admin" ||
+            event.recordingAccess !== "paid" ||
+            !event.recordingPrice ||
+            purchasedEventIds.has(event.id),
+        }),
+      );
     res.json(await Promise.all(filtered.map(normalizeEventImage)));
   }),
 );
@@ -123,7 +113,7 @@ router.get(
       return res.status(404).json({ message: "Form not found" });
     }
     const userRole = req.user?.role ?? null;
-    if (!canAccessEvent(event, userRole)) {
+    if (!canAccessPublicEvent(event, userRole)) {
       return res.status(403).json({ message: "You do not have access to this form" });
     }
     const form = await storage.forms.getPublicById(event.registrationFormId);
@@ -147,11 +137,28 @@ router.get(
       return res.status(404).json({ message: "Event not found" });
     }
     const userRole = req.user?.role ?? null;
-    if (canAccessEvent(event, userRole)) {
-      res.json(await normalizeEventImage(event));
-    } else {
-      res.json(await normalizeEventImage(redactSensitiveFields(event)));
+    if (!canAccessPublicEvent(event, userRole)) {
+      return res.status(404).json({ message: "Event not found" });
     }
+
+    const isAdmin = userRole === "admin";
+    let canJoin = isAdmin;
+    let canViewRecording = isAdmin || event.recordingAccess !== "paid";
+    if (req.user && !isAdmin) {
+      const [registration, purchase] = await Promise.all([
+        storage.eventRegistrations.getRegistrationByEventAndUser(event.id, req.user.id),
+        storage.recordingPurchases.getByUserAndEvent(req.user.id, event.id),
+      ]);
+      canJoin = Boolean(
+        registration?.status === "confirmed" &&
+        (event.registrationType !== "paid" || registration.paymentStatus === "paid"),
+      );
+      canViewRecording = canViewRecording || Boolean(purchase?.stripePaymentIntentId);
+    }
+
+    res.json(
+      await normalizeEventImage(applyEventAccessEntitlements(event, { canJoin, canViewRecording })),
+    );
   }),
 );
 

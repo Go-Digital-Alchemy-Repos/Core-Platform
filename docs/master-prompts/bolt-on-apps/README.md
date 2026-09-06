@@ -1,5 +1,9 @@
 # Bolt-On App Master Prompt Suite
 
+For client migrations, this suite is governed by the canonical
+[Client Migration Master Plan](../../core-project-plan.md). Bolt-on public pages must use the imported
+React site's theme adapter and must not establish a competing visual system.
+
 This suite turns the current Core Platform feature apps into portable implementation prompts. It is intended for an engineering agent working in this repository or in another dashboard product.
 
 The prompts preserve the product behavior of Core Platform while requiring the implementation to adapt to the host system's architecture, visual language, authentication, permissions, data layer, and operational conventions.
@@ -40,7 +44,7 @@ A completed app is:
 
 - independently understandable and isolated behind a module boundary;
 - registered in the host dashboard's feature-app settings;
-- configurable per site or tenant through an authorized toggle;
+- configurable per client instance (or the host system's equivalent scope) through an authorized toggle;
 - visually native to the host system in public, admin, light, and dark contexts;
 - gated consistently across navigation, routes, APIs, search, feeds, jobs, and embeds;
 - non-destructive when disabled;

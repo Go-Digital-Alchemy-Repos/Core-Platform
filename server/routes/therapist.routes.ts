@@ -2,12 +2,11 @@ import { Router } from "express";
 import { storage } from "../storage/index";
 import { authenticateToken, requireRole } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
-import { insertTherapistProfileSchema } from "@shared/schema";
+import { updateOwnTherapistProfileSchema } from "@shared/schema";
 import { enrichTherapistLocationFields } from "../services/therapist-location.service";
+import { sanitizePublicRichHtml } from "../utils/sanitize-rich-html";
 
 const router = Router();
-const updateTherapistProfileSchema = insertTherapistProfileSchema.partial().omit({ userId: true });
-
 router.use(authenticateToken);
 router.use(requireRole("therapist"));
 
@@ -32,7 +31,8 @@ router.put(
       return;
     }
 
-    const data = updateTherapistProfileSchema.parse(req.body);
+    const data = updateOwnTherapistProfileSchema.parse(req.body);
+    if (data.bio !== undefined) data.bio = sanitizePublicRichHtml(data.bio);
     const enrichedData = await enrichTherapistLocationFields(data, profile);
     const updated = await storage.therapists.updateProfile(profile.id, enrichedData);
     await storage.activity.log(req.user!.id, "profile_update", "Profile updated by provider");

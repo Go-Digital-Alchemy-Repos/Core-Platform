@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AdminSidebar } from "./admin-sidebar";
@@ -28,6 +28,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CreditCard, LockKeyhole, Plus, RefreshCw, Save, Settings, Users } from "lucide-react";
+import {
+  buildMembershipStripeSettingsPayload,
+  type MembershipStripeSettingsForm,
+} from "./membership-stripe-settings";
 import type {
   MembershipAccessRule,
   MembershipAuditEvent,
@@ -131,7 +135,7 @@ export default function AdminMembershipPage() {
     entitlements: "",
     teaser: "",
   });
-  const [stripeForm, setStripeForm] = useState({
+  const [stripeForm, setStripeForm] = useState<MembershipStripeSettingsForm>({
     mode: "test",
     publishableKey: "",
     secretKey: "",
@@ -154,6 +158,15 @@ export default function AdminMembershipPage() {
   const { data: activity = [] } = useQuery<MembershipAuditEvent[]>({
     queryKey: ["/api/admin/membership/activity"],
   });
+
+  useEffect(() => {
+    if (!stripeStatus) return;
+    setStripeForm((current) => ({
+      ...current,
+      mode: stripeStatus.mode,
+      customerPortalEnabled: stripeStatus.customerPortalEnabled,
+    }));
+  }, [stripeStatus]);
 
   const planOptions = useMemo(
     () => plans.map((plan) => ({ id: plan.id, label: plan.name })),
@@ -259,12 +272,21 @@ export default function AdminMembershipPage() {
 
   const saveStripeMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("PUT", "/api/admin/membership/payments/stripe", stripeForm);
+      await apiRequest(
+        "PUT",
+        "/api/admin/membership/payments/stripe",
+        buildMembershipStripeSettingsPayload(stripeForm),
+      );
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/membership/payments/stripe"] });
       toast({ title: "Membership payment settings saved" });
-      setStripeForm((current) => ({ ...current, secretKey: "", webhookSecret: "" }));
+      setStripeForm((current) => ({
+        ...current,
+        publishableKey: "",
+        secretKey: "",
+        webhookSecret: "",
+      }));
     },
     onError: (error: Error) =>
       toast({
@@ -705,7 +727,9 @@ export default function AdminMembershipPage() {
                   <Label>Mode</Label>
                   <Select
                     value={stripeForm.mode}
-                    onValueChange={(value) => setStripeForm({ ...stripeForm, mode: value })}
+                    onValueChange={(value) =>
+                      setStripeForm({ ...stripeForm, mode: value === "live" ? "live" : "test" })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />

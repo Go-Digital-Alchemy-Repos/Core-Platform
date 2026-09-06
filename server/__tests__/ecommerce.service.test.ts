@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import type {
   EcommerceCoupon,
   EcommerceOrder,
@@ -15,17 +15,24 @@ const mockShippingZones: EcommerceShippingZone[] = [];
 const mockShippingRates: EcommerceShippingRate[] = [];
 const mockGetOrder = vi.fn();
 const mockUpdateOrder = vi.fn();
-const mockMarkOrderPaidIfUnpaid = vi.fn();
+const mockSettlePaidOrder = vi.fn();
 const mockGetOrderWithDetails = vi.fn();
 const mockGetCustomer = vi.fn();
 const mockFindOrCreateCustomer = vi.fn();
 const mockCreateOrder = vi.fn();
+const mockClaimCheckoutRequest = vi.fn();
+const mockGetCheckoutRequest = vi.fn();
+const mockAttachCheckoutRequestOrder = vi.fn();
+const mockCompleteCheckoutRequest = vi.fn();
+const mockFailCheckoutRequest = vi.fn();
 const mockCreateOrderNote = vi.fn();
 const mockCreatePaymentRequest = vi.fn();
 const mockUpdatePaymentRequest = vi.fn();
 const mockMarkPaymentRequestPaidBySession = vi.fn();
+const mockSettlePaymentRequestOrderBySession = vi.fn();
 const mockGetFulfillmentsForOrder = vi.fn();
 const mockGetRefundByStripeRefundId = vi.fn();
+const mockGetRefund = vi.fn();
 const mockUpdateRefund = vi.fn();
 const mockCreateRefund = vi.fn();
 const mockGetProductCategories = vi.fn(async (_productId: string) => []);
@@ -42,7 +49,10 @@ const mockInvalidateCategory = vi.fn();
 const mockGetEcommerceStripeClient = vi.fn();
 const mockStripePaymentIntentCreate = vi.fn();
 const mockStripePaymentIntentCancel = vi.fn();
+const mockStripePaymentIntentRetrieve = vi.fn();
 const mockStripeCheckoutSessionCreate = vi.fn();
+const mockStripeRefundCreate = vi.fn();
+const mockStripeRefundList = vi.fn();
 
 function seedManualOrderProduct() {
   mockProducts.push({
@@ -99,21 +109,30 @@ vi.mock("../storage/index", () => ({
       countCouponRedemptions: mockCountCouponRedemptions,
       getOrder: mockGetOrder,
       updateOrder: mockUpdateOrder,
-      markOrderPaidIfUnpaid: mockMarkOrderPaidIfUnpaid,
+      updateOrderWithStatusNotification: mockUpdateOrder,
+      settlePaidOrder: mockSettlePaidOrder,
       getOrderWithDetails: mockGetOrderWithDetails,
       getCustomer: mockGetCustomer,
       findOrCreateCustomer: mockFindOrCreateCustomer,
       createOrder: mockCreateOrder,
+      claimCheckoutRequest: mockClaimCheckoutRequest,
+      getCheckoutRequest: mockGetCheckoutRequest,
+      attachCheckoutRequestOrder: mockAttachCheckoutRequestOrder,
+      completeCheckoutRequest: mockCompleteCheckoutRequest,
+      failCheckoutRequest: mockFailCheckoutRequest,
       createOrderNote: mockCreateOrderNote,
       createPaymentRequest: mockCreatePaymentRequest,
       updatePaymentRequest: mockUpdatePaymentRequest,
       markPaymentRequestPaidBySession: mockMarkPaymentRequestPaidBySession,
+      settlePaymentRequestOrderBySession: mockSettlePaymentRequestOrderBySession,
       getFulfillmentsForOrder: mockGetFulfillmentsForOrder,
       recordCouponRedemptionForOrder: mockRecordCouponRedemptionForOrder,
       deductInventoryForPaidOrder: mockDeductInventoryForPaidOrder,
       getRefundByStripeRefundId: mockGetRefundByStripeRefundId,
+      getRefund: mockGetRefund,
       updateRefund: mockUpdateRefund,
       createRefund: mockCreateRefund,
+      reserveRefund: mockCreateRefund,
     },
   },
 }));
@@ -129,11 +148,19 @@ vi.mock("../services/ecommerce-stripe.service", async (importOriginal) => {
   return {
     ...actual,
     getEcommerceStripeClient: mockGetEcommerceStripeClient,
+    getEcommerceStripeTransactionClient: async () => {
+      const stripe = await mockGetEcommerceStripeClient();
+      actual.assertEcommerceProviderTransactionsEnabled();
+      return stripe;
+    },
   };
 });
 
 describe("ecommerce services", () => {
+  afterEach(() => vi.unstubAllEnvs());
   beforeEach(() => {
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", "true");
+    mockGetCheckoutRequest.mockReset();
     mockProducts.length = 0;
     mockVariants.length = 0;
     mockCoupons.length = 0;
@@ -141,15 +168,20 @@ describe("ecommerce services", () => {
     mockShippingRates.length = 0;
     mockGetOrder.mockReset();
     mockUpdateOrder.mockReset();
-    mockMarkOrderPaidIfUnpaid.mockReset();
+    mockSettlePaidOrder.mockReset();
     mockGetOrderWithDetails.mockReset();
     mockGetCustomer.mockReset();
     mockFindOrCreateCustomer.mockReset();
     mockCreateOrder.mockReset();
+    mockClaimCheckoutRequest.mockReset();
+    mockAttachCheckoutRequestOrder.mockReset();
+    mockCompleteCheckoutRequest.mockReset();
+    mockFailCheckoutRequest.mockReset();
     mockCreateOrderNote.mockReset();
     mockGetFulfillmentsForOrder.mockReset();
     mockGetFulfillmentsForOrder.mockResolvedValue([]);
     mockGetRefundByStripeRefundId.mockReset();
+    mockGetRefund.mockReset();
     mockUpdateRefund.mockReset();
     mockCreateRefund.mockReset();
     mockGetProductCategories.mockReset();
@@ -172,12 +204,14 @@ describe("ecommerce services", () => {
       paymentIntents: {
         create: mockStripePaymentIntentCreate,
         cancel: mockStripePaymentIntentCancel,
+        retrieve: mockStripePaymentIntentRetrieve,
       },
       checkout: {
         sessions: {
           create: mockStripeCheckoutSessionCreate,
         },
       },
+      refunds: { create: mockStripeRefundCreate, list: mockStripeRefundList },
     });
     mockStripePaymentIntentCreate.mockReset();
     mockStripePaymentIntentCreate.mockResolvedValue({
@@ -186,17 +220,163 @@ describe("ecommerce services", () => {
     });
     mockStripePaymentIntentCancel.mockReset();
     mockStripePaymentIntentCancel.mockResolvedValue({ id: "pi_test", status: "canceled" });
+    mockStripePaymentIntentRetrieve.mockReset();
+    mockStripePaymentIntentRetrieve.mockResolvedValue({
+      id: "pi_test",
+      client_secret: "pi_test_secret",
+    });
     mockStripeCheckoutSessionCreate.mockReset();
     mockStripeCheckoutSessionCreate.mockResolvedValue({
       id: "cs_test",
       url: "https://checkout.stripe.test/pay/cs_test",
       expires_at: 1_800_000_000,
     });
+    mockStripeRefundCreate.mockReset();
+    mockStripeRefundList.mockReset();
+    mockStripeRefundList.mockResolvedValue({ data: [] });
     mockCreatePaymentRequest.mockReset();
     mockCreatePaymentRequest.mockImplementation(async (data) => ({ id: "payreq-1", ...data }));
     mockUpdatePaymentRequest.mockReset();
     mockUpdatePaymentRequest.mockImplementation(async (id, data) => ({ id, ...data }));
     mockMarkPaymentRequestPaidBySession.mockReset();
+    mockSettlePaymentRequestOrderBySession.mockReset();
+  });
+
+  it.each([
+    "Missing Stripe secret key",
+    "Live mode cannot use a test secret key",
+    "awaiting activation",
+  ])("rejects provider-backed operations before local writes: %s", async (message) => {
+    const {
+      createManualEcommerceOrderDraft,
+      createPaymentLinkForOrder,
+      createStandalonePaymentRequest,
+    } = await import("../services/ecommerce-order.service");
+    const { createEcommerceRefund } = await import("../services/ecommerce-refund.service");
+    seedManualOrderProduct();
+    mockGetCustomer.mockResolvedValue({
+      id: "customer",
+      email: "buyer@example.test",
+      name: "Buyer",
+    });
+    mockGetOrderWithDetails.mockResolvedValue({
+      id: "order",
+      customerId: "customer",
+      totalAmount: 2500,
+      status: "pending",
+      paymentStatus: "unpaid",
+      items: [],
+      refunds: [],
+      stripePaymentIntentId: "pi_test",
+    });
+    if (message === "awaiting activation")
+      vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", "false");
+    else
+      mockGetEcommerceStripeClient.mockRejectedValue(
+        Object.assign(new Error(message), { statusCode: 409 }),
+      );
+    await expect(
+      createManualEcommerceOrderDraft({
+        customerId: "customer",
+        items: [{ productId: "p-manual", quantity: 1 }],
+        paymentAction: "send_payment_link",
+      }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    await expect(createPaymentLinkForOrder("order")).rejects.toMatchObject({ statusCode: 409 });
+    await expect(
+      createStandalonePaymentRequest({
+        customer: { email: "new@example.test", name: "New" },
+        title: "Payment",
+        amount: 2500,
+        reason: "Synthetic request",
+      }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    mockGetOrderWithDetails.mockResolvedValue({
+      id: "order",
+      totalAmount: 2500,
+      status: "paid",
+      paymentStatus: "paid",
+      stripePaymentIntentId: "pi_test",
+      refunds: [],
+    });
+    await expect(
+      createEcommerceRefund({ orderId: "order", amount: 500, source: "stripe" }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    for (const write of [
+      mockFindOrCreateCustomer,
+      mockCreateOrder,
+      mockCreatePaymentRequest,
+      mockCreateRefund,
+      mockUpdateOrder,
+      mockUpdateRefund,
+    ])
+      expect(write).not.toHaveBeenCalled();
+    expect(mockStripeCheckoutSessionCreate).not.toHaveBeenCalled();
+    expect(mockStripeRefundCreate).not.toHaveBeenCalled();
+  });
+
+  it.each(["save_draft", "mark_paid"] as const)(
+    "manual %s does not require Stripe configuration",
+    async (paymentAction) => {
+      vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", undefined);
+      const { createManualEcommerceOrderDraft } =
+        await import("../services/ecommerce-order.service");
+      seedManualOrderProduct();
+      mockGetCustomer.mockResolvedValue({
+        id: "customer",
+        email: "buyer@example.test",
+        name: "Buyer",
+      });
+      mockCreateOrder.mockResolvedValue({ id: "manual" });
+      mockSettlePaidOrder.mockResolvedValue({ order: { id: "manual" } });
+      mockGetEcommerceStripeClient.mockRejectedValue(new Error("Stripe unavailable"));
+      await createManualEcommerceOrderDraft({
+        customerId: "customer",
+        items: [{ productId: "p-manual", quantity: 1 }],
+        paymentAction,
+      });
+      expect(mockCreateOrder).toHaveBeenCalledOnce();
+      expect(mockGetEcommerceStripeClient).not.toHaveBeenCalled();
+    },
+  );
+
+  it("manual refunds do not require Stripe configuration", async () => {
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", undefined);
+    const { createEcommerceRefund } = await import("../services/ecommerce-refund.service");
+    mockGetOrderWithDetails.mockResolvedValue({
+      id: "manual",
+      totalAmount: 2500,
+      status: "paid",
+      paymentStatus: "paid",
+      refunds: [],
+    });
+    mockCreateRefund.mockResolvedValue({ id: "manual-refund", amount: 500, status: "processed" });
+    mockGetEcommerceStripeClient.mockRejectedValue(new Error("Stripe unavailable"));
+    await createEcommerceRefund({ orderId: "manual", amount: 500, source: "manual" });
+    expect(mockCreateRefund).toHaveBeenCalledOnce();
+    expect(mockGetEcommerceStripeClient).not.toHaveBeenCalled();
+  });
+
+  it("standalone payment request uses one preflight client and keeps draft on ambiguous dispatch failure", async () => {
+    const { createStandalonePaymentRequest } = await import("../services/ecommerce-order.service");
+    mockFindOrCreateCustomer.mockImplementation(async (customer) => ({ id: "new", ...customer }));
+    mockStripeCheckoutSessionCreate.mockRejectedValue(new Error("ambiguous network failure"));
+    await expect(
+      createStandalonePaymentRequest({
+        customer: { email: "new@example.test", name: "New" },
+        title: "Payment",
+        amount: 2500,
+        reason: "Synthetic request",
+      }),
+    ).rejects.toThrow("ambiguous network failure");
+    expect(mockGetEcommerceStripeClient).toHaveBeenCalledOnce();
+    expect(mockGetEcommerceStripeClient.mock.invocationCallOrder[0]).toBeLessThan(
+      mockFindOrCreateCustomer.mock.invocationCallOrder[0],
+    );
+    expect(mockCreatePaymentRequest).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "draft" }),
+    );
+    expect(mockUpdatePaymentRequest).not.toHaveBeenCalled();
   });
 
   it("calculates effective sale pricing without trusting client prices", async () => {
@@ -410,6 +590,96 @@ describe("ecommerce services", () => {
       }),
     ).toThrow();
   });
+
+  it.each([true, false])(
+    "returns the original PaymentIntent with activation %s",
+    async (enabled) => {
+      const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
+      const order = {
+        id: "order-existing-checkout",
+        customerId: "customer-1",
+        lookupToken: "lookup-existing",
+        stripePaymentIntentId: "pi_existing",
+        totalAmount: 5000,
+      } as EcommerceOrder;
+      mockProducts.push({
+        id: "p-idempotent",
+        name: "Digital Guide",
+        price: 5000,
+        active: true,
+        status: "published",
+        visibility: "online",
+        archivedAt: null,
+        requiresShipping: false,
+        productType: "digital",
+        fulfillmentType: "digital",
+      } as EcommerceProduct);
+      mockVariants.push({
+        id: "v-idempotent",
+        productId: "p-idempotent",
+        title: "Default",
+        price: 5000,
+        active: true,
+        status: "active",
+        isDefault: true,
+        trackInventory: false,
+        inventoryQuantity: 0,
+        allowBackorder: false,
+        optionValues: {},
+      } as EcommerceProductVariant);
+      mockClaimCheckoutRequest.mockResolvedValue({
+        created: false,
+        request: {
+          requestKey: "9d723950-a6e1-4bb9-b95a-58a43eeafb1b",
+          customerEmail: "buyer@example.com",
+          orderId: order.id,
+          status: "ready",
+        },
+      });
+      if (!enabled) {
+        vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", "false");
+        mockGetCheckoutRequest.mockResolvedValue({
+          requestKey: "9d723950-a6e1-4bb9-b95a-58a43eeafb1b",
+          customerEmail: "buyer@example.com",
+          orderId: order.id,
+          status: "ready",
+        });
+      }
+      mockGetOrder.mockResolvedValue(order);
+      mockStripePaymentIntentRetrieve.mockResolvedValue({
+        id: "pi_existing",
+        client_secret: "pi_existing_secret",
+      });
+
+      await expect(
+        createEcommercePaymentIntent(
+          {
+            items: [{ productId: "p-idempotent", quantity: 1 }],
+            customer: { email: "buyer@example.com", name: "Buyer" },
+            shippingAddress: {
+              name: "Buyer",
+              address: "123 Main St",
+              city: "Detroit",
+              state: "MI",
+              zip: "48201",
+              country: "US",
+            },
+            billingSameAsShipping: true,
+          },
+          { checkoutRequestKey: "9d723950-a6e1-4bb9-b95a-58a43eeafb1b" },
+        ),
+      ).resolves.toMatchObject({
+        orderId: order.id,
+        clientSecret: "pi_existing_secret",
+        paymentIntentId: "pi_existing",
+      });
+      expect(mockFindOrCreateCustomer).not.toHaveBeenCalled();
+      expect(mockCreateOrder).not.toHaveBeenCalled();
+      expect(mockStripePaymentIntentRetrieve).toHaveBeenCalledWith("pi_existing");
+      expect(mockStripePaymentIntentCreate).not.toHaveBeenCalled();
+      if (!enabled) expect(mockClaimCheckoutRequest).not.toHaveBeenCalled();
+    },
+  );
 
   it("rejects guest checkout when customer accounts are required", async () => {
     const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
@@ -1097,6 +1367,184 @@ describe("ecommerce services", () => {
     expect(mockCreateOrder).not.toHaveBeenCalled();
   });
 
+  it("rejects disabled fresh checkout before inserting an idempotency claim", async () => {
+    const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", undefined);
+    mockProducts.push({
+      id: "p-digital",
+      name: "Digital Guide",
+      price: 5000,
+      active: true,
+      status: "published",
+      visibility: "online",
+      archivedAt: null,
+      requiresShipping: false,
+      productType: "digital",
+      fulfillmentType: "digital",
+    } as EcommerceProduct);
+    mockVariants.push({
+      id: "v-digital",
+      productId: "p-digital",
+      title: "Default",
+      price: 5000,
+      active: true,
+      status: "active",
+      isDefault: true,
+      trackInventory: false,
+      inventoryQuantity: 0,
+      allowBackorder: false,
+      optionValues: {},
+    } as EcommerceProductVariant);
+
+    await expect(
+      createEcommercePaymentIntent(
+        {
+          items: [{ productId: "p-digital", quantity: 1 }],
+          customer: { email: "buyer@example.com", name: "Buyer" },
+          shippingAddress: {
+            name: "Buyer",
+            address: "123 Main St",
+            city: "Detroit",
+            state: "MI",
+            zip: "48201",
+            country: "US",
+          },
+          billingSameAsShipping: true,
+        },
+        { checkoutRequestKey: "9d723950-a6e1-4bb9-b95a-58a43eeafb1b" },
+      ),
+    ).rejects.toMatchObject({
+      message: "Ecommerce provider transactions are awaiting operator activation",
+      statusCode: 409,
+    });
+    expect(mockFindOrCreateCustomer).not.toHaveBeenCalled();
+    expect(mockCreateOrder).not.toHaveBeenCalled();
+    expect(mockClaimCheckoutRequest).not.toHaveBeenCalled();
+    expect(mockStripePaymentIntentCreate).not.toHaveBeenCalled();
+  });
+
+  it("preserves manual risk review without provider activation", async () => {
+    const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", undefined);
+    mockGetDecryptedCategory.mockImplementation(async (category) =>
+      category === "ecommerce_fraud"
+        ? { ecommerce_fraud_settings: JSON.stringify({ riskReviewThreshold: 0 }) }
+        : {},
+    );
+    mockFindOrCreateCustomer.mockResolvedValue({ id: "review-customer" });
+    mockCreateOrder.mockResolvedValue({ id: "review-order" });
+    mockAttachCheckoutRequestOrder.mockResolvedValue({ id: "review-order" });
+    mockClaimCheckoutRequest.mockResolvedValue({ created: true, request: {} });
+    mockProducts.push({
+      id: "p-digital",
+      name: "Digital Guide",
+      price: 5000,
+      active: true,
+      status: "published",
+      visibility: "online",
+      archivedAt: null,
+      requiresShipping: false,
+      productType: "digital",
+      fulfillmentType: "digital",
+    } as EcommerceProduct);
+    mockVariants.push({
+      id: "v-digital",
+      productId: "p-digital",
+      title: "Default",
+      price: 5000,
+      active: true,
+      status: "active",
+      isDefault: true,
+      trackInventory: false,
+      inventoryQuantity: 0,
+      allowBackorder: false,
+      optionValues: {},
+    } as EcommerceProductVariant);
+
+    await expect(
+      createEcommercePaymentIntent(
+        {
+          items: [{ productId: "p-digital", quantity: 1 }],
+          customer: { email: "buyer@example.com", name: "Buyer" },
+          shippingAddress: {
+            name: "Buyer",
+            address: "123 Main St",
+            city: "Detroit",
+            state: "MI",
+            zip: "48201",
+            country: "US",
+          },
+          billingSameAsShipping: true,
+        },
+        { checkoutRequestKey: "9d723950-a6e1-4bb9-b95a-58a43eeafb1b" },
+      ),
+    ).rejects.toMatchObject({
+      message:
+        "This order needs a quick review before payment. Please contact support or try again later.",
+      statusCode: 409,
+    });
+    expect(mockCreateOrder).toHaveBeenCalledOnce();
+    expect(mockGetEcommerceStripeClient).not.toHaveBeenCalled();
+    expect(mockStripePaymentIntentCreate).not.toHaveBeenCalled();
+  });
+
+  it("does not create a provider transaction for a pending historical request", async () => {
+    const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", undefined);
+    mockGetCheckoutRequest.mockResolvedValue({ customerEmail: "buyer@example.com", orderId: null });
+    mockProducts.push({
+      id: "p-digital",
+      name: "Digital Guide",
+      price: 5000,
+      active: true,
+      status: "published",
+      visibility: "online",
+      archivedAt: null,
+      requiresShipping: false,
+      productType: "digital",
+      fulfillmentType: "digital",
+    } as EcommerceProduct);
+    mockVariants.push({
+      id: "v-digital",
+      productId: "p-digital",
+      title: "Default",
+      price: 5000,
+      active: true,
+      status: "active",
+      isDefault: true,
+      trackInventory: false,
+      inventoryQuantity: 0,
+      allowBackorder: false,
+      optionValues: {},
+    } as EcommerceProductVariant);
+
+    await expect(
+      createEcommercePaymentIntent(
+        {
+          items: [{ productId: "p-digital", quantity: 1 }],
+          customer: { email: "buyer@example.com", name: "Buyer" },
+          shippingAddress: {
+            name: "Buyer",
+            address: "123 Main St",
+            city: "Detroit",
+            state: "MI",
+            zip: "48201",
+            country: "US",
+          },
+          billingSameAsShipping: true,
+        },
+        { checkoutRequestKey: "9d723950-a6e1-4bb9-b95a-58a43eeafb1b" },
+      ),
+    ).rejects.toMatchObject({
+      message: "This checkout request is still being prepared. Retry in a moment.",
+      statusCode: 409,
+    });
+    expect(mockFindOrCreateCustomer).not.toHaveBeenCalled();
+    expect(mockCreateOrder).not.toHaveBeenCalled();
+    expect(mockClaimCheckoutRequest).not.toHaveBeenCalled();
+    expect(mockStripePaymentIntentCreate).not.toHaveBeenCalled();
+  });
+
   it("marks checkout orders failed when Stripe cannot create a PaymentIntent", async () => {
     const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
     const customer = { id: "customer-1", email: "buyer@example.com", name: "Buyer" };
@@ -1349,6 +1797,9 @@ describe("ecommerce services", () => {
       }),
       { idempotencyKey: `ecommerce_order_${order.id}_payment_intent` },
     );
+    expect(mockCreateOrder).toHaveBeenCalledWith(expect.any(Object), expect.any(Array), {
+      reservationExpiresAt: expect.any(Date),
+    });
     expect(mockUpdateOrder).toHaveBeenCalledWith(order.id, { stripePaymentIntentId: "pi_test" });
   });
 
@@ -1863,6 +2314,67 @@ describe("ecommerce services", () => {
     expect(publicPriced.lines[0]).not.toHaveProperty("productSnapshot");
   });
 
+  it("gates direct gateway refund creation even with a previously resolved client", async () => {
+    const { createPaymentGatewayRefund } =
+      await import("../services/ecommerce-payment-gateway-refund.service");
+    const stripe = await mockGetEcommerceStripeClient();
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", undefined);
+    const params = {
+      provider: "stripe" as const,
+      order: { id: "order", stripePaymentIntentId: "pi_synthetic" },
+      amount: 100,
+      idempotencyKey: "synthetic",
+    };
+    await expect(createPaymentGatewayRefund(params)).rejects.toMatchObject({ statusCode: 409 });
+    await expect(createPaymentGatewayRefund(params, stripe)).rejects.toMatchObject({
+      statusCode: 409,
+    });
+    expect(mockStripeRefundCreate).not.toHaveBeenCalled();
+  });
+
+  it("reports configured separately from activation and validates config before gating", async () => {
+    const actual = await vi.importActual<typeof import("../services/ecommerce-stripe.service")>(
+      "../services/ecommerce-stripe.service",
+    );
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", undefined);
+    await expect(actual.getEcommerceStripeTransactionClient()).rejects.toThrow(
+      "secret key is not configured",
+    );
+    mockGetDecryptedCategory.mockResolvedValue({
+      active_mode: "live",
+      live_secret_key: "sk_test_wrong",
+    });
+    await expect(actual.getEcommerceStripeTransactionClient()).rejects.toThrow("Live mode");
+    expect(await actual.getMaskedEcommerceStripeStatus()).toMatchObject({
+      configured: false,
+      providerTransactionsEnabled: false,
+      awaitingActivation: false,
+    });
+    mockGetDecryptedCategory.mockResolvedValue({
+      active_mode: "test",
+      test_secret_key: "sk_test_synthetic",
+    });
+    for (const flag of [undefined, "false", "TRUE", "1"]) {
+      vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", flag);
+      await expect(actual.getEcommerceStripeTransactionClient()).rejects.toMatchObject({
+        statusCode: 409,
+      });
+      expect(await actual.getMaskedEcommerceStripeStatus()).toMatchObject({
+        configured: true,
+        providerTransactionsEnabled: false,
+        awaitingActivation: true,
+      });
+      await expect(actual.getEcommerceStripeClient()).resolves.toBeDefined();
+    }
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", "true");
+    await expect(actual.getEcommerceStripeTransactionClient()).resolves.toBeDefined();
+    expect(await actual.getMaskedEcommerceStripeStatus()).toMatchObject({
+      configured: true,
+      providerTransactionsEnabled: true,
+      awaitingActivation: false,
+    });
+  });
+
   it("validates Stripe key mode separation", async () => {
     const {
       getEcommerceStripePublishableKey,
@@ -1981,7 +2493,34 @@ describe("ecommerce services", () => {
         amount: 4000,
         source: "manual",
       }),
-    ).rejects.toThrow(/exceeds refundable balance/);
+    ).rejects.toMatchObject({
+      message: "Refund amount exceeds refundable balance",
+      statusCode: 400,
+    });
+    expect(mockCreateRefund).not.toHaveBeenCalled();
+  });
+
+  it("returns not found before reserving a refund for a missing order", async () => {
+    const { createEcommerceRefund } = await import("../services/ecommerce-refund.service");
+    mockGetOrderWithDetails.mockResolvedValueOnce(undefined);
+    await expect(
+      createEcommerceRefund({ orderId: "missing", amount: 100, source: "manual" }),
+    ).rejects.toMatchObject({ statusCode: 404 });
+    expect(mockCreateRefund).not.toHaveBeenCalled();
+  });
+
+  it.each([0, -100])("rejects invalid refund amount %s before reserving funds", async (amount) => {
+    const { createEcommerceRefund } = await import("../services/ecommerce-refund.service");
+    mockGetOrderWithDetails.mockResolvedValueOnce({
+      id: "order-paid",
+      status: "paid",
+      paymentStatus: "paid",
+      totalAmount: 5000,
+      refunds: [],
+    });
+    await expect(
+      createEcommerceRefund({ orderId: "order-paid", amount, source: "manual" }),
+    ).rejects.toMatchObject({ statusCode: 400 });
     expect(mockCreateRefund).not.toHaveBeenCalled();
   });
 
@@ -2004,6 +2543,232 @@ describe("ecommerce services", () => {
       }),
     ).rejects.toThrow(/PayPal is configurable, but its operational adapter is not implemented yet/);
     expect(mockCreateRefund).not.toHaveBeenCalled();
+  });
+
+  it("reserves refundable balance before calling Stripe with a stable idempotency key", async () => {
+    const { createEcommerceRefund } = await import("../services/ecommerce-refund.service");
+    const order = {
+      id: "order-stripe-refund",
+      status: "paid",
+      paymentStatus: "paid",
+      totalAmount: 5000,
+      stripePaymentIntentId: "pi_refund",
+      refunds: [],
+    };
+    const reserved = {
+      id: "refund-local-1",
+      orderId: order.id,
+      amount: 2000,
+      source: "stripe",
+      status: "pending",
+    };
+    mockGetOrderWithDetails.mockResolvedValueOnce(order).mockResolvedValueOnce({
+      ...order,
+      refunds: [{ ...reserved, status: "processed", stripeRefundId: "re_123" }],
+    });
+    mockCreateRefund.mockResolvedValue(reserved);
+    mockStripeRefundCreate.mockResolvedValue({ id: "re_123", status: "succeeded" });
+    mockUpdateRefund.mockResolvedValue({
+      ...reserved,
+      status: "processed",
+      stripeRefundId: "re_123",
+    });
+
+    await createEcommerceRefund({
+      orderId: order.id,
+      amount: 2000,
+      source: "stripe",
+    });
+
+    expect(mockCreateRefund).toHaveBeenCalledWith(
+      expect.objectContaining({ orderId: order.id, status: "pending", source: "stripe" }),
+    );
+    expect(mockStripeRefundCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payment_intent: "pi_refund",
+        amount: 2000,
+        metadata: expect.objectContaining({ localRefundId: "refund-local-1" }),
+      }),
+      { idempotencyKey: "ecommerce_refund_refund-local-1" },
+    );
+    expect(mockUpdateRefund).toHaveBeenCalledWith(
+      "refund-local-1",
+      expect.objectContaining({ status: "processed", stripeRefundId: "re_123" }),
+    );
+  });
+
+  it("records an immediately failed Stripe refund as failed rather than pending", async () => {
+    const { createEcommerceRefund } = await import("../services/ecommerce-refund.service");
+    const order = {
+      id: "order-stripe-failed-refund",
+      status: "paid",
+      paymentStatus: "paid",
+      totalAmount: 5000,
+      stripePaymentIntentId: "pi_failed_refund",
+      refunds: [],
+    };
+    const reserved = {
+      id: "refund-local-failed",
+      orderId: order.id,
+      amount: 1000,
+      source: "stripe",
+      status: "pending",
+    };
+    mockGetOrderWithDetails.mockResolvedValueOnce(order).mockResolvedValueOnce({
+      ...order,
+      refunds: [{ ...reserved, status: "failed" }],
+    });
+    mockCreateRefund.mockResolvedValue(reserved);
+    mockStripeRefundCreate.mockResolvedValue({ id: "re_failed", status: "failed" });
+    mockUpdateRefund.mockResolvedValue({
+      ...reserved,
+      status: "failed",
+      stripeRefundId: "re_failed",
+    });
+
+    await createEcommerceRefund({
+      orderId: order.id,
+      amount: 1000,
+      source: "stripe",
+    });
+
+    expect(mockUpdateRefund).toHaveBeenCalledWith(
+      "refund-local-failed",
+      expect.objectContaining({ status: "failed", stripeRefundId: "re_failed" }),
+    );
+    expect(mockUpdateOrder).toHaveBeenCalledWith(order.id, { paymentStatus: "refund_failed" });
+  });
+
+  it("keeps an ambiguous Stripe failure reserved for reconciliation", async () => {
+    const { createEcommerceRefund } = await import("../services/ecommerce-refund.service");
+    const order = {
+      id: "order-stripe-timeout",
+      status: "paid",
+      paymentStatus: "paid",
+      totalAmount: 5000,
+      stripePaymentIntentId: "pi_timeout",
+      refunds: [],
+    };
+    mockGetOrderWithDetails.mockResolvedValue(order);
+    mockCreateRefund.mockResolvedValue({
+      id: "refund-local-timeout",
+      orderId: order.id,
+      amount: 1000,
+      source: "stripe",
+      status: "pending",
+    });
+    mockStripeRefundCreate.mockRejectedValue(new Error("provider timeout"));
+
+    await expect(
+      createEcommerceRefund({ orderId: order.id, amount: 1000, source: "stripe" }),
+    ).rejects.toThrow("provider timeout");
+    expect(mockUpdateRefund).not.toHaveBeenCalled();
+    expect(mockGetEcommerceStripeClient).toHaveBeenCalledOnce();
+    expect(mockGetEcommerceStripeClient.mock.invocationCallOrder[0]).toBeLessThan(
+      mockCreateRefund.mock.invocationCallOrder[0],
+    );
+    expect(mockCreateRefund.mock.invocationCallOrder[0]).toBeLessThan(
+      mockStripeRefundCreate.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("reconciles an ambiguous refund through its local Stripe metadata", async () => {
+    const { recordStripeRefundWebhook } = await import("../services/ecommerce-refund.service");
+    mockGetRefundByStripeRefundId.mockResolvedValue(undefined);
+    mockGetRefund.mockResolvedValue({
+      id: "refund-local-timeout",
+      orderId: "order-stripe-timeout",
+      amount: 1000,
+      status: "pending",
+      stripeRefundId: null,
+    });
+    mockUpdateRefund.mockResolvedValue({
+      id: "refund-local-timeout",
+      orderId: "order-stripe-timeout",
+      amount: 1000,
+      status: "processed",
+      stripeRefundId: "re_recovered",
+    });
+    mockGetOrderWithDetails.mockResolvedValue({
+      id: "order-stripe-timeout",
+      status: "paid",
+      paymentStatus: "refund_pending",
+      totalAmount: 5000,
+      refunds: [{ amount: 1000, status: "processed" }],
+    });
+
+    await recordStripeRefundWebhook({
+      stripeRefundId: "re_recovered",
+      localRefundId: "refund-local-timeout",
+      status: "succeeded",
+    });
+
+    expect(mockGetRefund).toHaveBeenCalledWith("refund-local-timeout");
+    expect(mockUpdateRefund).toHaveBeenCalledWith(
+      "refund-local-timeout",
+      expect.objectContaining({ stripeRefundId: "re_recovered", status: "processed" }),
+    );
+    expect(mockUpdateOrder).toHaveBeenCalledWith("order-stripe-timeout", {
+      paymentStatus: "partially_refunded",
+    });
+  });
+
+  it("reconciles a pending Stripe refund by matching its durable local metadata", async () => {
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", undefined);
+    const { reconcileEcommerceRefund } = await import("../services/ecommerce-refund.service");
+    mockGetRefund.mockResolvedValue({
+      id: "refund-local-timeout",
+      orderId: "order-stripe-timeout",
+      amount: 1000,
+      source: "stripe",
+      status: "pending",
+      stripeRefundId: null,
+    });
+    mockGetOrderWithDetails
+      .mockResolvedValueOnce({
+        id: "order-stripe-timeout",
+        status: "paid",
+        paymentStatus: "refund_pending",
+        totalAmount: 5000,
+        stripePaymentIntentId: "pi_timeout",
+        refunds: [{ amount: 1000, status: "pending" }],
+      })
+      .mockResolvedValueOnce({
+        id: "order-stripe-timeout",
+        status: "paid",
+        paymentStatus: "refund_pending",
+        totalAmount: 5000,
+        stripePaymentIntentId: "pi_timeout",
+        refunds: [{ amount: 1000, status: "processed" }],
+      });
+    mockStripeRefundList.mockResolvedValue({
+      data: [
+        {
+          id: "re_recovered",
+          status: "succeeded",
+          metadata: { localRefundId: "refund-local-timeout" },
+        },
+      ],
+    });
+    mockUpdateRefund.mockResolvedValue({
+      id: "refund-local-timeout",
+      orderId: "order-stripe-timeout",
+      amount: 1000,
+      source: "stripe",
+      status: "processed",
+      stripeRefundId: "re_recovered",
+    });
+
+    await reconcileEcommerceRefund("refund-local-timeout");
+
+    expect(mockStripeRefundList).toHaveBeenCalledWith({ payment_intent: "pi_timeout", limit: 100 });
+    expect(mockUpdateRefund).toHaveBeenCalledWith(
+      "refund-local-timeout",
+      expect.objectContaining({ status: "processed", stripeRefundId: "re_recovered" }),
+    );
+    expect(mockUpdateOrder).toHaveBeenCalledWith("order-stripe-timeout", {
+      paymentStatus: "partially_refunded",
+    });
   });
 
   it("does not double count a newly created refund returned by the refreshed order", async () => {
@@ -2058,7 +2823,9 @@ describe("ecommerce services", () => {
       paymentStatus: "paid",
     } as EcommerceOrder;
     mockGetOrder.mockResolvedValueOnce(pendingOrder).mockResolvedValueOnce(paidOrder);
-    mockMarkOrderPaidIfUnpaid.mockResolvedValueOnce(paidOrder);
+    mockSettlePaidOrder
+      .mockResolvedValueOnce({ order: paidOrder, transitioned: true })
+      .mockResolvedValueOnce({ order: paidOrder, transitioned: false });
     mockGetOrderWithDetails.mockResolvedValue({
       ...paidOrder,
       customer: null,
@@ -2070,11 +2837,11 @@ describe("ecommerce services", () => {
     await markEcommerceOrderPaid("order-1", "pi_123");
     await markEcommerceOrderPaid("order-1", "pi_123");
 
-    expect(mockMarkOrderPaidIfUnpaid).toHaveBeenCalledTimes(1);
+    expect(mockSettlePaidOrder).toHaveBeenCalledTimes(2);
     expect(mockUpdateOrder).not.toHaveBeenCalled();
-    expect(mockRecordCouponRedemptionForOrder).toHaveBeenCalledTimes(1);
-    expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledTimes(2);
-    expect(mockSendEcommerceOrderConfirmation).toHaveBeenCalledTimes(1);
+    expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
+    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
+    expect(mockSendEcommerceOrderConfirmation).not.toHaveBeenCalled();
   });
 
   it("does not send duplicate paid-order effects when another worker wins the paid transition", async () => {
@@ -2091,7 +2858,7 @@ describe("ecommerce services", () => {
       paymentStatus: "paid",
     } as EcommerceOrder;
     mockGetOrder.mockResolvedValue(pendingOrder);
-    mockMarkOrderPaidIfUnpaid.mockResolvedValue(undefined);
+    mockSettlePaidOrder.mockResolvedValue({ order: paidOrder, transitioned: false });
     mockGetOrderWithDetails.mockResolvedValue({
       ...paidOrder,
       customer: null,
@@ -2102,9 +2869,69 @@ describe("ecommerce services", () => {
 
     await markEcommerceOrderPaid("order-1", "pi_123");
 
-    expect(mockMarkOrderPaidIfUnpaid).toHaveBeenCalledWith("order-1", "pi_123");
+    expect(mockSettlePaidOrder).toHaveBeenCalledWith("order-1", "pi_123");
     expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
-    expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledTimes(1);
+    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
+    expect(mockSendEcommerceOrderConfirmation).not.toHaveBeenCalled();
+  });
+
+  it("reconciles a payment-link request through the atomic order settlement", async () => {
+    const { reconcileEcommercePaymentRequestSession } =
+      await import("../services/ecommerce-order.service");
+    const paidOrder = {
+      id: "order-payment-link-1",
+      status: "paid",
+      paymentStatus: "paid",
+      stripePaymentIntentId: "pi_payment_link_1",
+    } as EcommerceOrder;
+    const paidRequest = {
+      id: "request-payment-link-1",
+      orderId: paidOrder.id,
+      status: "paid",
+      stripePaymentIntentId: "pi_payment_link_1",
+    };
+    mockSettlePaymentRequestOrderBySession.mockResolvedValue({
+      request: paidRequest,
+      order: paidOrder,
+      transitioned: true,
+    });
+    mockGetOrderWithDetails.mockResolvedValue({
+      ...paidOrder,
+      customer: null,
+      items: [],
+      refunds: [],
+      shipments: [],
+    });
+
+    await expect(
+      reconcileEcommercePaymentRequestSession("cs_payment_link_1", "pi_payment_link_1"),
+    ).resolves.toEqual(paidRequest);
+
+    expect(mockSettlePaymentRequestOrderBySession).toHaveBeenCalledWith(
+      "cs_payment_link_1",
+      "pi_payment_link_1",
+    );
+    expect(mockSettlePaidOrder).not.toHaveBeenCalled();
+    expect(mockSendEcommerceOrderConfirmation).not.toHaveBeenCalled();
+  });
+
+  it("does not send a payment-link confirmation when settlement was already completed", async () => {
+    const { reconcileEcommercePaymentRequestSession } =
+      await import("../services/ecommerce-order.service");
+    const paidOrder = {
+      id: "order-payment-link-2",
+      status: "paid",
+      paymentStatus: "paid",
+    } as EcommerceOrder;
+    mockSettlePaymentRequestOrderBySession.mockResolvedValue({
+      request: { id: "request-payment-link-2", orderId: paidOrder.id, status: "paid" },
+      order: paidOrder,
+      transitioned: false,
+    });
+
+    await reconcileEcommercePaymentRequestSession("cs_payment_link_2", "pi_payment_link_2");
+
+    expect(mockGetOrderWithDetails).not.toHaveBeenCalled();
     expect(mockSendEcommerceOrderConfirmation).not.toHaveBeenCalled();
   });
 
@@ -2116,16 +2943,12 @@ describe("ecommerce services", () => {
       paymentStatus: "unpaid",
       stripePaymentIntentId: null,
     } as EcommerceOrder;
-    const mismatchedOrder = {
-      ...pendingOrder,
-      stripePaymentIntentId: "pi_other",
-    } as EcommerceOrder;
-    mockGetOrder.mockResolvedValueOnce(pendingOrder).mockResolvedValueOnce(mismatchedOrder);
-    mockMarkOrderPaidIfUnpaid.mockResolvedValue(undefined);
+    mockGetOrder.mockResolvedValue(pendingOrder);
+    mockSettlePaidOrder.mockRejectedValue(new Error("PaymentIntent does not match this order"));
 
     await expect(markEcommerceOrderPaid("order-1", "pi_123")).rejects.toThrow(/PaymentIntent/);
 
-    expect(mockMarkOrderPaidIfUnpaid).toHaveBeenCalledWith("order-1", "pi_123");
+    expect(mockSettlePaidOrder).toHaveBeenCalledWith("order-1", "pi_123");
     expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
     expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
     expect(mockSendEcommerceOrderConfirmation).not.toHaveBeenCalled();
@@ -2144,7 +2967,7 @@ describe("ecommerce services", () => {
       paymentStatus: "paid",
     } as EcommerceOrder;
     mockGetOrder.mockResolvedValue(pendingOrder);
-    mockUpdateOrder.mockResolvedValue(paidOrder);
+    mockSettlePaidOrder.mockResolvedValue({ order: paidOrder, transitioned: true });
     mockGetOrderWithDetails.mockResolvedValue({
       ...paidOrder,
       customer: null,
@@ -2157,16 +2980,17 @@ describe("ecommerce services", () => {
     const order = await updateAdminEcommerceOrder("order-admin-1", { status: "paid" });
 
     expect(order).toBe(paidOrder);
-    expect(mockUpdateOrder).toHaveBeenCalledWith("order-admin-1", {
-      status: "paid",
-      paymentStatus: "paid",
+    expect(mockSettlePaidOrder).toHaveBeenCalledWith("order-admin-1", null, {
+      method: "other",
+      reference: undefined,
+      markedBy: null,
     });
-    expect(mockRecordCouponRedemptionForOrder).toHaveBeenCalledWith("order-admin-1");
-    expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledWith("order-admin-1");
-    expect(mockSendEcommerceOrderStatusEmail).toHaveBeenCalledTimes(1);
+    expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
+    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
+    expect(mockSendEcommerceOrderStatusEmail).not.toHaveBeenCalled();
   });
 
-  it("does not refinalize inventory when an admin saves an already-paid order", async () => {
+  it("reconciles idempotent paid effects when an admin saves an already-paid order", async () => {
     const { updateAdminEcommerceOrder } = await import("../services/ecommerce-order.service");
     const paidOrder = {
       id: "order-admin-2",
@@ -2174,7 +2998,7 @@ describe("ecommerce services", () => {
       paymentStatus: "paid",
     } as EcommerceOrder;
     mockGetOrder.mockResolvedValue(paidOrder);
-    mockUpdateOrder.mockResolvedValue(paidOrder);
+    mockSettlePaidOrder.mockResolvedValue({ order: paidOrder, transitioned: false });
 
     await updateAdminEcommerceOrder(
       "order-admin-2",
@@ -2182,11 +3006,12 @@ describe("ecommerce services", () => {
       { id: "admin-1" },
     );
 
-    expect(mockUpdateOrder).toHaveBeenCalledWith("order-admin-2", {
-      status: "paid",
-      notes: "Already handled",
-      paymentStatus: "paid",
+    expect(mockSettlePaidOrder).toHaveBeenCalledWith("order-admin-2", null, {
+      method: "other",
+      reference: undefined,
+      markedBy: "admin-1",
     });
+    expect(mockUpdateOrder).toHaveBeenCalledWith("order-admin-2", { notes: "Already handled" });
     expect(mockCreateOrderNote).toHaveBeenCalledWith({
       orderId: "order-admin-2",
       authorId: "admin-1",
@@ -2263,6 +3088,34 @@ describe("ecommerce services", () => {
       updateAdminEcommerceOrder("order-admin-delivered", { status: "shipped" }),
     ).rejects.toThrow(/Delivered orders/);
     expect(mockUpdateOrder).not.toHaveBeenCalled();
+  });
+
+  it("requires a captured payment to be fully refunded before cancellation", async () => {
+    const { updateAdminEcommerceOrder } = await import("../services/ecommerce-order.service");
+    mockGetOrder
+      .mockResolvedValueOnce({
+        id: "order-admin-paid-cancel",
+        status: "paid",
+        paymentStatus: "paid",
+      } as EcommerceOrder)
+      .mockResolvedValueOnce({
+        id: "order-admin-refunded-cancel",
+        status: "paid",
+        paymentStatus: "refunded",
+      } as EcommerceOrder);
+    mockUpdateOrder.mockResolvedValue({
+      id: "order-admin-refunded-cancel",
+      status: "cancelled",
+      paymentStatus: "refunded",
+    } as EcommerceOrder);
+
+    await expect(
+      updateAdminEcommerceOrder("order-admin-paid-cancel", { status: "cancelled" }),
+    ).rejects.toThrow(/fully refunded/);
+    await expect(
+      updateAdminEcommerceOrder("order-admin-refunded-cancel", { status: "cancelled" }),
+    ).resolves.toMatchObject({ status: "cancelled", paymentStatus: "refunded" });
+    expect(mockUpdateOrder).toHaveBeenCalledTimes(1);
   });
 
   it("allows admin shipped transitions for paid active orders", async () => {
@@ -2602,6 +3455,11 @@ describe("ecommerce services", () => {
       updatedAt: new Date(),
     });
 
+    mockSettlePaidOrder.mockResolvedValue({
+      order: { id: "order-manual-1", status: "paid", paymentStatus: "paid" },
+      transitioned: true,
+    });
+
     const order = await createManualEcommerceOrder({
       customerId: customer.id,
       items: [{ productId: "p-manual", quantity: 2 }],
@@ -2612,8 +3470,8 @@ describe("ecommerce services", () => {
     expect(mockCreateOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         customerId: customer.id,
-        status: "paid",
-        paymentStatus: "paid",
+        status: "pending",
+        paymentStatus: "unpaid",
         subtotalAmount: 5000,
         totalAmount: 5000,
         isManualOrder: true,
@@ -2630,8 +3488,13 @@ describe("ecommerce services", () => {
         }),
       ],
     );
-    expect(mockRecordCouponRedemptionForOrder).toHaveBeenCalledWith("order-manual-1");
-    expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledWith("order-manual-1");
+    expect(mockSettlePaidOrder).toHaveBeenCalledWith("order-manual-1", null, {
+      method: "other",
+      reference: undefined,
+      markedBy: null,
+    });
+    expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
+    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
   });
 
   it("rejects manual orders for unknown customers before creating orders", async () => {
@@ -2649,7 +3512,43 @@ describe("ecommerce services", () => {
     expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
   });
 
+  it("keeps a newly created manual order pending when atomic paid settlement fails", async () => {
+    const { createManualEcommerceOrder } = await import("../services/ecommerce-order.service");
+    const customer = { id: "customer-1", email: "buyer@example.com", name: "Buyer" };
+    seedManualOrderProduct();
+    mockGetCustomer.mockResolvedValue(customer);
+    mockCreateOrder.mockResolvedValue({
+      id: "order-settlement-failed",
+      customerId: customer.id,
+      status: "pending",
+      paymentStatus: "unpaid",
+      totalAmount: 2500,
+      customer,
+      items: [],
+      refunds: [],
+      shipments: [],
+      fulfillments: [],
+      internalNotes: [],
+    });
+    mockSettlePaidOrder.mockRejectedValue(new Error("Insufficient inventory for variant v-manual"));
+
+    await expect(
+      createManualEcommerceOrder({
+        customerId: customer.id,
+        items: [{ productId: "p-manual", quantity: 1 }],
+      }),
+    ).rejects.toThrow(/Insufficient inventory/);
+
+    expect(mockCreateOrder).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "pending", paymentStatus: "unpaid" }),
+      expect.any(Array),
+    );
+    expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
+    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
+  });
+
   it("creates draft manual orders without deducting inventory", async () => {
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", undefined);
     const { createManualEcommerceOrderDraft } = await import("../services/ecommerce-order.service");
     const customer = { id: "customer-1", email: "buyer@example.com", name: "Buyer" };
     const createdOrder = {
@@ -2727,42 +3626,67 @@ describe("ecommerce services", () => {
       shipments: [],
       fulfillments: [],
     });
+    const originalPublicSiteOrigin = process.env.PUBLIC_SITE_ORIGIN;
+    const originalAdminOrigin = process.env.CORE_PLATFORM_ADMIN_ORIGIN;
+    const originalAppUrl = process.env.APP_URL;
+    process.env.PUBLIC_SITE_ORIGIN = "https://www.example.com";
+    process.env.CORE_PLATFORM_ADMIN_ORIGIN = "https://admin.example.com";
+    process.env.APP_URL = "https://admin.example.com";
+    try {
+      await createManualEcommerceOrderDraft({
+        customerId: customer.id,
+        items: [{ productId: "p-manual", quantity: 1 }],
+        paymentAction: "send_payment_link",
+        customReason: "Phone order",
+      });
 
-    await createManualEcommerceOrderDraft({
-      customerId: customer.id,
-      items: [{ productId: "p-manual", quantity: 1 }],
-      paymentAction: "send_payment_link",
-      customReason: "Phone order",
-    });
-
-    expect(mockCreatePaymentRequest).toHaveBeenCalledWith(
-      expect.objectContaining({
-        orderId: "order-link-1",
-        customerEmail: "buyer@example.com",
-        amount: 2500,
-        reason: "Phone order",
-      }),
-    );
-    expect(mockStripeCheckoutSessionCreate).toHaveBeenCalled();
-    expect(mockUpdateOrder).toHaveBeenCalledWith(
-      "order-link-1",
-      expect.objectContaining({
-        paymentStatus: "pending_payment",
-        stripeSessionId: "cs_test",
-        manualPaymentMethod: "payment_link",
-      }),
-    );
-    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
+      expect(mockGetEcommerceStripeClient).toHaveBeenCalledOnce();
+      expect(mockGetEcommerceStripeClient.mock.invocationCallOrder[0]).toBeLessThan(
+        mockCreateOrder.mock.invocationCallOrder[0],
+      );
+      expect(mockCreatePaymentRequest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderId: "order-link-1",
+          customerEmail: "buyer@example.com",
+          amount: 2500,
+          reason: "Phone order",
+        }),
+      );
+      expect(mockStripeCheckoutSessionCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success_url: expect.stringMatching(/^https:\/\/www\.example\.com\/order-success\?/),
+          cancel_url: "https://admin.example.com/admin/ecommerce/orders",
+        }),
+        expect.anything(),
+      );
+      expect(mockUpdateOrder).toHaveBeenCalledWith(
+        "order-link-1",
+        expect.objectContaining({
+          paymentStatus: "pending_payment",
+          stripeSessionId: "cs_test",
+          manualPaymentMethod: "payment_link",
+        }),
+      );
+      expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
+    } finally {
+      if (originalPublicSiteOrigin === undefined) delete process.env.PUBLIC_SITE_ORIGIN;
+      else process.env.PUBLIC_SITE_ORIGIN = originalPublicSiteOrigin;
+      if (originalAdminOrigin === undefined) delete process.env.CORE_PLATFORM_ADMIN_ORIGIN;
+      else process.env.CORE_PLATFORM_ADMIN_ORIGIN = originalAdminOrigin;
+      if (originalAppUrl === undefined) delete process.env.APP_URL;
+      else process.env.APP_URL = originalAppUrl;
+    }
   });
 
   it("marks manual orders paid and deducts inventory after external payment", async () => {
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", undefined);
     const { markManualEcommerceOrderPaid } = await import("../services/ecommerce-order.service");
     const paidOrder = {
       id: "order-manual-paid",
       status: "paid",
       paymentStatus: "paid",
     } as EcommerceOrder;
-    mockUpdateOrder.mockResolvedValue(paidOrder);
+    mockSettlePaidOrder.mockResolvedValue({ order: paidOrder, transitioned: true });
     mockGetOrderWithDetails.mockResolvedValue({
       ...paidOrder,
       customer: null,
@@ -2782,20 +3706,18 @@ describe("ecommerce services", () => {
       { id: "admin-1" },
     );
 
-    expect(mockUpdateOrder).toHaveBeenCalledWith(
-      "order-manual-paid",
-      expect.objectContaining({
-        status: "paid",
-        paymentStatus: "paid",
-        manualPaymentMethod: "cash",
-        manualPaymentReference: "receipt-12",
-        manualPaymentMarkedBy: "admin-1",
-      }),
-    );
+    expect(mockSettlePaidOrder).toHaveBeenCalledWith("order-manual-paid", null, {
+      method: "cash",
+      reference: "receipt-12",
+      markedBy: "admin-1",
+    });
     expect(mockCreateOrderNote).toHaveBeenCalledWith(
       expect.objectContaining({ body: "Paid at counter" }),
     );
-    expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledWith("order-manual-paid");
+    expect(mockUpdateOrder).toHaveBeenCalledWith("order-manual-paid", {
+      notes: "Paid at counter",
+    });
+    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
   });
 
   it("requires a reason for standalone custom payment requests", async () => {

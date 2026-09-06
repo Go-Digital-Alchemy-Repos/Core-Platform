@@ -4,6 +4,7 @@ import {
   loadBackupSnapshotFromKey,
   restoreBackupSnapshot,
 } from "../services/system-backup.service";
+import { assertBackupRestoreIdentity } from "../services/backup-restore-identity";
 
 function getArg(flag: string) {
   const index = process.argv.indexOf(flag);
@@ -32,13 +33,20 @@ async function main() {
   }
 
   const snapshot = await loadSnapshot();
-  await restoreBackupSnapshot(snapshot);
+  const identity = assertBackupRestoreIdentity(snapshot.manifest, {
+    targetStackId: process.env.CLIENT_STACK_ID,
+    allowLegacyBackup: process.argv.includes("--allow-legacy-backup"),
+  });
+  await restoreBackupSnapshot(snapshot, {
+    allowLegacyBackup: process.argv.includes("--allow-legacy-backup"),
+  });
   console.log(
     JSON.stringify(
       {
         restored: true,
         key: snapshot.manifest.key,
         createdAt: snapshot.manifest.createdAt,
+        identity: identity.kind,
       },
       null,
       2,

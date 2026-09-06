@@ -1,4 +1,5 @@
 import type { EcommerceProduct, SeoSettings } from "@shared/schema";
+import { getEffectivePublicSiteOrigin } from "../config/client-stack-origins";
 
 interface ProductFeedItem {
   id: string;
@@ -49,7 +50,7 @@ export function buildProductFeedItems(
   products: EcommerceProduct[],
   seo: SeoSettings | null,
 ): ProductFeedItem[] {
-  const siteUrl = (seo?.siteUrl || "").replace(/\/$/, "");
+  const siteUrl = getEffectivePublicSiteOrigin(seo?.siteUrl) || "";
   const brand = seo?.organizationName || seo?.siteName || "Core Platform";
   return products
     .filter(
@@ -88,7 +89,7 @@ export function buildProductFeedXml(input: {
   products: EcommerceProduct[];
   seo: SeoSettings | null;
 }): string {
-  const siteUrl = (input.seo?.siteUrl || "").replace(/\/$/, "");
+  const siteUrl = getEffectivePublicSiteOrigin(input.seo?.siteUrl) || "";
   const items = buildProductFeedItems(input.products, input.seo);
   const title = input.seo?.siteName || "Core Platform";
   const description = input.seo?.defaultMetaDescription || "Core Platform product feed";

@@ -4,7 +4,7 @@ import path from "path";
 import fs from "fs";
 import multer from "multer";
 import { authenticateToken } from "../middleware/auth";
-import { asyncHandler } from "../middleware/error-handler";
+import { AppError, asyncHandler } from "../middleware/error-handler";
 import { storage } from "../storage/index";
 import * as r2Service from "../services/r2.service";
 import {
@@ -155,6 +155,9 @@ router.post(
     }
 
     if (!publicUrl) {
+      if (process.env.NODE_ENV === "production") {
+        throw new AppError("Durable upload storage is unavailable", 503);
+      }
       ensureAttachmentDir();
       const localPath = path.join(LOCAL_ATTACHMENT_DIR, filename);
       fs.writeFileSync(localPath, fileBuffer);

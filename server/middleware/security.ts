@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
 import helmet from "helmet";
+import { loadClientSiteManifest } from "../services/client-site-manifest.service";
 import rateLimit from "express-rate-limit";
 import { logger } from "../utils/logger";
 
@@ -12,6 +13,7 @@ export function enforceRequiredSecrets() {
   const required: Record<string, string | undefined> = {
     SESSION_SECRET: process.env.SESSION_SECRET,
     DATABASE_URL: process.env.DATABASE_URL,
+    SETUP_TOKEN: process.env.SETUP_TOKEN,
   };
 
   const missing = Object.entries(required)
@@ -30,6 +32,21 @@ export function enforceRequiredSecrets() {
 }
 
 export function securityHeaders(): RequestHandler {
+  return createSecurityHeaders();
+}
+
+// Only an explicitly configured, fully validated manifest may extend frame-src.
+// An absent manifest keeps standalone Core restricted; an invalid one rejects startup.
+export async function configuredSecurityHeaders(
+  manifestPath: string | undefined,
+  corePlatformVersion: string,
+): Promise<RequestHandler> {
+  if (manifestPath === undefined) return securityHeaders();
+  const manifest = await loadClientSiteManifest(manifestPath, corePlatformVersion);
+  return createSecurityHeaders(manifest.origins.publicSite);
+}
+
+function createSecurityHeaders(publicSiteOrigin?: string): RequestHandler {
   return helmet({
     referrerPolicy: { policy: "strict-origin-when-cross-origin" },
     contentSecurityPolicy: {
@@ -83,7 +100,12 @@ export function securityHeaders(): RequestHandler {
           "https://analytics.twitter.com",
           "https://static.ads-twitter.com",
         ],
-        frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
+        frameSrc: [
+          "'self'",
+          "https://js.stripe.com",
+          "https://hooks.stripe.com",
+          ...(publicSiteOrigin ? [publicSiteOrigin] : []),
+        ],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
         formAction: ["'self'"],
@@ -147,6 +169,19 @@ export const apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: "Too many requests. Please slow down." },
+  skip: () => isDev,
+});
+
+export const crmInboundRateLimitPolicy = {
+  windowMs: 10 * 60 * 1000,
+  max: 60,
+  message: { message: "Too many CRM intake requests. Please try again shortly." },
+};
+
+export const crmInboundLimiter = rateLimit({
+  ...crmInboundRateLimitPolicy,
+  standardHeaders: true,
+  legacyHeaders: false,
   skip: () => isDev,
 });
 

@@ -6,6 +6,7 @@ import { PUBLIC_MENU_LOCATIONS, type CmsMenu, type PublicMenuLocation } from "@s
 import { verifyCmsPreviewToken } from "../utils/cms-preview-token";
 import { optionalAuth } from "../middleware/auth";
 import { canAccessResource } from "../services/membership-access.service";
+import { sanitizePublicCmsContent } from "../utils/sanitize-rich-html";
 
 const router = Router();
 
@@ -26,7 +27,7 @@ router.get(
         teaser: access.teaser ?? null,
       });
     }
-    res.json(page);
+    res.json({ ...page, content: sanitizePublicCmsContent(page.content) });
   }),
 );
 
@@ -41,7 +42,7 @@ router.get(
       return res.status(404).json({ error: "Preview not found" });
     }
 
-    res.json(page);
+    res.json({ ...page, content: sanitizePublicCmsContent(page.content) });
   }),
 );
 
@@ -64,7 +65,7 @@ router.get(
     if (!sidebar) {
       return res.status(404).json({ error: "No default sidebar configured" });
     }
-    res.json(sidebar);
+    res.json(sanitizePublicCmsContent(sidebar));
   }),
 );
 
@@ -76,7 +77,7 @@ router.get(
     if (!sidebar) {
       return res.status(404).json({ error: "Sidebar not found" });
     }
-    res.json(sidebar);
+    res.json(sanitizePublicCmsContent(sidebar));
   }),
 );
 

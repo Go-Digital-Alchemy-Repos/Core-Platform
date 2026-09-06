@@ -72,7 +72,7 @@ All admin routes require `admin` role and are registered under `/api/admin/`:
 | --------------------------- | ------ | -------------------------------------------------------------------------------------------------------- |
 | `/api/health`               | GET    | Basic health check (memory, uptime, version)                                                             |
 | `/api/health/ready`         | GET    | Readiness probe (checks DB connectivity)                                                                 |
-| `/api/health/metrics`       | GET    | Request metrics (dev or when METRICS_ENABLED)                                                            |
+| `/api/health/metrics`       | GET    | Metrics (development, or production with `METRICS_ENABLED` and bearer token)                            |
 | `/api/branding`             | GET    | Public branding settings for the frontend                                                                |
 | `/api/membership-tiers`     | GET    | Public tier listing                                                                                      |
 | `/api/seo/global`           | GET    | Global SEO settings                                                                                      |

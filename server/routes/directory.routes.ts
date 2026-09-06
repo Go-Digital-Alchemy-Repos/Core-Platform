@@ -9,21 +9,21 @@ import { getSiteFeatures } from "../services/site-features.service";
 import {
   DIRECTORY_MODE_PROFILE_ALIASES,
   getDirectoryExperienceMode,
+  type PublicDirectorySettings,
 } from "@shared/types/directory-settings";
+import type { TherapistWithUser } from "@shared/types/directory";
+import { serializePublicDirectoryProfile } from "../services/public-directory-profile.service";
 
 const router = Router();
 
-async function normalizeTherapistResult<
-  T extends { user?: { profileImageUrl?: string | null } | null },
->(item: T): Promise<T> {
-  if (!item.user) return item;
-  return {
-    ...item,
-    user: {
-      ...item.user,
-      profileImageUrl: (await r2Service.normalizePublicUrl(item.user.profileImageUrl)) ?? null,
-    },
-  };
+async function serializePublicTherapist(
+  item: TherapistWithUser,
+  settings: PublicDirectorySettings,
+) {
+  const profileImageUrl = item.user
+    ? ((await r2Service.normalizePublicUrl(item.user.profileImageUrl)) ?? null)
+    : null;
+  return serializePublicDirectoryProfile(item, settings, profileImageUrl);
 }
 
 router.get(
@@ -77,7 +77,9 @@ router.get(
 
     res.json({
       ...result,
-      items: await Promise.all(result.items.map(normalizeTherapistResult)),
+      items: await Promise.all(
+        result.items.map((item) => serializePublicTherapist(item, directorySettings)),
+      ),
     });
   }),
 );
@@ -104,7 +106,9 @@ router.get(
       directorySettings.directoryRequiresApprovedApplication,
       directoryMode,
     );
-    res.json(await Promise.all(featured.map(normalizeTherapistResult)));
+    res.json(
+      await Promise.all(featured.map((item) => serializePublicTherapist(item, directorySettings))),
+    );
   }),
 );
 
@@ -160,7 +164,7 @@ router.get(
       res.status(404).json({ message: "Therapist not found" });
       return;
     }
-    res.json(await normalizeTherapistResult(profile));
+    res.json(await serializePublicTherapist(profile, directorySettings));
   }),
 );
 

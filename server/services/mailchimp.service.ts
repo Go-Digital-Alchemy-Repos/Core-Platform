@@ -55,25 +55,33 @@ async function mailchimpRequest<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
-  const response = await fetch(buildMailchimpUrl(config, path), {
-    ...init,
-    headers: {
-      Authorization: getAuthHeader(config.apiKey),
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
-  });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Mailchimp request failed (${response.status}): ${body}`);
+  const controller = new AbortController();
+  const deadline = setTimeout(
+    () => controller.abort(new Error("mailchimp_request_timeout")),
+    30_000,
+  );
+  deadline.unref();
+  try {
+    const response = await fetch(buildMailchimpUrl(config, path), {
+      ...init,
+      signal: controller.signal,
+      headers: {
+        Authorization: getAuthHeader(config.apiKey),
+        "Content-Type": "application/json",
+        ...(init?.headers || {}),
+      },
+    });
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`Mailchimp request failed (${response.status}): ${body}`);
+    }
+    if (response.status === 204) return undefined as T;
+    // Await body consumption before clearing the abort deadline as headers can
+    // arrive while the remote server leaves the response body open indefinitely.
+    return (await response.json()) as T;
+  } finally {
+    clearTimeout(deadline);
   }
-
-  if (response.status === 204) {
-    return undefined as T;
-  }
-
-  return response.json() as Promise<T>;
 }
 
 function getSubscriberHash(email: string): string {
@@ -100,14 +108,18 @@ export async function testMailchimpConnection(): Promise<{ success: boolean; mes
   }
 }
 
-export async function syncContactToMailchimp(input: {
-  email: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  tags?: string[];
-}): Promise<void> {
+export async function syncContactToMailchimp(
+  input: {
+    email: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    tags?: string[];
+  },
+  options: { requireConfigured?: boolean } = {},
+): Promise<void> {
   const config = await getMailchimpConfig();
   if (!config) {
+    if (options.requireConfigured) throw new Error("mailchimp_not_configured");
     logger.email.info("[mailchimp] Skipping contact sync because Mailchimp is not configured");
     return;
   }

@@ -179,10 +179,17 @@ export const membershipProcessedWebhookEvents = pgTable(
     provider: text("provider").notNull(),
     eventId: text("event_id").notNull(),
     eventType: text("event_type").notNull(),
-    processedAt: timestamp("processed_at").defaultNow(),
+    status: text("status").notNull().default("processing"),
+    attemptCount: integer("attempt_count").notNull().default(1),
+    processingToken: varchar("processing_token"),
+    startedAt: timestamp("started_at").notNull().defaultNow(),
+    completedAt: timestamp("completed_at"),
+    lastError: text("last_error"),
+    processedAt: timestamp("processed_at"),
   },
   (table) => [
     uniqueIndex("idx_membership_webhook_provider_event").on(table.provider, table.eventId),
+    index("idx_membership_webhook_status_started").on(table.status, table.startedAt),
   ],
 );
 

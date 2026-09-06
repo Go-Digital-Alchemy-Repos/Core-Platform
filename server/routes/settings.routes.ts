@@ -1,3 +1,4 @@
+import { CRM_PIPELINE_SETTING_KEY } from "@shared/crm-pipeline-settings";
 import { Router, type NextFunction, type Request, type Response } from "express";
 import multer from "multer";
 import { z } from "zod";
@@ -17,6 +18,7 @@ import { ensureSystemEmailTemplates } from "../services/system-email-templates.s
 import { testMailchimpConnection } from "../services/mailchimp.service";
 import { BRANDING_OPTIONS, isImageMime } from "../services/image-optimizer";
 import { createCmsMediaAssetFromUpload } from "../services/cms-media-upload.service";
+import { isDesignEditableBrandingSetting } from "../utils/branding-settings-policy";
 
 const router = Router();
 
@@ -53,7 +55,7 @@ function requireSettingWritePermission(req: Request, res: Response, next: NextFu
     next();
     return;
   }
-  if (req.body?.category === "branding" && hasAdminPermission(req.user, "design")) {
+  if (isDesignEditableBrandingSetting(req.body) && hasAdminPermission(req.user, "design")) {
     next();
     return;
   }
@@ -96,6 +98,18 @@ router.put(
   requireSettingWritePermission,
   asyncHandler(async (req, res) => {
     const data = upsertSettingSchema.parse(req.body);
+    if (data.key === CRM_PIPELINE_SETTING_KEY)
+      return res
+        .status(400)
+        .json({ message: "Use /api/admin/crm/settings/pipeline to update pipeline settings" });
+    if (req.user?.role !== "admin") {
+      const existing = (await storage.settings.getAllSettings()).find(
+        (setting) => setting.key === data.key,
+      );
+      if (existing && (existing.category !== "branding" || existing.isSecret)) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+    }
     const setting = await storage.settings.upsertSetting(
       data.key,
       data.value,
@@ -173,6 +187,10 @@ router.delete(
   "/settings/:key",
   requireRole("admin"),
   asyncHandler(async (req, res) => {
+    if (paramString(req.params.key) === CRM_PIPELINE_SETTING_KEY)
+      return res
+        .status(400)
+        .json({ message: "Use /api/admin/crm/settings/pipeline to restore pipeline defaults" });
     await storage.settings.deleteSetting(paramString(req.params.key));
     res.json({ message: "Setting deleted" });
   }),

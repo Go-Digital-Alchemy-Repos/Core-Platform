@@ -25,6 +25,8 @@ import ecommerceRoutes from "./ecommerce.routes";
 import careersRoutes from "./careers.routes";
 import portfolioRoutes from "./portfolio.routes";
 import membershipRoutes from "./membership.routes";
+import clientSiteContentRoutes from "./client-site-content.routes";
+import clientStackOnboardingRoutes from "./client-stack-onboarding.routes";
 import {
   requireBlogEnabled,
   requireCareersEnabled,
@@ -39,6 +41,17 @@ import {
 const router = Router();
 
 router.use(authenticateToken);
+
+// CRM editors must reach their scoped router before the admin-only root mounts.
+router.use("/crm", requireCrmEnabled, requireAdminPermission("crm"), crmRoutes);
+
+// Content editors need the same scoped access before the admin-only root mounts.
+router.use(
+  "/client-site-content",
+  requireCmsEnabled,
+  requireAdminPermission("content"),
+  clientSiteContentRoutes,
+);
 
 router.use("/", requireRole("admin"), dashboardRoutes);
 router.use(
@@ -58,6 +71,7 @@ router.use("/events", requireEventsEnabled, requireAdminPermission("content"), e
 router.use("/blog", requireBlogEnabled, requireAdminPermission("content"), blogRoutes);
 router.use("/", requireAdminPermission("content"), registrationRoutes);
 router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsRoutes);
+router.use("/client-stack-onboarding", requireRole("admin"), clientStackOnboardingRoutes);
 router.use(
   "/cms",
   requireCmsEnabled,
@@ -77,7 +91,6 @@ router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsAudi
 router.use("/cms", requireCmsEnabled, requireAdminPermission("design"), cmsMenusRoutes);
 router.use("/cms", requireCmsEnabled, requireAdminPermission("design"), cmsSidebarsRoutes);
 router.use("/", requireAdminPermission("content"), formsRoutes);
-router.use("/crm", requireCrmEnabled, requireAdminPermission("crm"), crmRoutes);
 router.use("/ecommerce", requireRole("admin"), ecommerceRoutes);
 router.use("/membership", requireMembershipEnabled, requireRole("admin"), membershipRoutes);
 router.use("/careers", requireCareersEnabled, requireAdminPermission("content"), careersRoutes);
