@@ -136,3 +136,56 @@ notification table is absent before its additive migration. Normal candidate
 `35a1ef3` remains pending its final hosted browser checks at this checkpoint.
 Recovery HTTP and transaction aggregates are retained in the private cutover
 directory. Business interruption ends only after normal runtime is verified.
+
+
+## Normal maintenance accepted; uploads reopened
+
+Final candidate `35a1ef3` passed hosted run 34009648410, including Verify and all
+22 Better Farms pilot cases. Normal attempt `b25432a5` stopped at required-secret
+startup validation: `SETUP_TOKEN` was absent. Root securely provisioned a random
+value through Railway stdin, retained it only in the service secret store, and
+retried the unchanged artifact. The setup endpoint cannot overwrite an existing
+admin. Deployment `3a0b406a-7ffe-414f-a1c3-40517eb5f3ef` succeeded; migrations
+completed at 03:55:55Z and public readiness was verified at 03:56:26Z.
+
+Independent read-only post-upgrade evidence confirmed the exact compiled artifact
+SHA256 `931935e8797837fe1f8cf53f0eeb784a96585a804d266a576e020705e7b081ea`, all four
+historical order states, one manual processed refund, no provider-linked orders
+or refunds, empty notification/form/webhook queues and expected new schema and
+idempotency constraints. Actual direct Node PID1, namespace, retained backup
+prefix and 45-second drain were verified. All five settings screens loaded in
+the authenticated live admin without changing values. Media bytes matched.
+Recovery deployment `c040f4f4` is REMOVED.
+
+Uploads reopened in deployment `3c748492-7c61-4d5a-8eec-ce33a07d0aba`, using the
+same exact artifact. Actual freeze=false and an authenticated empty upload's
+400 missing-file response confirm admission reopened without creating an object.
+Readiness was 200 at 04:00:44Z. Previous frozen normal `3a0b406a` is REMOVED.
+Provider transactions remain disabled. The original object, copy audit chain,
+backup and isolated recovery artifact remain retained. This accepts Core
+maintenance, not Better Farms domain/content launch or provider activation.
+
+Future preflight must validate all normal-entrypoint required secret names and
+Railway configuration types before pausing business admission. Recovery success
+alone does not establish that the normal application has all required settings.
+PR11 was updated with this evidence and submitted for main-branch integration.
+
+
+PR11 merged at 04:01:26Z as `a99bb7efeb4c007789c20da91ff0e2d395452836`.
+Automatic main deployment `26d0c65b-0521-4aef-b146-86fb3d12a6ed` reached SUCCESS.
+Actual runtime commit and exact compiled artifact matched; uploads remain open,
+provider transactions disabled, namespace and backup prefix retained, and PID1
+is direct Node. Readiness passed at 04:03:21Z. Prior `3c748492` and `3a0b406a`
+are REMOVED. The maintenance cutover is complete. Broader client launch, CRM
+custom-field release, provider acceptance and ecommerce completion goals remain
+active.
+
+CRM follow-up on the separate `codex/crm-custom-fields` branch: typed field and
+mapping UI plus actual desktop/mobile journeys are accepted through `919b4f8`.
+Backup rehearsal restored 109 tables exactly and exposed an inherited repeated
+profile-backfill defect. Fix `ed3ee09` preserves existing preferences and nullable
+fields, backfilling only newly added legacy columns atomically. Independent
+review accepted it and root reran four PostgreSQL tests successfully; the owned
+fixture was removed. Updated recovery evidence and release integration remain
+pending. None of this later CRM work is claimed as deployed in the maintenance
+release.
