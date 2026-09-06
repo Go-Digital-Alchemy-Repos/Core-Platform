@@ -151,3 +151,17 @@ nonzero. Database statements and storage operations have deadlines. Database idl
 shutdown errors are contained so raw connection errors cannot escape through those paths.
 The command requires the candidate source and installed dependencies (including `tsx`);
 it is not a dist-only executable. No production invocation or copy is implied by its tests.
+
+
+### Built command
+
+`npm run build` emits `dist/operations/verify-legacy-upload-migration.mjs`. Run it with
+`node dist/operations/verify-legacy-upload-migration.mjs --plan /private/plan.json --approval /private/approval.json`.
+The bundle includes application helpers and resolves `pg` and AWS SDK from installed production
+dependencies; it does not require TypeScript sources or `tsx` on the service. The built artifact
+must still be delivered through a reviewed operational path; its existence locally is not a
+claim that this tool is available on the current production deployment.
+
+CI checks missing-input rejection from a detached temporary directory through both the real
+file and a symlink entrypoint. This catches silent entrypoint skips caused by path normalization.
+It proves packaging and sanitized rejection, not a valid live source/provider dry run.

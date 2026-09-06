@@ -1,6 +1,6 @@
-import { constants } from "node:fs";
+import { constants, realpathSync } from "node:fs";
 import { open } from "node:fs/promises";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { S3Client } from "@aws-sdk/client-s3";
 import { databasePoolConfig } from "../config/database";
@@ -149,6 +149,14 @@ export async function main(args: string[], env: NodeJS.ProcessEnv) {
     if (pool) await pool.end().catch(() => undefined);
   }
 }
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+function isDirectInvocation(): boolean {
+  if (!process.argv[1]) return false;
+  try {
+    return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
+if (isDirectInvocation()) {
   process.exitCode = await main(process.argv.slice(2), process.env);
 }

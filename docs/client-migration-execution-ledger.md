@@ -5,6 +5,20 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Standalone migration command packaging
+
+The production build now emits `dist/operations/verify-legacy-upload-migration.mjs`, bundling
+application helpers while using installed production `pg`/AWS dependencies. A detached smoke
+check exposed a silent entrypoint skip through macOS path aliases; the entrypoint now compares
+resolved filesystem paths. Both direct and symlinked launches return the expected sanitized
+missing-input error with exit1. The command runs without source files or `tsx`. CI now repeats
+this packaging check after building; it does not claim valid database/provider acceptance.
+
+Root passed all 18 command/source tests, types, scoped lint, full build and the detached check.
+The artifact SHA256 was `6c1c584a8d74e95c34318d2f1264f9db328637b02d81b7bfdbd0d9819da2e95e`.
+An additional detached run used the exact-main hotfix dependency install successfully. No
+production delivery, source inventory refresh, provider read or copy was performed in this step.
+
 ### Exact-origin images, source-file verification and read-only migration tooling
 
 Site `21eeb76b33c1258c75a001296074b880ef85f87f` now permits hero images from the exact configured

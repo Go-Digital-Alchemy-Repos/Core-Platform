@@ -1,4 +1,5 @@
 import { build as esbuild } from "esbuild";
+import { buildUploadVerifier } from "./build-upload-verifier";
 import { build as viteBuild } from "vite";
 import { rm, cp, readFile } from "fs/promises";
 
@@ -29,6 +30,8 @@ async function buildAll() {
     external: ["sharp"],
     logLevel: "info",
   });
+
+  await buildUploadVerifier();
 
   console.log("copying migrations...");
   await cp("migrations", "dist/migrations", { recursive: true });
