@@ -506,7 +506,7 @@ export function DirectoryBrowserSection({
     showTravelOption,
   ]);
 
-  const { data, isLoading } = useQuery<PaginatedTherapists>({
+  const { data, isLoading, isError, refetch } = useQuery<PaginatedTherapists>({
     queryKey: ["/api/therapists", queryParams],
     queryFn: async () => {
       const res = await fetch(`/api/therapists?${queryParams}`);
@@ -660,7 +660,7 @@ export function DirectoryBrowserSection({
                       {subheading}
                     </p>
                   )}
-                  {!isLoading && (
+                  {!isLoading && !isError && (
                     <p
                       className="text-xs text-muted-foreground flex items-center gap-1 mt-[10px] mb-[10px]"
                       data-testid="text-results-count"
@@ -978,6 +978,20 @@ export function DirectoryBrowserSection({
             >
               {isLoading ? (
                 <ListSkeletons />
+              ) : isError ? (
+                <div
+                  role="alert"
+                  className="py-16 px-4 text-center"
+                  data-testid="directory-load-error"
+                >
+                  <p className="text-sm font-medium">Unable to load the directory</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Please try again in a moment.
+                  </p>
+                  <Button variant="outline" size="sm" className="mt-4" onClick={() => refetch()}>
+                    Try again
+                  </Button>
+                </div>
               ) : therapists.length === 0 ? (
                 <div
                   className="flex flex-col items-center justify-center py-16 px-4 text-center"

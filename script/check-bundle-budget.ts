@@ -19,7 +19,9 @@ const budgets: Budget[] = [
   { pattern: /^index-.*\.css$/, maxKiB: 225, label: "entry CSS" },
   { pattern: /^vendor-.*\.js$/, maxKiB: 1_100, label: "shared vendor JavaScript" },
   { pattern: /^stripe-.*\.js$/, maxKiB: 175, label: "Stripe checkout JavaScript" },
-  { pattern: /^maps-.*\.js$/, maxKiB: 250, label: "map JavaScript" },
+  // MapLibre includes the vector renderer and worker; isolated from the shared vendor chunk.
+  { pattern: /^maps-.*\.js$/, maxKiB: 1_100, label: "map JavaScript" },
+  { pattern: /^maplibre-gl-worker-.*\.js$/, maxKiB: 525, label: "map worker JavaScript" },
   { pattern: /^charts-.*\.js$/, maxKiB: 350, label: "charts JavaScript" },
   { pattern: /^tiptap-.*\.js$/, maxKiB: 225, label: "rich text editor JavaScript" },
   { pattern: /^prosemirror-.*\.js$/, maxKiB: 275, label: "editor engine JavaScript" },
