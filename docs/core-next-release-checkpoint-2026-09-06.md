@@ -86,9 +86,14 @@ and label transports are not connected, and non-Stripe refund adapters remain
 unsupported. A configurable integration is not a delivered operational capability.
 These remain product completion work, with provider selection and sandbox
 acceptance required before activation. The separate category
-parent validation gap remains open: dangling or cyclic parents require an explicit
-service validation/concurrency contract; the Woo transaction lock alone does not
-fix category API writes after a rollback commits.
+parent integrity gap remains open. Normal sequential API requests already reject
+missing, self and descendant parents. Validation currently occurs before the
+storage write, however, so races and direct storage callers can bypass it;
+existing cyclic ancestry can cause unbounded traversal. Backend transaction
+validation and a consistent lock order shared with Woo, plus cycle-safe admin
+repair visibility, are now authorized in isolated worktrees. Preserve inactive
+parent eligibility, soft deletion and existing response semantics. No migration
+or silent rewrite of historical category data is planned.
 
 Better Farms content/assets/domain acceptance and final build/runtime origin
 agreement remain open. The reusable website build/deployment playbook follows
