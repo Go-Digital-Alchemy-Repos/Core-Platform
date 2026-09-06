@@ -1,4 +1,4 @@
-import { eq, and, ilike, or, sql, type SQL, desc } from "drizzle-orm";
+import { isNull, eq, and, ilike, or, sql, type SQL, desc } from "drizzle-orm";
 import { db } from "../db";
 import {
   directoryProfileMedia,
@@ -43,7 +43,10 @@ const filterOptionsCache = new MemoryCache<DirectoryFilterOptions>(FILTER_CACHE_
 const FILTER_OPTIONS_KEY = "filter_options";
 
 function buildFilterConditions(params: InternalSearchParams): SQL[] {
-  const conditions: SQL[] = [eq(therapistProfiles.isActive, true), eq(users.isSuspended, false)];
+  const conditions: SQL[] = [
+    eq(therapistProfiles.isActive, true),
+    or(isNull(therapistProfiles.userId), eq(users.isSuspended, false))!,
+  ];
 
   if (params.requireApprovedApplication !== false) {
     conditions.push(eq(therapistProfiles.isApproved, true));
@@ -174,7 +177,7 @@ export class TherapistStorage {
   }
 
   async getProfileMediaUsage(): Promise<
-    Array<{ media: DirectoryProfileMedia; profile: TherapistProfile; user: User }>
+    Array<{ media: DirectoryProfileMedia; profile: TherapistProfile; user: User | null }>
   > {
     return db
       .select({
@@ -184,7 +187,7 @@ export class TherapistStorage {
       })
       .from(directoryProfileMedia)
       .innerJoin(therapistProfiles, eq(directoryProfileMedia.profileId, therapistProfiles.id))
-      .innerJoin(users, eq(therapistProfiles.userId, users.id));
+      .leftJoin(users, eq(therapistProfiles.userId, users.id));
   }
 
   async listProfilesPaginated(params: InternalSearchParams = {}): Promise<PaginatedTherapists> {
@@ -196,7 +199,7 @@ export class TherapistStorage {
     const [countResult] = await db
       .select({ count: sql<number>`count(*)` })
       .from(therapistProfiles)
-      .innerJoin(users, eq(therapistProfiles.userId, users.id))
+      .leftJoin(users, eq(therapistProfiles.userId, users.id))
       .where(and(...conditions));
 
     const total = Number(countResult.count);
@@ -212,7 +215,7 @@ export class TherapistStorage {
         },
       })
       .from(therapistProfiles)
-      .innerJoin(users, eq(therapistProfiles.userId, users.id))
+      .leftJoin(users, eq(therapistProfiles.userId, users.id))
       .where(and(...conditions))
       .orderBy(...orderBy)
       .limit(pageSize)
@@ -221,7 +224,12 @@ export class TherapistStorage {
     return {
       items: results.map((r) => ({
         ...r.profile,
-        user: r.user,
+        user: r.user ?? {
+          firstName: r.profile.title || "Location",
+          lastName: "",
+          email: "",
+          profileImageUrl: null,
+        },
       })),
       total,
       page,
@@ -246,9 +254,9 @@ export class TherapistStorage {
     const langResult = await db.execute(
       sql`SELECT DISTINCT unnest(${therapistProfiles.languages}) AS lang
           FROM ${therapistProfiles}
-          INNER JOIN ${users} ON ${therapistProfiles.userId} = ${users.id}
+          LEFT JOIN ${users} ON ${therapistProfiles.userId} = ${users.id}
           WHERE ${therapistProfiles.isActive} = true
-            AND ${users.isSuspended} = false
+            AND (${therapistProfiles.userId} IS NULL OR ${users.isSuspended} = false)
             ${approvalSql}
             ${modeSql}
           ORDER BY lang`,
@@ -257,9 +265,9 @@ export class TherapistStorage {
     const countryResult = await db.execute(
       sql`SELECT DISTINCT ${therapistProfiles.country} AS country
           FROM ${therapistProfiles}
-          INNER JOIN ${users} ON ${therapistProfiles.userId} = ${users.id}
+          LEFT JOIN ${users} ON ${therapistProfiles.userId} = ${users.id}
           WHERE ${therapistProfiles.isActive} = true
-            AND ${users.isSuspended} = false
+            AND (${therapistProfiles.userId} IS NULL OR ${users.isSuspended} = false)
             ${approvalSql}
             ${modeSql}
             AND ${therapistProfiles.country} IS NOT NULL
@@ -287,11 +295,24 @@ export class TherapistStorage {
         },
       })
       .from(therapistProfiles)
-      .innerJoin(users, eq(therapistProfiles.userId, users.id))
-      .where(and(eq(therapistProfiles.id, id), eq(users.isSuspended, false)));
+      .leftJoin(users, eq(therapistProfiles.userId, users.id))
+      .where(
+        and(
+          eq(therapistProfiles.id, id),
+          or(isNull(therapistProfiles.userId), eq(users.isSuspended, false))!,
+        ),
+      );
 
     if (results.length === 0) return undefined;
-    return { ...results[0].profile, user: results[0].user };
+    return {
+      ...results[0].profile,
+      user: results[0].user ?? {
+        firstName: results[0].profile.title || "Location",
+        lastName: "",
+        email: "",
+        profileImageUrl: null,
+      },
+    };
   }
 
   async getAllProfiles(): Promise<TherapistWithUser[]> {
@@ -306,9 +327,17 @@ export class TherapistStorage {
         },
       })
       .from(therapistProfiles)
-      .innerJoin(users, eq(therapistProfiles.userId, users.id));
+      .leftJoin(users, eq(therapistProfiles.userId, users.id));
 
-    return results.map((r) => ({ ...r.profile, user: r.user }));
+    return results.map((r) => ({
+      ...r.profile,
+      user: r.user ?? {
+        firstName: r.profile.title || "Location",
+        lastName: "",
+        email: "",
+        profileImageUrl: null,
+      },
+    }));
   }
 
   async countProfiles(): Promise<number> {
@@ -331,7 +360,7 @@ export class TherapistStorage {
     const conditions: SQL[] = [
       eq(therapistProfiles.isFeatured, true),
       eq(therapistProfiles.isActive, true),
-      eq(users.isSuspended, false),
+      or(isNull(therapistProfiles.userId), eq(users.isSuspended, false))!,
     ];
 
     if (requireApprovedApplication) {
@@ -353,11 +382,19 @@ export class TherapistStorage {
         },
       })
       .from(therapistProfiles)
-      .innerJoin(users, eq(therapistProfiles.userId, users.id))
+      .leftJoin(users, eq(therapistProfiles.userId, users.id))
       .where(and(...conditions))
       .limit(6);
 
-    return results.map((r) => ({ ...r.profile, user: r.user }));
+    return results.map((r) => ({
+      ...r.profile,
+      user: r.user ?? {
+        firstName: r.profile.title || "Location",
+        lastName: "",
+        email: "",
+        profileImageUrl: null,
+      },
+    }));
   }
 
   async countPending(): Promise<number> {
