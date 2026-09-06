@@ -2051,3 +2051,26 @@ and budgets remain green.
   files, 546 tests), production build, formatting, and bundle budgets passed locally.
 - **Safety boundary:** no account was created, no identity or credential was accessed, and no Railway, R2,
   DNS, backup, restore, or production infrastructure was changed.
+
+### 2026-09-06 — External migration ledger and isolated CRM progress
+
+- **Maintenance candidate:** unchanged at `6ea326ae620b5fcd4b5c10ef1cd1f62724e0c230`;
+  hosted run 34006542042 passed for that exact head. Operator tooling remains on
+  `codex/durable-upload-ledger`, separate from the application candidate.
+- **Storage evidence:** authenticated bucket inspection found no completed-object
+  expiration rule. The audit-only probe at `ad73b6a` wrote two approved records
+  and a second source-runtime process verified exact hashes against an externally
+  retained receipt. No media copy or upload freeze occurred. See
+  [operations checkpoint](maintenance-operations-checkpoint.md) for exact evidence,
+  retention limits, current replica/process inventory and remaining cutover steps.
+- **Recovery correction:** `codex/namespace-rollback` at `a9d21d2` now explicitly
+  starts the read-only recovery entrypoint with a 45-second drain; its reviewed
+  binary hash is unchanged. Hosted run 34008130360 was in progress when recorded.
+  The previous temporary restored backup file was absent; exact storage retrieval
+  is being revalidated before live freeze.
+- **CRM-2:** isolated `codex/crm-custom-fields` accepted API `64b98ef`, settings UI
+  `122182c` and atomic manual creation/conversion `dba987e`. Root passed 24 UI tests,
+  47 service/API tests and 24 PostgreSQL-suite tests; independent reviews found no
+  blockers in these bounded slices. Record editors, explicit form mapping and
+  pinned durable intake snapshots are in progress. Whole-journey browser and
+  populated backup/restore acceptance remain required before CRM release.
