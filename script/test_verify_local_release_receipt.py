@@ -21,8 +21,20 @@ class ReceiptTests(unittest.TestCase):
         self.evidence = self.root/'evidence'; self.evidence.mkdir()
         self.checkout = self.root/'checkout'; self.checkout.mkdir()
         self.git('init', '-q')
+        original_suites = copy.deepcopy(v.DB_SUITES)
+        self.addCleanup(lambda: (v.DB_SUITES.clear(), v.DB_SUITES.update(original_suites)))
+        synthetic = b'describe.skipIf(!fixture)("synthetic", () => {});\n'
+        self.synthetic_source = synthetic
+        fixture_script = SCRIPT.read_text()
+        for suite in v.DB_SUITES.values():
+            fixture_script = fixture_script.replace(suite['sha256'], hashlib.sha256(synthetic).hexdigest())
+            suite['sha256'] = hashlib.sha256(synthetic).hexdigest()
+        self.script = self.root/'synthetic-verifier.py'
+        self.script.write_text(fixture_script)
+        for path in v.suite_inventory(v.CORE_GATES):
+            file=self.checkout/path;file.parent.mkdir(parents=True,exist_ok=True);file.write_bytes(synthetic)
         (self.checkout/'tracked.txt').write_text('synthetic\n')
-        self.git('add', 'tracked.txt'); self.git('commit', '-qm', 'fixture')
+        self.git('add', '.'); self.git('commit', '-qm', 'fixture')
         self.expected = {'candidate': self.git('rev-parse', 'HEAD'), 'tree': self.git('rev-parse', 'HEAD^{tree}'), 'base': self.git('rev-parse', 'HEAD')}
         self.manifest = self.make_manifest('core')
 
@@ -37,7 +49,7 @@ class ReceiptTests(unittest.TestCase):
             (self.evidence/path).write_text(path)
             m['evidence'].append({'path':path,'sha256':hashlib.sha256(path.encode()).hexdigest(),'sanitized':True})
         for name in sorted(gates):
-            m['gates'].append({'id': name, 'inputs':v.PINNED_INPUTS.get(name, {}), **self.expected, 'status': 'passed', 'exitCode': 0, 'testsPassed': 1, 'testsSkipped': 0, 'optInGateExclusions': [], 'evidence': ['evidence.json'], 'cleanup': {'containersRemoved': True, 'volumesRemoved': True, 'processesStopped': True} if name in v.FIXTURE_GATES else None})
+            m['gates'].append({'id': name, 'inputs':v.PINNED_INPUTS.get(name, {}), **self.expected, 'status': 'passed', 'exitCode': 0, 'testsPassed': sum(x['testsPassed'] for x in v.gate_suites(name)) if name in v.DB_GATES else 1, 'testsSkipped': sum(x['ordinarySkipped'] for x in v.suite_inventory(gates).values()) if name == 'ordinary-tests' else 0, 'optInGateExclusions': sorted(v.DB_GATES & gates) if name == 'ordinary-tests' else [], 'testSuites': v.gate_suites(name) if name in v.DB_GATES else [], 'evidence': ['evidence.json'], 'cleanup': {'containersRemoved': True, 'volumesRemoved': True, 'processesStopped': True} if name in v.FIXTURE_GATES else None})
         self.sign(m)
         return m
 
@@ -60,7 +72,7 @@ class ReceiptTests(unittest.TestCase):
             with self.subTest(change=change), self.assertRaises(v.InvalidReceipt):self.check(m)
 
     def test_versions_profiles_unknown_fields_and_truthy_values(self):
-        for key,value in [('version',1),('version',3),('version',True),('profile','unknown'),('profile','crm'),('secret','not-accepted')]:
+        for key,value in [('version',1),('version',4),('version',True),('profile','unknown'),('profile','crm'),('secret','not-accepted')]:
             m=copy.deepcopy(self.manifest);m[key]=value
             with self.subTest(key=key,value=value),self.assertRaises(v.InvalidReceipt):self.check(m)
         m=copy.deepcopy(self.manifest);m['observations']['cleanBefore']='true'
@@ -90,7 +102,7 @@ class ReceiptTests(unittest.TestCase):
         with self.assertRaises(v.InvalidReceipt):self.check(m)
 
     def test_unit_opt_in_skips_have_fixed_exclusions_and_real_gates(self):
-        m=copy.deepcopy(self.manifest);g=next(x for x in m['gates'] if x['id']=='ordinary-tests');g['testsSkipped']=57;g['optInGateExclusions']=sorted(v.DB_GATES & v.CORE_GATES);self.sign(m)
+        m=copy.deepcopy(self.manifest);g=next(x for x in m['gates'] if x['id']=='ordinary-tests');g['testsSkipped']=sum(x['ordinarySkipped'] for x in v.suite_inventory(v.CORE_GATES).values());g['optInGateExclusions']=sorted(v.DB_GATES & v.CORE_GATES);self.sign(m)
         self.assertEqual(self.check(m)['structuralVerification'],'passed')
         g['optInGateExclusions'].append('invented-reason')
         with self.assertRaises(v.InvalidReceipt):self.check(m)
@@ -138,19 +150,26 @@ class ReceiptTests(unittest.TestCase):
         wrong={**self.expected,'candidate':'0'*40}
         with self.assertRaisesRegex(v.InvalidReceipt,'stale-head'):v.checkout_identity(self.checkout,wrong)
         marker=self.checkout/'shared/schema/crm-custom-fields.ts';marker.parent.mkdir(parents=True);marker.write_text('// synthetic')
+        for path in v.suite_inventory(v.CRM_GATES):
+            file=self.checkout/path;file.parent.mkdir(parents=True,exist_ok=True);file.write_bytes(self.synthetic_source)
         self.git('add','.');self.git('commit','-qm','crm');expected={**self.expected,'candidate':self.git('rev-parse','HEAD'),'tree':self.git('rev-parse','HEAD^{tree}')}
         self.assertEqual(v.checkout_identity(self.checkout,expected),('crm',frozenset()))
 
     def feature_candidate(self, paths):
         for path in paths:
-            file=self.checkout/path;file.parent.mkdir(parents=True,exist_ok=True);file.write_text('-- synthetic migration\n')
+            file=self.checkout/path;file.parent.mkdir(parents=True,exist_ok=True);file.write_bytes(self.synthetic_source) if path in v.DB_SUITES else file.write_text('-- synthetic migration\n')
+        for path in v.suite_inventory(v.required_gates(v.checkout_policy(paths))):
+            file=self.checkout/path;file.parent.mkdir(parents=True,exist_ok=True);file.write_bytes(self.synthetic_source)
         self.git('add','.');self.git('commit','-qm','migration features')
         self.expected.update(candidate=self.git('rev-parse','HEAD'),tree=self.git('rev-parse','HEAD^{tree}'))
         return v.checkout_identity(self.checkout,self.expected)
 
     def add_gate(self, manifest, name):
         gate=copy.deepcopy(next(g for g in manifest['gates'] if g['id']=='atomic-settings'))
-        gate['id']=name;manifest['gates'].append(gate)
+        gate['id']=name;gate['testSuites']=v.gate_suites(name);gate['testsPassed']=sum(x['testsPassed'] for x in gate['testSuites']);manifest['gates'].append(gate)
+        required={g['id'] for g in manifest['gates']}
+        ordinary=next(g for g in manifest['gates'] if g['id']=='ordinary-tests')
+        ordinary.update(testsSkipped=sum(x['ordinarySkipped'] for x in v.suite_inventory(required).values()),optInGateExclusions=sorted(v.DB_GATES & required))
         self.sign(manifest)
 
     def test_features_required_independently_of_core_or_crm_profile(self):
@@ -180,7 +199,7 @@ class ReceiptTests(unittest.TestCase):
                 self.sign(broken)
                 with self.subTest(name=name,field=field),self.assertRaises(v.InvalidReceipt):v.verify(broken,self.evidence,self.expected,policy)
         ordinary=next(g for g in m['gates'] if g['id']=='ordinary-tests')
-        ordinary.update(testsSkipped=2,optInGateExclusions=sorted(v.DB_GATES & (v.CORE_GATES|policy[1])))
+        ordinary.update(testsSkipped=sum(x['ordinarySkipped'] for x in v.suite_inventory(v.CORE_GATES|policy[1]).values()),optInGateExclusions=sorted(v.DB_GATES & (v.CORE_GATES|policy[1])))
         self.sign(m)
         self.assertEqual(v.verify(m,self.evidence,self.expected,policy)['structuralVerification'],'passed')
         ordinary['optInGateExclusions'].remove('atomic-fulfillment');self.sign(m)
@@ -191,7 +210,7 @@ class ReceiptTests(unittest.TestCase):
         self.assertEqual(policy,('core',frozenset(v.MIGRATION_GATES.values())))
         self.manifest=self.make_manifest('core')
         (self.evidence/'manifest.json').write_text(json.dumps(self.manifest))
-        command=['python3',str(SCRIPT),'--evidence-dir',str(self.evidence),'--manifest','manifest.json','--checkout',str(self.checkout)]
+        command=['python3',str(self.script),'--evidence-dir',str(self.evidence),'--manifest','manifest.json','--checkout',str(self.checkout)]
         for key,value in self.expected.items():command.extend(['--expected-'+key,value])
         result=subprocess.run(command,capture_output=True,text=True)
         self.assertEqual(result.returncode,1)
@@ -202,6 +221,95 @@ class ReceiptTests(unittest.TestCase):
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)
         self.assertEqual(v.checkout_policy(['server/migrate-standalone-locations.database.test.ts','server/storage/ecommerce-atomic-fulfillment.database.test.ts']),('core',frozenset()))
 
+    def test_v3_new_database_source_obligations_cannot_be_suppressed(self):
+        for path, gate in v.DATABASE_FILE_GATES.items():
+            policy = v.checkout_policy([path])
+            self.assertEqual(policy, ('core', frozenset({gate})))
+            manifest = self.make_manifest('core')
+            with self.subTest(path=path), self.assertRaisesRegex(v.InvalidReceipt, 'missing-or-extra-gates'):
+                v.verify(manifest, self.evidence, self.expected, policy)
+            self.add_gate(manifest, gate)
+            self.assertEqual(v.verify(manifest, self.evidence, self.expected, policy)['databaseFileGatesRequired'], [gate])
+
+    def test_v3_valid_28_gate_cli_bundle_and_exact_optin_exclusions(self):
+        policy = self.feature_candidate(['migrations/0062_crm_custom_fields.sql', *v.MIGRATION_GATES, *v.DATABASE_FILE_GATES])
+        manifest = self.make_manifest('crm')
+        for name in sorted(policy[1]): self.add_gate(manifest, name)
+        ordinary = next(g for g in manifest['gates'] if g['id'] == 'ordinary-tests')
+        ordinary.update(testsSkipped=99, optInGateExclusions=sorted(v.DB_GATES))
+        self.sign(manifest)
+        self.assertEqual(v.verify(manifest, self.evidence, self.expected, policy)['gatesVerified'], 28)
+        (self.evidence/'manifest.json').write_text(json.dumps(manifest))
+        command = ['python3', str(self.script), '--evidence-dir', str(self.evidence), '--manifest', 'manifest.json', '--checkout', str(self.checkout)]
+        for key, value in self.expected.items(): command.extend(['--expected-'+key,value])
+        result = subprocess.run(command,capture_output=True,text=True)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        for name in set(v.DATABASE_FILE_GATES.values()):
+            for change in ('missing','old-label','zero','skip','cleanup','exclusion'):
+                bad = copy.deepcopy(manifest)
+                gate = next(g for g in bad['gates'] if g['id'] == name)
+                if change == 'missing': bad['gates'].remove(gate)
+                elif change == 'old-label': gate['id'] = 'atomic-settings'
+                elif change == 'zero': gate['testsPassed'] = 0
+                elif change == 'skip': gate['testsSkipped'] = 1
+                elif change == 'cleanup': gate['cleanup']['volumesRemoved'] = False
+                elif change == 'exclusion': next(g for g in bad['gates'] if g['id'] == 'ordinary-tests')['optInGateExclusions'].remove(name)
+                self.sign(bad)
+                with self.subTest(gate=name,change=change),self.assertRaises(v.InvalidReceipt):
+                    v.verify(bad,self.evidence,self.expected,policy)
+        manifest['version'] = 2
+        self.sign(manifest)
+        with self.assertRaisesRegex(v.InvalidReceipt,'unsupported-version'):
+            v.verify(manifest,self.evidence,self.expected,policy)
+
+    def test_v3_source_hash_missing_runtime_required_and_unknown_suites(self):
+        policy = self.feature_candidate(list(v.RUNTIME_GATES))
+        self.assertEqual(policy[1], frozenset(v.DATABASE_FILE_GATES.values()))
+        path = self.checkout/'server/services/woocommerce-import-merchant-race.database.test.ts'
+        path.write_text('changed suite')
+        self.git('add','.');self.git('commit','-qm','changed')
+        self.expected.update(candidate=self.git('rev-parse','HEAD'),tree=self.git('rev-parse','HEAD^{tree}'))
+        with self.assertRaisesRegex(v.InvalidReceipt,'changed-suite-source'):
+            v.checkout_identity(self.checkout,self.expected)
+        path.unlink()
+        self.git('add','.');self.git('commit','-qm','removed')
+        self.expected.update(candidate=self.git('rev-parse','HEAD'),tree=self.git('rev-parse','HEAD^{tree}'))
+        with self.assertRaisesRegex(v.InvalidReceipt,'missing-required-suite-source'):
+            v.checkout_identity(self.checkout,self.expected)
+        path.write_bytes(self.synthetic_source)
+        for name,content in [('unknown.database.test.ts','fixture'),('other.test.ts','test.runIf(enabled)("case", () => {});')]:
+            unknown=self.checkout/name;unknown.write_text(content)
+            self.git('add','.');self.git('commit','-qm','unknown')
+            self.expected.update(candidate=self.git('rev-parse','HEAD'),tree=self.git('rev-parse','HEAD^{tree}'))
+            with self.assertRaisesRegex(v.InvalidReceipt,'unknown-opt-in-suite'):
+                v.checkout_identity(self.checkout,self.expected)
+            unknown.unlink()
+
+    def test_known_suite_cannot_be_excluded_by_removed_feature_marker(self):
+        path=self.checkout/'server/storage/crm-custom-fields.database.test.ts'
+        path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(self.synthetic_source)
+        self.git('add','.');self.git('commit','-qm','uncovered suite')
+        self.expected.update(candidate=self.git('rev-parse','HEAD'),tree=self.git('rev-parse','HEAD^{tree}'))
+        with self.assertRaisesRegex(v.InvalidReceipt,'uncovered-known-suite'):
+            v.checkout_identity(self.checkout,self.expected)
+
+    def test_v3_partial_woo_inventory_and_mismatched_aggregates(self):
+        policy = v.checkout_policy(list(v.DATABASE_FILE_GATES))
+        manifest=self.make_manifest('core')
+        for name in sorted(policy[1]):self.add_gate(manifest,name)
+        for change in ('only-four','wrong-total','old-source','suite-skipped','ordinary-total','duplicate-suite'):
+            bad=copy.deepcopy(manifest)
+            gate=next(g for g in bad['gates'] if g['id']=='woo-catalog-rollback')
+            if change=='only-four':
+                gate['testSuites']=[x for x in gate['testSuites'] if x['testsPassed']==4];gate['testsPassed']=4
+            elif change=='wrong-total':gate['testsPassed']=4
+            elif change=='old-source':gate['testSuites'][0]['sourceSha256']='0'*64
+            elif change=='suite-skipped':gate['testSuites'][0]['testsSkipped']=1
+            elif change=='duplicate-suite':gate['testSuites'][1]=gate['testSuites'][0]
+            else:next(g for g in bad['gates'] if g['id']=='ordinary-tests')['testsSkipped']+=1
+            self.sign(bad)
+            with self.subTest(change=change),self.assertRaises(v.InvalidReceipt):v.verify(bad,self.evidence,self.expected,policy)
+
     def test_crm_migration_cannot_be_hidden_by_declared_core_profile(self):
         policy=self.feature_candidate(['migrations/0062_crm_custom_fields.sql',*v.MIGRATION_GATES])
         with self.assertRaisesRegex(v.InvalidReceipt,'invalid-profile'):
@@ -209,7 +317,7 @@ class ReceiptTests(unittest.TestCase):
 
     def test_cli_actual_clean_checkout_and_safe_failure(self):
         (self.evidence/'manifest.json').write_text(json.dumps(self.manifest))
-        command=['python3',str(SCRIPT),'--evidence-dir',str(self.evidence),'--manifest','manifest.json','--checkout',str(self.checkout)]
+        command=['python3',str(self.script),'--evidence-dir',str(self.evidence),'--manifest','manifest.json','--checkout',str(self.checkout)]
         for k,value in self.expected.items():command += ['--expected-'+k,value]
         result=subprocess.run(command,capture_output=True,text=True)
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)

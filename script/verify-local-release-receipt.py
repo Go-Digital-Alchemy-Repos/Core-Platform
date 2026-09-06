@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Offline V2 local release receipt consistency verifier. No publishing or credential handling."""
+"""Offline V3 local release receipt consistency verifier. No publishing or credential handling."""
 import argparse
 import hashlib
 import json
@@ -9,7 +9,7 @@ import re
 import stat
 import subprocess
 
-VERSION = 2
+VERSION = 3
 CORE_GATES = frozenset({
     'locked-dependencies', 'types', 'lint', 'format', 'ordinary-tests',
     'deployment-config-source', 'deployment-config-compiled',
@@ -24,7 +24,12 @@ MIGRATION_GATES = {
     'migrations/0061_standalone_locations.sql': 'standalone-migration',
     'migrations/0063_atomic_ecommerce_fulfillment.sql': 'atomic-fulfillment',
 }
-DB_GATES = frozenset(MIGRATION_GATES.values()) | frozenset({'backup-form-reservation-ny', 'backup-form-reservation-utc',
+DATABASE_FILE_GATES = {
+    'server/storage/crm-follow-ups.database.test.ts': 'crm-follow-ups',
+    'server/services/woocommerce-import-rollback.database.test.ts': 'woo-catalog-rollback',
+    'server/services/woocommerce-import-merchant-race.database.test.ts': 'woo-catalog-rollback',
+}
+DB_GATES = frozenset(DATABASE_FILE_GATES.values()) | frozenset(MIGRATION_GATES.values()) | frozenset({'backup-form-reservation-ny', 'backup-form-reservation-utc',
                      'atomic-settings', 'crm-persistence', 'crm-mapping', 'crm-profile-migration'})
 FIXTURE_GATES = DB_GATES | frozenset({'fresh-migrations-twice', 'historical-populated-upgrade',
     'production-runtime', 'application-browser', 'better-farms-pilot', 'crm-populated-upgrade', 'crm-capture-restore'})
@@ -33,6 +38,64 @@ PINNED_INPUTS = {
     'historical-populated-upgrade': {'baselineCommit': 'a006f36a3c4f37566c71b278d561844b45fb3b81'},
     'crm-populated-upgrade': {'baselineCommit': 'a99bb7efeb4c007789c20da91ff0e2d395452836'},
 }
+DB_SUITES = {'server/services/system-backup.database.test.ts': {'sha256': '8db3db6ff8d6d1d5c25ab9a8b11734a7ed7d2e4d2bde73431605dfd345c6bb98',
+                                                    'passed': 7,
+                                                    'ordinarySkipped': 7,
+                                                    'gates': ['backup-form-reservation-ny',
+                                                              'backup-form-reservation-utc']},
+ 'server/storage/forms-effects.database.test.ts': {'sha256': 'aed1b51e5c70925a8a2535d622aa096b88486a217b79528168825e6d67435891',
+                                                   'passed': 8,
+                                                   'ordinarySkipped': 8,
+                                                   'gates': ['backup-form-reservation-ny',
+                                                             'backup-form-reservation-utc']},
+ 'server/storage/ecommerce-reservation-expiry.database.test.ts': {'sha256': 'a4d943626effc5d7bb96bb85a344a3a909bdeda2c016afa5d65e76dee87af4d6',
+                                                                  'passed': 4,
+                                                                  'ordinarySkipped': 4,
+                                                                  'gates': ['backup-form-reservation-ny',
+                                                                            'backup-form-reservation-utc']},
+ 'server/__tests__/settings-atomic.db.test.ts': {'sha256': 'ca33232b0c406f32d36dfb9ca16c9729e6ac89324d48a98e3c69f2c1fcfd7a3b',
+                                                 'passed': 5,
+                                                 'ordinarySkipped': 5,
+                                                 'gates': ['atomic-settings']},
+ 'server/storage/crm-custom-fields.database.test.ts': {'sha256': 'e24549effb9a56bb1a5805bb60ad668c3ab3b0f55ddf736b1bea56fdb33b98bf',
+                                                       'passed': 24,
+                                                       'ordinarySkipped': 18,
+                                                       'gates': ['crm-persistence']},
+ 'server/storage/crm-form-mapping.database.test.ts': {'sha256': 'f67438a9adced0ee8c6f85650f2072bc911c5b995f5bd6544f6ea583b4a04e47',
+                                                      'passed': 11,
+                                                      'ordinarySkipped': 11,
+                                                      'gates': ['crm-mapping']},
+ 'server/migrate-crm-profile.database.test.ts': {'sha256': '71cd684638b33c9f307f879b83956be4e47117e20894ab9cdc3b6b4f44687060',
+                                                 'passed': 4,
+                                                 'ordinarySkipped': 4,
+                                                 'gates': ['crm-profile-migration']},
+ 'server/migrate-standalone-locations.database.test.ts': {'sha256': '17d4af8d2a7ea398193cb1e5e7de68834cd91db6dcde8954fa16cae271e8fee2',
+                                                          'passed': 1,
+                                                          'ordinarySkipped': 1,
+                                                          'gates': ['standalone-migration']},
+ 'server/storage/ecommerce-atomic-fulfillment.database.test.ts': {'sha256': 'c4dd1cf89fb2927f61f9be5830c1b5728d0ded15a371ed75895d1c19dd4fb5d5',
+                                                                  'passed': 14,
+                                                                  'ordinarySkipped': 14,
+                                                                  'gates': ['atomic-fulfillment']},
+ 'server/storage/crm-follow-ups.database.test.ts': {'sha256': '176dca8e4caaa6761ac0621674860a6041b45e9039dc156476297534c2ab1068',
+                                                    'passed': 7,
+                                                    'ordinarySkipped': 7,
+                                                    'gates': ['crm-follow-ups']},
+ 'server/services/woocommerce-import-rollback.database.test.ts': {'sha256': 'd134971f9fd49cbfd871522ede2574647c8c484ec50df79d4ad8e297a0c1c9bc',
+                                                                  'passed': 4,
+                                                                  'ordinarySkipped': 4,
+                                                                  'gates': ['woo-catalog-rollback']},
+ 'server/services/woocommerce-import-merchant-race.database.test.ts': {'sha256': 'a2a5c76247fc09790a24b430c5d1fe1b6f0dfa1fccdff2e94ef8c5ba7e637dbb',
+                                                                       'passed': 16,
+                                                                       'ordinarySkipped': 16,
+                                                                       'gates': ['woo-catalog-rollback']}}
+RUNTIME_GATES = {
+    "server/storage/crm-follow-ups.storage.ts": "crm-follow-ups",
+    "server/services/crm-follow-ups.service.ts": "crm-follow-ups",
+    "server/routes/admin/crm-follow-ups.routes.ts": "crm-follow-ups",
+    "server/services/woocommerce-import-drizzle.repository.ts": "woo-catalog-rollback",
+}
+
 MAX_MANIFEST = 256 * 1024
 MAX_FILE = 32 * 1024 * 1024
 MAX_TOTAL = 256 * 1024 * 1024
@@ -110,21 +173,47 @@ def checkout_identity(checkout, expected):
     require(not git(checkout, 'status', '--porcelain=v1', '--untracked-files=all'), 'dirty-checkout')
     git(checkout, 'merge-base', '--is-ancestor', expected['base'], expected['candidate'])
     tracked = git(checkout, 'ls-tree', '-r', '--name-only', expected['candidate']).splitlines()
-    return checkout_policy(tracked)
+    policy = checkout_policy(tracked)
+    required = required_gates(policy)
+    required_suites = suite_inventory(required)
+    require(set(required_suites) <= set(tracked), 'missing-required-suite-source')
+    require((set(DB_SUITES) & set(tracked)) <= set(required_suites), 'uncovered-known-suite')
+    for path, suite in required_suites.items():
+        data = read_bounded(checkout, path, MAX_FILE)
+        require(hashlib.sha256(data).hexdigest() == suite['sha256'], 'changed-suite-source')
+    for path in tracked:
+        if not re.search(r'\.(?:test|spec)\.[cm]?[jt]sx?$', path):
+            continue
+        # Conservative supported discovery, not a TypeScript parser. Known suite pins cover aliases.
+        data = read_bounded(checkout, path, MAX_FILE).decode('utf8')
+        suspicious = path.endswith(('.database.test.ts', '.db.test.ts')) or re.search(r'\b(?:describe|test|it)\s*\.\s*(?:skipIf|runIf|skip)\b', data)
+        require(not suspicious or path in DB_SUITES, 'unknown-opt-in-suite')
+    return policy
 
 def checkout_policy(tracked):
     # Source presence creates obligations; receipt profile/gate declarations cannot remove them.
     tracked = frozenset(tracked)
     profile = 'crm' if {'shared/schema/crm-custom-fields.ts', 'migrations/0062_crm_custom_fields.sql'} & tracked else 'core'
-    migration_gates = frozenset(gate for path, gate in MIGRATION_GATES.items() if path in tracked)
-    return (profile, migration_gates)
+    source_gates = frozenset(gate for path, gate in {**MIGRATION_GATES, **DATABASE_FILE_GATES, **RUNTIME_GATES}.items() if path in tracked)
+    return (profile, source_gates)
+
+def required_gates(policy):
+    profile, source_gates = policy
+    return CORE_GATES | (CRM_GATES if profile == 'crm' else frozenset()) | source_gates
+
+def suite_inventory(gates):
+    return {path: suite for path, suite in DB_SUITES.items() if set(suite['gates']) & set(gates)}
+
+def gate_suites(name):
+    return [{'path': path, 'sourceSha256': suite['sha256'], 'testsPassed': suite['passed'], 'testsSkipped': 0}
+            for path, suite in sorted(suite_inventory({name}).items())]
 
 def review_digest(manifest):
     body = {key: value for key, value in manifest.items() if key != 'review'}
     return hashlib.sha256(json.dumps(body, sort_keys=True, separators=(',', ':'), ensure_ascii=True).encode()).hexdigest()
 
 def verify(manifest, root, expected, detected_policy):
-    detected_profile, migration_gates = detected_policy
+    detected_profile, source_gates = detected_policy
     keys(manifest, {'version', 'profile', 'candidate', 'tree', 'base', 'operator', 'observations', 'gates', 'evidence', 'artifacts', 'review'})
     require(type(manifest['version']) is int and manifest['version'] == VERSION, 'unsupported-version')
     require(manifest['profile'] in ('core', 'crm') and manifest['profile'] == detected_profile, 'invalid-profile')
@@ -147,12 +236,12 @@ def verify(manifest, root, expected, detected_policy):
         require(total <= MAX_TOTAL, 'evidence-too-large')
         require(hashlib.sha256(data).hexdigest() == entry['sha256'], 'evidence-hash-mismatch')
         hashes[entry['path']] = entry['sha256']
-    required = CORE_GATES | (CRM_GATES if detected_profile == 'crm' else frozenset()) | migration_gates
+    required = CORE_GATES | (CRM_GATES if detected_profile == 'crm' else frozenset()) | source_gates
     gates = manifest['gates']
     require(type(gates) is list and len(gates) == len(required), 'missing-or-extra-gates')
     seen = set(); referenced = set()
     for gate in gates:
-        keys(gate, {'id', 'candidate', 'tree', 'base', 'status', 'exitCode', 'testsPassed', 'testsSkipped', 'optInGateExclusions', 'evidence', 'cleanup', 'inputs'})
+        keys(gate, {'id', 'candidate', 'tree', 'base', 'status', 'exitCode', 'testsPassed', 'testsSkipped', 'optInGateExclusions', 'evidence', 'cleanup', 'inputs', 'testSuites'})
         name = gate['id']
         require(type(name) is str and name in required and name not in seen, 'duplicate-or-unknown-gate')
         seen.add(name)
@@ -160,8 +249,18 @@ def verify(manifest, root, expected, detected_policy):
         require(all(gate[key] == expected[key] for key in ('candidate', 'tree', 'base')), 'gate-identity-mismatch')
         require(gate['status'] == 'passed' and type(gate['exitCode']) is int and gate['exitCode'] == 0, 'gate-not-passed')
         require(all(type(gate[key]) is int and 0 <= gate[key] <= 1000000 for key in ('testsPassed', 'testsSkipped')), 'invalid-test-count')
+        expected_suites = gate_suites(name) if name in DB_GATES else []
+        require(type(gate['testSuites']) is list, 'invalid-suite-coverage')
+        for suite in gate['testSuites']:
+            keys(suite, {'path', 'sourceSha256', 'testsPassed', 'testsSkipped'})
+            require(type(suite['testsPassed']) is int and type(suite['testsSkipped']) is int, 'invalid-suite-count')
+        require(gate['testSuites'] == expected_suites, 'invalid-suite-coverage')
+        if expected_suites:
+            require(gate['testsPassed'] == sum(suite['testsPassed'] for suite in expected_suites), 'suite-total-mismatch')
         exclusions = gate['optInGateExclusions']
         require(type(exclusions) is list and all(type(x) is str for x in exclusions), 'invalid-exclusions')
+        if name == 'ordinary-tests':
+            require(gate['testsSkipped'] == sum(suite['ordinarySkipped'] for suite in suite_inventory(required).values()), 'ordinary-skip-total-mismatch')
         if name == 'ordinary-tests' and gate['testsSkipped']:
             require(len(exclusions) == len(set(exclusions)) and set(exclusions) == DB_GATES & required, 'invalid-opt-in-exclusions')
         else:
@@ -190,7 +289,7 @@ def verify(manifest, root, expected, detected_policy):
     require(all(review[key] == expected[key] for key in ('candidate', 'tree', 'base')), 'review-identity-mismatch')
     digest(review['bundleSha256'])
     require(review['bundleSha256'] == review_digest(manifest), 'review-bundle-mismatch')
-    return {'version': VERSION, **expected, 'profile': detected_profile, 'migrationGatesRequired': sorted(migration_gates), 'gatesVerified': len(seen), 'evidenceFilesVerified': len(hashes), 'structuralVerification': 'passed', 'attestationTruth': 'not-established', 'releaseApproved': False}
+    return {'version': VERSION, **expected, 'profile': detected_profile, 'migrationGatesRequired': sorted(source_gates & frozenset(MIGRATION_GATES.values())), 'databaseFileGatesRequired': sorted(source_gates & frozenset(DATABASE_FILE_GATES.values())), 'gatesVerified': len(seen), 'evidenceFilesVerified': len(hashes), 'structuralVerification': 'passed', 'attestationTruth': 'not-established', 'releaseApproved': False}
 
 class SafeParser(argparse.ArgumentParser):
     def error(self, _message):
