@@ -78,7 +78,7 @@ jobs:
         run: >-
           node --input-type=module -e 'import pg from "pg";
           const pool = new pg.Pool();
-          try { for (const name of ["core_backup_test", "core_form_effect_test", "core_reservation_expiry_test", "core_browser_test"])
+          try { for (const name of ["core_backup_test", "core_form_effect_test", "core_reservation_expiry_test", "core_browser_test", "core_settings_test"])
           await pool.query(`CREATE DATABASE ${name}`); } finally { await pool.end(); }'
 
       - name: Verify database reliability across timezones
@@ -90,6 +90,11 @@ jobs:
           for timezone in America/New_York UTC; do
             TZ="$timezone" npx vitest run server/services/system-backup.database.test.ts server/storage/forms-effects.database.test.ts server/storage/ecommerce-reservation-expiry.database.test.ts
           done
+
+      - name: Verify atomic settings persistence
+        env:
+          SETTINGS_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/core_settings_test
+        run: npx vitest run server/__tests__/settings-atomic.db.test.ts
 
       - name: Build production bundle
         run: npm run build

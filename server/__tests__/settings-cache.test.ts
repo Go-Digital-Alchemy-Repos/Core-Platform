@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const { mockDb } = vi.hoisted(() => {
@@ -6,6 +7,7 @@ const { mockDb } = vi.hoisted(() => {
     insert: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+    transaction: vi.fn(),
   };
   return { mockDb };
 });
@@ -30,6 +32,7 @@ vi.mock("@shared/schema", () => ({
 
 vi.mock("drizzle-orm", () => ({
   eq: vi.fn((_col: unknown, val: unknown) => val),
+  sql: vi.fn(),
 }));
 
 import { SettingsStorage } from "../storage/settings.storage";
@@ -38,9 +41,10 @@ function setupMockDb() {
   const returning = vi.fn();
   const where = vi.fn(() => ({ returning }));
   const set = vi.fn(() => ({ where }));
-  const values = vi.fn(() => ({ returning }));
+  const values = vi.fn(() => ({ onConflictDoUpdate: vi.fn(() => ({ returning })) }));
   const from = vi.fn(() => ({ where }));
 
+  mockDb.transaction.mockImplementation(async (callback) => callback(mockDb));
   mockDb.select.mockReturnValue({ from });
   mockDb.insert.mockReturnValue({ values });
   mockDb.update.mockReturnValue({ set });
@@ -55,6 +59,24 @@ describe("SettingsStorage caching", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     storage = new SettingsStorage(100);
+  });
+
+  it("finishes encryption before any transaction begins", async () => {
+    setupMockDb();
+    const cipher = vi.spyOn(crypto, "createCipheriv").mockImplementation(() => {
+      throw new Error("cipher unavailable");
+    });
+    try {
+      await expect(
+        storage.upsertSettings([
+          { key: "active_mode", value: "live", category: "stripe", isSecret: false },
+          { key: "secret", value: "synthetic", category: "stripe", isSecret: true },
+        ]),
+      ).rejects.toThrow("cipher unavailable");
+      expect(mockDb.transaction).not.toHaveBeenCalled();
+    } finally {
+      cipher.mockRestore();
+    }
   });
 
   it("caches getSetting results and avoids repeat DB calls", async () => {
@@ -152,6 +174,76 @@ describe("SettingsStorage caching", () => {
     ]);
     const val2 = await storage.getSetting("new_key");
     expect(val2).toBe("new_val");
+  });
+
+  it("does not cache an old category query that completes after invalidation", async () => {
+    const { from } = setupMockDb();
+    let finish!: (rows: unknown[]) => void;
+    const where = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          }),
+      )
+      .mockResolvedValue([{ key: "k", value: "new", isSecret: false }]);
+    from.mockReturnValue({ where });
+    const pending = storage.getDecryptedCategory("category");
+    storage.invalidateAll();
+    finish([{ key: "k", value: "old", isSecret: false }]);
+    expect(await pending).toEqual({ k: "old" });
+    expect(await storage.getDecryptedCategory("category")).toEqual({ k: "new" });
+    expect(where).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not cache an old single-key query that completes after invalidation", async () => {
+    const { from } = setupMockDb();
+    let finish!: (rows: unknown[]) => void;
+    const where = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          }),
+      )
+      .mockResolvedValue([{ key: "k", value: "new", category: "category", isSecret: false }]);
+    from.mockReturnValue({ where });
+    const pending = storage.getSetting("k");
+    storage.invalidateAll();
+    finish([{ key: "k", value: "old", category: "category", isSecret: false }]);
+    expect(await pending).toBe("old");
+    expect(await storage.getSetting("k")).toBe("new");
+  });
+
+  it("failed deletion retains cache and successful deletion fences in-flight reads", async () => {
+    const { from } = setupMockDb();
+    const where = vi
+      .fn()
+      .mockResolvedValue([{ key: "k", value: "old", category: "cat", isSecret: false }]);
+    from.mockReturnValue({ where });
+    await storage.getSetting("k");
+    mockDb.delete.mockReturnValue({ where: vi.fn().mockRejectedValue(new Error("delete failed")) });
+    await expect(storage.deleteSetting("k")).rejects.toThrow("delete failed");
+    expect(await storage.getSetting("k")).toBe("old");
+    expect(where).toHaveBeenCalledTimes(1);
+    storage.invalidateAll();
+    let finish!: (rows: unknown[]) => void;
+    where
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          }),
+      )
+      .mockResolvedValue([]);
+    const pending = storage.getSetting("k");
+    mockDb.delete.mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) });
+    await storage.deleteSetting("k");
+    finish([{ key: "k", value: "old", category: "cat", isSecret: false }]);
+    await pending;
+    expect(await storage.getSetting("k")).toBeNull();
   });
 
   it("invalidateAll clears all caches", async () => {

@@ -959,65 +959,23 @@ router.put(
       return;
     }
 
-    const writes = [
-      storage.settings.upsertSetting("active_mode", data.activeMode, "ecommerce_stripe", false),
+    const writes: { key: string; value: string; category: string; isSecret: boolean }[] = [
+      { key: "active_mode", value: data.activeMode, category: "ecommerce_stripe", isSecret: false },
     ];
-    if (data.testPublishableKey !== undefined)
-      writes.push(
-        storage.settings.upsertSetting(
-          "test_publishable_key",
-          data.testPublishableKey,
-          "ecommerce_stripe",
-          false,
-        ),
-      );
-    if (data.livePublishableKey !== undefined)
-      writes.push(
-        storage.settings.upsertSetting(
-          "live_publishable_key",
-          data.livePublishableKey,
-          "ecommerce_stripe",
-          false,
-        ),
-      );
-    if (data.testSecretKey)
-      writes.push(
-        storage.settings.upsertSetting(
-          "test_secret_key",
-          data.testSecretKey,
-          "ecommerce_stripe",
-          true,
-        ),
-      );
-    if (data.liveSecretKey)
-      writes.push(
-        storage.settings.upsertSetting(
-          "live_secret_key",
-          data.liveSecretKey,
-          "ecommerce_stripe",
-          true,
-        ),
-      );
-    if (data.testWebhookSecret)
-      writes.push(
-        storage.settings.upsertSetting(
-          "test_webhook_secret",
-          data.testWebhookSecret,
-          "ecommerce_stripe",
-          true,
-        ),
-      );
-    if (data.liveWebhookSecret)
-      writes.push(
-        storage.settings.upsertSetting(
-          "live_webhook_secret",
-          data.liveWebhookSecret,
-          "ecommerce_stripe",
-          true,
-        ),
-      );
-    await Promise.all(writes);
-    storage.settings.invalidateCategory("ecommerce_stripe");
+    const fields = [
+      ["testPublishableKey", "test_publishable_key", false],
+      ["livePublishableKey", "live_publishable_key", false],
+      ["testSecretKey", "test_secret_key", true],
+      ["liveSecretKey", "live_secret_key", true],
+      ["testWebhookSecret", "test_webhook_secret", true],
+      ["liveWebhookSecret", "live_webhook_secret", true],
+    ] as const;
+    for (const [field, key, isSecret] of fields) {
+      const value = data[field];
+      if (value !== undefined && (!isSecret || value))
+        writes.push({ key, value, category: "ecommerce_stripe", isSecret });
+    }
+    await storage.settings.upsertSettings(writes);
     res.json(await getMaskedEcommerceStripeStatus());
   }),
 );

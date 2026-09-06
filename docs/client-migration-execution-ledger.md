@@ -54,6 +54,32 @@ admin browser loaded all five screens and their Save controls after release. No 
 changed. `/api/health/ready` reported database connected at 2026-09-05T22:54:04Z. This closes the routing
 incident, not the broader ecommerce completion workstream. The fix is also merged into remediation.
 
+### Ecommerce settings load and save correctness follow-up
+
+The routing hotfix exposed a separate issue: four settings forms offered Save before their initial
+GET completed, and all five lacked load-failure recovery. The candidate now waits for successful
+hydration, offers Retry, preserves edits across background refreshes, and reports failed saves
+without clearing entries. Twenty-one focused regressions passed; the initial failure tests reproduced
+the previous behavior before the fix. Root independently passed all 39 settings/routing regressions.
+
+Backend review also found non-atomic multi-field writes: Stripe could commit active mode before a
+credential write failed, while tax and fraud settings had the same partial-save pattern. These now
+use one transactional conflict-upsert batch. Encryption finishes before writes, concurrent first
+saves no longer race through select-then-insert, and caches invalidate after successful commit.
+A generation counter prevents an older in-flight read from repopulating an invalidated cache;
+delete follows the same successful-write boundary. Other application instances retain the existing
+60-second cache TTL, so this is not immediate cross-instance invalidation.
+
+Independent review accepted the change. Five real PostgreSQL tests passed for rollback, concurrent
+first saves, coherent reads during writes, encryption and category moves; fixture cleanup completed.
+CI now runs these tests in a dedicated database. The full ordinary suite, types, lint, formatting,
+production build and bundle budgets passed. Root also ran all 32 real application desktop/mobile
+journeys successfully, including settings persistence, transport-failure recovery and editor denial.
+Two additional desktop/mobile Stripe cases passed with synthetic local test keys: UI save/reload,
+masked GET responses, and blank-secret resave preservation. No Stripe provider call was made.
+These additional fixes are candidate changes, not yet deployed. Hosted Verify for the preceding
+checkpoint `fb19e45` passed as run `33999814457`.
+
 ### Runtime-discovered follow-up: database timestamp consistency
 
 Disposable form-outbox tests exposed local-time Date binding against PostgreSQL timestamp-without-
