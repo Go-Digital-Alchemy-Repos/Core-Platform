@@ -77,3 +77,40 @@ it("connects the footer submit button to the form and surfaces validation failur
   expect(alert?.textContent).toContain("First name required");
   expect(alert?.textContent).toContain("Valid email required");
 });
+
+it("creates a standalone location without account fields", async () => {
+  const submit = vi.fn();
+  const locationLabels = getAdminDirectoryLabels({
+    directoryMode: "store_locator",
+    listingLabelSingular: "Location",
+  } as PublicDirectorySettings);
+  await act(async () =>
+    root.render(
+      <AddTherapistSheet
+        open
+        onOpenChange={vi.fn()}
+        onSubmit={submit}
+        isPending={false}
+        labels={locationLabels}
+      />,
+    ),
+  );
+  expect(document.querySelector('[data-testid="input-add-email"]')).toBeNull();
+  expect(document.querySelector('[data-testid="input-add-password"]')).toBeNull();
+  const button = document.querySelector<HTMLButtonElement>('[data-testid="button-add-submit"]')!;
+  await act(async () => button.click());
+  expect(document.querySelector('[role="alert"]')?.textContent).toContain(
+    "Location name is required",
+  );
+  const { Simulate } = await import("react-dom/test-utils");
+  const title = document.querySelector<HTMLInputElement>('[data-testid="input-add-title"]')!;
+  await act(async () => {
+    title.value = "Warehouse North";
+    Simulate.change(title);
+  });
+  await act(async () => button.click());
+  expect(submit).toHaveBeenCalledTimes(1);
+  expect(submit.mock.calls[0][0]).toMatchObject({ title: "Warehouse North" });
+  expect(submit.mock.calls[0][0]).not.toHaveProperty("email");
+  expect(submit.mock.calls[0][0]).not.toHaveProperty("password");
+});

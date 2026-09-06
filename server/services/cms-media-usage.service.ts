@@ -434,9 +434,12 @@ export async function buildCmsMediaLibraryAssets(
 
   for (const item of directoryGalleryMedia) {
     const displayName =
-      [item.user.firstName, item.user.lastName].filter(Boolean).join(" ").trim() || item.user.email;
+      item.profile.title ||
+      [item.user?.firstName, item.user?.lastName].filter(Boolean).join(" ").trim() ||
+      item.user?.email ||
+      "Location";
     const isLive = Boolean(
-      item.profile.isActive && item.profile.isApproved && !item.user.isSuspended,
+      item.profile.isActive && item.profile.isApproved && !item.user?.isSuspended,
     );
     const path = `/directory/${item.profile.id}`;
     addAssetIdUsage(
