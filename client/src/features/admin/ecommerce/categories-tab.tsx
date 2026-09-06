@@ -220,8 +220,9 @@ export function CategoriesTab() {
         <CardContent>
           <form onSubmit={submit} className="grid gap-4">
             <div className="space-y-2">
-              <Label>Name</Label>
+              <Label htmlFor="category-name">Name</Label>
               <Input
+                id="category-name"
                 value={form.name}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, name: event.target.value }))
@@ -231,8 +232,9 @@ export function CategoriesTab() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Slug</Label>
+              <Label htmlFor="category-slug">Slug</Label>
               <Input
+                id="category-slug"
                 value={form.slug}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, slug: event.target.value }))
@@ -241,14 +243,14 @@ export function CategoriesTab() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Parent category</Label>
+              <Label htmlFor="category-parent">Parent category</Label>
               <Select
                 value={form.parentId || "__root"}
                 onValueChange={(value) =>
                   setForm((current) => ({ ...current, parentId: value === "__root" ? "" : value }))
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger id="category-parent">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -265,8 +267,9 @@ export function CategoriesTab() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Description</Label>
+              <Label htmlFor="category-description">Description</Label>
               <Textarea
+                id="category-description"
                 value={form.description}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, description: event.target.value }))
@@ -283,8 +286,9 @@ export function CategoriesTab() {
             />
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Sort order</Label>
+                <Label htmlFor="category-sort-order">Sort order</Label>
                 <Input
+                  id="category-sort-order"
                   type="number"
                   value={form.sortOrder}
                   onChange={(event) =>
@@ -294,10 +298,11 @@ export function CategoriesTab() {
               </div>
               <div className="flex items-center gap-3 pt-7">
                 <Switch
+                  id="category-active"
                   checked={form.active}
                   onCheckedChange={(active) => setForm((current) => ({ ...current, active }))}
                 />
-                <Label>Active</Label>
+                <Label htmlFor="category-active">Active</Label>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
