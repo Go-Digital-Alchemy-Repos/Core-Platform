@@ -1,5 +1,10 @@
 # Core release readiness — 2026-09-05
 
+Later live evidence is recorded in [Core live storage and recovery](release-evidence/core-live-storage-2026-09-05.md):
+actual R2 object read, a missing local asset, zero relevant paid-inventory duplicate groups,
+and successful recovery of the latest deployed database backup. The original bounded review
+below remains historical; its unverified items should be read alongside that checkpoint.
+
 Bounded source and recorded-evidence review of remediation `745cde6` against
 `origin/main` `f09e9d4199ffca634c0bc1df5c4e48d3c63bb762`. No production configuration,
 credentials, objects or data were accessed or changed. This report proposes a release

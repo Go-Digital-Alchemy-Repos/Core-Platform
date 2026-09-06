@@ -5,6 +5,32 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Live storage inspection and actual backup recovery
+
+The settings candidate `9a8bf1a` passed hosted Verify (`34000263302`). Read-only production
+inspection then established actual storage facts rather than relying on configuration: the
+referenced unprefixed R2 image exists, the other local CMS file is missing, and relevant paid
+inventory duplicate groups currently number zero. Stack identity and explicit backup namespace
+remain unset. The missing local URL has no other-table references in the inspected backup;
+its original source was not found in the three Core checkouts. No replacement or deletion was
+guessed from another image's equal file size.
+
+The latest actual production backup (main `f09e9d4`, 00:01:45 UTC) was fetched by exact key to
+a private temporary file. Two independent disposable restores preserved all 94 tables and 391
+rows before and after candidate migrations, including encrypted values as ciphertext. Root's
+run used Python optimization to confirm the checks remain active. Containers, volumes and
+private backup input were removed. Only aggregate evidence was retained in
+[live storage and recovery](release-evidence/core-live-storage-2026-09-05.md). No production
+write, provider operation, DNS change or deployment occurred. Media recovery, namespace
+ownership/cutover, encryption-secret recovery and controlled replacement remain separate gates.
+
+The seven-route Better Farms audit is recorded in
+[route acceptance status](pilots/better-farms/route-acceptance-status.md). It exposed lost form
+idempotency between the React form and Core. A reviewed isolated site change, `cec78df`, now
+retains keys through ambiguous unchanged retries and forwards them through the proxy; changed
+payloads and accepted successes renew them. Site tests/types/build passed. The actual
+after-commit response-loss browser proof is the next acceptance step; no site deployment occurred.
+
 ### Populated upgrade, two-origin pilot and upload execution checkpoint
 
 Hosted Verify run `33999305310` passed for `70f8f9e`. The next checkpoint adds a pinned-main
