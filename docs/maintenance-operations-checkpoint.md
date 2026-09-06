@@ -118,3 +118,21 @@ Recovery's local executable verification passed, including `/ready`, business 50
 read-only database behavior, clean shutdown and fixture cleanup. Remaining gates:
 actual recovery deployment/media read, then maintenance deployment and runtime
 checks, then reopening uploads. Do not treat the media copy as release completion.
+
+
+Recovery `f92d5bf` passed hosted run 34009643877 and deployed successfully as
+`c040f4f4-0651-4b58-a3de-d6384343b4ad`. Provider metadata adopted numeric 45-second
+drain, `/ready` and the direct recovery Node command. Actual PID1 matches that
+command. Runtime namespace, retained backup prefix, upload freeze and disabled
+provider mutations were verified without disclosing secrets. Public readiness is
+200; the exact namespaced image is 200 and matches the original hash. Business
+API and webhook probes are 503 with Retry-After60. Old normal writer `a7218714`
+is terminal REMOVED, with stop evidence at 03:46:40.925731377Z.
+
+The accessible backup hash and candidate migration/runner hashes still match the
+successful restore rehearsal. Current duplicate paid inventory groups are zero.
+Pre-upgrade historical orders remain four, with zero Stripe-linked orders; the
+notification table is absent before its additive migration. Normal candidate
+`35a1ef3` remains pending its final hosted browser checks at this checkpoint.
+Recovery HTTP and transaction aggregates are retained in the private cutover
+directory. Business interruption ends only after normal runtime is verified.
