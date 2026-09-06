@@ -214,23 +214,48 @@ async function ensureCrmTables() {
     )
   `);
 
-  await db.execute(
-    sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "client_type" text NOT NULL DEFAULT 'individual'`,
-  );
-  await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "primary_email" text`);
+  // Observe legacy columns before adding any of them. Keep schema creation and
+  // backfill atomic so retries cannot confuse a partial upgrade with user data.
+  await db.execute(sql`
+    DO $crm_profile$
+    DECLARE
+      existing_columns text[];
+    BEGIN
+      LOCK TABLE public.crm_clients IN ACCESS EXCLUSIVE MODE;
+      SELECT array_agg(column_name::text) INTO existing_columns
+      FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'crm_clients';
+
+      ALTER TABLE public.crm_clients ADD COLUMN IF NOT EXISTS client_type text NOT NULL DEFAULT 'individual';
+      ALTER TABLE public.crm_clients ADD COLUMN IF NOT EXISTS primary_email text;
+      ALTER TABLE public.crm_clients ADD COLUMN IF NOT EXISTS primary_phone text;
+      ALTER TABLE public.crm_clients ADD COLUMN IF NOT EXISTS company_name text;
+      ALTER TABLE public.crm_clients ADD COLUMN IF NOT EXISTS client_since timestamp;
+      ALTER TABLE public.crm_clients ADD COLUMN IF NOT EXISTS preferred_contact_method text NOT NULL DEFAULT 'no_preference';
+
+      IF NOT ARRAY['client_type','primary_email','primary_phone','company_name','client_since','preferred_contact_method']::text[] <@ existing_columns THEN
+        UPDATE public.crm_clients
+        SET
+          client_type = CASE WHEN 'client_type' = ANY(existing_columns) THEN client_type
+            WHEN NULLIF(trim(COALESCE(company, '')), '') IS NULL THEN 'individual' ELSE 'business' END,
+          primary_email = CASE WHEN 'primary_email' = ANY(existing_columns) THEN primary_email ELSE email END,
+          primary_phone = CASE WHEN 'primary_phone' = ANY(existing_columns) THEN primary_phone ELSE phone END,
+          company_name = CASE WHEN 'company_name' = ANY(existing_columns) THEN company_name ELSE company END,
+          client_since = CASE WHEN 'client_since' = ANY(existing_columns) THEN client_since ELSE created_at END,
+          preferred_contact_method = CASE WHEN 'preferred_contact_method' = ANY(existing_columns) THEN preferred_contact_method
+            WHEN NULLIF(trim(COALESCE(email, '')), '') IS NOT NULL THEN 'email'
+            WHEN NULLIF(trim(COALESCE(phone, '')), '') IS NOT NULL THEN 'phone' ELSE 'no_preference' END;
+      END IF;
+    END $crm_profile$;
+  `);
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "secondary_email" text`);
-  await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "primary_phone" text`);
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "alternate_phone" text`);
-  await db.execute(
-    sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "preferred_contact_method" text NOT NULL DEFAULT 'no_preference'`,
-  );
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "address_line_1" text`);
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "address_line_2" text`);
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "city" text`);
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "region" text`);
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "postal_code" text`);
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "country" text`);
-  await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "company_name" text`);
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "legal_name" text`);
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "website" text`);
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "industry" text`);
@@ -254,9 +279,6 @@ async function ensureCrmTables() {
   );
   await db.execute(
     sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "renewal_date" timestamp`,
-  );
-  await db.execute(
-    sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "client_since" timestamp`,
   );
   await db.execute(
     sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "internal_tags" jsonb NOT NULL DEFAULT '[]'::jsonb`,
@@ -289,26 +311,6 @@ async function ensureCrmTables() {
   await db.execute(
     sql`CREATE INDEX IF NOT EXISTS "idx_crm_clients_created_at" ON "crm_clients" ("created_at")`,
   );
-
-  await db.execute(sql`
-    UPDATE "crm_clients"
-    SET
-      "client_type" = CASE WHEN NULLIF(trim(COALESCE("company", '')), '') IS NULL THEN 'individual' ELSE 'business' END,
-      "primary_email" = COALESCE("primary_email", "email"),
-      "primary_phone" = COALESCE("primary_phone", "phone"),
-      "company_name" = COALESCE("company_name", "company"),
-      "client_since" = COALESCE("client_since", "created_at"),
-      "preferred_contact_method" = CASE
-        WHEN "preferred_contact_method" IS NOT NULL AND "preferred_contact_method" <> 'no_preference' THEN "preferred_contact_method"
-        WHEN NULLIF(trim(COALESCE("email", '')), '') IS NOT NULL THEN 'email'
-        WHEN NULLIF(trim(COALESCE("phone", '')), '') IS NOT NULL THEN 'phone'
-        ELSE 'no_preference'
-      END
-    WHERE "primary_email" IS NULL
-       OR "primary_phone" IS NULL
-       OR "company_name" IS NULL
-       OR "client_since" IS NULL
-  `);
 
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS "crm_client_notes" (
