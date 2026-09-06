@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, count, desc, eq, inArray } from "drizzle-orm";
+import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
 import {
   ecommerceCategories,
   ecommerceProductCategories,
@@ -157,6 +157,54 @@ function productBaseline(
       }))
       .sort((left, right) => left.sortOrder - right.sortOrder || left.id.localeCompare(right.id)),
   };
+}
+
+type ImportTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/** Hold the aggregate until commit: parent UPDATE lock fences FK inserts;
+ * existing child row locks fence edits/deletes that do not touch the parent. */
+async function lockedProductHash(tx: ImportTransaction, id: string, reason: string) {
+  const [product] = await tx
+    .select()
+    .from(ecommerceProducts)
+    .where(eq(ecommerceProducts.id, id))
+    .for("update");
+  if (!product) return null;
+  const variants = await tx
+    .select()
+    .from(ecommerceProductVariants)
+    .where(eq(ecommerceProductVariants.productId, id))
+    .orderBy(ecommerceProductVariants.id)
+    .for("update");
+  const assignments = await tx
+    .select()
+    .from(ecommerceProductCategories)
+    .where(eq(ecommerceProductCategories.productId, id))
+    .orderBy(ecommerceProductCategories.categoryId)
+    .for("update");
+  const media = await tx
+    .select()
+    .from(ecommerceProductMedia)
+    .where(eq(ecommerceProductMedia.productId, id))
+    .orderBy(ecommerceProductMedia.id)
+    .for("update");
+  // Phase 1 owns exactly one default variant. Preserve merchant additions;
+  // never hide them by hashing only the default and then cascading a delete.
+  if (
+    variants.length !== 1 ||
+    !variants[0].isDefault ||
+    variants[0].optionSignature !== "default"
+  ) {
+    throw new WooImportManualReviewError(reason);
+  }
+  return hash(
+    productBaseline(
+      product,
+      variants[0],
+      assignments.map((item) => item.categoryId),
+      media,
+    ),
+  );
 }
 
 function expectedProductBaseline(product: WooImportProduct) {
@@ -428,7 +476,8 @@ export class DrizzleWooImportRepository implements WooImportRepositoryV1 {
               eq(wooImportMappings.externalId, operation.externalId),
             ),
           )
-          .limit(1);
+          .limit(1)
+          .for("update");
 
         let actualTargetHash: string | null = null;
         if (operation.entityType === "category") {
@@ -436,7 +485,8 @@ export class DrizzleWooImportRepository implements WooImportRepositoryV1 {
             .select()
             .from(ecommerceCategories)
             .where(eq(ecommerceCategories.id, operation.targetId))
-            .limit(1);
+            .limit(1)
+            .for("update");
           if (target) {
             actualTargetHash = hash({
               id: target.id,
@@ -450,41 +500,11 @@ export class DrizzleWooImportRepository implements WooImportRepositoryV1 {
             });
           }
         } else {
-          const [target] = await tx
-            .select()
-            .from(ecommerceProducts)
-            .where(eq(ecommerceProducts.id, operation.targetId))
-            .limit(1);
-          if (target) {
-            const [variant] = await tx
-              .select()
-              .from(ecommerceProductVariants)
-              .where(
-                and(
-                  eq(ecommerceProductVariants.productId, target.id),
-                  eq(ecommerceProductVariants.isDefault, true),
-                ),
-              )
-              .limit(1);
-            const [targetAssignments, targetMedia] = await Promise.all([
-              tx
-                .select()
-                .from(ecommerceProductCategories)
-                .where(eq(ecommerceProductCategories.productId, target.id)),
-              tx
-                .select()
-                .from(ecommerceProductMedia)
-                .where(eq(ecommerceProductMedia.productId, target.id)),
-            ]);
-            actualTargetHash = hash(
-              productBaseline(
-                target,
-                variant ?? null,
-                targetAssignments.map((item) => item.categoryId),
-                targetMedia,
-              ),
-            );
-          }
+          actualTargetHash = await lockedProductHash(
+            tx,
+            operation.targetId,
+            "target_edited_since_import",
+          );
         }
 
         if (mapping) {
@@ -767,6 +787,15 @@ export class DrizzleWooImportRepository implements WooImportRepositoryV1 {
           .set({ status: "rollback_pending", updatedAt: new Date() })
           .where(eq(wooImportRuns.id, run.id));
         assertWooImportRunTransition("rollback_pending", "manual_review");
+      } else if (run.status === "planned") {
+        // A first-batch transaction also rolls back its applying transition.
+        // Record that attempted apply before the existing manual-review state.
+        assertWooImportRunTransition(run.status, "applying");
+        await tx
+          .update(wooImportRuns)
+          .set({ status: "applying", updatedAt: new Date() })
+          .where(eq(wooImportRuns.id, run.id));
+        assertWooImportRunTransition("applying", "manual_review");
       } else {
         assertWooImportRunTransition(run.status, "manual_review");
       }
@@ -846,7 +875,31 @@ export class DrizzleWooImportRepository implements WooImportRepositoryV1 {
         const createdMappings = await tx
           .select()
           .from(wooImportMappings)
-          .where(eq(wooImportMappings.firstRunId, run.id));
+          .where(eq(wooImportMappings.firstRunId, run.id))
+          .orderBy(wooImportMappings.id)
+          .for("update");
+        const createdCategoryIds = new Set(
+          createdMappings
+            .filter((mapping) => mapping.targetType === "ecommerce_category")
+            .map((mapping) => mapping.targetId),
+        );
+        if (createdCategoryIds.size) {
+          // parent_id has no FK: row locks cannot fence new child references.
+          // Only rollback needs this category-write lock; ordinary reads continue.
+          await tx.execute(sql`LOCK TABLE ecommerce_categories IN SHARE ROW EXCLUSIVE MODE`);
+          const children = await tx
+            .select({ id: ecommerceCategories.id })
+            .from(ecommerceCategories)
+            .where(inArray(ecommerceCategories.parentId, [...createdCategoryIds]));
+          if (children.some((child) => !createdCategoryIds.has(child.id))) {
+            throw new WooImportManualReviewError("rollback_target_edited_since_import");
+          }
+        }
+        const createdProductIds = new Set(
+          createdMappings
+            .filter((mapping) => mapping.targetType === "ecommerce_product")
+            .map((mapping) => mapping.targetId),
+        );
         for (const mapping of createdMappings) {
           const [audit] = await tx
             .select()
@@ -869,8 +922,18 @@ export class DrizzleWooImportRepository implements WooImportRepositoryV1 {
               .select()
               .from(ecommerceCategories)
               .where(eq(ecommerceCategories.id, mapping.targetId))
-              .limit(1);
+              .limit(1)
+              .for("update");
             if (target) {
+              const assignments = await tx
+                .select()
+                .from(ecommerceProductCategories)
+                .where(eq(ecommerceProductCategories.categoryId, target.id))
+                .orderBy(ecommerceProductCategories.productId)
+                .for("update");
+              if (assignments.some((assignment) => !createdProductIds.has(assignment.productId))) {
+                throw new WooImportManualReviewError("rollback_target_edited_since_import");
+              }
               currentTargetHash = hash({
                 id: target.id,
                 name: target.name,
@@ -883,41 +946,11 @@ export class DrizzleWooImportRepository implements WooImportRepositoryV1 {
               });
             }
           } else {
-            const [target] = await tx
-              .select()
-              .from(ecommerceProducts)
-              .where(eq(ecommerceProducts.id, mapping.targetId))
-              .limit(1);
-            if (target) {
-              const [variant] = await tx
-                .select()
-                .from(ecommerceProductVariants)
-                .where(
-                  and(
-                    eq(ecommerceProductVariants.productId, target.id),
-                    eq(ecommerceProductVariants.isDefault, true),
-                  ),
-                )
-                .limit(1);
-              const [targetAssignments, targetMedia] = await Promise.all([
-                tx
-                  .select()
-                  .from(ecommerceProductCategories)
-                  .where(eq(ecommerceProductCategories.productId, target.id)),
-                tx
-                  .select()
-                  .from(ecommerceProductMedia)
-                  .where(eq(ecommerceProductMedia.productId, target.id)),
-              ]);
-              currentTargetHash = hash(
-                productBaseline(
-                  target,
-                  variant ?? null,
-                  targetAssignments.map((item) => item.categoryId),
-                  targetMedia,
-                ),
-              );
-            }
+            currentTargetHash = await lockedProductHash(
+              tx,
+              mapping.targetId,
+              "rollback_target_edited_since_import",
+            );
           }
           if (!currentTargetHash || currentTargetHash !== audit.nextTargetHash) {
             throw new WooImportManualReviewError("rollback_target_edited_since_import");
