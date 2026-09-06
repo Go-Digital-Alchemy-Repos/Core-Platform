@@ -277,3 +277,98 @@ describe("settings initial-load safety", () => {
     expect(api.request.mock.calls[1][2]).toEqual(expect.objectContaining(stored[section]));
   });
 });
+
+describe("Security Center auxiliary reads", () => {
+  const overviewPath = "/api/admin/ecommerce/security/overview";
+  const blocksPath = "/api/admin/ecommerce/security/blocks";
+  const overview = {
+    summary: { total: 17, blocked: 3, manualReview: 2, velocityBlocks: 1 },
+    recentEvents: [
+      {
+        id: "event",
+        createdAt: "2026-09-06T12:00:00Z",
+        email: "retained@example.test",
+        message: "Retained activity",
+        decision: "block",
+        score: 90,
+      },
+    ],
+  };
+  const blocks = [
+    { id: "block", type: "email", value: "blocked@example.test", reason: "Retained block" },
+  ];
+  const fallback = (key: string) =>
+    stored[sections.find((section) => paths[section] === key) ?? "security"];
+  it("shows empty states only after successful empty reads", async () => {
+    await render("security", async (key) =>
+      key === overviewPath
+        ? {
+            summary: { total: 0, blocked: 0, manualReview: 0, velocityBlocks: 0 },
+            recentEvents: [],
+          }
+        : key === blocksPath
+          ? []
+          : fallback(key),
+    );
+    expect(host.textContent).toContain("Screened today");
+    expect(host.textContent).toContain("No active manual fraud blocks");
+    expect(host.textContent).toContain("No fraud activity has been logged");
+  });
+  it("shows loading instead of fabricated empty metrics and blocks", async () => {
+    await render("security", async (key) =>
+      [overviewPath, blocksPath].includes(key) ? new Promise(() => {}) : fallback(key),
+    );
+    expect(host.textContent).toContain("Loading security activity");
+    expect(host.textContent).toContain("Loading manual fraud blocks");
+    expect(host.textContent).not.toContain("Screened today");
+    expect(host.textContent).not.toContain("No active manual fraud blocks");
+    expect(host.textContent).not.toContain("No fraud activity has been logged");
+    expect(save()?.disabled).toBe(false);
+  });
+  it("retries failed independent reads and only then renders actual results", async () => {
+    let failed = true;
+    await render("security", async (key) => {
+      if ([overviewPath, blocksPath].includes(key)) {
+        if (failed) throw new Error("private backend detail");
+        return key === overviewPath ? overview : blocks;
+      }
+      return fallback(key);
+    });
+    await flush();
+    expect(host.textContent).toContain("Security activity could not be loaded");
+    expect(host.textContent).toContain("Manual fraud blocks could not be loaded");
+    expect(host.textContent).not.toContain("private backend detail");
+    expect(host.textContent).not.toContain("No active manual fraud blocks");
+    failed = false;
+    for (const label of ["Retry security activity", "Retry manual fraud blocks"]) {
+      const button = [...host.querySelectorAll("button")].find((b) => b.textContent === label)!;
+      await act(async () => button.click());
+      await flush();
+    }
+    expect(host.textContent).toContain("Screened today");
+    expect(host.textContent).toContain("Retained activity");
+    expect(host.textContent).toContain("blocked@example.test");
+  });
+  it("retains acknowledged data and marks it stale after background failures", async () => {
+    let failed = false;
+    await render("security", async (key) => {
+      if ([overviewPath, blocksPath].includes(key)) {
+        if (failed) throw new Error("failed");
+        return key === overviewPath ? overview : blocks;
+      }
+      return fallback(key);
+    });
+    failed = true;
+    await act(async () => {
+      await Promise.all(
+        [overviewPath, blocksPath].map((path) => client.invalidateQueries({ queryKey: [path] })),
+      );
+    });
+    await flush();
+    expect(host.textContent).toContain("Security activity could not be refreshed");
+    expect(host.textContent).toContain("Manual fraud blocks could not be refreshed");
+    expect(host.textContent).toContain("Retained activity");
+    expect(host.textContent).toContain("blocked@example.test");
+    expect(host.textContent).not.toContain("No active manual fraud blocks");
+  });
+});
