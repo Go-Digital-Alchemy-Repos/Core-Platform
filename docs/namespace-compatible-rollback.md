@@ -123,3 +123,11 @@ normal-business default. Root checked the configuration lines and confirmed the
 reviewed compiled recovery artifact hash is unchanged. Runtime adoption still
 requires inspection after deployment; namespace configuration and upload freeze
 must be supplied together as specified in the maintenance cutover runbook.
+
+Independent deployment review found the normal application's healthcheck URL was
+still configured. Recovery now explicitly uses `/ready`; the compiled fixture
+verifier reads this path from `railway.toml` and exercises it against the actual
+recovery handler. Root reran the PostgreSQL fixture successfully: configured
+readiness passed, business routes returned 503, no application tables were
+created, shutdown exited cleanly, and the fixture was removed. The artifact hash
+remains unchanged. This correction requires hosted validation of its new commit.

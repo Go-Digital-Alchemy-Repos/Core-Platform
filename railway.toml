@@ -5,7 +5,7 @@ buildCommand = "npm run build"
 startCommand = "env NODE_ENV=production node dist/rollback-maintenance.cjs"
 # Recovery remains read-only; allow its bounded shutdown before replacement.
 drainingSeconds = "45"
-healthcheckPath = "/api/health/ready"
+healthcheckPath = "/ready"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 5

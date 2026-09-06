@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Exercise the compiled maintenance server against an owned empty local PostgreSQL fixture."""
-import hashlib, json, os, pathlib, secrets, signal, socket, subprocess, tempfile, time, urllib.request, urllib.error, uuid
+import hashlib, json, os, pathlib, re, secrets, signal, socket, subprocess, tempfile, time, urllib.request, urllib.error, uuid
 root=pathlib.Path(__file__).resolve().parent.parent
 name='core-recovery-'+uuid.uuid4().hex[:12]
 password=secrets.token_hex(20)
@@ -21,6 +21,11 @@ def interrupted(number, _frame):
 signal.signal(signal.SIGTERM, interrupted)
 signal.signal(signal.SIGINT, interrupted)
 try:
+    configuration=(root/'railway.toml').read_text()
+    configured_paths=re.findall(r'^healthcheckPath\s*=\s*"([^"]+)"\s*$',configuration,re.M)
+    require(len(configured_paths)==1,'Exactly one configured healthcheck required')
+    readiness_path=configured_paths[0]
+    require(readiness_path=='/ready','Recovery deployment must use its own readiness endpoint')
     context=os.environ.get('DOCKER_CONTEXT')
     endpoint=(os.environ.get('DOCKER_HOST') if not context else None) or run(['docker','context','inspect',*([context] if context else []),'--format','{{.Endpoints.docker.Host}}']).stdout.strip()
     require(endpoint.startswith('unix://'),'Local Docker required')
@@ -42,7 +47,7 @@ try:
         while True:
             require(process.poll() is None,'Recovery server exited before readiness')
             try:
-                code,body=request(port,'/ready')
+                code,body=request(port,readiness_path)
                 if code==200: break
             except (OSError,urllib.error.URLError): pass
             require(time.monotonic()<deadline,'Recovery readiness timeout');time.sleep(.2)
@@ -52,7 +57,7 @@ try:
         count=run(['docker','exec',name,'psql','-U','postgres','-Atc',"SELECT count(*) FROM information_schema.tables WHERE table_schema='public'"]).stdout.strip()
         require(count=='0','Recovery entrypoint created application tables')
         process.send_signal(signal.SIGTERM);require(process.wait(timeout=10)==0,'Recovery server did not drain cleanly')
-        report.update(status='passed',read_only_database_readiness=True,business_requests_rejected=True,no_bootstrap_tables=True,shutdown_exit=0)
+        report.update(status='passed',configured_healthcheck_path=readiness_path,read_only_database_readiness=True,business_requests_rejected=True,no_bootstrap_tables=True,shutdown_exit=0)
 except Exception as error:
     report.update(status='failed',error=str(error).replace(password,'[redacted]'))
 finally:
