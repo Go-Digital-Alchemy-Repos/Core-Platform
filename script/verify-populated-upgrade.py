@@ -3,6 +3,8 @@
 from __future__ import annotations
 import argparse, hashlib, json, os, pathlib, secrets, signal, subprocess, tempfile, time, uuid
 
+from rehearsal_cleanup import ChildRuns, capture, cleanup, exclusive_report, persist, LABEL
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 TABLES = ['system_settings','cms_forms','cms_form_submissions','crm_leads','crm_lead_notes','ecommerce_products','ecommerce_product_variants','ecommerce_customers','ecommerce_orders','ecommerce_inventory_adjustments']
 
@@ -10,22 +12,29 @@ def main(output, baseline, rollback_ref=None):
     name = 'core-upgrade-' + uuid.uuid4().hex[:12]
     password = secrets.token_hex(24)
     report = {'status':'failed','baseline':baseline}
+    report_fd = exclusive_report(output)
+    children = ChildRuns()
+    owned_identity = None
+    docker = ["docker"]
     cleanup_required = False
     def require(condition, message):
         if not condition: raise RuntimeError(message)
     def run(args, cwd=ROOT, env=None, data=None, timeout=60, check=True):
-        r = subprocess.run(args,cwd=cwd,env=env,input=data,text=True,capture_output=True,timeout=timeout)
+        r = children.run(args,cwd=cwd,env=env,input=data,text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=timeout)
         if check and r.returncode: raise RuntimeError((r.stderr or r.stdout)[-4000:].replace(password,'[redacted]'))
         return r
     def sql(db, query):
-        return run(['docker','exec','-i',name,'psql','-U','upgrade','-d',db,'-X','-qAt','-v','ON_ERROR_STOP=1'],data=query).stdout.strip()
+        return run(docker+['exec','-i',name,'psql','-U','upgrade','-d',db,'-X','-qAt','-v','ON_ERROR_STOP=1'],data=query).stdout.strip()
     try:
         context = os.environ.get('DOCKER_CONTEXT')
-        endpoint = (os.environ.get('DOCKER_HOST') if not context else None) or run(['docker','context','inspect',*([context] if context else []),'--format','{{.Endpoints.docker.Host}}']).stdout.strip()
+        endpoint = (os.environ.get('DOCKER_HOST') if not context else None) or run(docker+['context','inspect',*([context] if context else []),'--format','{{.Endpoints.docker.Host}}']).stdout.strip()
         if not endpoint.startswith('unix://'): raise RuntimeError('Only a local Docker Unix socket is permitted')
+        docker = ['docker','--host',endpoint]
         revision = run(['git','rev-parse',baseline+'^{commit}']).stdout.strip()
         report['baseline'] = revision
         report['candidate'] = run(['git','rev-parse','HEAD']).stdout.strip()
+        report['workingTreeClean'] = not run(['git', 'status', '--porcelain']).stdout.strip()
+        report['producerSha256'] = {p: hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in ['script/verify-populated-upgrade.py', 'script/rehearsal_cleanup.py']}
         report['candidate_migration_runner_sha256'] = hashlib.sha256((ROOT/'server/migrate.ts').read_bytes()).hexdigest()
         report['candidate_migration_files_sha256'] = hashlib.sha256(b''.join(p.name.encode()+b'\0'+p.read_bytes() for p in sorted((ROOT/'migrations').glob('*.sql')))).hexdigest()
         with tempfile.TemporaryDirectory(prefix=name) as directory:
@@ -39,10 +48,14 @@ def main(output, baseline, rollback_ref=None):
             run(['npm','ci','--no-audit','--no-fund'],cwd=base,env=install_env,timeout=240)
             report['baseline_dependency_install']='npm ci from pinned package-lock, lifecycle scripts disabled'
             cleanup_required=True
-            run(['docker','run','-d','--name',name,'-p','127.0.0.1::5432','-e','POSTGRES_USER=upgrade','-e','POSTGRES_PASSWORD='+password,'-e','POSTGRES_DB=upgrade_clean','postgres:16-alpine'])
-            port=run(['docker','port',name,'5432']).stdout.strip().rsplit(':',1)[1]
+            created = run(docker+['run','-d','--label',LABEL+'='+name,'--name',name,'-p','127.0.0.1::5432','-e','POSTGRES_USER=upgrade','-e','POSTGRES_PASSWORD='+password,'-e','POSTGRES_DB=upgrade_clean','postgres:16-alpine'])
+            owned_identity = capture(run, docker, name, created.stdout.strip())
+            identity_fd = exclusive_report(output.with_name(output.name+'.ownership.json'))
+            try: persist(identity_fd, owned_identity)
+            finally: os.close(identity_fd)
+            port=run(docker+['port',name,'5432']).stdout.strip().rsplit(':',1)[1]
             end=time.monotonic()+30
-            while run(['docker','exec','-e','PGPASSWORD='+password,name,'psql','-h','127.0.0.1','-U','upgrade','-d','upgrade_clean','-Atc','SELECT 1'],check=False).returncode:
+            while run(docker+['exec','-e','PGPASSWORD='+password,name,'psql','-h','127.0.0.1','-U','upgrade','-d','upgrade_clean','-Atc','SELECT 1'],check=False).returncode:
                 if time.monotonic()>end: raise RuntimeError('PostgreSQL startup timeout')
                 time.sleep(.25)
             sql('upgrade_clean','CREATE DATABASE upgrade_duplicate;')
@@ -117,18 +130,17 @@ def main(output, baseline, rollback_ref=None):
         report['error']=str(e).replace(password,'[redacted]')
     finally:
         signal.signal(signal.SIGTERM,signal.SIG_IGN);signal.signal(signal.SIGINT,signal.SIG_IGN)
-        if cleanup_required:
-            try:
-                inspected=run(['docker','container','inspect',name],check=False)
-                if inspected.returncode==0:
-                    report['fixture_removed']=run(['docker','rm','--force','--volumes',name],check=False).returncode==0
-                else:
-                    # A successful daemon inventory distinguishes absence from an unavailable daemon.
-                    inventory=run(['docker','container','ls','--all','--format','{{.Names}}'],check=False)
-                    report['fixture_removed']=inventory.returncode==0 and name not in inventory.stdout.splitlines()
-            except Exception: report['fixture_removed']=False
-            if not report['fixture_removed']: report['status']='failed'
-        output.parent.mkdir(parents=True,exist_ok=True);output.write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
+        before_cleanup_processes = children.finish()
+        report['cleanup'] = cleanup(run, docker, owned_identity) if owned_identity else {'passed': not cleanup_required, 'containersRemoved': not cleanup_required, 'volumesRemoved': not cleanup_required, 'error': 'No verified ownership inventory; no container removed.'}
+        process_result = children.finish()
+        report['cleanup'].update(process_result)
+        report['cleanup']['beforeCleanupProcessesStopped'] = before_cleanup_processes['processesStopped']
+        report['fixture_removed'] = report['cleanup']['containersRemoved']
+        if not report['cleanup']['passed'] or not process_result['processesStopped'] or not before_cleanup_processes['processesStopped']:
+            report['status']='failed'
+        try: persist(report_fd, report)
+        finally: os.close(report_fd)
+        print(json.dumps(report,indent=2))
     return 0 if report['status']=='passed' else 1
 
 if __name__=='__main__':
