@@ -67,6 +67,8 @@ async function startIsolatedApp() {
     for (const user of [
       { email: "browser-admin@example.test", role: "admin", adminPermissions: [] },
       { email: "browser-editor@example.test", role: "editor", adminPermissions: ["crm"] },
+      { email: "browser-customer-a@example.test", role: "client", adminPermissions: [] },
+      { email: "browser-customer-b@example.test", role: "client", adminPermissions: [] },
     ]) {
       const values = {
         ...user,
