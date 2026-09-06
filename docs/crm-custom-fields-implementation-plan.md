@@ -68,6 +68,30 @@ Store mapping through a dedicated admin endpoint with expected monotonic form ma
 
 `POST /api/admin/forms/:id/crm-mapping/preview` accepts a proposed mapping and bounded synthetic sample data; executes the same pure resolver/validator as intake; returns normalized built-ins/custom values, accepting definition revisions, missing/invalid source errors and duplicate-overwrite explanation. No submission, lead, job, provider or log of sample values. Mapping UI shows source→target/type and errors before save, but preview is not mandatory authorization or proof of later production values.
 
+### Verified form scalar adapter boundary
+
+Root inspected `public-form-renderer.tsx` and `forms.service.ts:validateField` on 2026-09-06.
+Core `checkbox` fields are option arrays, not booleans. Only a checkbox with exactly one configured
+option may map to a boolean: validated `[]` becomes false, and exactly `[thatOption.value]`
+becomes true. Reject multiple options, duplicate/unknown values and non-array inputs. The separate
+`consent` field already validates to a boolean and may map directly; this does not grant marketing
+consent or trigger external enrollment. Required mapping means a supplied non-null boolean, so
+false remains valid; required consent enforcement stays with ordinary form validation.
+
+The mapping resolver accepts the ordinary form validator's output, not arbitrary visitor input.
+Numbers are finite JSON numbers after that validation, while optional blank numbers are `""` and
+map to null; the typed bounds still reject Infinity and out-of-range numbers. Dates must pass the
+shared Gregorian-date validator. Single select/radio/image-choice inputs are option strings;
+only image-choice single mode is compatible. Optional blank scalar inputs map to null, and
+required mapped targets reject null. Text-like sources must remain strings. No generic truthiness,
+array flattening, stringification of objects or number coercion belongs in the mapping layer.
+
+Both preview and intake must call the same ordinary form validation before the pure resolver.
+Extract/reuse that validator when implementing mapping; do not implement a different preview-only
+parser or weaken existing fields. Mapping errors return source IDs/codes without submitted values.
+A test must prove checkbox false, numeric zero and optional blank remain distinct across preview,
+submission snapshot, retry and typed-value persistence.
+
 ## Submission, retries and errors
 
 Validate explicit mappings and mapped values before inserting a new submission or any job. Return 400 with stable source-field error codes for invalid visitor values, without echoing submitted values; unavailable/archived mapping configuration returns 503 with a neutral visitor message and a separate safe administrator diagnostic. Existing form public/proxy routes retain authentication, size/rate limits and response shape; expose field errors compatibly without requiring site changes to preserve entries.
