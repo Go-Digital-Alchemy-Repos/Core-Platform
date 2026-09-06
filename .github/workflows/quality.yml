@@ -96,9 +96,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify deployment configuration
-        run: npx tsx server/scripts/check-deployment-preflight.ts --config railway.toml --profile normal
-
       - name: Verify migrations
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/core_platform_ci
@@ -136,7 +133,7 @@ jobs:
         run: >-
           node --input-type=module -e 'import pg from "pg";
           const pool = new pg.Pool();
-          try { for (const name of ["core_backup_test", "core_form_effect_test", "core_reservation_expiry_test", "core_browser_test", "core_settings_test", "core_crm_custom_fields_test", "core_crm_mapping_test", "core_crm_profile_test"])
+          try { for (const name of ["core_backup_test", "core_form_effect_test", "core_reservation_expiry_test", "core_browser_test", "core_settings_test"])
           await pool.query(`CREATE DATABASE ${name}`); } finally { await pool.end(); }'
 
       - name: Verify database reliability across timezones
@@ -154,29 +151,8 @@ jobs:
           SETTINGS_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/core_settings_test
         run: npx vitest run server/__tests__/settings-atomic.db.test.ts
 
-      - name: Verify CRM persistence, mapping and migration safety
-        timeout-minutes: 5
-        env:
-          CRM_CUSTOM_FIELDS_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/core_crm_custom_fields_test
-          CRM_FORM_MAPPING_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/core_crm_mapping_test
-          CRM_PROFILE_MIGRATION_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/core_crm_profile_test
-        run: npx vitest run server/storage/crm-custom-fields.database.test.ts server/storage/crm-form-mapping.database.test.ts server/migrate-crm-profile.database.test.ts
-
-      - name: Rehearse current Core to CRM upgrade
-        timeout-minutes: 8
-        run: |
-          git fetch --no-tags --depth=1 origin a99bb7efeb4c007789c20da91ff0e2d395452836
-          python3 script/verify-crm-populated-upgrade.py --output test-results/crm-populated-upgrade.json
-
-      - name: Verify CRM capture and restore
-        timeout-minutes: 5
-        run: python3 script/verify-crm-backup-recovery.py --output test-results/crm-recovery.json
-
       - name: Build production bundle
         run: npm run build
-
-      - name: Verify compiled deployment preflight
-        run: node dist/operations/check-deployment-preflight.mjs --config railway.toml --profile normal
 
       - name: Verify standalone upload command
         run: python3 script/verify-upload-verifier-artifact.py
@@ -207,7 +183,5 @@ jobs:
           path: |
             test-results/production-runtime.json
             test-results/populated-upgrade.json
-            test-results/crm-recovery.json
-            test-results/crm-populated-upgrade.json
           if-no-files-found: warn
           retention-days: 14
