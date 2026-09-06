@@ -1320,11 +1320,12 @@ export function AddTherapistSheet({
               className="w-full basis-full rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive mb-3"
               data-testid="add-profile-error"
             >
-              {serverError ||
-                `Please check the form: ${Object.values(form.formState.errors)
-                  .map((error) => error.message)
-                  .filter(Boolean)
-                  .join(". ")}`}
+              {Object.keys(form.formState.errors).length > 0
+                ? `Please check the form: ${Object.values(form.formState.errors)
+                    .map((error) => error.message)
+                    .filter(Boolean)
+                    .join(". ")}`
+                : serverError}
             </div>
           )}
           <Button
