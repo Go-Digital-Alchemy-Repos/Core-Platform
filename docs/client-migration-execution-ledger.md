@@ -5,6 +5,25 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Actual populated rollback schema rehearsal
+
+Root extended the disposable upgrade runner with an optional immutable `--rollback-ref`. On actual
+main `a006f36` upgraded through candidate `0d11316`, rollback `704cabf` migration startup completed,
+then the current candidate migrated forward again. The original 11 rows across ten tables, all
+values of four notification jobs, and queued/failed form-effect jobs were unchanged. The existing
+negative duplicate-paid-history case still rejected without altering its records. Both candidate
+and rollback dependencies came from their respective lockfiles; the disposable database/volume
+were removed. The final run used Python `-O`, retaining explicit verification checks.
+See [aggregate and exact revision evidence](release-evidence/core-rollback-schema-2026-09-06.json).
+
+This proves migration-startup compatibility for the populated fixture, not full rollback readiness.
+The older runtime starts scheduled publication, event reminders, backups and directory membership
+lifecycle services, but does not implement the new form, notification or inventory-reservation
+workers. Its business writes and older backup behavior cannot be assumed equivalent to the new
+candidate. A controlled rollback must address admission, worker drainage, queued work and eventual
+resumption explicitly; the upload freeze only covers upload mutations. HTTP/runtime/provider
+acceptance and those operational controls remain open. No production change occurred.
+
 ### Offline commerce desktop/mobile acceptance integrated
 
 Root reviewed the final actual-app spec and its guarded synthetic fixture seeds. Both desktop and

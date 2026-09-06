@@ -6,7 +6,7 @@ import argparse, hashlib, json, os, pathlib, secrets, signal, subprocess, tempfi
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 TABLES = ['system_settings','cms_forms','cms_form_submissions','crm_leads','crm_lead_notes','ecommerce_products','ecommerce_product_variants','ecommerce_customers','ecommerce_orders','ecommerce_inventory_adjustments']
 
-def main(output, baseline):
+def main(output, baseline, rollback_ref=None):
     name = 'core-upgrade-' + uuid.uuid4().hex[:12]
     password = secrets.token_hex(24)
     report = {'status':'failed','baseline':baseline}
@@ -85,6 +85,25 @@ def main(output, baseline):
             sql('upgrade_clean',checks)
             require(snapshot('upgrade_clean',columns)[0]==original,'Constraint checks failed to roll back')
             report['new_constraints_verified']=True
+            if rollback_ref:
+                sql('upgrade_clean', "INSERT INTO cms_form_effect_jobs(id,submission_id,deduplication_key,payload,status,attempt_count) VALUES ('upgrade-effect-queued','upgrade-submission','queued','{\"synthetic\":true}','queued',0),('upgrade-effect-failed','upgrade-submission','failed','{\"synthetic\":true}','failed',3);")
+                effects_query = "SELECT json_agg(t ORDER BY id) FROM cms_form_effect_jobs t;"
+                effects_before = json.loads(sql('upgrade_clean',effects_query))
+                rollback_revision = run(['git','rev-parse',rollback_ref+'^{commit}']).stdout.strip()
+                rollback_root = pathlib.Path(directory)/'rollback'; rollback_root.mkdir()
+                rollback_archive = pathlib.Path(directory)/'rollback.tar'
+                run(['git','archive','--format=tar','--output',str(rollback_archive),rollback_revision])
+                run(['tar','-xf',str(rollback_archive),'-C',str(rollback_root)])
+                run(['npm','ci','--no-audit','--no-fund'],cwd=rollback_root,env=install_env,timeout=240)
+                migrate(rollback_root,'upgrade_clean')
+                require(snapshot('upgrade_clean',columns)[0]==original,'Rollback startup changed legacy records')
+                require(json.loads(sql('upgrade_clean',jobs_query))==jobs_before,'Rollback startup changed notification history')
+                require(json.loads(sql('upgrade_clean',effects_query))==effects_before,'Rollback startup changed form queue history')
+                migrate(ROOT,'upgrade_clean')
+                require(snapshot('upgrade_clean',columns)[0]==original,'Roll-forward changed legacy records')
+                require(json.loads(sql('upgrade_clean',jobs_query))==jobs_before,'Roll-forward changed notification history')
+                require(json.loads(sql('upgrade_clean',effects_query))==effects_before,'Roll-forward changed form queue history')
+                report['rollback_schema_rehearsal']={'revision':rollback_revision,'startup_completed':True,'legacy_values_preserved':True,'notification_values_preserved':True,'new_form_queue_values_preserved':True,'form_job_statuses':['queued','failed'],'roll_forward_completed':True,'scope':'Migration startup only; no application workers, business writes, provider operations or HTTP readiness exercised'}
             sql('upgrade_duplicate',"INSERT INTO ecommerce_inventory_adjustments(id,product_id,variant_id,order_id,delta,quantity_after,reason) VALUES ('upgrade-duplicate','upgrade-product','upgrade-variant','upgrade-order',-2,6,'order_paid');")
             duplicate_before,duplicate_columns=snapshot('upgrade_duplicate')
             rejected=migrate(ROOT,'upgrade_duplicate',expect=False)
@@ -114,7 +133,8 @@ def main(output, baseline):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=pathlib.Path,required=True);parser.add_argument('--baseline',default='a006f36a3c4f37566c71b278d561844b45fb3b81')
+    parser.add_argument("--rollback-ref",help="Optional immutable rollback revision to rehearse against the upgraded populated schema")
     args=parser.parse_args()
     def interrupted(number,_frame): raise RuntimeError(f'Upgrade rehearsal interrupted by signal {number}')
     signal.signal(signal.SIGTERM,interrupted);signal.signal(signal.SIGINT,interrupted)
-    raise SystemExit(main(args.output.resolve(),args.baseline))
+    raise SystemExit(main(args.output.resolve(),args.baseline,args.rollback_ref))
