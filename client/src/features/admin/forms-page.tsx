@@ -72,7 +72,7 @@ import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 import { useEditorSaveState } from "@/hooks/use-editor-save-state";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 
-type EditableForm = Omit<CmsForm, "createdAt" | "updatedAt">;
+type EditableForm = Omit<CmsForm, "createdAt" | "updatedAt" | "crmMapping" | "crmMappingRevision">;
 
 type FieldLibraryItem = {
   type: CmsFormFieldType;

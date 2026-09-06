@@ -1,3 +1,4 @@
+import type { CrmFormMappingV1 } from "../crm-form-mapping";
 import { sql } from "drizzle-orm";
 import {
   pgTable,
@@ -133,6 +134,8 @@ export const cmsForms = pgTable(
       .$type<CmsFormField[]>()
       .default(sql`'[]'::jsonb`)
       .notNull(),
+    crmMapping: jsonb("crm_mapping").$type<CrmFormMappingV1 | null>(),
+    crmMappingRevision: integer("crm_mapping_revision").notNull().default(0),
     settings: jsonb("settings")
       .$type<CmsFormSettings>()
       .default(sql`'{}'::jsonb`)

@@ -342,3 +342,5 @@ export {
 } from "./provider-applications";
 
 export * from "./client-stack-onboarding";
+
+export * from "./crm-custom-fields";

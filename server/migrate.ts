@@ -559,6 +559,7 @@ async function reconcileSchema(migrationsFolder: string) {
   await ensureClientSiteContentTables(migrationsFolder);
   await ensureManagedFormSubmissionSchema(migrationsFolder);
   await ensureWooImportLifecycleTables(migrationsFolder);
+  await runSqlMigrationFile(migrationsFolder, "0061_crm_custom_fields.sql");
 }
 
 export async function runMigrations() {

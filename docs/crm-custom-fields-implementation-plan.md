@@ -21,6 +21,18 @@ contract/resolver tests. Full types and scoped lint/formatting also passed. This
 live mapped intake: the caller still must reuse ordinary validation, pin transaction-consistent
 revisions, bound the full job envelope and commit the snapshot atomically with submission/jobs.
 
+## Persistence checkpoint
+
+The additive persistence slice is accepted in this isolated branch: four definition/revision/value
+tables, entity/form revision columns, explicit0061 reconciliation, typed transaction-aware storage
+and generic creation-schema exclusion of server-owned revisions. Definition locks precede entity
+locks; revisions/limits serialize and reads join retained configuration rather than querying each
+value separately. Root independently passed18 tests (12 PostgreSQL cases and6 guard/schema checks)
+in an owned disposable fixture and verified its removal. Independent bounded review found no
+blocking defect; types and scoped lint/formatting passed. A suggested fixture timeout bound will
+be included with the next integration work. Actual-current-main upgrade, backup/restore, API and
+workflow integration remain required; the synthetic populated rehearsal alone does not prove them.
+
 ## Source constraints
 
 - `shared/schema/crm.ts` has separate lead/client records, untyped `metadata`/`formData`, six fixed stages and unique client `sourceLeadId`. Custom fields must not reinterpret those existing JSON records.
