@@ -5,6 +5,7 @@ const MockS3Client = vi.fn(() => ({ send: mockSend }));
 
 vi.mock("@aws-sdk/client-s3", () => ({
   S3Client: MockS3Client,
+  GetObjectCommand: vi.fn((params: unknown) => ({ type: "GetObject", ...(params as object) })),
   PutObjectCommand: vi.fn((params: unknown) => ({ type: "PutObject", ...(params as object) })),
   DeleteObjectCommand: vi.fn((params: unknown) => ({
     type: "DeleteObject",
@@ -33,6 +34,9 @@ vi.mock("../storage/index", () => ({
   },
 }));
 
+vi.mock("../storage", () => ({ storage: {} }));
+vi.mock("../services/email.service", () => ({ sendEmail: vi.fn() }));
+
 describe("R2 service", () => {
   afterEach(() => vi.unstubAllEnvs());
   it("freeze throws before configuration/SDK work instead of returning fallback sentinels", async () => {
@@ -48,6 +52,8 @@ describe("R2 service", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     MockS3Client.mockClear();
+    delete process.env.CLIENT_STACK_ID;
+    delete process.env.PUBLIC_SITE_ORIGIN;
     const mod = await import("../services/r2.service");
     mod.resetClient();
   });
@@ -138,6 +144,128 @@ describe("R2 service", () => {
 
     const mod = await import("../services/r2.service");
     const url = await mod.uploadFile("images/photo.jpg", Buffer.from("data"), "image/jpeg");
-    expect(url).toBe("https://cdn.example.com/images/photo.jpg");
+    expect(url).toBe("https://cdn.example.com/system-backups/uploads/images/photo.jpg");
+  });
+
+  it("stores uploads under the activated client domain namespace", async () => {
+    process.env.CLIENT_STACK_ID = "better-farms-foundation";
+    process.env.PUBLIC_SITE_ORIGIN = "https://www.better-farms.org";
+    mockGetDecryptedCategory.mockResolvedValue({
+      r2_account_id: "acct",
+      r2_access_key_id: "key",
+      r2_secret_access_key: "secret",
+      r2_bucket_name: "core-platform-website-backups",
+      r2_public_url: "",
+    });
+    mockSend.mockResolvedValue({});
+
+    const mod = await import("../services/r2.service");
+    const url = await mod.uploadFile("cms/media/photo.jpg", Buffer.from("data"), "image/jpeg");
+
+    expect(url).toBe("/r2/cms/media/photo.jpg");
+    expect(mockSend).toHaveBeenCalledWith(
+      expect.objectContaining({ Key: "clients/better-farms.org/uploads/cms/media/photo.jpg" }),
+    );
+  });
+  function configure(publicUrl = "") {
+    vi.stubEnv("CLIENT_STACK_ID", "core-platform");
+    vi.stubEnv("PUBLIC_SITE_ORIGIN", "");
+    mockGetDecryptedCategory.mockResolvedValue({
+      r2_account_id: "acct",
+      r2_access_key_id: "key",
+      r2_secret_access_key: "secret",
+      r2_bucket_name: "bucket",
+      r2_public_url: publicUrl,
+    });
+    mockSend.mockResolvedValue({
+      Body: { transformToByteArray: async () => Buffer.from("candidate bytes") },
+      ContentType: "image/webp",
+    });
+  }
+  it("targets namespaced GET and DELETE using stored logical keys", async () => {
+    configure();
+    const mod = await import("../services/r2.service");
+    expect((await mod.downloadFile("cms/images/candidate.webp"))?.buffer.toString()).toBe(
+      "candidate bytes",
+    );
+    expect(mockSend).toHaveBeenLastCalledWith({
+      type: "GetObject",
+      Bucket: "bucket",
+      Key: "clients/core-platform/uploads/cms/images/candidate.webp",
+    });
+    expect(await mod.deleteFile("cms/images/candidate.webp")).toBe(true);
+    expect(mockSend).toHaveBeenLastCalledWith({
+      type: "DeleteObject",
+      Bucket: "bucket",
+      Key: "clients/core-platform/uploads/cms/images/candidate.webp",
+    });
+  });
+  it("does not fall back to the root key when namespaced GET fails", async () => {
+    configure();
+    mockSend.mockRejectedValue(new Error("NoSuchKey"));
+    const mod = await import("../services/r2.service");
+    expect(await mod.downloadFile("cms/images/missing.webp")).toBeNull();
+    expect(mockSend).toHaveBeenCalledOnce();
+    expect(mockSend.mock.calls[0][0].Key).toBe(
+      "clients/core-platform/uploads/cms/images/missing.webp",
+    );
+  });
+  it("normalizes a candidate-qualified public URL to a logical app URL without double prefix", async () => {
+    configure();
+    const mod = await import("../services/r2.service");
+    expect(
+      await mod.normalizePublicUrl(
+        "https://pub.example.r2.dev/clients/core-platform/uploads/cms/images/candidate.webp",
+      ),
+    ).toBe("/r2/cms/images/candidate.webp");
+    expect(await mod.normalizePublicUrl("/r2/cms/images/candidate.webp")).toBe(
+      "/r2/cms/images/candidate.webp",
+    );
+    mod.resetClient();
+    configure("https://cdn.example.com");
+    expect(
+      await mod.normalizePublicUrl(
+        "https://pub.example.r2.dev/clients/core-platform/uploads/cms/images/candidate.webp",
+      ),
+    ).toBe("https://cdn.example.com/clients/core-platform/uploads/cms/images/candidate.webp");
+  });
+  it("reads candidate career resume r2:logical references through the unchanged career loader while frozen", async () => {
+    configure();
+    vi.stubEnv("UPLOAD_MUTATIONS_FROZEN", "true");
+    const { loadCareerResume } = await import("../services/careers.service");
+    expect((await loadCareerResume("r2:career-resumes/candidate.pdf"))?.buffer.toString()).toBe(
+      "candidate bytes",
+    );
+    expect(mockSend).toHaveBeenLastCalledWith({
+      type: "GetObject",
+      Bucket: "bucket",
+      Key: "clients/core-platform/uploads/career-resumes/candidate.pdf",
+    });
+  });
+  it("serves a candidate logical app URL through the real frozen public route", async () => {
+    configure();
+    vi.stubEnv("UPLOAD_MUTATIONS_FROZEN", "true");
+    const { default: express } = await import("express");
+    const { default: route } = await import("../routes/r2-public.routes");
+    const app = express();
+    app.use("/r2", route);
+    const server = app.listen(0, "127.0.0.1");
+    await new Promise<void>((resolve) => server.once("listening", resolve));
+    try {
+      const address = server.address() as import("node:net").AddressInfo;
+      const response = await fetch(`http://127.0.0.1:${address.port}/r2/cms/images/candidate.webp`);
+      expect(response.status).toBe(200);
+      expect(await response.text()).toBe("candidate bytes");
+      expect(mockSend).toHaveBeenLastCalledWith({
+        type: "GetObject",
+        Bucket: "bucket",
+        Key: "clients/core-platform/uploads/cms/images/candidate.webp",
+      });
+    } finally {
+      server.closeAllConnections();
+      await new Promise<void>((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      );
+    }
   });
 });
