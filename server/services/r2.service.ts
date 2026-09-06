@@ -8,6 +8,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { logger } from "../utils/logger";
 import { retryOnce } from "../utils/retry";
+import { getClientStoragePrefix } from "../../shared/client-backup-policy";
 
 interface R2Config {
   accountId: string;
@@ -15,6 +16,7 @@ interface R2Config {
   secretAccessKey: string;
   bucketName: string;
   publicUrl: string;
+  prefix: string;
 }
 
 let cachedClient: S3Client | null = null;
@@ -61,10 +63,22 @@ function buildPublicObjectUrl(baseUrl: string, key: string): string {
   return `${baseUrl.replace(/\/$/, "")}/${normalizedKey}`;
 }
 
-function getPublicObjectUrl(key: string, configuredPublicUrl: string): string {
+function qualifyKey(key: string, prefix: string): string {
+  return `${prefix}/${key.replace(/^\/+/, "")}`.replace(/\/{2,}/g, "/");
+}
+
+function logicalKey(key: string, prefix: string): string {
+  const normalizedKey = key.replace(/^\/+/, "");
+  const namespace = `${prefix}/`;
+  return normalizedKey.startsWith(namespace)
+    ? normalizedKey.slice(namespace.length)
+    : normalizedKey;
+}
+
+function getPublicObjectUrl(key: string, configuredPublicUrl: string, prefix: string): string {
   const configuredBaseUrl = getConfiguredPublicBaseUrl(configuredPublicUrl);
   if (configuredBaseUrl) {
-    return buildPublicObjectUrl(configuredBaseUrl, key);
+    return buildPublicObjectUrl(configuredBaseUrl, qualifyKey(key, prefix));
   }
 
   return buildAppServedObjectUrl(key);
@@ -90,7 +104,14 @@ async function getR2Config(): Promise<R2Config | null> {
     const publicUrl = settings["r2_public_url"] || "";
 
     if (accountId && accessKeyId && secretAccessKey && bucketName) {
-      return { accountId, accessKeyId, secretAccessKey, bucketName, publicUrl };
+      return {
+        accountId,
+        accessKeyId,
+        secretAccessKey,
+        bucketName,
+        publicUrl,
+        prefix: `${getClientStoragePrefix(process.env.CLIENT_STACK_ID, process.env.PUBLIC_SITE_ORIGIN)}/uploads`,
+      };
     }
   } catch (err) {
     logger.r2.warn("Failed to load R2 configuration", {
@@ -104,12 +125,14 @@ async function getClient(): Promise<{
   client: S3Client;
   bucketName: string;
   publicUrl: string;
+  prefix: string;
 } | null> {
   if (cachedClient && cachedConfig) {
     return {
       client: cachedClient,
       bucketName: cachedConfig.bucketName,
       publicUrl: cachedConfig.publicUrl,
+      prefix: cachedConfig.prefix,
     };
   }
 
@@ -130,6 +153,7 @@ async function getClient(): Promise<{
     client: cachedClient,
     bucketName: config.bucketName,
     publicUrl: config.publicUrl,
+    prefix: config.prefix,
   };
 }
 
@@ -157,7 +181,7 @@ export async function uploadFile(
         r2.client.send(
           new PutObjectCommand({
             Bucket: r2.bucketName,
-            Key: key,
+            Key: qualifyKey(key, r2.prefix),
             Body: buffer,
             ContentType: contentType,
           }),
@@ -165,7 +189,7 @@ export async function uploadFile(
       "R2 upload",
     );
 
-    const publicUrl = getPublicObjectUrl(key, r2.publicUrl);
+    const publicUrl = getPublicObjectUrl(key, r2.publicUrl, r2.prefix);
 
     logger.r2.info("File uploaded", { key });
     return publicUrl;
@@ -186,7 +210,7 @@ export async function deleteFile(key: string): Promise<boolean> {
         r2.client.send(
           new DeleteObjectCommand({
             Bucket: r2.bucketName,
-            Key: key,
+            Key: qualifyKey(key, r2.prefix),
           }),
         ),
       "R2 delete",
@@ -211,7 +235,7 @@ export async function downloadFile(
         r2.client.send(
           new GetObjectCommand({
             Bucket: r2.bucketName,
-            Key: key,
+            Key: qualifyKey(key, r2.prefix),
           }),
         ),
       "R2 download",
@@ -283,6 +307,6 @@ export async function normalizePublicUrl(
   const r2 = await getClient();
   if (!r2) return url;
 
-  const objectKey = getObjectKeyFromUrl(parsed, r2.bucketName);
-  return getPublicObjectUrl(objectKey, r2.publicUrl);
+  const objectKey = logicalKey(getObjectKeyFromUrl(parsed, r2.bucketName), r2.prefix);
+  return getPublicObjectUrl(objectKey, r2.publicUrl, r2.prefix);
 }

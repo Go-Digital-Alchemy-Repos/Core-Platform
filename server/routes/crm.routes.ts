@@ -2,15 +2,18 @@ import { Router } from "express";
 import { asyncHandler } from "../middleware/error-handler";
 import { storage } from "../storage";
 import { createOrUpdateCrmLead } from "../services/crm.service";
+import { constantTimeSecretEquals } from "../utils/constant-time-secret";
+import { crmInboundLimiter } from "../middleware/security";
 
 const router = Router();
 
 router.post(
   "/leads",
+  crmInboundLimiter,
   asyncHandler(async (req, res) => {
     const configuredKey = await storage.settings.getDecryptedValue("crm_api_key");
     const suppliedKey = req.get("X-CRM-API-Key");
-    if (!configuredKey || suppliedKey !== configuredKey) {
+    if (!constantTimeSecretEquals(suppliedKey, configuredKey)) {
       return res.status(401).json({ message: "Invalid CRM API key" });
     }
 

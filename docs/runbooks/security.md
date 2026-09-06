@@ -2,30 +2,30 @@
 
 ## Required Environment Variables
 
-| Variable | Required In | Description |
-|---|---|---|
-| `SESSION_SECRET` | Production | JWT signing secret. Must NOT be the dev default (`dev-secret-change-me`). Use a cryptographically random string ≥ 32 characters. |
-| `DATABASE_URL` | Production | PostgreSQL connection string. |
-| `APP_URL` | Recommended | Canonical URL of the application (e.g., `https://app.example.com`). Used for origin checking. Not enforced at startup but strongly recommended for production. |
-| `TRUSTED_ORIGINS` | Optional | Comma-separated list of additional trusted origins for the CSRF origin check (e.g., `https://admin.example.com,https://staging.example.com`). |
-| `SETUP_TOKEN` | Optional | One-time token required to create the initial admin account via `/api/setup/admin`. |
-| `STRIPE_SECRET_KEY` | Production | Stripe API secret key for payment processing. |
-| `STRIPE_WEBHOOK_SECRET` | Production | Stripe webhook signing secret for verifying webhook payloads. |
+| Variable                | Required In                 | Description                                                                                                                                                                                               |
+| ----------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SESSION_SECRET`        | Production                  | JWT signing secret. Must NOT be the dev default (`dev-secret-change-me`). Use a cryptographically random string ≥ 32 characters.                                                                          |
+| `DATABASE_URL`          | Production                  | PostgreSQL connection string.                                                                                                                                                                             |
+| `APP_URL`               | Client production preflight | Current canonical Core Platform service origin (e.g., `https://app.example.com`). Used for origin checking and generated links.                                                                           |
+| `TRUSTED_ORIGINS`       | Client production preflight | Comma-separated browser origins allowed by the CSRF origin check (e.g., `https://app.example.com,https://www.example.com`).                                                                               |
+| `SETUP_TOKEN`           | Production                  | High-entropy bootstrap token required to create the initial admin account via `/api/setup/admin`. Keep it configured so a fresh or restored database cannot expose an unauthenticated first-admin window. |
+| `STRIPE_SECRET_KEY`     | Production                  | Stripe API secret key for payment processing.                                                                                                                                                             |
+| `STRIPE_WEBHOOK_SECRET` | Production                  | Stripe webhook signing secret for verifying webhook payloads.                                                                                                                                             |
 
-The application enforces `SESSION_SECRET` and `DATABASE_URL` at startup in production and will exit immediately if they are missing or if `SESSION_SECRET` still has the dev default value.
+The application enforces `SESSION_SECRET`, `DATABASE_URL`, and `SETUP_TOKEN` at startup in production and will exit immediately if they are missing or if `SESSION_SECRET` still has the dev default value.
 
 ## Rate Limiting
 
 All rate limiters are **skipped in development** and enforced in production. They use `express-rate-limit` with standard headers (`RateLimit-*`) enabled.
 
-| Endpoint | Window | Max Requests | Purpose |
-|---|---|---|---|
-| `POST /api/auth/login` | 15 min | 10 | Brute-force login protection |
-| `POST /api/auth/register` | 60 min | 5 | Registration abuse prevention |
-| `POST /api/auth/forgot-password` | 15 min | 5 | Password reset email flooding |
-| `POST /api/auth/reset-password` | 15 min | 10 | Reset token brute-force protection |
-| `POST /api/guest-messages` | 15 min | 5 | Guest contact form spam prevention |
-| `ALL /api/*` | 15 min | 300 | General API abuse prevention |
+| Endpoint                         | Window | Max Requests | Purpose                            |
+| -------------------------------- | ------ | ------------ | ---------------------------------- |
+| `POST /api/auth/login`           | 15 min | 10           | Brute-force login protection       |
+| `POST /api/auth/register`        | 60 min | 5            | Registration abuse prevention      |
+| `POST /api/auth/forgot-password` | 15 min | 5            | Password reset email flooding      |
+| `POST /api/auth/reset-password`  | 15 min | 10           | Reset token brute-force protection |
+| `POST /api/guest-messages`       | 15 min | 5            | Guest contact form spam prevention |
+| `ALL /api/*`                     | 15 min | 300          | General API abuse prevention       |
 
 ## CSRF / Origin Check
 
@@ -51,14 +51,14 @@ invalidates previously issued cookies, and suspended users are rejected by both 
 optional authentication. The first release from the legacy token format intentionally requires all
 users to sign in again.
 
-| Setting | Value | Notes |
-|---|---|---|
-| Cookie name | `corePlatform_token` | |
-| `httpOnly` | `true` | Prevents JavaScript access (XSS mitigation) |
-| `secure` | `true` in production | Cookies only sent over HTTPS |
-| `sameSite` | `lax` | Prevents cross-site request attachment while allowing top-level navigation |
-| `maxAge` | 7 days | Matches JWT expiry |
-| `path` | `/` | Available to all routes |
+| Setting     | Value                | Notes                                                                      |
+| ----------- | -------------------- | -------------------------------------------------------------------------- |
+| Cookie name | `corePlatform_token` |                                                                            |
+| `httpOnly`  | `true`               | Prevents JavaScript access (XSS mitigation)                                |
+| `secure`    | `true` in production | Cookies only sent over HTTPS                                               |
+| `sameSite`  | `lax`                | Prevents cross-site request attachment while allowing top-level navigation |
+| `maxAge`    | 7 days               | Matches JWT expiry                                                         |
+| `path`      | `/`                  | Available to all routes                                                    |
 
 ## Helmet / Content Security Policy
 
@@ -80,15 +80,16 @@ Helmet is enabled with the following CSP directives:
 | `form-action` | `'self'` | Restrict form submission targets |
 
 Additional Helmet settings:
+
 - `crossOriginEmbedderPolicy`: disabled (app serves cross-origin media)
 - `crossOriginResourcePolicy`: `cross-origin` (allows external origins to load served media)
 
 ## Payload Size Limits
 
-| Parser | Limit |
-|---|---|
-| `express.json()` | 1 MB |
-| `express.urlencoded()` | 1 MB |
+| Parser                 | Limit |
+| ---------------------- | ----- |
+| `express.json()`       | 1 MB  |
+| `express.urlencoded()` | 1 MB  |
 
 ## Error Handling
 

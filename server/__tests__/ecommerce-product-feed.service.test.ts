@@ -50,6 +50,18 @@ describe("ecommerce product feed", () => {
     });
   });
 
+  it("uses the configured public origin over persisted SEO data", () => {
+    const original = process.env.PUBLIC_SITE_ORIGIN;
+    process.env.PUBLIC_SITE_ORIGIN = "https://temporary-client.up.railway.app";
+    try {
+      const [item] = buildProductFeedItems([baseProduct], seo);
+      expect(item.link).toBe("https://temporary-client.up.railway.app/products/identity-workbook");
+    } finally {
+      if (original === undefined) delete process.env.PUBLIC_SITE_ORIGIN;
+      else process.env.PUBLIC_SITE_ORIGIN = original;
+    }
+  });
+
   it("excludes noindex products from public product feeds", () => {
     const items = buildProductFeedItems([{ ...baseProduct, robotsIndex: false }], seo);
     expect(items).toHaveLength(0);

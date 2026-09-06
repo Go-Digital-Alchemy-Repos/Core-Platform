@@ -4,20 +4,22 @@ This document describes the quality checks available in the Core Platform codeba
 
 ## Available Scripts
 
-| Script         | Command          | Purpose                                            |
-| -------------- | ---------------- | -------------------------------------------------- |
-| Type-check     | `npm run check`  | Runs `tsc` to validate TypeScript types            |
-| Lint           | `npm run lint`   | Runs ESLint across client, server, and shared code |
-| Format (check) | `npm run format` | Runs Prettier in check mode (reports issues only)  |
-| Test           | `npm test`       | Runs Vitest unit tests                             |
-| Build          | `npm run build`  | Builds the production client and server bundles    |
-| Bundle budget  | `npm run budget` | Checks production asset sizes after a build        |
+| Script           | Command             | Purpose                                               |
+| ---------------- | ------------------- | ----------------------------------------------------- |
+| Migration verify | `npm run db:verify` | Applies migrations to an isolated PostgreSQL database |
+| Type-check       | `npm run check`     | Runs `tsc` to validate TypeScript types               |
+| Lint             | `npm run lint`      | Runs ESLint across client, server, and shared code    |
+| Format (check)   | `npm run format`    | Runs Prettier in check mode (reports issues only)     |
+| Test             | `npm test`          | Runs Vitest unit tests                                |
+| Build            | `npm run build`     | Builds the production client and server bundles       |
+| Bundle budget    | `npm run budget`    | Checks production asset sizes after a build           |
 
 ## Running Checks Locally
 
 Before pushing code, run the full quality suite:
 
 ```bash
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/core_platform npm run db:verify
 npm run check
 npm run lint
 npm run format
@@ -26,7 +28,7 @@ npm run build
 npm run budget
 ```
 
-All commands must pass cleanly before a pull request is ready to merge. The format check currently remains advisory in CI until the repository has a formatting baseline.
+All commands must pass cleanly before a pull request is ready to merge.
 
 ## Lint
 
@@ -82,19 +84,21 @@ Current guardrails expect app-level routes such as CRM and ecommerce to stay laz
 
 ## CI Workflow
 
-The CI quality workflow should run automatically on every push to `main` and on every pull request targeting `main`. It should execute:
+The tracked GitHub Actions quality workflow runs automatically on every push and pull request. It executes:
 
 1. `npm ci` — clean install of dependencies
-2. `npm run check` — type-checking
-3. `npm run lint` — linting
-4. `npm run format` — formatting check (non-blocking, see note below)
-5. `npm test` — unit tests
-6. `npm run build` — production bundle verification
-7. `npm run budget` — production asset size budget
+2. Apply migrations twice to the workflow's isolated PostgreSQL 16 service
+3. `npm run check` — type-checking
+4. `npm run lint` — linting
+5. `npm run format` — formatting check
+6. `npm test` — unit tests
+7. Run backup, managed-form and reservation reliability tests against dedicated disposable databases in New York and UTC process timezones
+8. `npm run build` — production bundle verification
+9. `npm run budget` — production asset size budget
+10. Start the compiled production bundle in isolated Linux with verified TLS PostgreSQL, verify readiness and Node PID 1, then require graceful SIGTERM exit
+11. Install Chromium and run `playwright.app.config.ts` against the actual Express/Vite application and disposable PostgreSQL
 
-All steps must pass for the CI run to be green.
-
-**Note:** The format check runs with `continue-on-error: true` in CI because the existing codebase has not yet been mass-formatted. It reports formatting issues without blocking the pipeline. Once a baseline format pass is applied, the `continue-on-error` flag can be removed to enforce formatting strictly.
+All steps must pass for the CI run to be green. The workflow uses Node.js 20 and npm's lockfile cache; it does not use production credentials or contact client services.
 
 ## Conventions
 
@@ -102,3 +106,18 @@ All steps must pass for the CI run to be green.
 - **Prefer `warn` over `error`** for rules that are aspirational rather than critical.
 - **Test file naming**: `<module>.test.ts` co-located with the source file.
 - **No mocked/stubbed database tests** in unit test files — those belong in integration tests (out of scope for now).
+
+## Real application browser tests
+
+`BROWSER_TEST_DATABASE_URL=postgresql://test:test@localhost:5432/core_browser_test npm run test:e2e`
+runs desktop and mobile journeys after `npx playwright install chromium`. Provision the dedicated
+local `core_browser_test` database first. The launcher rejects non-loopback destinations and URL
+overrides, ignores ordinary DATABASE_URL/.env/provider credentials, seeds synthetic admin and CRM
+editor users, runs migrations, and starts the actual app. It never reuses an existing web server.
+
+The suite checks every ecommerce settings route, persisted CRM presentation changes through the
+UI and reload, and CRM editor read/write permissions. It does not prove payment-provider sandbox
+transactions or all CRM lifecycle flows; those remain separate release gates.
+
+`npm run test:e2e:layout` retains the earlier synthetic CSS layout checks. Those fixture checks are
+not evidence that an actual application journey works.

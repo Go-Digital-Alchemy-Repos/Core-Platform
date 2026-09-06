@@ -52,6 +52,21 @@ export async function getEcommerceStripeClient(): Promise<Stripe> {
   return new Stripe(await getEcommerceStripeSecretKey());
 }
 
+/** Operator activation applies only to new provider transactions, never historical recovery. */
+export function assertEcommerceProviderTransactionsEnabled() {
+  if (process.env.ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED !== "true") {
+    throw stripeConfigurationError(
+      "Ecommerce provider transactions are awaiting operator activation",
+    );
+  }
+}
+
+export async function getEcommerceStripeTransactionClient(): Promise<Stripe> {
+  const stripe = await getEcommerceStripeClient();
+  assertEcommerceProviderTransactionsEnabled();
+  return stripe;
+}
+
 export async function getEcommerceStripeWebhookSecret(): Promise<string | null> {
   const settings = await getEcommerceStripeSettings();
   const mode = settings.active_mode === "live" ? "live" : "test";
@@ -61,7 +76,16 @@ export async function getEcommerceStripeWebhookSecret(): Promise<string | null> 
 export async function getMaskedEcommerceStripeStatus() {
   const settings = await getEcommerceStripeSettings();
   const activeMode = settings.active_mode === "live" ? "live" : "test";
+  const selectedSecret =
+    activeMode === "live" ? settings.live_secret_key : settings.test_secret_key;
+  const configured =
+    Boolean(selectedSecret) && !validateStripeKeyMode(activeMode, undefined, selectedSecret);
+  const providerTransactionsEnabled =
+    process.env.ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED === "true";
   return {
+    providerTransactionsEnabled,
+    configured,
+    awaitingActivation: configured && !providerTransactionsEnabled,
     activeMode,
     testPublishableKey: settings.test_publishable_key || "",
     livePublishableKey: settings.live_publishable_key || "",

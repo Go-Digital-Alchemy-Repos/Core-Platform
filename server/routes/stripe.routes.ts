@@ -7,6 +7,7 @@ import { asyncHandler } from "../middleware/error-handler";
 import type { Event } from "@shared/schema/events";
 import { getEventPath } from "@shared/event-url";
 import { getDirectorySettings } from "../services/directory-settings.service";
+import { findActiveTierForStripePrice } from "../utils/membership-price-policy";
 
 const router = Router();
 
@@ -163,6 +164,13 @@ router.post(
       return;
     }
 
+    const activeTiers = await storage.tiers.getActiveTiers();
+    const selectedTier = findActiveTierForStripePrice(activeTiers, priceId);
+    if (!selectedTier) {
+      res.status(400).json({ message: "The selected membership price is not available" });
+      return;
+    }
+
     const user = req.user!;
 
     const directorySettings = await getDirectorySettings();
@@ -195,13 +203,21 @@ router.post(
         subscription = await storage.subscriptions.createSubscription({
           therapistId: user.id,
           stripeCustomerId: customerId,
+          tierId: selectedTier.id,
           status: "inactive",
         });
       } else {
         await storage.subscriptions.updateSubscription(subscription.id, {
           stripeCustomerId: customerId,
+          tierId: selectedTier.id,
         });
       }
+    }
+
+    if (subscription && subscription.tierId !== selectedTier.id) {
+      subscription = await storage.subscriptions.updateSubscription(subscription.id, {
+        tierId: selectedTier.id,
+      });
     }
 
     if (
@@ -242,7 +258,7 @@ router.post(
       mode: "subscription",
       success_url: `${host}/therapist/subscription?success=true`,
       cancel_url: `${host}/therapist/subscription?canceled=true`,
-      metadata: { userId: user.id },
+      metadata: { userId: user.id, tierId: selectedTier.id },
     });
 
     res.json({ url: session.url });

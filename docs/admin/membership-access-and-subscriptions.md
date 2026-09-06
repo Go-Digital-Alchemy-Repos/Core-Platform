@@ -52,6 +52,14 @@ When access is denied, callers should use the rule teaser and reason to render a
 - Use manual member assignment for comps, internal testing, offline payments, or migration support.
 - Use activity logs when auditing why a user gained or lost access.
 - Keep Stripe settings under the membership payment panel. Do not reuse ecommerce or directory subscription Stripe configuration unless the service explicitly supports it.
+- Blank Stripe credential fields preserve the stored value. Replacing a credential requires a nonblank value; clearing one requires the explicit administrative API clear flag.
+- Checkout success, cancellation, and customer-portal return URLs must use `APP_URL` or an origin listed in `TRUSTED_ORIGINS`.
+
+## Stripe Webhook Recovery
+
+Membership webhook deliveries are claimed atomically before subscription side effects begin. Successful deliveries are marked `processed`; failures are marked `failed` and remain eligible for a Stripe retry. A processing claim can be recovered after five minutes, and attempt tokens prevent an expired worker from completing or failing a newer retry.
+
+The delivery record prevents concurrent duplicate handling and preserves failure details for operations. Subscription updates use existing upsert/update paths, but the business effects and audit insert are not yet one database transaction. Operators should inspect membership state and audit history before manually replaying an event that may have failed after a partial effect.
 
 ## Related Files
 

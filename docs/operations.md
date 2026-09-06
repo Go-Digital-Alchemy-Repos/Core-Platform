@@ -58,7 +58,9 @@ Checks if the application is ready to serve traffic by verifying database connec
 
 Returns in-memory application metrics. Resets on process restart.
 
-**Access control:** In production, this endpoint returns 404 unless `METRICS_ENABLED=true` is set as an environment variable. Always available in development.
+**Access control:** In production, this endpoint returns 404 unless `METRICS_ENABLED=true` and a matching
+`Authorization: Bearer <METRICS_BEARER_TOKEN>` header are supplied. It is available without authentication
+in development.
 
 **Response:**
 
@@ -83,6 +85,10 @@ Returns in-memory application metrics. Resets on process restart.
   "email": {
     "success": 10,
     "failure": 1
+  },
+  "domains": {
+    "checkout": { "created": 10, "failed": 1 },
+    "webhook": { "processed": 12 }
   }
 }
 ```
@@ -90,6 +96,8 @@ Returns in-memory application metrics. Resets on process restart.
 - Route paths are normalized (UUIDs and numeric IDs replaced with `:id`)
 - Error counts are grouped by HTTP status code
 - DB query and email metrics track when explicitly instrumented via `recordDbQuery()` and `recordEmailOutcome()`
+- Use `?format=prometheus` for the authenticated, stack-labeled scrape view. It excludes route paths and
+  exposes only aggregate process, database, email, HTTP-error, and domain-outcome counters.
 
 ## Structured Log Format
 

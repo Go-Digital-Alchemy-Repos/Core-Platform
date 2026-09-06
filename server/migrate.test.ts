@@ -44,6 +44,76 @@ describe("runMigrations", () => {
       expect.stringContaining("0042_career_directory_locations.sql"),
       "utf8",
     );
+    expect(mockReadFile).toHaveBeenCalledWith(
+      expect.stringContaining("0044_client_site_content.sql"),
+      "utf8",
+    );
+    expect(mockReadFile).toHaveBeenCalledWith(
+      expect.stringContaining("0045_membership_webhook_delivery.sql"),
+      "utf8",
+    );
+    expect(mockReadFile).toHaveBeenCalledWith(
+      expect.stringContaining("0046_ecommerce_webhook_delivery.sql"),
+      "utf8",
+    );
+    expect(mockReadFile).toHaveBeenCalledWith(
+      expect.stringContaining("0047_woocommerce_import_lifecycle.sql"),
+      "utf8",
+    );
+    expect(mockReadFile).toHaveBeenCalledWith(
+      expect.stringContaining("0048_ecommerce_checkout_request_idempotency.sql"),
+      "utf8",
+    );
+    expect(mockReadFile).toHaveBeenCalledWith(
+      expect.stringContaining("0049_ecommerce_paid_inventory_effect_unique.sql"),
+      "utf8",
+    );
+    expect(mockReadFile).toHaveBeenCalledWith(
+      expect.stringContaining("0050_ecommerce_notification_jobs.sql"),
+      "utf8",
+    );
+    expect(mockReadFile).toHaveBeenCalledWith(
+      expect.stringContaining("0051_ecommerce_inventory_reservations.sql"),
+      "utf8",
+    );
+    expect(mockReadFile).toHaveBeenCalledWith(
+      expect.stringContaining("0060_ecommerce_notification_reconciliation.sql"),
+      "utf8",
+    );
+    for (const historical of ["0052_", "0053_", "0054_"]) {
+      expect(mockReadFile).not.toHaveBeenCalledWith(expect.stringContaining(historical), "utf8");
+    }
+    expect(mockReadFile).toHaveBeenCalledWith(
+      expect.stringContaining("0055_woo_import_disposition_evidence.sql"),
+      "utf8",
+    );
+    expect(mockReadFile).toHaveBeenCalledWith(
+      expect.stringContaining("0056_client_stack_onboarding_evidence.sql"),
+      "utf8",
+    );
+    expect(mockReadFile).toHaveBeenCalledWith(
+      expect.stringContaining("0057_ecommerce_notification_job_manual_retries.sql"),
+      "utf8",
+    );
+  });
+
+  it("reconciles idempotent managed-form submissions on an existing schema", async () => {
+    mockExecute
+      .mockResolvedValueOnce({ rows: [{ exists: true }] })
+      .mockResolvedValueOnce({ rows: [{ count: 1 }] })
+      .mockResolvedValue({ rows: [{ exists: true }] });
+
+    const { runMigrations } = await import("./migrate");
+    await runMigrations();
+
+    expect(mockReadFile).toHaveBeenCalledWith(
+      expect.stringContaining("0058_cms_form_submission_idempotency.sql"),
+      "utf8",
+    );
+    expect(mockReadFile).toHaveBeenCalledWith(
+      expect.stringContaining("0059_cms_form_effect_jobs.sql"),
+      "utf8",
+    );
   });
 
   it("recognizes the default Drizzle journal schema on an existing database", async () => {

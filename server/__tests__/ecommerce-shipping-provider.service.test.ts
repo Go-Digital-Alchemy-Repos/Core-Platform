@@ -61,8 +61,8 @@ describe("ecommerce shipping provider registry", () => {
     expect(easypost?.setupFields[0]).toMatchObject({ key: "apiKey", hasValue: true });
     expect(easypost).toMatchObject({
       configured: true,
-      operational: true,
-      readyCapabilities: expect.arrayContaining(["rates", "labels", "tracking"]),
+      operational: false,
+      readyCapabilities: [],
       missingCredentialLabels: [],
     });
     const shipstation = statuses.find((status) => status.provider === "shipstation");

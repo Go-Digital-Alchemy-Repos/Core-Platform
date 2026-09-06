@@ -1,38 +1,48 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { EcommerceOrder } from "@shared/schema";
 
-const mockGetOrder = vi.fn();
-const mockHasProcessedWebhook = vi.fn();
-const mockMarkWebhookProcessed = vi.fn();
-const mockMarkEcommerceOrderPaid = vi.fn();
-const mockRecordStripeRefundWebhook = vi.fn();
-const mockGetEcommerceStripeWebhookSecret = vi.fn();
+const mocks = vi.hoisted(() => ({
+  getOrder: vi.fn(),
+  updateOrder: vi.fn(),
+  claim: vi.fn(),
+  complete: vi.fn(),
+  fail: vi.fn(),
+  markOrderPaid: vi.fn(),
+  reconcilePaymentRequest: vi.fn(),
+  recordRisk: vi.fn(),
+  recordRefund: vi.fn(),
+  getWebhookSecret: vi.fn(),
+  getWebhookProcessing: vi.fn(),
+  getStripeClient: vi.fn(),
+  retrieveStripeEvent: vi.fn(),
+}));
 
 vi.mock("../storage/index", () => ({
   storage: {
     ecommerce: {
-      getOrder: mockGetOrder,
-      hasProcessedWebhook: mockHasProcessedWebhook,
-      markWebhookProcessed: mockMarkWebhookProcessed,
+      getOrder: mocks.getOrder,
+      updateOrder: mocks.updateOrder,
+      claimWebhookProcessing: mocks.claim,
+      completeWebhookProcessing: mocks.complete,
+      failWebhookProcessing: mocks.fail,
+      getWebhookProcessing: mocks.getWebhookProcessing,
     },
   },
 }));
 
 vi.mock("../services/ecommerce-stripe.service", () => ({
-  getEcommerceStripeClient: vi.fn(async () => ({
-    webhooks: {
-      constructEvent: vi.fn(),
-    },
-  })),
-  getEcommerceStripeWebhookSecret: mockGetEcommerceStripeWebhookSecret,
+  getEcommerceStripeClient: mocks.getStripeClient,
+  getEcommerceStripeWebhookSecret: mocks.getWebhookSecret,
 }));
 
 vi.mock("../services/ecommerce-order.service", () => ({
-  markEcommerceOrderPaid: mockMarkEcommerceOrderPaid,
+  markEcommerceOrderPaid: mocks.markOrderPaid,
+  reconcileEcommercePaymentRequestSession: mocks.reconcilePaymentRequest,
+  recordEcommerceStripeRiskOutcome: mocks.recordRisk,
 }));
 
 vi.mock("../services/ecommerce-refund.service", () => ({
-  recordStripeRefundWebhook: mockRecordStripeRefundWebhook,
+  recordStripeRefundWebhook: mocks.recordRefund,
 }));
 
 function eventPayload(type: string, object: Record<string, unknown>) {
@@ -47,25 +57,26 @@ function eventPayload(type: string, object: Record<string, unknown>) {
 
 describe("processEcommerceStripeWebhook", () => {
   beforeEach(() => {
-    mockGetOrder.mockReset();
-    mockHasProcessedWebhook.mockReset();
-    mockMarkWebhookProcessed.mockReset();
-    mockMarkEcommerceOrderPaid.mockReset();
-    mockRecordStripeRefundWebhook.mockReset();
-    mockGetEcommerceStripeWebhookSecret.mockReset();
-    mockGetEcommerceStripeWebhookSecret.mockResolvedValue(null);
-    mockHasProcessedWebhook.mockResolvedValue(false);
-    mockMarkWebhookProcessed.mockResolvedValue(true);
+    vi.clearAllMocks();
+    mocks.getWebhookSecret.mockResolvedValue(null);
+    mocks.getWebhookProcessing.mockResolvedValue(undefined);
+    mocks.getStripeClient.mockResolvedValue({
+      webhooks: { constructEvent: vi.fn() },
+      events: { retrieve: mocks.retrieveStripeEvent },
+    });
+    mocks.claim.mockResolvedValue("attempt-token-1");
+    mocks.complete.mockResolvedValue(undefined);
+    mocks.fail.mockResolvedValue(undefined);
   });
 
-  it("marks payment webhooks processed only after paid-order reconciliation succeeds", async () => {
+  it("claims and completes a payment webhook around paid-order reconciliation", async () => {
     const { processEcommerceStripeWebhook } = await import("../webhooks/ecommerce-stripe.handler");
-    mockGetOrder.mockResolvedValue({
+    mocks.getOrder.mockResolvedValue({
       id: "order-1",
       totalAmount: 5000,
       stripePaymentIntentId: "pi_123",
     } as EcommerceOrder);
-    mockMarkEcommerceOrderPaid.mockResolvedValue({ id: "order-1" });
+    mocks.markOrderPaid.mockResolvedValue({ id: "order-1" });
 
     await processEcommerceStripeWebhook(
       eventPayload("payment_intent.succeeded", {
@@ -75,20 +86,22 @@ describe("processEcommerceStripeWebhook", () => {
       }),
     );
 
-    expect(mockMarkEcommerceOrderPaid).toHaveBeenCalledWith("order-1", "pi_123");
-    expect(mockMarkWebhookProcessed).toHaveBeenCalledWith(
+    expect(mocks.claim).toHaveBeenCalledWith(
       "stripe",
       "evt_payment_intent_succeeded",
       "payment_intent.succeeded",
     );
-    expect(mockMarkEcommerceOrderPaid.mock.invocationCallOrder[0]).toBeLessThan(
-      mockMarkWebhookProcessed.mock.invocationCallOrder[0],
+    expect(mocks.markOrderPaid).toHaveBeenCalledWith("order-1", "pi_123");
+    expect(mocks.complete).toHaveBeenCalledWith(
+      "stripe",
+      "evt_payment_intent_succeeded",
+      "attempt-token-1",
     );
   });
 
-  it("skips duplicate payment webhooks before paid-order side effects", async () => {
+  it("skips side effects when another worker owns or completed the event", async () => {
+    mocks.claim.mockResolvedValue(null);
     const { processEcommerceStripeWebhook } = await import("../webhooks/ecommerce-stripe.handler");
-    mockHasProcessedWebhook.mockResolvedValue(true);
 
     await processEcommerceStripeWebhook(
       eventPayload("payment_intent.succeeded", {
@@ -98,20 +111,20 @@ describe("processEcommerceStripeWebhook", () => {
       }),
     );
 
-    expect(mockHasProcessedWebhook).toHaveBeenCalledWith("stripe", "evt_payment_intent_succeeded");
-    expect(mockGetOrder).not.toHaveBeenCalled();
-    expect(mockMarkEcommerceOrderPaid).not.toHaveBeenCalled();
-    expect(mockMarkWebhookProcessed).not.toHaveBeenCalled();
+    expect(mocks.getOrder).not.toHaveBeenCalled();
+    expect(mocks.markOrderPaid).not.toHaveBeenCalled();
+    expect(mocks.complete).not.toHaveBeenCalled();
+    expect(mocks.fail).not.toHaveBeenCalled();
   });
 
-  it("does not mark payment webhooks processed when reconciliation fails", async () => {
+  it("records a failed payment attempt and rethrows for provider retry", async () => {
     const { processEcommerceStripeWebhook } = await import("../webhooks/ecommerce-stripe.handler");
-    mockGetOrder.mockResolvedValue({
+    mocks.getOrder.mockResolvedValue({
       id: "order-1",
       totalAmount: 5000,
       stripePaymentIntentId: "pi_123",
     } as EcommerceOrder);
-    mockMarkEcommerceOrderPaid.mockRejectedValue(new Error("temporary inventory lock"));
+    mocks.markOrderPaid.mockRejectedValue(new Error("temporary inventory lock"));
 
     await expect(
       processEcommerceStripeWebhook(
@@ -121,55 +134,130 @@ describe("processEcommerceStripeWebhook", () => {
           metadata: { orderId: "order-1" },
         }),
       ),
-    ).rejects.toThrow(/temporary inventory lock/);
+    ).rejects.toThrow("temporary inventory lock");
 
-    expect(mockMarkWebhookProcessed).not.toHaveBeenCalled();
+    expect(mocks.complete).not.toHaveBeenCalled();
+    expect(mocks.fail).toHaveBeenCalledWith(
+      "stripe",
+      "evt_payment_intent_succeeded",
+      "attempt-token-1",
+      "temporary inventory lock",
+    );
   });
 
-  it("marks refund webhooks processed only after refund reconciliation succeeds", async () => {
+  it("releases a pending checkout reservation when Stripe cancels its PaymentIntent", async () => {
     const { processEcommerceStripeWebhook } = await import("../webhooks/ecommerce-stripe.handler");
-    mockRecordStripeRefundWebhook.mockResolvedValue({ id: "refund-1" });
+    mocks.getOrder.mockResolvedValue({
+      id: "order-1",
+      status: "pending",
+      paymentStatus: "unpaid",
+      stripePaymentIntentId: "pi_123",
+    } as EcommerceOrder);
+    mocks.updateOrder.mockResolvedValue({ id: "order-1", status: "cancelled" });
+
+    await processEcommerceStripeWebhook(
+      eventPayload("payment_intent.canceled", {
+        id: "pi_123",
+        metadata: { orderId: "order-1" },
+      }),
+    );
+
+    expect(mocks.updateOrder).toHaveBeenCalledWith("order-1", {
+      status: "cancelled",
+      paymentStatus: "failed",
+    });
+  });
+
+  it("completes refund delivery only after refund reconciliation succeeds", async () => {
+    const { processEcommerceStripeWebhook } = await import("../webhooks/ecommerce-stripe.handler");
+    mocks.recordRefund.mockResolvedValue({ id: "refund-1" });
 
     await processEcommerceStripeWebhook(
       eventPayload("refund.updated", {
         id: "re_123",
         amount: 2500,
         status: "succeeded",
-        metadata: { orderId: "order-1" },
+        metadata: { orderId: "order-1", localRefundId: "refund-local-1" },
       }),
     );
 
-    expect(mockRecordStripeRefundWebhook).toHaveBeenCalledWith({
+    expect(mocks.recordRefund).toHaveBeenCalledWith({
       stripeRefundId: "re_123",
+      localRefundId: "refund-local-1",
       orderId: "order-1",
       amount: 2500,
       status: "succeeded",
     });
-    expect(mockMarkWebhookProcessed).toHaveBeenCalledWith(
+    expect(mocks.complete).toHaveBeenCalledWith("stripe", "evt_refund_updated", "attempt-token-1");
+  });
+
+  it("records refund reconciliation failures for retry", async () => {
+    mocks.recordRefund.mockRejectedValue(new Error("temporary refund lock"));
+    const { processEcommerceStripeWebhook } = await import("../webhooks/ecommerce-stripe.handler");
+
+    await expect(
+      processEcommerceStripeWebhook(
+        eventPayload("refund.updated", {
+          id: "re_123",
+          amount: 2500,
+          status: "succeeded",
+          metadata: { orderId: "order-1" },
+        }),
+      ),
+    ).rejects.toThrow("temporary refund lock");
+    expect(mocks.complete).not.toHaveBeenCalled();
+    expect(mocks.fail).toHaveBeenCalledWith(
       "stripe",
       "evt_refund_updated",
-      "refund.updated",
-    );
-    expect(mockRecordStripeRefundWebhook.mock.invocationCallOrder[0]).toBeLessThan(
-      mockMarkWebhookProcessed.mock.invocationCallOrder[0],
+      "attempt-token-1",
+      "temporary refund lock",
     );
   });
 
-  it("skips duplicate refund webhooks before refund side effects", async () => {
-    const { processEcommerceStripeWebhook } = await import("../webhooks/ecommerce-stripe.handler");
-    mockHasProcessedWebhook.mockResolvedValue(true);
+  it("replays a failed delivery from Stripe without accepting a raw webhook payload", async () => {
+    const { replayEcommerceStripeWebhook } = await import("../webhooks/ecommerce-stripe.handler");
+    mocks.getWebhookProcessing.mockResolvedValue({
+      status: "failed",
+      eventType: "payment_intent.succeeded",
+    });
+    mocks.retrieveStripeEvent.mockResolvedValue({
+      id: "evt_replay_123",
+      type: "payment_intent.succeeded",
+      data: { object: { id: "pi_123", amount: 5000, metadata: { orderId: "order-1" } } },
+    });
+    mocks.getOrder.mockResolvedValue({
+      id: "order-1",
+      totalAmount: 5000,
+      stripePaymentIntentId: "pi_123",
+    } as EcommerceOrder);
+    mocks.markOrderPaid.mockResolvedValue({ id: "order-1" });
 
-    await processEcommerceStripeWebhook(
-      eventPayload("refund.updated", {
-        id: "re_123",
-        amount: 2500,
-        status: "succeeded",
-        metadata: { orderId: "order-1" },
-      }),
+    await expect(replayEcommerceStripeWebhook("evt_replay_123")).resolves.toMatchObject({
+      status: "replayed",
+      eventId: "evt_replay_123",
+    });
+    expect(mocks.retrieveStripeEvent).toHaveBeenCalledWith("evt_replay_123");
+    expect(mocks.claim).toHaveBeenCalledWith(
+      "stripe",
+      "evt_replay_123",
+      "payment_intent.succeeded",
     );
+    expect(mocks.markOrderPaid).toHaveBeenCalledWith("order-1", "pi_123");
+  });
 
-    expect(mockHasProcessedWebhook).toHaveBeenCalledWith("stripe", "evt_refund_updated");
-    expect(mockRecordStripeRefundWebhook).not.toHaveBeenCalled();
-    expect(mockMarkWebhookProcessed).not.toHaveBeenCalled();
+  it("does not call Stripe again for an already processed delivery", async () => {
+    const { replayEcommerceStripeWebhook } = await import("../webhooks/ecommerce-stripe.handler");
+    mocks.getWebhookProcessing.mockResolvedValue({
+      status: "processed",
+      eventType: "refund.updated",
+    });
+
+    await expect(replayEcommerceStripeWebhook("evt_done_123")).resolves.toEqual({
+      status: "already_processed",
+      eventId: "evt_done_123",
+      eventType: "refund.updated",
+    });
+    expect(mocks.retrieveStripeEvent).not.toHaveBeenCalled();
+    expect(mocks.claim).not.toHaveBeenCalled();
   });
 });

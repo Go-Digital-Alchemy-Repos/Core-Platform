@@ -5,8 +5,9 @@
 1. **Environment variables**: Ensure all required variables are set (see `docs/runbooks/deployment.md`)
    - `SESSION_SECRET` must be a strong random string (not the dev default)
    - `DATABASE_URL` must point to the production PostgreSQL instance
-   - `APP_URL` must be set for origin validation
-   - `TRUSTED_ORIGINS` should include all valid origins (including preview URLs)
+   - In separate public/admin deployments, `PUBLIC_SITE_ORIGIN` and `CORE_PLATFORM_ADMIN_ORIGIN` must be
+     distinct canonical HTTPS origins; `APP_URL` must equal the admin origin for legacy Core services
+   - `TRUSTED_ORIGINS` must include both exact origins once, plus only reviewed preview origins
 
 2. **Database migrations**: Migrations run automatically on production startup via `server/migrate.ts`. Review pending migrations before deploying:
    - Check the `migrations/` directory for new migration files (journal in `migrations/meta/`)

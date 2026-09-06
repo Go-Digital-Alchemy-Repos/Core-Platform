@@ -220,6 +220,23 @@ describe("public-prerender.service", () => {
     expect(snapshot?.canonicalUrl).toBe("https://coreplatform.com/join");
   });
 
+  it("uses the configured public origin over persisted SEO data", async () => {
+    const original = process.env.PUBLIC_SITE_ORIGIN;
+    process.env.PUBLIC_SITE_ORIGIN = "https://temporary-client.up.railway.app";
+    try {
+      const { getPublicHtmlSnapshot } = await import("../services/public-prerender.service");
+      const snapshot = await getPublicHtmlSnapshot("/");
+
+      expect(snapshot?.canonicalUrl).toBe("https://temporary-client.up.railway.app");
+      expect(JSON.stringify(snapshot?.jsonLd)).toContain(
+        '"url":"https://temporary-client.up.railway.app"',
+      );
+    } finally {
+      if (original === undefined) delete process.env.PUBLIC_SITE_ORIGIN;
+      else process.env.PUBLIC_SITE_ORIGIN = original;
+    }
+  });
+
   it("skips prerender snapshots for private app routes", async () => {
     const { getPublicHtmlSnapshot, isPublicPrerenderPath } =
       await import("../services/public-prerender.service");
