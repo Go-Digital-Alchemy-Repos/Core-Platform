@@ -10,6 +10,9 @@ import { logger } from "../../utils/logger";
 import * as r2Service from "../../services/r2.service";
 import { enrichTherapistLocationFields } from "../../services/therapist-location.service";
 
+import { getDirectorySettings } from "../../services/directory-settings.service";
+import { getDirectoryExperienceMode } from "@shared/types/directory-settings";
+
 const router = Router();
 
 async function normalizeTherapistResult<
@@ -77,6 +80,7 @@ router.post(
       return;
     }
 
+    const directoryMode = getDirectoryExperienceMode(await getDirectorySettings());
     const hashedPassword = await hashPassword(data.password);
     const user = await storage.users.createUser({
       email: data.email,
@@ -98,6 +102,7 @@ router.post(
       userId: user.id,
       isApproved: data.isApproved ?? true,
       ...profilePayload,
+      directoryMode,
     });
 
     const profileWithUser = await storage.therapists.getProfileWithUser(profile.id);

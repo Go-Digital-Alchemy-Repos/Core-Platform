@@ -132,7 +132,7 @@ interface TherapistWithUser {
 
 type StatusFilter = "all" | "pending" | "approved" | "rejected";
 
-function getAdminDirectoryLabels(settings: PublicDirectorySettings) {
+export function getAdminDirectoryLabels(settings: PublicDirectorySettings) {
   return {
     singular:
       settings.listingLabelSingular || settings.participantLabelSingular || "Directory Profile",
@@ -651,9 +651,13 @@ function TherapistsContent() {
 
       <AddTherapistSheet
         open={addSheetOpen}
-        onOpenChange={setAddSheetOpen}
+        onOpenChange={(open) => {
+          createMutation.reset();
+          setAddSheetOpen(open);
+        }}
         onSubmit={(data) => createMutation.mutate(data)}
         isPending={createMutation.isPending}
+        serverError={createMutation.error?.message}
         labels={labels}
       />
 
@@ -778,17 +782,19 @@ function TherapistsContent() {
   );
 }
 
-function AddTherapistSheet({
+export function AddTherapistSheet({
   open,
   onOpenChange,
   onSubmit,
   isPending,
+  serverError,
   labels,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: CreateTherapistValues) => void;
   isPending: boolean;
+  serverError?: string;
   labels: ReturnType<typeof getAdminDirectoryLabels>;
 }) {
   const { specializations: specList } = useSpecializations();
@@ -833,12 +839,16 @@ function AddTherapistSheet({
       <SheetContent side="right" size="lg" data-testid="dialog-add-therapist">
         <SheetHeader>
           <SheetTitle>Add New {labels.singular}</SheetTitle>
-          <SheetDescription>Create a new account and directory profile.</SheetDescription>
+          <SheetDescription>
+            Create a new account and directory profile. Use an email address that is not already
+            registered.
+          </SheetDescription>
         </SheetHeader>
         <SheetBody>
           <Form {...form}>
             <form
               id="add-therapist-form"
+              noValidate
               onSubmit={form.handleSubmit(onSubmit)}
               className="space-y-4 pb-4"
             >
@@ -1290,7 +1300,20 @@ function AddTherapistSheet({
             </form>
           </Form>
         </SheetBody>
-        <SheetFooter>
+        <SheetFooter className="flex-wrap">
+          {(serverError || Object.keys(form.formState.errors).length > 0) && (
+            <div
+              role="alert"
+              className="w-full basis-full rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive mb-3"
+              data-testid="add-profile-error"
+            >
+              {serverError ||
+                `Please check the form: ${Object.values(form.formState.errors)
+                  .map((error) => error.message)
+                  .filter(Boolean)
+                  .join(". ")}`}
+            </div>
+          )}
           <Button
             variant="outline"
             onClick={() => {
