@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -147,7 +147,15 @@ function accountPath(view: AccountView) {
   return `/account/${view}`;
 }
 
-function AccountShell({ view, children }: { view: AccountView; children: React.ReactNode }) {
+function AccountShell({
+  view,
+  children,
+  busy = false,
+}: {
+  view: AccountView;
+  children: React.ReactNode;
+  busy?: boolean;
+}) {
   const links: Array<{ view: AccountView; label: string; icon: React.ElementType }> = [
     { view: "dashboard", label: "Overview", icon: Home },
     { view: "orders", label: "Orders", icon: Package },
@@ -187,7 +195,9 @@ function AccountShell({ view, children }: { view: AccountView; children: React.R
               })}
             </CardContent>
           </Card>
-          {children}
+          <fieldset disabled={busy} className="min-w-0">
+            {children}
+          </fieldset>
         </div>
       </div>
     </PageLayout>
@@ -257,9 +267,23 @@ function OrderList({ orders }: { orders: AccountOrder[] }) {
 }
 
 function OrderDetail({ orderId }: { orderId: string }) {
-  const { data: order } = useQuery<AccountOrder>({
-    queryKey: ["/api/ecommerce/account/orders", orderId],
+  const { user } = useAuth();
+  const orderQuery = useQuery<AccountOrder>({
+    queryKey: ["/api/ecommerce/account/orders", orderId, user?.id],
+    queryFn: async () =>
+      (await apiRequest("GET", `/api/ecommerce/account/orders/${orderId}`)).json(),
+    enabled: Boolean(user),
   });
+  const order = orderQuery.data;
+  if (orderQuery.isError)
+    return (
+      <div role="alert">
+        <p>Order could not be loaded.</p>
+        <Button onClick={() => void orderQuery.refetch()} disabled={orderQuery.isFetching}>
+          Retry order
+        </Button>
+      </div>
+    );
   if (!order)
     return (
       <Card>
@@ -432,17 +456,29 @@ function OrderDetail({ orderId }: { orderId: string }) {
 }
 
 export default function CustomerAccountPage({ view }: { view: AccountView }) {
+  const { user } = useAuth();
+  return <CustomerAccountContent key={user?.id ?? "signed-out"} view={view} />;
+}
+
+function CustomerAccountContent({ view }: { view: AccountView }) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
   const { toast } = useToast();
-  const { data: overview } = useQuery<AccountOverview>({ queryKey: ["/api/ecommerce/account"] });
-  const { data: orders = [] } = useQuery<AccountOrder[]>({
-    queryKey: ["/api/ecommerce/account/orders"],
-    enabled: view === "orders",
+  const overviewQuery = useQuery<AccountOverview>({
+    queryKey: ["/api/ecommerce/account", user?.id],
+    queryFn: async () => (await apiRequest("GET", "/api/ecommerce/account")).json(),
+    enabled: Boolean(user),
   });
-  const { data: savedAddresses } = useQuery<AccountAddress[]>({
-    queryKey: ["/api/ecommerce/account/addresses"],
-    enabled: view === "addresses",
+  const overview = overviewQuery.data;
+  const ordersQuery = useQuery<AccountOrder[]>({
+    queryKey: ["/api/ecommerce/account/orders", user?.id],
+    queryFn: async () => (await apiRequest("GET", "/api/ecommerce/account/orders")).json(),
+    enabled: Boolean(user) && view === "orders",
+  });
+  const addressesQuery = useQuery<AccountAddress[]>({
+    queryKey: ["/api/ecommerce/account/addresses", user?.id],
+    queryFn: async () => (await apiRequest("GET", "/api/ecommerce/account/addresses")).json(),
+    enabled: Boolean(user) && view === "addresses",
   });
   const orderId = useMemo(() => location.split("/").at(-1) ?? "", [location]);
   const customer = overview?.customer;
@@ -454,15 +490,21 @@ export default function CustomerAccountPage({ view }: { view: AccountView }) {
     orderSmsOptIn: false,
   });
 
+  const hydrated = useRef<{
+    profile: typeof profile;
+    address: typeof address;
+    preferences: typeof preferences;
+  } | null>(null);
+  const [feedback, setFeedback] = useState<{ error: boolean; message: string } | null>(null);
   useEffect(() => {
     if (!customer) return;
     const [firstName, ...rest] = customer.name.split(" ");
-    setProfile({
+    const nextProfile = {
       firstName: firstName || "",
       lastName: rest.join(" "),
       phone: customer.phone ?? "",
-    });
-    setAddress({
+    };
+    const nextAddress = {
       ...emptyAddressForm,
       address: customer.address ?? "",
       line2: customer.line2 ?? "",
@@ -471,11 +513,28 @@ export default function CustomerAccountPage({ view }: { view: AccountView }) {
       zipCode: customer.zipCode ?? "",
       country: customer.country ?? "US",
       isDefault: true,
-    });
-    setPreferences({
+    };
+    const nextPreferences = {
       marketingEmailOptIn: customer.marketingEmailOptIn,
       orderSmsOptIn: customer.orderSmsOptIn,
-    });
+    };
+    const previous = hydrated.current;
+    setProfile((current) =>
+      !previous || JSON.stringify(current) === JSON.stringify(previous.profile)
+        ? nextProfile
+        : current,
+    );
+    setAddress((current) =>
+      !previous || JSON.stringify(current) === JSON.stringify(previous.address)
+        ? nextAddress
+        : current,
+    );
+    setPreferences((current) =>
+      !previous || JSON.stringify(current) === JSON.stringify(previous.preferences)
+        ? nextPreferences
+        : current,
+    );
+    hydrated.current = { profile: nextProfile, address: nextAddress, preferences: nextPreferences };
   }, [customer]);
 
   const saveMutation = useMutation({
@@ -488,11 +547,28 @@ export default function CustomerAccountPage({ view }: { view: AccountView }) {
       path: string;
       body?: unknown;
     }) => {
+      if (!overviewQuery.isSuccess) throw new Error("Account unavailable");
       const res = await apiRequest(method, path, body);
       if (res.status === 204) return null;
       return res.json();
     },
-    onSuccess: () => {
+    onMutate: () => setFeedback(null),
+    onError: () => {
+      setFeedback({ error: true, message: "Your changes could not be saved. Please try again." });
+      toast({
+        title: "Account update failed",
+        description: "Your entered details are preserved.",
+        variant: "destructive",
+      });
+    },
+    onSuccess: (_data, variables) => {
+      if (hydrated.current) {
+        if (variables.path.endsWith("/profile"))
+          hydrated.current.profile = variables.body as typeof profile;
+        if (variables.path.endsWith("/preferences"))
+          hydrated.current.preferences = variables.body as typeof preferences;
+      }
+      setFeedback({ error: false, message: "Account updated." });
       queryClient.invalidateQueries({ queryKey: ["/api/ecommerce/account"] });
       queryClient.invalidateQueries({ queryKey: ["/api/ecommerce/account/addresses"] });
       toast({ title: "Account updated" });
@@ -503,7 +579,8 @@ export default function CustomerAccountPage({ view }: { view: AccountView }) {
     (path: string, body: unknown, method = "PUT") =>
     (event: FormEvent) => {
       event.preventDefault();
-      saveMutation.mutate({ method, path, body });
+      if (overviewQuery.isSuccess && !saveMutation.isPending)
+        saveMutation.mutate({ method, path, body });
     };
 
   const resetAddressForm = () => {
@@ -542,7 +619,22 @@ export default function CustomerAccountPage({ view }: { view: AccountView }) {
     );
   };
 
-  if (!overview || !user) {
+  const activeQuery =
+    view === "orders" ? ordersQuery : view === "addresses" ? addressesQuery : overviewQuery;
+  if (overviewQuery.isError || activeQuery.isError) {
+    const failed = overviewQuery.isError ? overviewQuery : activeQuery;
+    return (
+      <AccountShell view={view}>
+        <div role="alert">
+          <p>Account details could not be loaded. Your entered details are preserved.</p>
+          <Button onClick={() => void failed.refetch()} disabled={failed.isFetching}>
+            Retry account
+          </Button>
+        </div>
+      </AccountShell>
+    );
+  }
+  if (!overview || !user || activeQuery.isPending) {
     return (
       <AccountShell view={view}>
         <Card>
@@ -552,7 +644,7 @@ export default function CustomerAccountPage({ view }: { view: AccountView }) {
     );
   }
   const activeCustomer = overview.customer;
-  const addresses = savedAddresses ?? overview.addresses ?? [];
+  const addresses = addressesQuery.data ?? overview.addresses ?? [];
   const addressRegionOptions = getRegionOptions(address.country);
   const addressRegionLabel =
     address.country === "CA"
@@ -562,7 +654,9 @@ export default function CustomerAccountPage({ view }: { view: AccountView }) {
         : "Region";
 
   return (
-    <AccountShell view={view}>
+    <AccountShell view={view} busy={saveMutation.isPending}>
+      {feedback ? <p role={feedback.error ? "alert" : "status"}>{feedback.message}</p> : null}
+
       {view === "dashboard" ? (
         <div className="space-y-6">
           <Card>
@@ -575,7 +669,7 @@ export default function CustomerAccountPage({ view }: { view: AccountView }) {
           </Card>
         </div>
       ) : null}
-      {view === "orders" ? <OrderList orders={orders} /> : null}
+      {view === "orders" ? <OrderList orders={ordersQuery.data ?? []} /> : null}
       {view === "order" ? <OrderDetail orderId={orderId} /> : null}
       {view === "profile" ? (
         <Card>
@@ -589,8 +683,9 @@ export default function CustomerAccountPage({ view }: { view: AccountView }) {
               className="grid gap-4 sm:grid-cols-2"
             >
               <div className="space-y-2">
-                <Label>First name</Label>
+                <Label htmlFor="account-first-name">First name</Label>
                 <Input
+                  id="account-first-name"
                   value={profile.firstName}
                   onChange={(e) =>
                     setProfile((current) => ({ ...current, firstName: e.target.value }))
@@ -599,8 +694,9 @@ export default function CustomerAccountPage({ view }: { view: AccountView }) {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Last name</Label>
+                <Label htmlFor="account-last-name">Last name</Label>
                 <Input
+                  id="account-last-name"
                   value={profile.lastName}
                   onChange={(e) =>
                     setProfile((current) => ({ ...current, lastName: e.target.value }))
@@ -612,8 +708,9 @@ export default function CustomerAccountPage({ view }: { view: AccountView }) {
                 <Input value={user.email} disabled />
               </div>
               <div className="space-y-2">
-                <Label>Phone</Label>
+                <Label htmlFor="account-phone">Phone</Label>
                 <Input
+                  id="account-phone"
                   value={profile.phone}
                   onChange={(e) => setProfile((current) => ({ ...current, phone: e.target.value }))}
                 />
@@ -868,6 +965,7 @@ export default function CustomerAccountPage({ view }: { view: AccountView }) {
                   </p>
                 </div>
                 <Switch
+                  aria-label="Marketing emails"
                   checked={preferences.marketingEmailOptIn}
                   onCheckedChange={(marketingEmailOptIn) =>
                     setPreferences((current) => ({ ...current, marketingEmailOptIn }))
@@ -882,6 +980,7 @@ export default function CustomerAccountPage({ view }: { view: AccountView }) {
                   </p>
                 </div>
                 <Switch
+                  aria-label="SMS order updates"
                   checked={preferences.orderSmsOptIn}
                   onCheckedChange={(orderSmsOptIn) =>
                     setPreferences((current) => ({ ...current, orderSmsOptIn }))
