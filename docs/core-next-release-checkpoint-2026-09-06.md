@@ -121,3 +121,29 @@ cycle even while holding the graph lock. That backend patch is not accepted;
 reproduction and live ancestry validation consistent with import ordering are
 required. Do not promote the existing passing cases into proof that this race
 is fixed. Frozen f485330 and its accepted evidence remain unchanged.
+
+
+### Approved import execution revision
+
+The category follow-up now includes a bounded durable execution-contract revision.
+New runs use execution version `1.1.0`, deterministic parent-first category
+ordering and a persisted batch size before any batch commits. Source envelopes,
+source plans, disposition contracts and their fingerprints remain `1.0.0`.
+Existing `1.0.0` runs retain their exact legacy order, even with empty checkpoints;
+there is no implicit upgrade or reordering of committed batch identities.
+
+Every category batch must validate its projected graph against live ancestry
+under the graph write lock. Valid child-first source input must work for new
+runs across batch boundaries, without requiring the operator to rebuild input.
+Legacy continuation that cannot satisfy live dependencies must stop explicitly
+for review rather than rewrite its history. Unknown execution versions or
+metadata and changed resume batch sizes must fail closed.
+
+New begin validation must require execution `1.1.0`, while legacy resume is a
+separate supported path. The CLI must select the recorded supported execution
+version for resume while preserving all other identity checks. Regression proof
+must show the old supported resume entrypoint rejects new-version runs before
+resuming status or writing targets. This does not claim protection against an
+operator directly invoking arbitrary old repository internals. No schema migration
+or production import is authorized by this revision; implementation and review
+remain in progress on the isolated category branch.
