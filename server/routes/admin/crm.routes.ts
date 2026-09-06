@@ -1,3 +1,5 @@
+import crmFollowUpsRoutes from "./crm-follow-ups.routes";
+import { createCrmTask, updateCrmTask } from "../../services/crm-follow-ups.service";
 import crmCustomFieldsRoutes from "./crm-custom-fields.routes";
 import { requireRole } from "../../middleware/auth";
 import {
@@ -24,6 +26,7 @@ import type { CrmClientStatus, CrmLeadStage } from "@shared/schema";
 
 const router = Router();
 router.use(crmCustomFieldsRoutes);
+router.use(crmFollowUpsRoutes);
 
 router.get(
   "/settings/pipeline",
@@ -41,17 +44,7 @@ router.put(
 
 const leadUpdateSchema = crmLeadInputSchema.partial();
 const noteSchema = z.object({ body: z.string().trim().min(1, "Note is required") });
-const taskCreateSchema = z.object({
-  title: z.string().trim().min(1, "Task title is required"),
-  dueAt: z.coerce.date().optional().nullable(),
-  assignedToId: z.string().optional().nullable(),
-});
-const taskUpdateSchema = taskCreateSchema.partial().extend({
-  completed: z.boolean().optional(),
-});
 const clientNoteSchema = noteSchema;
-const clientTaskCreateSchema = taskCreateSchema;
-const clientTaskUpdateSchema = taskUpdateSchema;
 
 function isCrmLeadStage(value: unknown): value is CrmLeadStage {
   return typeof value === "string" && CRM_LEAD_STAGES.includes(value as CrmLeadStage);
@@ -125,30 +118,16 @@ router.post(
 router.post(
   "/clients/:id/tasks",
   asyncHandler(async (req, res) => {
-    const clientId = paramString(req.params.id);
-    const client = await storage.crm.getClientById(clientId);
-    if (!client) return res.status(404).json({ message: "Client not found" });
-    const parsed = clientTaskCreateSchema.parse(req.body);
-    res.status(201).json(
-      await storage.crm.createClientTask({
-        clientId,
-        title: parsed.title,
-        dueAt: parsed.dueAt ?? null,
-        assignedToId: parsed.assignedToId ?? req.user?.id ?? null,
-        createdById: req.user?.id ?? null,
-        completed: false,
-      }),
-    );
+    res
+      .status(201)
+      .json(await createCrmTask("client", paramString(req.params.id), req.body, req.user!.id));
   }),
 );
 
 router.patch(
   "/clients/tasks/:taskId",
   asyncHandler(async (req, res) => {
-    const parsed = clientTaskUpdateSchema.parse(req.body);
-    const task = await storage.crm.updateClientTask(paramString(req.params.taskId), parsed);
-    if (!task) return res.status(404).json({ message: "Task not found" });
-    res.json(task);
+    res.json(await updateCrmTask("client", paramString(req.params.taskId), req.body));
   }),
 );
 
@@ -202,30 +181,16 @@ router.post(
 router.post(
   "/:id/tasks",
   asyncHandler(async (req, res) => {
-    const leadId = paramString(req.params.id);
-    const lead = await storage.crm.getLeadById(leadId);
-    if (!lead) return res.status(404).json({ message: "Lead not found" });
-    const parsed = taskCreateSchema.parse(req.body);
-    res.status(201).json(
-      await storage.crm.createTask({
-        leadId,
-        title: parsed.title,
-        dueAt: parsed.dueAt ?? null,
-        assignedToId: parsed.assignedToId ?? req.user?.id ?? null,
-        createdById: req.user?.id ?? null,
-        completed: false,
-      }),
-    );
+    res
+      .status(201)
+      .json(await createCrmTask("lead", paramString(req.params.id), req.body, req.user!.id));
   }),
 );
 
 router.patch(
   "/tasks/:taskId",
   asyncHandler(async (req, res) => {
-    const parsed = taskUpdateSchema.parse(req.body);
-    const task = await storage.crm.updateTask(paramString(req.params.taskId), parsed);
-    if (!task) return res.status(404).json({ message: "Task not found" });
-    res.json(task);
+    res.json(await updateCrmTask("lead", paramString(req.params.taskId), req.body));
   }),
 );
 

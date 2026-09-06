@@ -816,7 +816,9 @@ function CrmClientsContent() {
   const [creating, setCreating] = useState(false);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<CrmClientStatus | "all">("all");
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(() =>
+    new URLSearchParams(window.location.search).get("record"),
+  );
   const { data: clients = [], isLoading } = useQuery<CrmClient[]>({
     queryKey: ["/api/admin/crm/clients", { status, query }],
     queryFn: async () => {
