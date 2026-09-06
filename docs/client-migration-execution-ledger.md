@@ -5,6 +5,22 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Seven-route pilot acceptance and mobile focus fix
+
+The actual pinned Better Farms sweep found a keyboard focus escape from the open mobile drawer.
+Root reviewed the bounded header correction in site `7fd1298beb373ee447aa97f578fb11e575faf8f0`:
+Tab/Shift+Tab and programmatic focus stay within the drawer/trigger, background branches become
+inert while open and regain their prior state on close, and desktop resizing closes the drawer.
+The site commit is pushed and clean. Core now pins that exact source.
+
+All22 actual two-origin pilot browser cases passed (33.7 seconds), including the original three
+CMS/forms/image integration cases and19 route/interaction cases. All seven routes passed desktop
+and mobile image decoding, headings, internal targets and navigation/reload; board dialogs and
+donation-to-contact behavior passed. The expanded focus test covers forward/reverse movement,
+background restoration and desktop resizing. Site types and38 contract tests plus Core types and
+scoped lint passed. Fixture containers/ports were cleaned. Source-backed copy/assets approval,
+comprehensive accessibility and real domains/provider activation remain separate launch gates.
+
 ### Isolated rollback maintenance artifact prepared
 
 Rollback branch `codex/namespace-rollback` now has candidate `3ccc819`: a separate compiled

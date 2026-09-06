@@ -5,7 +5,7 @@ Requires the installed repository dependencies, Chromium, OpenSSL, and local Doc
 via a local Unix-socket Docker context (or `DOCKER_HOST`; an explicit
 `DOCKER_CONTEXT` takes precedence). Remote Docker endpoints are rejected. No existing database URL is used.
 `PILOT_SITE_ROOT` can locate the existing Better Farms checkout; its HEAD must be the
-reviewed `cec78dfd9ed1d89d906461db25f257a008d41a49` candidate. The default is the
+reviewed `7fd1298beb373ee447aa97f578fb11e575faf8f0` candidate. The default is the
 separate `Better Farms Foundation-form-reliability` checkout; the original site checkout is preserved.
 
 The launcher creates an auto-removing, loopback-published Postgres 16 container with
@@ -50,3 +50,10 @@ Teardown stops the apps/proxy, removes the disposable container and temporary TL
 manifest and build files. Cleanup verifies container absence and fails if removal
 cannot be confirmed. No production domains, DNS, imports, donation transactions,
 client-approved content, or production release gates are exercised by this test.
+
+`routes.spec.ts` adds desktop/mobile checks for all seven public routes, local image
+decoding, internal route targets, header navigation/reload, all About board dialogs,
+and donation-to-contact behavior. The mobile drawer regression checks both Tab
+directions, Escape/trigger restoration, background inert restoration and desktop
+resize. All 22 pilot cases passed against the pin above; see
+`docs/pilots/better-farms/route-acceptance-status.md` for scope and remaining gates.

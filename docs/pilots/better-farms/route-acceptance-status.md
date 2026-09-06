@@ -23,6 +23,41 @@ now references `8021f6b`; all three integrated cases passed in 16.6 seconds on 2
 External hero image policy, approved quotations/identities/assets and broader route interaction
 acceptance remain open.
 
+## Seven-route browser follow-up — 2026-09-06 UTC
+
+The actual local two-origin pilot fixture now pins clean Better Farms
+`7fd1298beb373ee447aa97f578fb11e575faf8f0`. Running
+`npx playwright test --config playwright.pilot.config.ts` passed **22/22 cases in
+33.7 seconds**: the existing three CMS/form integration cases plus nineteen route
+and interaction cases in `e2e/pilot/routes.spec.ts`.
+
+For all seven routes at 1440px and 390px, browser checks confirmed HTTP 200, one visible
+nonempty primary heading, successful decoding of local `img` elements, internal
+link paths belonging to the seven-route set, actual header navigation to Contact,
+and a successful reload. Every About board dialog opened by keyboard with a decoded
+headshot and closed using Escape. Donation selection/custom amount and the CTA to
+Contact worked at both widths; no checkout or provider call was exercised.
+
+The initial run against 21eeb76 passed 18 cases and reproduced one defect: Tab from
+the final mobile drawer link focused the obscured page. Site commit 7fd1298 fixes
+forward/reverse focus wrapping, guards focus entry and makes background branches
+inert while preserving their prior state. The passing regression verifies Escape
+returns focus to the trigger, close restores background interaction, and resizing
+to desktop closes the drawer and restores desktop navigation. The original failed
+assertion was retained and extended, not relaxed.
+
+The fixture built the real site production artifact, ran Core in development mode,
+and owned synthetic local PostgreSQL/TLS services. Browser requests were restricted
+to fixture origins. Its container and ports 5202/5203/5443 were released afterward.
+Better Farms typecheck and 38 site-contract tests passed; Core typecheck and scoped
+ESLint passed. The source branch `codex/form-reliability` was pushed at 7fd1298.
+
+This supersedes the broad pending route-interaction statement above only for these
+specific checks. It is not content/portrait/quotation approval, comprehensive WCAG
+conformance, provider delivery, checkout, production DNS, or production release
+acceptance. The original audit below remains historical evidence; unresolved copy,
+rights and broader accessibility gates still apply.
+
 ## Route matrix
 
 All seven paths are actually mounted in site `client/src/App.tsx:51`; each renders

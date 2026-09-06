@@ -182,8 +182,8 @@ async function main() {
     encoding: "utf8",
     timeout: 30000,
   }).trim();
-  if (siteRevision !== "21eeb76b33c1258c75a001296074b880ef85f87f")
-    throw new Error("Pilot requires reviewed Better Farms 21eeb76 source");
+  if (siteRevision !== "7fd1298beb373ee447aa97f578fb11e575faf8f0")
+    throw new Error("Pilot requires reviewed Better Farms 7fd1298 source");
   if (
     execFileSync("git", ["-C", siteRoot, "status", "--porcelain", "--untracked-files=no"], {
       env: minimal,
