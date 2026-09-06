@@ -369,3 +369,21 @@ re-review required. Customer browser tests are also being rerun with direct
 persisted logs because the first worker evidence retained transcribed tool
 output rather than original stdout. Functional results and source review are
 recorded, but these are not substitutes for final durable release evidence.
+
+### Follow-up evidence and shared producer correction
+
+Root verified every retained log hash and candidate source hash for customer
+account browser attempt customer-account-browser-20260906T050803Z-43987d44:
+six cases passed on clean bd84711. Captured logs include actual test exit0,
+container removal, anonymous-volume absence and server drain/port release.
+The receipt explicitly does not claim a separately captured app exit code.
+This replaces reliance on the earlier transcribed browser output.
+
+The same incomplete cleanup reporting exists in CRM populated-upgrade and
+backup-restore producers. Root owns the former adaptation; the CRM specialist
+owns the latter. Both use the shared ownership helper and process checks before
+and after cleanup, preserving restore invariants and input protections. The
+independent reviewer retains acceptance responsibility for the combined patch.
+A synthetic CRM populated-upgrade rehearsal is running; no result is claimed yet.
+Production-runtime smoke cleanup also needs explicit resource evidence in the
+next release run; its current removal return codes alone are insufficient.
