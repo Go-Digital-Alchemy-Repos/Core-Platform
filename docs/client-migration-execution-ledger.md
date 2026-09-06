@@ -5,6 +5,21 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### First hosted Linux pilot acceptance passed
+
+Hosted run34004914446, pilot job101410232417, passed all22 browser cases in54.6 seconds at
+`59af4a4`. The first run exposed missing Better Farms dependencies in the fresh hosted checkout;
+CI now installs that checkout's exact lockfile, and the launcher rejects a missing site dependency
+directory rather than falling back to Core's parent installation. The dependent required Verify
+job is still running; pilot success is not a claim that the whole release check completed.
+
+Root also corrected the dry-run operator's database session boundary: URL `options` values are
+rejected before pool creation because node-postgres can let them override the explicit read-only
+session. Five command tests and scoped lint passed, including rejection without a database pool
+or leaked connection detail. The verifier still has no apply path. A separate exact-object apply
+command is being prepared with explicit approval, writer-drain attestation and fsynced private
+ledger; this is tool implementation only, not approval or execution of a production copy.
+
 ### Hosted pilot gate added
 
 Commit `55a79cc` adds a hosted job that checks out the exact reviewed public Better Farms source

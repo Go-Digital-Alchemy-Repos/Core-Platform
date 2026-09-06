@@ -93,6 +93,10 @@ export async function main(args: string[], env: NodeJS.ProcessEnv) {
     const approval = await readMigrationInput(args[3]);
     if (plan.device === approval.device && plan.inode === approval.inode)
       throw new Error("Approval must be independent input");
+    // node-postgres URL options override explicit pool options; preserve the read-only session.
+    if (new URL(env.DATABASE_URL || "").searchParams.has("options")) {
+      throw new Error("Database URL session options are not allowed for verification");
+    }
     // The verifier checks platform IDs before the lazy pool establishes a connection.
     pool = new pg.Pool({
       ...databasePoolConfig(env),

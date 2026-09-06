@@ -52,6 +52,29 @@ describe("read-only migration command input", () => {
       await rm(directory, { recursive: true, force: true });
     }
   });
+  it("rejects URL session overrides before creating a database pool", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "migration-readonly-test-"));
+    const output = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const pool = vi.spyOn(pg, "Pool");
+    try {
+      const plan = join(directory, "plan");
+      const approval = join(directory, "approval");
+      await writeFile(plan, "{}", { mode: 0o600 });
+      await writeFile(approval, "{}", { mode: 0o600 });
+      expect(
+        await main(["--plan", plan, "--approval", approval], {
+          DATABASE_URL:
+            "postgresql://user:secret@localhost/core?options=-c%20default_transaction_read_only=off",
+        }),
+      ).toBe(1);
+      expect(pool).not.toHaveBeenCalled();
+      expect(JSON.stringify(output.mock.calls)).not.toContain("secret");
+    } finally {
+      pool.mockRestore();
+      output.mockRestore();
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
   it("sanitizes database/idle errors and cleanup rejection", async () => {
     const directory = await mkdtemp(join(tmpdir(), "migration-db-error-test-"));
     const output = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
