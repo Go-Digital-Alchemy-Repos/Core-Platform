@@ -564,7 +564,9 @@ function CrmContent() {
   const presentation = pipeline.presentation;
   const [query, setQuery] = useState("");
   const [stage, setStage] = useState<CrmLeadStage | "all">("all");
-  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(() =>
+    new URLSearchParams(window.location.search).get("record"),
+  );
   const [createOpen, setCreateOpen] = useState(false);
   const [activeLead, setActiveLead] = useState<CrmLead | null>(null);
   const sensors = useSensors(

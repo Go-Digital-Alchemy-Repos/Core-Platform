@@ -253,6 +253,12 @@ export function buildNavGroups(
                 icon: UserCheck,
                 iconColor: "text-emerald-600",
               },
+              {
+                title: "Follow-ups",
+                href: "/admin/crm/follow-ups",
+                icon: UserCheck,
+                iconColor: "text-emerald-600",
+              },
               ...(user?.role === "admin"
                 ? [
                     {
