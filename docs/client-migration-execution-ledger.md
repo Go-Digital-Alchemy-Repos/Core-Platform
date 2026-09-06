@@ -5,6 +5,20 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### CRM-2 contract accepted for isolated implementation
+
+Root accepted [the typed-field/mapping design](crm-custom-fields-implementation-plan.md), including
+five scalar types, dedicated revisioned definitions/values, transactional won conversion and pinned
+submission snapshots. Root added a monotonic form mapping revision that survives removal/recreation
+to prevent stale-editor overwrite. Old workers cannot consume mapped jobs safely; rollback must
+drain them or retain a compatible consumer. This is design acceptance, not implementation or release
+approval. CRM-2 will remain isolated from the maintenance candidate until its own acceptance passes.
+
+The latest CRM settings page also passed actual desktop/mobile light/dark badge and viewport checks
+(2 cases, 10.7 seconds) against an owned disposable PostgreSQL fixture, which was removed. Initial
+attempts stopped before browser tests because the required fixture was absent and then not ready;
+explicit database readiness resolved setup. No production services or provider calls were used.
+
 ### CRM settings navigation completed; activation wording reviewed
 
 CRM settings now links to the existing platform integrations, email templates and branding routes,
