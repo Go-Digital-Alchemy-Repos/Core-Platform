@@ -237,3 +237,43 @@ settings destinations were rechecked after the maintenance deployment. The
 active goal includes broader ecommerce defect correction and acceptance,
 CRM improvements, client onboarding and subsequent website deployment planning.
 Provider transactions remain disabled.
+
+
+### Immutable CRM baseline local validation — 2026-09-06
+
+Clean candidate `8126c8d5d1d0d034bfded61cd01fef834a839db0` now passes the
+local gate matrix: 1,094 ordinary tests (57 opt-in exclusions exercised in
+separate required database suites), 82 database test executions including
+New York/UTC reliability, 40 desktop/mobile application browser tests, and
+22 pinned Better Farms pilot tests at site7fd1298. Types, lint, format, build,
+budgets, fresh migrations twice, a006 historical upgrade, a99 CRM upgrade,
+CRM capture/restore, source/compiled preflight and detached upload artifacts
+passed. Compiled Linux Node22.23.2 startup used verified TLS1.3 PostgreSQL,
+reached ready, and drained on SIGTERM with exit0. Artifact SHA256
+`8c82cbbc28f28b10c3bdcae9cace9b8b71b385af6d5cce4855489297cfae2e49`.
+Owned fixtures were removed; checkout remained clean. External private summary
+`Core Platform Operations/crm-8126c8d-validation-summary.json` binds six
+per-run receipt hashes. This accepts local baseline validation, not production
+release or later ecommerce changes.
+
+Independent release-policy review rejected an unrestricted PAT status as
+equivalent to the current Actions-app-bound check. Prepare a dedicated
+GitHub App, running its verifier locally with no webhook infrastructure,
+and require the actual app identity for a distinctly named local check.
+Keep all other branch protections and Actions disabled. Registration access
+is currently at GitHub's passkey/authenticator confirmation screen; the
+owner was asked asynchronously to complete that authentication. No app,
+status, protection, or production setting was changed. Offline receipt
+validation implementation is proceeding independently.
+
+Ecommerce frontend candidate9ed3eea/b825590 implements checkout load recovery
+and account draft/error handling; root review identified a remaining
+already-autofilled address identity-switch case, now assigned for correction.
+Atomic shipping/fulfillment uses an approved order-locked, idempotent contract
+and additive0063 receipt columns in a separate branch, with real concurrency
+and partial-shipment tests in progress. Do not treat either as accepted/live.
+
+Peer PR13 remains90882c2, migration0061. Owner-authorized calendar sample
+seeding was separately reported by that task (238 new/239 total events);
+the next fresh production backup must include the current post-seed state.
+Root did not execute that seed and has not independently verified its rows.
