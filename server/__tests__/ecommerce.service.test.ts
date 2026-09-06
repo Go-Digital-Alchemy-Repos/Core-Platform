@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import type {
   EcommerceCoupon,
   EcommerceOrder,
@@ -21,6 +21,7 @@ const mockGetCustomer = vi.fn();
 const mockFindOrCreateCustomer = vi.fn();
 const mockCreateOrder = vi.fn();
 const mockClaimCheckoutRequest = vi.fn();
+const mockGetCheckoutRequest = vi.fn();
 const mockAttachCheckoutRequestOrder = vi.fn();
 const mockCompleteCheckoutRequest = vi.fn();
 const mockFailCheckoutRequest = vi.fn();
@@ -115,6 +116,7 @@ vi.mock("../storage/index", () => ({
       findOrCreateCustomer: mockFindOrCreateCustomer,
       createOrder: mockCreateOrder,
       claimCheckoutRequest: mockClaimCheckoutRequest,
+      getCheckoutRequest: mockGetCheckoutRequest,
       attachCheckoutRequestOrder: mockAttachCheckoutRequestOrder,
       completeCheckoutRequest: mockCompleteCheckoutRequest,
       failCheckoutRequest: mockFailCheckoutRequest,
@@ -146,11 +148,19 @@ vi.mock("../services/ecommerce-stripe.service", async (importOriginal) => {
   return {
     ...actual,
     getEcommerceStripeClient: mockGetEcommerceStripeClient,
+    getEcommerceStripeTransactionClient: async () => {
+      const stripe = await mockGetEcommerceStripeClient();
+      actual.assertEcommerceProviderTransactionsEnabled();
+      return stripe;
+    },
   };
 });
 
 describe("ecommerce services", () => {
+  afterEach(() => vi.unstubAllEnvs());
   beforeEach(() => {
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", "true");
+    mockGetCheckoutRequest.mockReset();
     mockProducts.length = 0;
     mockVariants.length = 0;
     mockCoupons.length = 0;
@@ -232,78 +242,83 @@ describe("ecommerce services", () => {
     mockSettlePaymentRequestOrderBySession.mockReset();
   });
 
-  it.each(["Missing Stripe secret key", "Live mode cannot use a test secret key"])(
-    "rejects provider-backed operations before local writes: %s",
-    async (message) => {
-      const {
-        createManualEcommerceOrderDraft,
-        createPaymentLinkForOrder,
-        createStandalonePaymentRequest,
-      } = await import("../services/ecommerce-order.service");
-      const { createEcommerceRefund } = await import("../services/ecommerce-refund.service");
-      seedManualOrderProduct();
-      mockGetCustomer.mockResolvedValue({
-        id: "customer",
-        email: "buyer@example.test",
-        name: "Buyer",
-      });
-      mockGetOrderWithDetails.mockResolvedValue({
-        id: "order",
-        customerId: "customer",
-        totalAmount: 2500,
-        status: "pending",
-        paymentStatus: "unpaid",
-        items: [],
-        refunds: [],
-        stripePaymentIntentId: "pi_test",
-      });
+  it.each([
+    "Missing Stripe secret key",
+    "Live mode cannot use a test secret key",
+    "awaiting activation",
+  ])("rejects provider-backed operations before local writes: %s", async (message) => {
+    const {
+      createManualEcommerceOrderDraft,
+      createPaymentLinkForOrder,
+      createStandalonePaymentRequest,
+    } = await import("../services/ecommerce-order.service");
+    const { createEcommerceRefund } = await import("../services/ecommerce-refund.service");
+    seedManualOrderProduct();
+    mockGetCustomer.mockResolvedValue({
+      id: "customer",
+      email: "buyer@example.test",
+      name: "Buyer",
+    });
+    mockGetOrderWithDetails.mockResolvedValue({
+      id: "order",
+      customerId: "customer",
+      totalAmount: 2500,
+      status: "pending",
+      paymentStatus: "unpaid",
+      items: [],
+      refunds: [],
+      stripePaymentIntentId: "pi_test",
+    });
+    if (message === "awaiting activation")
+      vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", "false");
+    else
       mockGetEcommerceStripeClient.mockRejectedValue(
         Object.assign(new Error(message), { statusCode: 409 }),
       );
-      await expect(
-        createManualEcommerceOrderDraft({
-          customerId: "customer",
-          items: [{ productId: "p-manual", quantity: 1 }],
-          paymentAction: "send_payment_link",
-        }),
-      ).rejects.toMatchObject({ statusCode: 409 });
-      await expect(createPaymentLinkForOrder("order")).rejects.toMatchObject({ statusCode: 409 });
-      await expect(
-        createStandalonePaymentRequest({
-          customer: { email: "new@example.test", name: "New" },
-          title: "Payment",
-          amount: 2500,
-          reason: "Synthetic request",
-        }),
-      ).rejects.toMatchObject({ statusCode: 409 });
-      mockGetOrderWithDetails.mockResolvedValue({
-        id: "order",
-        totalAmount: 2500,
-        status: "paid",
-        paymentStatus: "paid",
-        stripePaymentIntentId: "pi_test",
-        refunds: [],
-      });
-      await expect(
-        createEcommerceRefund({ orderId: "order", amount: 500, source: "stripe" }),
-      ).rejects.toMatchObject({ statusCode: 409 });
-      for (const write of [
-        mockFindOrCreateCustomer,
-        mockCreateOrder,
-        mockCreatePaymentRequest,
-        mockCreateRefund,
-        mockUpdateOrder,
-        mockUpdateRefund,
-      ])
-        expect(write).not.toHaveBeenCalled();
-      expect(mockStripeCheckoutSessionCreate).not.toHaveBeenCalled();
-      expect(mockStripeRefundCreate).not.toHaveBeenCalled();
-    },
-  );
+    await expect(
+      createManualEcommerceOrderDraft({
+        customerId: "customer",
+        items: [{ productId: "p-manual", quantity: 1 }],
+        paymentAction: "send_payment_link",
+      }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    await expect(createPaymentLinkForOrder("order")).rejects.toMatchObject({ statusCode: 409 });
+    await expect(
+      createStandalonePaymentRequest({
+        customer: { email: "new@example.test", name: "New" },
+        title: "Payment",
+        amount: 2500,
+        reason: "Synthetic request",
+      }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    mockGetOrderWithDetails.mockResolvedValue({
+      id: "order",
+      totalAmount: 2500,
+      status: "paid",
+      paymentStatus: "paid",
+      stripePaymentIntentId: "pi_test",
+      refunds: [],
+    });
+    await expect(
+      createEcommerceRefund({ orderId: "order", amount: 500, source: "stripe" }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    for (const write of [
+      mockFindOrCreateCustomer,
+      mockCreateOrder,
+      mockCreatePaymentRequest,
+      mockCreateRefund,
+      mockUpdateOrder,
+      mockUpdateRefund,
+    ])
+      expect(write).not.toHaveBeenCalled();
+    expect(mockStripeCheckoutSessionCreate).not.toHaveBeenCalled();
+    expect(mockStripeRefundCreate).not.toHaveBeenCalled();
+  });
 
   it.each(["save_draft", "mark_paid"] as const)(
     "manual %s does not require Stripe configuration",
     async (paymentAction) => {
+      vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", undefined);
       const { createManualEcommerceOrderDraft } =
         await import("../services/ecommerce-order.service");
       seedManualOrderProduct();
@@ -326,6 +341,7 @@ describe("ecommerce services", () => {
   );
 
   it("manual refunds do not require Stripe configuration", async () => {
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", undefined);
     const { createEcommerceRefund } = await import("../services/ecommerce-refund.service");
     mockGetOrderWithDetails.mockResolvedValue({
       id: "manual",
@@ -575,81 +591,95 @@ describe("ecommerce services", () => {
     ).toThrow();
   });
 
-  it("returns the original PaymentIntent for a repeated checkout request", async () => {
-    const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
-    const order = {
-      id: "order-existing-checkout",
-      customerId: "customer-1",
-      lookupToken: "lookup-existing",
-      stripePaymentIntentId: "pi_existing",
-      totalAmount: 5000,
-    } as EcommerceOrder;
-    mockProducts.push({
-      id: "p-idempotent",
-      name: "Digital Guide",
-      price: 5000,
-      active: true,
-      status: "published",
-      visibility: "online",
-      archivedAt: null,
-      requiresShipping: false,
-      productType: "digital",
-      fulfillmentType: "digital",
-    } as EcommerceProduct);
-    mockVariants.push({
-      id: "v-idempotent",
-      productId: "p-idempotent",
-      title: "Default",
-      price: 5000,
-      active: true,
-      status: "active",
-      isDefault: true,
-      trackInventory: false,
-      inventoryQuantity: 0,
-      allowBackorder: false,
-      optionValues: {},
-    } as EcommerceProductVariant);
-    mockClaimCheckoutRequest.mockResolvedValue({
-      created: false,
-      request: {
-        requestKey: "9d723950-a6e1-4bb9-b95a-58a43eeafb1b",
-        customerEmail: "buyer@example.com",
-        orderId: order.id,
-        status: "ready",
-      },
-    });
-    mockGetOrder.mockResolvedValue(order);
-    mockStripePaymentIntentRetrieve.mockResolvedValue({
-      id: "pi_existing",
-      client_secret: "pi_existing_secret",
-    });
-
-    await expect(
-      createEcommercePaymentIntent(
-        {
-          items: [{ productId: "p-idempotent", quantity: 1 }],
-          customer: { email: "buyer@example.com", name: "Buyer" },
-          shippingAddress: {
-            name: "Buyer",
-            address: "123 Main St",
-            city: "Detroit",
-            state: "MI",
-            zip: "48201",
-            country: "US",
-          },
-          billingSameAsShipping: true,
+  it.each([true, false])(
+    "returns the original PaymentIntent with activation %s",
+    async (enabled) => {
+      const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
+      const order = {
+        id: "order-existing-checkout",
+        customerId: "customer-1",
+        lookupToken: "lookup-existing",
+        stripePaymentIntentId: "pi_existing",
+        totalAmount: 5000,
+      } as EcommerceOrder;
+      mockProducts.push({
+        id: "p-idempotent",
+        name: "Digital Guide",
+        price: 5000,
+        active: true,
+        status: "published",
+        visibility: "online",
+        archivedAt: null,
+        requiresShipping: false,
+        productType: "digital",
+        fulfillmentType: "digital",
+      } as EcommerceProduct);
+      mockVariants.push({
+        id: "v-idempotent",
+        productId: "p-idempotent",
+        title: "Default",
+        price: 5000,
+        active: true,
+        status: "active",
+        isDefault: true,
+        trackInventory: false,
+        inventoryQuantity: 0,
+        allowBackorder: false,
+        optionValues: {},
+      } as EcommerceProductVariant);
+      mockClaimCheckoutRequest.mockResolvedValue({
+        created: false,
+        request: {
+          requestKey: "9d723950-a6e1-4bb9-b95a-58a43eeafb1b",
+          customerEmail: "buyer@example.com",
+          orderId: order.id,
+          status: "ready",
         },
-        { checkoutRequestKey: "9d723950-a6e1-4bb9-b95a-58a43eeafb1b" },
-      ),
-    ).resolves.toMatchObject({
-      orderId: order.id,
-      clientSecret: "pi_existing_secret",
-      paymentIntentId: "pi_existing",
-    });
-    expect(mockFindOrCreateCustomer).not.toHaveBeenCalled();
-    expect(mockCreateOrder).not.toHaveBeenCalled();
-    expect(mockStripePaymentIntentRetrieve).toHaveBeenCalledWith("pi_existing");
-  });
+      });
+      if (!enabled) {
+        vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", "false");
+        mockGetCheckoutRequest.mockResolvedValue({
+          requestKey: "9d723950-a6e1-4bb9-b95a-58a43eeafb1b",
+          customerEmail: "buyer@example.com",
+          orderId: order.id,
+          status: "ready",
+        });
+      }
+      mockGetOrder.mockResolvedValue(order);
+      mockStripePaymentIntentRetrieve.mockResolvedValue({
+        id: "pi_existing",
+        client_secret: "pi_existing_secret",
+      });
+
+      await expect(
+        createEcommercePaymentIntent(
+          {
+            items: [{ productId: "p-idempotent", quantity: 1 }],
+            customer: { email: "buyer@example.com", name: "Buyer" },
+            shippingAddress: {
+              name: "Buyer",
+              address: "123 Main St",
+              city: "Detroit",
+              state: "MI",
+              zip: "48201",
+              country: "US",
+            },
+            billingSameAsShipping: true,
+          },
+          { checkoutRequestKey: "9d723950-a6e1-4bb9-b95a-58a43eeafb1b" },
+        ),
+      ).resolves.toMatchObject({
+        orderId: order.id,
+        clientSecret: "pi_existing_secret",
+        paymentIntentId: "pi_existing",
+      });
+      expect(mockFindOrCreateCustomer).not.toHaveBeenCalled();
+      expect(mockCreateOrder).not.toHaveBeenCalled();
+      expect(mockStripePaymentIntentRetrieve).toHaveBeenCalledWith("pi_existing");
+      expect(mockStripePaymentIntentCreate).not.toHaveBeenCalled();
+      if (!enabled) expect(mockClaimCheckoutRequest).not.toHaveBeenCalled();
+    },
+  );
 
   it("rejects guest checkout when customer accounts are required", async () => {
     const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
@@ -1335,6 +1365,184 @@ describe("ecommerce services", () => {
     });
     expect(mockFindOrCreateCustomer).not.toHaveBeenCalled();
     expect(mockCreateOrder).not.toHaveBeenCalled();
+  });
+
+  it("rejects disabled fresh checkout before inserting an idempotency claim", async () => {
+    const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", undefined);
+    mockProducts.push({
+      id: "p-digital",
+      name: "Digital Guide",
+      price: 5000,
+      active: true,
+      status: "published",
+      visibility: "online",
+      archivedAt: null,
+      requiresShipping: false,
+      productType: "digital",
+      fulfillmentType: "digital",
+    } as EcommerceProduct);
+    mockVariants.push({
+      id: "v-digital",
+      productId: "p-digital",
+      title: "Default",
+      price: 5000,
+      active: true,
+      status: "active",
+      isDefault: true,
+      trackInventory: false,
+      inventoryQuantity: 0,
+      allowBackorder: false,
+      optionValues: {},
+    } as EcommerceProductVariant);
+
+    await expect(
+      createEcommercePaymentIntent(
+        {
+          items: [{ productId: "p-digital", quantity: 1 }],
+          customer: { email: "buyer@example.com", name: "Buyer" },
+          shippingAddress: {
+            name: "Buyer",
+            address: "123 Main St",
+            city: "Detroit",
+            state: "MI",
+            zip: "48201",
+            country: "US",
+          },
+          billingSameAsShipping: true,
+        },
+        { checkoutRequestKey: "9d723950-a6e1-4bb9-b95a-58a43eeafb1b" },
+      ),
+    ).rejects.toMatchObject({
+      message: "Ecommerce provider transactions are awaiting operator activation",
+      statusCode: 409,
+    });
+    expect(mockFindOrCreateCustomer).not.toHaveBeenCalled();
+    expect(mockCreateOrder).not.toHaveBeenCalled();
+    expect(mockClaimCheckoutRequest).not.toHaveBeenCalled();
+    expect(mockStripePaymentIntentCreate).not.toHaveBeenCalled();
+  });
+
+  it("preserves manual risk review without provider activation", async () => {
+    const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", undefined);
+    mockGetDecryptedCategory.mockImplementation(async (category) =>
+      category === "ecommerce_fraud"
+        ? { ecommerce_fraud_settings: JSON.stringify({ riskReviewThreshold: 0 }) }
+        : {},
+    );
+    mockFindOrCreateCustomer.mockResolvedValue({ id: "review-customer" });
+    mockCreateOrder.mockResolvedValue({ id: "review-order" });
+    mockAttachCheckoutRequestOrder.mockResolvedValue({ id: "review-order" });
+    mockClaimCheckoutRequest.mockResolvedValue({ created: true, request: {} });
+    mockProducts.push({
+      id: "p-digital",
+      name: "Digital Guide",
+      price: 5000,
+      active: true,
+      status: "published",
+      visibility: "online",
+      archivedAt: null,
+      requiresShipping: false,
+      productType: "digital",
+      fulfillmentType: "digital",
+    } as EcommerceProduct);
+    mockVariants.push({
+      id: "v-digital",
+      productId: "p-digital",
+      title: "Default",
+      price: 5000,
+      active: true,
+      status: "active",
+      isDefault: true,
+      trackInventory: false,
+      inventoryQuantity: 0,
+      allowBackorder: false,
+      optionValues: {},
+    } as EcommerceProductVariant);
+
+    await expect(
+      createEcommercePaymentIntent(
+        {
+          items: [{ productId: "p-digital", quantity: 1 }],
+          customer: { email: "buyer@example.com", name: "Buyer" },
+          shippingAddress: {
+            name: "Buyer",
+            address: "123 Main St",
+            city: "Detroit",
+            state: "MI",
+            zip: "48201",
+            country: "US",
+          },
+          billingSameAsShipping: true,
+        },
+        { checkoutRequestKey: "9d723950-a6e1-4bb9-b95a-58a43eeafb1b" },
+      ),
+    ).rejects.toMatchObject({
+      message:
+        "This order needs a quick review before payment. Please contact support or try again later.",
+      statusCode: 409,
+    });
+    expect(mockCreateOrder).toHaveBeenCalledOnce();
+    expect(mockGetEcommerceStripeClient).not.toHaveBeenCalled();
+    expect(mockStripePaymentIntentCreate).not.toHaveBeenCalled();
+  });
+
+  it("does not create a provider transaction for a pending historical request", async () => {
+    const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", undefined);
+    mockGetCheckoutRequest.mockResolvedValue({ customerEmail: "buyer@example.com", orderId: null });
+    mockProducts.push({
+      id: "p-digital",
+      name: "Digital Guide",
+      price: 5000,
+      active: true,
+      status: "published",
+      visibility: "online",
+      archivedAt: null,
+      requiresShipping: false,
+      productType: "digital",
+      fulfillmentType: "digital",
+    } as EcommerceProduct);
+    mockVariants.push({
+      id: "v-digital",
+      productId: "p-digital",
+      title: "Default",
+      price: 5000,
+      active: true,
+      status: "active",
+      isDefault: true,
+      trackInventory: false,
+      inventoryQuantity: 0,
+      allowBackorder: false,
+      optionValues: {},
+    } as EcommerceProductVariant);
+
+    await expect(
+      createEcommercePaymentIntent(
+        {
+          items: [{ productId: "p-digital", quantity: 1 }],
+          customer: { email: "buyer@example.com", name: "Buyer" },
+          shippingAddress: {
+            name: "Buyer",
+            address: "123 Main St",
+            city: "Detroit",
+            state: "MI",
+            zip: "48201",
+            country: "US",
+          },
+          billingSameAsShipping: true,
+        },
+        { checkoutRequestKey: "9d723950-a6e1-4bb9-b95a-58a43eeafb1b" },
+      ),
+    ).rejects.toMatchObject({
+      message: "This checkout request is still being prepared. Retry in a moment.",
+      statusCode: 409,
+    });
+    expect(mockFindOrCreateCustomer).not.toHaveBeenCalled();
+    expect(mockCreateOrder).not.toHaveBeenCalled();
+    expect(mockClaimCheckoutRequest).not.toHaveBeenCalled();
+    expect(mockStripePaymentIntentCreate).not.toHaveBeenCalled();
   });
 
   it("marks checkout orders failed when Stripe cannot create a PaymentIntent", async () => {
@@ -2106,6 +2314,67 @@ describe("ecommerce services", () => {
     expect(publicPriced.lines[0]).not.toHaveProperty("productSnapshot");
   });
 
+  it("gates direct gateway refund creation even with a previously resolved client", async () => {
+    const { createPaymentGatewayRefund } =
+      await import("../services/ecommerce-payment-gateway-refund.service");
+    const stripe = await mockGetEcommerceStripeClient();
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", undefined);
+    const params = {
+      provider: "stripe" as const,
+      order: { id: "order", stripePaymentIntentId: "pi_synthetic" },
+      amount: 100,
+      idempotencyKey: "synthetic",
+    };
+    await expect(createPaymentGatewayRefund(params)).rejects.toMatchObject({ statusCode: 409 });
+    await expect(createPaymentGatewayRefund(params, stripe)).rejects.toMatchObject({
+      statusCode: 409,
+    });
+    expect(mockStripeRefundCreate).not.toHaveBeenCalled();
+  });
+
+  it("reports configured separately from activation and validates config before gating", async () => {
+    const actual = await vi.importActual<typeof import("../services/ecommerce-stripe.service")>(
+      "../services/ecommerce-stripe.service",
+    );
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", undefined);
+    await expect(actual.getEcommerceStripeTransactionClient()).rejects.toThrow(
+      "secret key is not configured",
+    );
+    mockGetDecryptedCategory.mockResolvedValue({
+      active_mode: "live",
+      live_secret_key: "sk_test_wrong",
+    });
+    await expect(actual.getEcommerceStripeTransactionClient()).rejects.toThrow("Live mode");
+    expect(await actual.getMaskedEcommerceStripeStatus()).toMatchObject({
+      configured: false,
+      providerTransactionsEnabled: false,
+      awaitingActivation: false,
+    });
+    mockGetDecryptedCategory.mockResolvedValue({
+      active_mode: "test",
+      test_secret_key: "sk_test_synthetic",
+    });
+    for (const flag of [undefined, "false", "TRUE", "1"]) {
+      vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", flag);
+      await expect(actual.getEcommerceStripeTransactionClient()).rejects.toMatchObject({
+        statusCode: 409,
+      });
+      expect(await actual.getMaskedEcommerceStripeStatus()).toMatchObject({
+        configured: true,
+        providerTransactionsEnabled: false,
+        awaitingActivation: true,
+      });
+      await expect(actual.getEcommerceStripeClient()).resolves.toBeDefined();
+    }
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", "true");
+    await expect(actual.getEcommerceStripeTransactionClient()).resolves.toBeDefined();
+    expect(await actual.getMaskedEcommerceStripeStatus()).toMatchObject({
+      configured: true,
+      providerTransactionsEnabled: true,
+      awaitingActivation: false,
+    });
+  });
+
   it("validates Stripe key mode separation", async () => {
     const {
       getEcommerceStripePublishableKey,
@@ -2445,6 +2714,7 @@ describe("ecommerce services", () => {
   });
 
   it("reconciles a pending Stripe refund by matching its durable local metadata", async () => {
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", undefined);
     const { reconcileEcommerceRefund } = await import("../services/ecommerce-refund.service");
     mockGetRefund.mockResolvedValue({
       id: "refund-local-timeout",
@@ -3278,6 +3548,7 @@ describe("ecommerce services", () => {
   });
 
   it("creates draft manual orders without deducting inventory", async () => {
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", undefined);
     const { createManualEcommerceOrderDraft } = await import("../services/ecommerce-order.service");
     const customer = { id: "customer-1", email: "buyer@example.com", name: "Buyer" };
     const createdOrder = {
@@ -3408,6 +3679,7 @@ describe("ecommerce services", () => {
   });
 
   it("marks manual orders paid and deducts inventory after external payment", async () => {
+    vi.stubEnv("ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED", undefined);
     const { markManualEcommerceOrderPaid } = await import("../services/ecommerce-order.service");
     const paidOrder = {
       id: "order-manual-paid",

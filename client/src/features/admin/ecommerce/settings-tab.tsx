@@ -41,6 +41,9 @@ import {
 } from "@shared/ecommerce-shipping-settings";
 
 interface StripeSettingsStatus {
+  providerTransactionsEnabled: boolean;
+  configured: boolean;
+  awaitingActivation: boolean;
   activeMode: "test" | "live";
   testPublishableKey: string;
   livePublishableKey: string;
@@ -48,6 +51,39 @@ interface StripeSettingsStatus {
   hasLiveSecretKey: boolean;
   hasTestWebhookSecret: boolean;
   hasLiveWebhookSecret: boolean;
+}
+
+function StripeActivationNotice({ status }: { status: StripeSettingsStatus | undefined }) {
+  const [title, description] =
+    status?.configured === false
+      ? [
+          "Stripe credentials required",
+          "Save the keys for the active mode before using Stripe payments.",
+        ]
+      : status?.configured === true && status.providerTransactionsEnabled === false
+        ? [
+            "Awaiting payment activation",
+            "Credentials are saved. New Stripe payments and refunds remain disabled until your deployment operator activates them.",
+          ]
+        : status?.configured === true && status.providerTransactionsEnabled === true
+          ? [
+              "New Stripe transactions enabled",
+              "New payments and refunds can use the saved Stripe credentials.",
+            ]
+          : [
+              "Payment activation status unavailable",
+              "Reload these settings to check payment activation.",
+            ];
+  return (
+    <div
+      role="status"
+      data-testid="stripe-activation-status"
+      className="rounded-lg border bg-muted/40 p-4 text-sm"
+    >
+      <p className="font-medium">{title}</p>
+      <p className="mt-1 text-muted-foreground">{description}</p>
+    </div>
+  );
 }
 
 interface TaxSettingsStatus {
@@ -572,6 +608,7 @@ export function SettingsTab({ section = "store" }: { section?: EcommerceSettings
             <CardDescription>Secret values are encrypted and masked after save.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
+            <StripeActivationNotice status={data} />
             <div className="space-y-2">
               <Label>Active mode</Label>
               <Select value={activeMode} onValueChange={setActiveMode}>

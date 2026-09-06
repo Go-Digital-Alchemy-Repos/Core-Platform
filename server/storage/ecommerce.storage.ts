@@ -142,6 +142,14 @@ function notificationJobErrorCode(error: unknown) {
 }
 
 export class EcommerceStorage {
+  async getCheckoutRequest(requestKey: string): Promise<EcommerceCheckoutRequest | undefined> {
+    const [request] = await db
+      .select()
+      .from(ecommerceCheckoutRequests)
+      .where(eq(ecommerceCheckoutRequests.requestKey, requestKey));
+    return request;
+  }
+
   async claimCheckoutRequest(params: {
     requestKey: string;
     customerEmail: string;

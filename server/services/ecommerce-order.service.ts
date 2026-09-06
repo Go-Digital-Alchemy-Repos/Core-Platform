@@ -8,7 +8,10 @@ import {
   toPublicPricedCart,
   type PricedCartLine,
 } from "./ecommerce-pricing.service";
-import { getEcommerceStripeClient } from "./ecommerce-stripe.service";
+import {
+  getEcommerceStripeTransactionClient,
+  getEcommerceStripeClient,
+} from "./ecommerce-stripe.service";
 import { buildCorePlatformAdminUrl, buildPublicSiteUrl } from "../config/client-stack-origins";
 import { getEcommerceCustomerAccountSettings } from "./ecommerce-customer-account.service";
 import { assertEcommerceShippingDestinationAllowed } from "./ecommerce-store-settings.service";
@@ -230,7 +233,7 @@ function getManualDiscounts(data: z.infer<typeof manualOrderSchema>, lines: Pric
   return discounts;
 }
 
-type ResolvedStripeClient = Awaited<ReturnType<typeof getEcommerceStripeClient>>;
+type ResolvedStripeClient = Awaited<ReturnType<typeof getEcommerceStripeTransactionClient>>;
 
 async function createStripeCheckoutSessionForPaymentRequest(
   params: {
@@ -426,15 +429,24 @@ export async function createEcommercePaymentIntent(
       409,
     );
   }
+  const previousRequest = checkoutRequestKey
+    ? await storage.ecommerce.getCheckoutRequest(checkoutRequestKey)
+    : undefined;
   const stripe =
-    fraudEvaluation.decision === "manual_review" ? null : await getEcommerceStripeClient();
+    previousRequest && fraudEvaluation.decision !== "manual_review"
+      ? await getEcommerceStripeClient()
+      : fraudEvaluation.decision === "manual_review"
+        ? null
+        : await getEcommerceStripeTransactionClient();
 
-  const checkoutRequest = checkoutRequestKey
-    ? await storage.ecommerce.claimCheckoutRequest({
-        requestKey: checkoutRequestKey,
-        customerEmail: checkoutEmail,
-      })
-    : null;
+  const checkoutRequest = previousRequest
+    ? { created: false, request: previousRequest }
+    : checkoutRequestKey
+      ? await storage.ecommerce.claimCheckoutRequest({
+          requestKey: checkoutRequestKey,
+          customerEmail: checkoutEmail,
+        })
+      : null;
   if (checkoutRequest && !checkoutRequest.created) {
     if (checkoutRequest.request.customerEmail !== checkoutEmail) {
       throw httpError("This checkout request cannot be reused for a different customer.", 409);
@@ -712,7 +724,7 @@ export async function createManualEcommerceOrderDraft(
   }
   const isPaid = data.paymentAction === "mark_paid";
   const isPaymentLink = data.paymentAction === "send_payment_link";
-  const stripe = isPaymentLink ? await getEcommerceStripeClient() : undefined;
+  const stripe = isPaymentLink ? await getEcommerceStripeTransactionClient() : undefined;
   const order = await storage.ecommerce.createOrder(
     {
       customerId: customer.id,
@@ -786,7 +798,7 @@ async function createPaymentLinkForOrderWithClient(
   if (order.totalAmount <= 0)
     throw httpError("Order total must be greater than zero before requesting payment.", 400);
   if (order.paymentStatus === "paid") throw httpError("This order has already been paid.", 400);
-  const stripe = resolvedStripe ?? (await getEcommerceStripeClient());
+  const stripe = resolvedStripe ?? (await getEcommerceStripeTransactionClient());
   const reason = options.reason?.trim() || "Manual order payment link";
   const request = await storage.ecommerce.createPaymentRequest({
     orderId: order.id,
@@ -862,7 +874,7 @@ export async function createStandalonePaymentRequest(
   actor?: Pick<User, "id"> | null,
 ) {
   const data = standalonePaymentRequestSchema.parse(input);
-  const stripe = await getEcommerceStripeClient();
+  const stripe = await getEcommerceStripeTransactionClient();
   let customer = data.customerId ? await storage.ecommerce.getCustomer(data.customerId) : undefined;
   if (!customer && data.customer) {
     customer = await storage.ecommerce.findOrCreateCustomer({

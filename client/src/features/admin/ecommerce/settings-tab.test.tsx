@@ -104,6 +104,43 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 
+describe("Stripe activation status", () => {
+  it.each([
+    [false, false, "Stripe credentials required"],
+    [true, false, "Awaiting payment activation"],
+    [true, true, "New Stripe transactions enabled"],
+  ])(
+    "renders saved configuration %s and operator activation %s",
+    async (configured, enabled, title) => {
+      await render("stripe", async (key) => {
+        if (key === paths.stripe) {
+          return {
+            ...(stored.stripe as object),
+            configured,
+            providerTransactionsEnabled: enabled,
+            awaitingActivation: configured && !enabled,
+          };
+        }
+        return key.endsWith("blocks")
+          ? []
+          : stored[sections.find((name) => paths[name] === key) || "missing"] || {};
+      });
+      expect(host.querySelector('[data-testid="stripe-activation-status"]')?.textContent).toContain(
+        title,
+      );
+      await act(async () => save()!.click());
+      await flush();
+      const payload = api.request.mock.calls[0][2];
+      expect(payload).not.toHaveProperty("providerTransactionsEnabled");
+      expect(payload).not.toHaveProperty("configured");
+      expect(payload).not.toHaveProperty("awaitingActivation");
+      expect(host.querySelector('[data-testid="stripe-activation-status"]')?.textContent).toContain(
+        title,
+      );
+    },
+  );
+});
+
 describe("settings initial-load safety", () => {
   it.each(sections)("blocks %s saves during initial loading", async (section) => {
     await render(section, () => new Promise(() => {}));

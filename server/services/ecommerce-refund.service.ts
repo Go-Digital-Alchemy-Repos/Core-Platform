@@ -1,4 +1,4 @@
-import { getEcommerceStripeClient } from "./ecommerce-stripe.service";
+import { getEcommerceStripeTransactionClient } from "./ecommerce-stripe.service";
 import { storage } from "../storage/index";
 import { recordDomainOutcome } from "../utils/metrics";
 import {
@@ -113,7 +113,7 @@ export async function createEcommerceRefund(params: {
     assertPaymentGatewayRefundReady(source, order);
   }
 
-  const stripe = source === "stripe" ? await getEcommerceStripeClient() : undefined;
+  const stripe = source === "stripe" ? await getEcommerceStripeTransactionClient() : undefined;
   let status: RefundStatus = source === "manual" ? "processed" : "pending";
   let refund = await storage.ecommerce.reserveRefund({
     orderId: order.id,

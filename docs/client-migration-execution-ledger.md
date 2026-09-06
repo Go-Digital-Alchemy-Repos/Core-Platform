@@ -5,6 +5,27 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Ecommerce provider activation separated from saved credentials
+
+The candidate now requires `ECOMMERCE_PROVIDER_TRANSACTIONS_ENABLED=true` for new Stripe
+checkout, payment links and refunds. Configuration errors remain explicit and precede activation
+checks; disabled new requests stop before local customer/order/payment/refund writes. A read-only
+checkout-request lookup permits retrieval of an existing linked payment intent without claiming or
+creating a request; pending historical requests cannot bypass activation to create a payment.
+Manual draft/payment/refund and risk-review paths, webhooks, expiry and refund reconciliation
+remain available. Settings show missing credentials, awaiting activation, or enabled transactions;
+the displayed status is read-only and saving credentials cannot change the deployment flag.
+“Configured” checks saved key presence/mode, not remote provider acceptance.
+
+Backend validation passed 82 central ecommerce tests and 10 recovery tests, plus types/scoped lint.
+Root reviewed transaction call sites and passed all 24 settings component tests, including load,
+retry and save coverage for all five sections and activation-state persistence. The first new UI
+fixture incorrectly returned Stripe data to every settings query; it was corrected to return each
+endpoint's own fixture before the passing run. No production configuration or provider calls were
+made. Root also passed TypeScript, scoped lint and the complete production build. Hosted run
+34005497636 passed both pilot acceptance and Verify for preceding checkpoint517a88d; checks
+for this final candidate and provider acceptance remain release gates.
+
 ### Exact-object apply tooling reviewed and verified
 
 Root reviewed the new separate apply command and obtained a second bounded review with no blocking

@@ -1,4 +1,8 @@
-import { getEcommerceStripeClient } from "./ecommerce-stripe.service";
+import {
+  getEcommerceStripeClient,
+  getEcommerceStripeTransactionClient,
+  assertEcommerceProviderTransactionsEnabled,
+} from "./ecommerce-stripe.service";
 import {
   assertEcommerceIntegrationOperational,
   getEcommerceIntegrationAdapterDefinition,
@@ -78,7 +82,8 @@ export async function createPaymentGatewayRefund(
   assertPaymentGatewayRefundReady(params.provider, params.order);
 
   if (params.provider === "stripe") {
-    const stripe = resolvedStripe ?? (await getEcommerceStripeClient());
+    const stripe = resolvedStripe ?? (await getEcommerceStripeTransactionClient());
+    assertEcommerceProviderTransactionsEnabled();
     const refund = await stripe.refunds.create(
       {
         payment_intent: params.order.stripePaymentIntentId!,
