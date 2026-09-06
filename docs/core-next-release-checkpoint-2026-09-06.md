@@ -65,9 +65,15 @@ remains a no-import pilot. Revalidate actual deployment state before a cutover.
   cleanup and a supplemental resource/process/reusable-port check establish
   cleanup. Root also observed no listening processes on the three pilot ports.
   Evidence: private Operations/combined-pilot-20260906T232147Z-5e40e69a.
-- Final V3 evidence normalization and independent release acceptance remain
-  pending. The draft package must retain both initial failures and their
-  separately verified resolutions. The checker validates consistency; it cannot
+- V3 local evidence normalization and factual review are accepted for frozen
+  `f485330`: 28 gates and 32 evidence/artifact files, bundle digest
+  `ffc8598ed1fa6269b99a63bf54bf0cf6a008cc510b3a976b737eceeb79a76f18`.
+  Seven basic commands and both preflights were rerun with machine-recorded
+  clean commit/tree, timestamps, exits and log/source hashes; all four rebuilt
+  artifacts matched the retained runtime-tested copies. Original pending
+  manifests, initial failures and their resolutions remain unchanged.
+  Evidence: private Operations/normalized-v3-f485330-8108ec1d7b.
+  This accepts the local evidence, not deployment or provider activation. The checker validates consistency; it cannot
   establish the truth of attestations or authorize release by itself.
 
 GitHub Actions remains disabled under AGENTS section 22. The authenticated
@@ -98,3 +104,20 @@ or silent rewrite of historical category data is planned.
 Better Farms content/assets/domain acceptance and final build/runtime origin
 agreement remain open. The reusable website build/deployment playbook follows
 completion of the system and pilot, as requested by the owner.
+
+
+## Category integrity follow-up review
+
+UI repair visibility is committed separately at `cae9edc` on
+`codex/ecommerce-category-repair`. Closed cycles and self cycles render once;
+iterative traversal preserves normal ordering and excludes invalid parent
+choices. Three component tests pass; the old implementation fails visibility.
+The mutation test captures a mocked root-repair request, not database persistence.
+
+The isolated backend initially passed 30 PostgreSQL cases, but independent review
+found an additional stale-ancestry race in Woo apply between batches. A merchant
+can move A beneath B after A's batch, then a later B-under-A batch can form a
+cycle even while holding the graph lock. That backend patch is not accepted;
+reproduction and live ancestry validation consistent with import ordering are
+required. Do not promote the existing passing cases into proof that this race
+is fixed. Frozen f485330 and its accepted evidence remain unchanged.
