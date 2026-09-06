@@ -5,6 +5,24 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Recovery review corrections verified
+
+Independent review of the recovery-only artifact identified database URL host/duplicate-sslmode
+bypasses, an ignored query-string connection timeout, repeated-signal drain behavior, and verifier
+cleanup gaps. Rollback candidate `f9036a3` fixes them: only one sslmode parameter is permitted,
+external hosts require DNS plus verify-full, driver PoolConfig supplies read-only options and a
+real five-second connection timeout, repeated signals retain the drain guard, and process cleanup
+failure no longer bypasses container cleanup/reporting. The normal entrypoint's database behavior
+is unchanged unless the explicit internal recovery flag is set by the separate maintenance entry.
+
+Root passed413 tests, types, scoped lint and rebuild. A stalled real loopback PostgreSQL handshake
+rejected after5.008 seconds. The final compiled artifact SHA256 is
+`4b0b5f1c28c584c7c0071afe17ef1459c2737747fbf3943f29610b61d71bdf09`.
+The repeated disposable PostgreSQL smoke passed read-only readiness,503 business admission,
+no application table creation and clean SIGTERM; fixture removal was verified. Exact evidence
+and recovery-only limitations are committed on `codex/namespace-rollback`. Hosted checks and
+live namespace/read/deployment/drain acceptance remain required. No production change occurred.
+
 ### Seven-route pilot acceptance and mobile focus fix
 
 The actual pinned Better Farms sweep found a keyboard focus escape from the open mobile drawer.
