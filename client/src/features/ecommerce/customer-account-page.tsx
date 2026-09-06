@@ -490,6 +490,7 @@ function CustomerAccountContent({ view }: { view: AccountView }) {
     orderSmsOptIn: false,
   });
 
+  const addressInteraction = useRef(false);
   const hydrated = useRef<{
     profile: typeof profile;
     address: typeof address;
@@ -525,7 +526,8 @@ function CustomerAccountContent({ view }: { view: AccountView }) {
         : current,
     );
     setAddress((current) =>
-      !previous || JSON.stringify(current) === JSON.stringify(previous.address)
+      !addressInteraction.current &&
+      (!previous || JSON.stringify(current) === JSON.stringify(previous.address))
         ? nextAddress
         : current,
     );
@@ -584,11 +586,13 @@ function CustomerAccountContent({ view }: { view: AccountView }) {
     };
 
   const resetAddressForm = () => {
+    addressInteraction.current = true;
     setEditingAddressId(null);
     setAddress(emptyAddressForm);
   };
 
   const editAddress = (item: AccountAddress) => {
+    addressInteraction.current = true;
     setEditingAddressId(item.id);
     setAddress({
       label: item.label,

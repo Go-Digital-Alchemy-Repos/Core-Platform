@@ -210,7 +210,8 @@ export default function CheckoutPage() {
   const checkoutSettings = checkoutSettingsQuery.data;
   const settingsReady = checkoutSettingsQuery.isSuccess && Boolean(checkoutSettings);
   const { data: savedAddresses = [] } = useQuery<AccountAddress[]>({
-    queryKey: ["/api/ecommerce/account/addresses"],
+    queryKey: ["/api/ecommerce/account/addresses", user?.id],
+    queryFn: async () => (await apiRequest("GET", "/api/ecommerce/account/addresses")).json(),
     enabled: Boolean(user),
   });
 

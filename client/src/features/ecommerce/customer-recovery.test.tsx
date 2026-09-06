@@ -199,6 +199,71 @@ describe("checkout settings recovery", () => {
     expect(await screen.findByRole("button", { name: "Continue to payment" })).toBeTruthy();
     expect(mocks.api.mock.calls.every(([method]) => method === "GET")).toBe(true);
   });
+  it("never autofills another customer's cached addresses on identity switch", async () => {
+    queryClient.setQueryData(
+      ["/api/ecommerce/account/addresses"],
+      [
+        {
+          id: "old",
+          address: "Old private address",
+          city: "Old",
+          state: "MA",
+          zipCode: "00000",
+          country: "US",
+          isDefault: true,
+        },
+      ],
+    );
+    mocks.api.mockImplementation(async (_method, path) => {
+      if (path === "/api/ecommerce/account/addresses")
+        return response(
+          mocks.user.id === "customer-a"
+            ? []
+            : [
+                {
+                  id: "new",
+                  label: "Home",
+                  address: "New own address",
+                  city: "New",
+                  state: "MA",
+                  zipCode: "11111",
+                  country: "US",
+                  isDefault: true,
+                },
+              ],
+        );
+      return response(path.includes("stripe") ? { publishableKey: "pk_test_synthetic" } : settings);
+    });
+    const view = mount(<CheckoutPage />);
+    await screen.findByRole("button", { name: "Continue to payment" });
+    expect(screen.queryByDisplayValue("Old private address")).toBeNull();
+    queryClient.setQueryData(
+      ["/api/ecommerce/account/addresses", "customer-a"],
+      [
+        {
+          id: "a",
+          address: "Another A address",
+          city: "Old",
+          state: "MA",
+          zipCode: "00000",
+          country: "US",
+        },
+      ],
+    );
+    mocks.user = { id: "customer-b", email: "b@example.test", role: "client" };
+    view.rerender(
+      <QueryClientProvider client={queryClient}>
+        <CheckoutPage />
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByDisplayValue("New own address")).toBeTruthy();
+    expect(screen.queryByDisplayValue("Another A address")).toBeNull();
+    expect(
+      mocks.api.mock.calls
+        .filter(([, path]) => String(path).includes("account/addresses"))
+        .every(([, path]) => path === "/api/ecommerce/account/addresses"),
+    ).toBe(true);
+  });
   it("preserves entered checkout details across failed background refresh and retry", async () => {
     mount(<CheckoutPage />);
     await screen.findByRole("button", { name: "Continue to payment" });
@@ -272,6 +337,46 @@ describe("account recovery", () => {
       );
     });
     expect(screen.getByDisplayValue("Draft address")).toBeTruthy();
+  });
+  it("keeps the explicit address editor and reset form across background hydration", async () => {
+    mocks.api.mockImplementation(async (_method, path) =>
+      response(
+        path === "/api/ecommerce/account/addresses"
+          ? [
+              {
+                id: "saved",
+                label: "Home",
+                address: "Saved street",
+                city: "City",
+                state: "MA",
+                zipCode: "11111",
+                country: "US",
+                isDefault: true,
+              },
+            ]
+          : overview(),
+      ),
+    );
+    mount(<CustomerAccountPage view="addresses" />);
+    fireEvent.click(await screen.findByRole("button", { name: "Edit" }));
+    expect(screen.getByDisplayValue("Saved street")).toBeTruthy();
+    await act(async () => {
+      queryClient.setQueryData(["/api/ecommerce/account", "customer-a"], {
+        ...overview(),
+        customer: { ...overview().customer, address: "Changed server street" },
+      });
+    });
+    expect(screen.getByDisplayValue("Saved street")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await act(async () => {
+      queryClient.setQueryData(["/api/ecommerce/account", "customer-a"], {
+        ...overview(),
+        customer: { ...overview().customer, address: "New default street" },
+      });
+    });
+    await screen.findByRole("button", { name: "Add address" });
+    expect(screen.queryByDisplayValue("New default street")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Save changes" })).toBeNull();
   });
   it("reports save failure without erasing draft, then retries the actual payload", async () => {
     mount(<CustomerAccountPage view="profile" />);
