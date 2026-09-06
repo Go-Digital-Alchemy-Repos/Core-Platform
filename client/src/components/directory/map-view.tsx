@@ -18,6 +18,7 @@ interface MapViewProps {
   height?: string;
   minHeight?: string;
   interactive?: boolean;
+  collapseAttribution?: boolean;
   zoom?: number;
   center?: [number, number];
   highlightedId?: string | null;
@@ -28,6 +29,7 @@ export function MapView({
   height = "500px",
   minHeight,
   interactive = true,
+  collapseAttribution = false,
   zoom: zoomProp,
   center: centerProp,
   highlightedId,
@@ -58,7 +60,12 @@ export function MapView({
       className="h-full w-full overflow-hidden border isolate"
       data-testid="map-container"
     >
-      <BaseMap center={center} zoom={zoom} interactive={interactive}>
+      <BaseMap
+        center={center}
+        zoom={zoom}
+        interactive={interactive}
+        collapseAttribution={collapseAttribution}
+      >
         {markered.map((t) => {
           const fullName =
             [t.user.firstName, t.user.lastName].filter(Boolean).join(" ") || "Verified Provider";

@@ -8,11 +8,13 @@ export function BaseMap({
   center,
   zoom,
   interactive = true,
+  collapseAttribution = false,
   children,
 }: {
   center: [number, number];
   zoom: number;
   interactive?: boolean;
+  collapseAttribution?: boolean;
   children?: ReactNode;
 }) {
   const ref = useRef<MapRef>(null);
@@ -33,7 +35,19 @@ export function BaseMap({
         workerUrl={workerUrl}
         initialViewState={{ latitude: center[0], longitude: center[1], zoom }}
         mapStyle={MAP_STYLE_URL}
+        attributionControl={collapseAttribution ? { compact: true } : undefined}
         onLoad={({ target }) => {
+          if (collapseAttribution) {
+            // MapLibre opens compact attribution on initialization. Collapse only once;
+            // subsequent clicks and keyboard activation retain the native control behavior.
+            const attribution = target
+              .getContainer()
+              .querySelector<HTMLDetailsElement>("details.maplibregl-ctrl-attrib");
+            if (attribution) {
+              attribution.open = false;
+              attribution.classList.remove("maplibregl-compact-show");
+            }
+          }
           const original = target.getStyle();
           const styled = applyLightMapStyle(undefined, original);
           styled.layers.forEach((layer, index) => {

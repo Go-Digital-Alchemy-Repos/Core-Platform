@@ -663,6 +663,7 @@ export default function TherapistProfilePage() {
                 {showMap && (
                   <div className="aspect-square" data-testid="card-contact-map">
                     <MapView
+                      collapseAttribution
                       therapists={[
                         {
                           profile: therapist,
