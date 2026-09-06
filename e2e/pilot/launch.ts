@@ -12,11 +12,13 @@ import { randomUUID } from "node:crypto";
 const coreRoot = path.resolve(import.meta.dirname, "../..");
 const siteRoot =
   process.env.PILOT_SITE_ROOT ||
-  path.resolve(coreRoot, "../Better Farms Foundation-codex-site-shell");
+  path.resolve(coreRoot, "../Better Farms Foundation-form-reliability");
 const publicOrigin = "https://site.localhost:5443";
 const adminOrigin = "https://dashboard.site.localhost:5443";
 const minimal = { PATH: process.env.PATH || "", TZ: "UTC" };
 const mode = process.argv[2];
+const formProxyToken = "synthetic-pilot-form-proxy-token-local-only";
+const discoveryPath = path.join(tmpdir(), "core-better-farms-pilot-database-5443.json");
 
 async function core() {
   const database = new URL(process.env.PILOT_DATABASE_URL || "");
@@ -38,6 +40,8 @@ async function core() {
     SYSTEM_BACKUPS_ENABLED: "false",
     CLIENT_SITE_MANIFEST_PATH: process.env.PILOT_MANIFEST_PATH!,
     CLIENT_SITE_CORE_VERSION: "1.0.0",
+    CLIENT_STACK_ID: "better-farms-foundation",
+    CLIENT_FORM_PROXY_TOKEN: formProxyToken,
   };
   for (const key of Object.keys(process.env)) delete process.env[key];
   Object.assign(process.env, env);
@@ -61,6 +65,24 @@ async function core() {
     });
   }
   await new SettingsStorage().upsertSetting("enable_cms", "true", "system_configuration", false);
+  await new SettingsStorage().upsertSetting("enable_crm", "true", "system_configuration", false);
+  const { ensureSystemForms } = await import("../../server/services/system-forms.service");
+  const { storage } = await import("../../server/storage");
+  await ensureSystemForms();
+  for (const slug of ["contact-form", "newsletter-signup"]) {
+    const form = await storage.forms.getBySlug(slug);
+    if (!form) throw new Error("Required synthetic pilot form missing");
+    await storage.forms.update(form.id, {
+      isActive: true,
+      settings: {
+        ...form.settings,
+        mailchimpEnabled: false,
+        notifyAdmins: false,
+        storeAsContactMessage: slug === "contact-form",
+        createCrmLead: slug === "newsletter-signup",
+      },
+    });
+  }
   await import("../../server/index");
 }
 
@@ -160,8 +182,8 @@ async function main() {
     encoding: "utf8",
     timeout: 30000,
   }).trim();
-  if (siteRevision !== "ee14d6746cc14cb4b441eecf6598aaaf0e18e975")
-    throw new Error("Pilot requires reviewed Better Farms ee14d67 source");
+  if (siteRevision !== "cec78dfd9ed1d89d906461db25f257a008d41a49")
+    throw new Error("Pilot requires reviewed Better Farms cec78df source");
   if (
     execFileSync("git", ["-C", siteRoot, "status", "--porcelain", "--untracked-files=no"], {
       env: minimal,
@@ -182,6 +204,7 @@ async function main() {
   let proxy: https.Server | undefined;
   let stopped = false;
   let containerAttempted = false;
+  let discoveryCreated = false;
   const apps: ChildProcess[] = [];
   const cleanup = async () => {
     if (stopped) return;
@@ -222,7 +245,11 @@ async function main() {
           throw new Error(`Owned pilot container ${name} was not removed`, { cause: stopError });
       }
     } finally {
-      await rm(temp, { recursive: true, force: true });
+      try {
+        if (discoveryCreated) await rm(discoveryPath);
+      } finally {
+        await rm(temp, { recursive: true, force: true });
+      }
     }
   };
   for (const signal of ["SIGINT", "SIGTERM"] as const)
@@ -263,6 +290,9 @@ async function main() {
       "postgres:16-alpine",
     );
     const port = docker("port", name, "5432/tcp").split(":").pop();
+    const databaseUrl = `postgresql://pilot_test:disposable_pilot_test@127.0.0.1:${port}/core_pilot_test`;
+    await writeFile(discoveryPath, JSON.stringify({ databaseUrl }), { flag: "wx", mode: 0o600 });
+    discoveryCreated = true;
     for (let attempt = 0; ; attempt++) {
       try {
         docker("exec", name, "pg_isready", "-U", "pilot_test");
@@ -279,6 +309,7 @@ async function main() {
       ),
     );
     Object.assign(manifest.origins, { publicSite: publicOrigin, admin: adminOrigin });
+    manifest.client.source.revision = siteRevision;
     const manifestPath = path.join(temp, "manifest.json");
     await writeFile(manifestPath, JSON.stringify(manifest));
     execFileSync(
@@ -321,7 +352,7 @@ async function main() {
           "--core",
         ],
         {
-          PILOT_DATABASE_URL: `postgresql://pilot_test:disposable_pilot_test@127.0.0.1:${port}/core_pilot_test`,
+          PILOT_DATABASE_URL: databaseUrl,
           PILOT_MANIFEST_PATH: manifestPath,
         },
       ),
@@ -334,6 +365,7 @@ async function main() {
           PORT: "5203",
           VITE_CORE_PLATFORM_ADMIN_ORIGIN: adminOrigin,
           CORE_PLATFORM_API_ORIGIN: "http://127.0.0.1:5202",
+          CORE_PLATFORM_FORM_PROXY_TOKEN: formProxyToken,
         },
         siteRoot,
       ),

@@ -5,11 +5,18 @@ Requires the installed repository dependencies, Chromium, OpenSSL, and local Doc
 via a local Unix-socket Docker context (or `DOCKER_HOST`; an explicit
 `DOCKER_CONTEXT` takes precedence). Remote Docker endpoints are rejected. No existing database URL is used.
 `PILOT_SITE_ROOT` can locate the existing Better Farms checkout; its HEAD must be the
-reviewed `ee14d6746cc14cb4b441eecf6598aaaf0e18e975` candidate.
+reviewed `cec78dfd9ed1d89d906461db25f257a008d41a49` candidate. The default is the
+separate `Better Farms Foundation-form-reliability` checkout; the original site checkout is preserved.
 
 The launcher creates an auto-removing, loopback-published Postgres 16 container with
 synthetic credentials and database `core_pilot_test`. It migrates the empty database,
-seeds synthetic administrator/content-editor users, and explicitly enables CMS.
+seeds synthetic administrator/content-editor users, and explicitly enables CMS/CRM.
+The contact and newsletter forms use a fixed synthetic server-only proxy token/stack.
+Mailchimp and administrator notifications are disabled. Contact queues one local
+contact-message effect; newsletter queues one local CRM effect. No outbound provider
+or email delivery is configured. A mode0600 temporary discovery file supplies only
+the generated disposable database URL to read-only receipt checks; it is removed on
+teardown and never uses the caller's DATABASE_URL.
 It creates a temporary manifest with `https://site.localhost:5443` and
 `https://dashboard.site.localhost:5443`, preserving the real dashboard-origin policy.
 The real Core application runs behind a local TLS proxy; the real Better Farms
@@ -30,7 +37,14 @@ The real browser test verifies content-editor access, live iframe preview, priva
 unsaved/saved drafts, UI publication visible to a fresh public page, stale revision
 409, unrelated admin 403, actual sibling-origin/source postMessage rejection with
 a delivery/render barrier, and actual CSP blocking of an unapproved iframe origin.
-Screenshots/traces are under ignored `test-results/pilot/`.
+The form tests submit through actual React UI and site/Core proxy routes. They wait
+for the real201 plus a durable database submission/effect row before deliberately
+aborting the browser response. Unchanged retry returns200 with the same ID/key and
+one effect set; changed payload after successful retry receives a new ID/key and
+second effect set. Invalid input creates no receipt; failed-response input is retained.
+This proves receipt/enqueue behavior, not external effect delivery or reload-spanning
+idempotency. Per-form JSON evidence records receipt/effect IDs and counts without PII.
+Screenshots, evidence JSON and failure traces are under ignored `test-results/pilot/`.
 
 Teardown stops the apps/proxy, removes the disposable container and temporary TLS,
 manifest and build files. Cleanup verifies container absence and fails if removal

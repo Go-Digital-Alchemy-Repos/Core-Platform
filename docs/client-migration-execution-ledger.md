@@ -31,6 +31,16 @@ retains keys through ambiguous unchanged retries and forwards them through the p
 payloads and accepted successes renew them. Site tests/types/build passed. The actual
 after-commit response-loss browser proof is the next acceptance step; no site deployment occurred.
 
+**Retry acceptance verified:** Root independently passed all three two-origin pilot cases against
+site `cec78df` (15.5 seconds). For contact and newsletter, the browser response was discarded only
+after the real Core receipt and one local effect job were verified in PostgreSQL. Unchanged retry
+returned the same submission ID and retained one receipt/effect set. A changed payload after that
+successful retry created a distinct receipt. Invalid inputs created none, and failed-response inputs
+remained in the form. See [synthetic receipt evidence](release-evidence/better-farms-form-retry-2026-09-05.json).
+The fixture enables only local contact/CRM effects and sends no provider email. The earlier
+preview/draft/publish case still passes. Retry memory lasts for the mounted form; navigation/reload
+recovery is not claimed. Site hosted Verify passed (`34000741175`); no site release occurred.
+
 ### Populated upgrade, two-origin pilot and upload execution checkpoint
 
 Hosted Verify run `33999305310` passed for `70f8f9e`. The next checkpoint adds a pinned-main
