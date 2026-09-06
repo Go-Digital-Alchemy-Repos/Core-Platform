@@ -5,6 +5,22 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Orchestrator transition and current sprint — 2026-09-05
 
+### Rollback candidate preserved and release findings assigned
+
+Root reviewed the isolated media rollback port, compared its R2/helper bytes to the integration
+candidate and independently passed all 23 focused checks. Candidate `704cabf` is committed and
+pushed on `codex/namespace-rollback`; agent validation also passed all 403 baseline tests,
+types, lint, formatting, build and budgets. This is a recovery candidate, not a main merge or
+deployment. Full database/new-queue/business compatibility remains open.
+
+The independent bounded review of `1d9cd8c` recommends holding the broad release for missing-
+configuration-before-write corrections and unresolved namespace cutover. Manual commerce
+browser acceptance is also needed; it is now assigned in an isolated fixture alongside the
+provider configuration correction. The latter preserves deliberately offline actions and
+ambiguous failures after provider dispatch. The updated
+[maintenance gate matrix](core-maintenance-release-gates-2026-09-06.md) separates these from
+Better Farms content/domain launch and future provider activation. No production change occurred.
+
 ### R2 conditional-write semantics verified on the actual provider
 
 Root exercised a single randomly named temporary probe under the approved Core target upload

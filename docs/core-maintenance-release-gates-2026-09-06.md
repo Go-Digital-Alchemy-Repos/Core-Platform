@@ -1,0 +1,31 @@
+# Core maintenance release gates — 2026-09-06
+
+Broad integration release remains held. Production is `a006f36`, with the upload guard deployed
+but disabled. Better Farms site launch is a separate decision; no live checkout or DNS cutover
+is authorized for that pilot. This record updates the earlier historical readiness review.
+
+| Gate | Current evidence | Remaining work |
+| --- | --- | --- |
+| Reviewed baseline | Deployed main merged into remediation; exact candidate `1d9cd8c` received independent bounded 310-file review | Review subsequent fixes and exact release diff; reviewer did not claim exhaustive line-by-line audit |
+| Hosted validation | `533dc3d` Verify passed; `530b431` Verify also passed | Required Verify for final immutable release head |
+| Production runtime | Compiled Linux/TLS/start/shutdown evidence and CI gate exist | Final artifact gate and actual post-deploy start/drain configuration adoption |
+| Populated upgrade | Actual-main `a006f36` rehearsal preserved synthetic records through two runs and rejected duplicate paid history | Recheck final migration hashes and current duplicate predicate before deployment |
+| Real recovery | Actual production backup restore preserved 94 tables/391 rows, including ciphertext | Retain/recheck accessible backup and recovery configuration at cutover; ciphertext preservation does not recover the encryption secret |
+| Source media | Actual deployment-bound dry run verified one CMS object and returned would-copy | Final inventory after writer barrier; retain missing local asset as an explicit unresolved record, without guessing replacement |
+| Conditional copy primitive | Actual R2 probe rejected second conditional write with 412, preserved first bytes and was removed | Approved exact-plan execution and destination hash/read verification |
+| Writer barrier | Admission guard deployed, flag absent | Freeze, replace/drain old writers, resolve ambiguous writes, refresh inventory; flag alone is insufficient |
+| Namespace cutover | Target direction is clients/core-platform/uploads; explicit legacy backup prefix system-backups | Apply/reconcile approved copies and verify application URLs/deletion targeting while frozen |
+| Media rollback | Isolated candidate `704cabf` ports exact namespace algorithms onto deployed-main code; 403 tests passed, root independently passed 23 focused checks | Hosted check, database/queue/business compatibility and actual frozen read acceptance; no full rollback readiness claim |
+| Missing provider configuration | Review found local writes preceding Stripe client resolution in payment-link/refund paths | Resolve validated configuration before mutations; preserve deliberate offline operations and ambiguous post-dispatch states |
+| Manual ecommerce acceptance | Service/DB evidence covers settlement, inventory and outbox; current app browser suite emphasizes settings | Add offline order/payment/refund/guard browser workflow with actual disposable DB evidence |
+| New provider transactions | Actual production ecommerce Stripe settings absent; no provider-backed acceptance | Before activation, sandbox/provider correctness and an explicit activation decision/control; merely saving keys must not be mistaken for release acceptance |
+| Better Farms integration | Three actual two-origin cases pass including Core image decoding, CMS publish and response-loss retries | Final site build/runtime/manifest origin agreement; content/assets/domains and whole-site launch acceptance separately |
+
+The next executable work is configuration-before-write correction, manual commerce browser
+acceptance and rollback compatibility preparation. Do not freeze production uploads merely to
+wait for unrelated development. Storage copying remains gated and no historical orders are
+assumed to be demos. Historical webhook reconciliation/recovery must be considered separately
+from allowing new provider transactions.
+
+Evidence sources are linked from the canonical execution ledger and `docs/release-evidence/`.
+No checkbox here substitutes for the underlying artifact, runtime result or final review.
