@@ -297,3 +297,35 @@ normalization of the actual8126 evidence is underway with review acceptance
 left false. The policy must be extended for forthcoming0063 fulfillment gates
 before applying it to that later combined candidate. GitHub app registration
 remains at the owner's authentication prompt; no protection change occurred.
+
+
+### Release integration and evidence review follow-up
+
+Isolated `codex/client-release-integration` combined CRM8126, frontend2738c15
+and peer90882c2; owner Actions-disabled directive is committed at9e0a307.
+At that clean head, root types/build/budgets and 1,113 ordinary tests passed
+(57 opt-in exclusions). No integration release has occurred.
+
+Independent review reproduced a supported legacy migration defect: existing
+public tables without a Drizzle journal return after reconciliation, so the
+journal-only0061 location migration was skipped. Explicit0061 replay before
+0062 is implemented with actual failing-then-passing PostgreSQL evidence,
+preserving existing accounts/profile media and creating a standalone location.
+The final synthetic location tests block public geocoder calls. An initial
+worker test may have made synthetic geocoder requests; it is not claimed as
+provider-isolated evidence. No credentials or production rows were used.
+
+Atomic fulfillment candidatef87b338 corrects two additional review findings:
+remaining quantities are refreshed authoritatively after replay, and results
+are bound to the submitted order instead of resetting another order's draft.
+Six desktop/mobile cases passed. A final canonical item-order fingerprint
+regression is being completed before integration.
+
+The private8126 normalized release receipt remains rejected/pending review.
+Functional tests passed, but formal cleanup evidence is incomplete for some
+rehearsals: container-removal reports do not uniformly prove anonymous-volume
+absence or child-process exit. Earlier broad cleanup statements must not be
+read as direct proof of every volume's absence. No pass status was published.
+Rehearsal producers are being improved to capture exact owned resource IDs and
+verify removal explicitly for the next integrated validation run. Historical
+receipts remain unchanged. GitHub app creation still awaits owner authentication.
