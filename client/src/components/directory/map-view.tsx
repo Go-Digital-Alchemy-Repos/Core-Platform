@@ -20,6 +20,7 @@ interface MapViewProps {
   interactive?: boolean;
   collapseAttribution?: boolean;
   zoom?: number;
+  fitToPins?: boolean;
   center?: [number, number];
   highlightedId?: string | null;
 }
@@ -31,6 +32,7 @@ export function MapView({
   interactive = true,
   collapseAttribution = false,
   zoom: zoomProp,
+  fitToPins = false,
   center: centerProp,
   highlightedId,
 }: MapViewProps) {
@@ -52,6 +54,16 @@ export function MapView({
 
   const zoom = zoomProp ?? (markered.length === 0 ? 2 : markered.length === 1 ? 6 : 3);
 
+  const bounds = useMemo<[[number, number], [number, number]] | undefined>(() => {
+    if (!fitToPins || markered.length === 0) return undefined;
+    const latitudes = markered.map((t) => Number(t.profile.latitude));
+    const longitudes = markered.map((t) => Number(t.profile.longitude));
+    return [
+      [Math.min(...longitudes), Math.min(...latitudes)],
+      [Math.max(...longitudes), Math.max(...latitudes)],
+    ];
+  }, [fitToPins, markered]);
+
   const hasPercentHeight = typeof height === "string" && height.includes("%");
 
   return (
@@ -63,6 +75,7 @@ export function MapView({
       <BaseMap
         center={center}
         zoom={zoom}
+        bounds={bounds}
         interactive={interactive}
         collapseAttribution={collapseAttribution}
       >
