@@ -1,3 +1,5 @@
+import type { CrmClientNoteDetail } from "@shared/crm-note-presentation";
+import { CrmNoteList, CrmNoteVisibility } from "./crm-note-list";
 import { CrmRecordCustomFields } from "./crm-record-custom-fields";
 import { CreateCrmClientSheet } from "./crm-create-client-sheet";
 import { useState, type ReactNode } from "react";
@@ -13,7 +15,6 @@ import {
   CRM_CONTACT_METHODS,
   type CrmClient,
   type CrmClientOnboardingStatus,
-  type CrmClientNote,
   type CrmClientStatus,
   type CrmClientTask,
   type CrmClientType,
@@ -62,7 +63,7 @@ import {
 
 type ClientDetail = CrmClient & {
   sourceLead?: CrmLead;
-  notes: CrmClientNote[];
+  notes: CrmClientNoteDetail[];
   tasks: CrmClientTask[];
 };
 
@@ -679,6 +680,7 @@ function ClientDetailSheet({
                   </div>
                 </TabsContent>
                 <TabsContent value="notes" className="space-y-3">
+                  <CrmNoteVisibility />
                   <Textarea
                     rows={3}
                     placeholder="Add a client note..."
@@ -692,16 +694,7 @@ function ClientDetailSheet({
                   >
                     Add Note
                   </Button>
-                  <div className="space-y-2">
-                    {client.notes.map((item) => (
-                      <div key={item.id} className="rounded-md border p-3 text-sm">
-                        <p className="whitespace-pre-wrap">{item.body}</p>
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          {formatDate(item.createdAt)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+                  <CrmNoteList notes={client.notes} formatDate={formatDate} />
                 </TabsContent>
                 <TabsContent value="tasks" className="space-y-3">
                   <div className="grid gap-2 sm:grid-cols-[1fr_160px_auto]">

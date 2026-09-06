@@ -1,7 +1,9 @@
+import type { CrmLeadNoteDetail, CrmClientNoteDetail } from "@shared/crm-note-presentation";
 import { CrmCustomFieldsStorage, lockCrmCustomFieldDefinitions } from "./crm-custom-fields.storage";
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../db";
 import {
+  users,
   CRM_CLIENT_STATUSES,
   CRM_LEAD_STAGES,
   crmClientNotes,
@@ -34,7 +36,7 @@ export interface CrmLeadListFilters {
 }
 
 export interface CrmLeadDetail extends CrmLead {
-  notes: CrmLeadNote[];
+  notes: CrmLeadNoteDetail[];
   tasks: CrmLeadTask[];
   client?: CrmClient;
 }
@@ -46,7 +48,7 @@ export interface CrmClientListFilters {
 
 export interface CrmClientDetail extends CrmClient {
   sourceLead?: CrmLead;
-  notes: CrmClientNote[];
+  notes: CrmClientNoteDetail[];
   tasks: CrmClientTask[];
 }
 
@@ -290,12 +292,29 @@ export class CrmStorage {
     return transaction ? apply(transaction) : db.transaction(apply);
   }
 
-  async listNotes(leadId: string): Promise<CrmLeadNote[]> {
-    return db
-      .select()
+  async listNotes(leadId: string): Promise<CrmLeadNoteDetail[]> {
+    const rows = await db
+      .select({
+        id: crmLeadNotes.id,
+        leadId: crmLeadNotes.leadId,
+        body: crmLeadNotes.body,
+        createdById: crmLeadNotes.createdById,
+        createdAt: crmLeadNotes.createdAt,
+        authorFirstName: users.firstName,
+        authorLastName: users.lastName,
+      })
       .from(crmLeadNotes)
+      .leftJoin(users, eq(crmLeadNotes.createdById, users.id))
       .where(eq(crmLeadNotes.leadId, leadId))
       .orderBy(desc(crmLeadNotes.createdAt));
+    return rows.map(({ authorFirstName, authorLastName, ...note }) => ({
+      ...note,
+      authorName:
+        [authorFirstName, authorLastName]
+          .map((part) => part?.trim())
+          .filter(Boolean)
+          .join(" ") || null,
+    }));
   }
 
   async createNote(data: InsertCrmLeadNote): Promise<CrmLeadNote> {
@@ -396,12 +415,29 @@ export class CrmStorage {
     return client;
   }
 
-  async listClientNotes(clientId: string): Promise<CrmClientNote[]> {
-    return db
-      .select()
+  async listClientNotes(clientId: string): Promise<CrmClientNoteDetail[]> {
+    const rows = await db
+      .select({
+        id: crmClientNotes.id,
+        clientId: crmClientNotes.clientId,
+        body: crmClientNotes.body,
+        createdById: crmClientNotes.createdById,
+        createdAt: crmClientNotes.createdAt,
+        authorFirstName: users.firstName,
+        authorLastName: users.lastName,
+      })
       .from(crmClientNotes)
+      .leftJoin(users, eq(crmClientNotes.createdById, users.id))
       .where(eq(crmClientNotes.clientId, clientId))
       .orderBy(desc(crmClientNotes.createdAt));
+    return rows.map(({ authorFirstName, authorLastName, ...note }) => ({
+      ...note,
+      authorName:
+        [authorFirstName, authorLastName]
+          .map((part) => part?.trim())
+          .filter(Boolean)
+          .join(" ") || null,
+    }));
   }
 
   async createClientNote(data: InsertCrmClientNote): Promise<CrmClientNote> {
