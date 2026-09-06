@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ClipboardCheck, Globe2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,8 @@ const readinessLabels: Record<string, string> = {
 
 export default function ClientStackOnboardingPage() {
   const { toast } = useToast();
+  const planGeneration = useRef(0);
+  const readinessRevision = useRef(0);
   const [stackId, setStackId] = useState("");
   const [publicDomain, setPublicDomain] = useState("");
   const [adminDomain, setAdminDomain] = useState("");
@@ -77,7 +79,8 @@ export default function ClientStackOnboardingPage() {
   >([]);
 
   const planMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (generation: number) => {
+      if (generation !== planGeneration.current) throw new Error("Domain plan was replaced.");
       const response = await apiRequest("POST", "/api/admin/client-stack-onboarding/domain-plan", {
         stackId,
         publicDomain,
@@ -106,22 +109,26 @@ export default function ClientStackOnboardingPage() {
       });
       return response.json() as Promise<DomainPlan>;
     },
-    onSuccess: (result) => {
+    onSuccess: (result, generation) => {
+      if (generation !== planGeneration.current) return;
       setPlan(result);
       setReadinessResult(null);
       setDnsVerification(null);
       setEvidenceRecords([]);
     },
-    onError: (error: Error) =>
+    onError: (error: Error, generation) => {
+      if (generation !== planGeneration.current) return;
       toast({
         title: "Could not generate the domain plan",
         description: error.message,
         variant: "destructive",
-      }),
+      });
+    },
   });
 
   const readinessMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (scope: { generation: number; revision: number }) => {
+      if (scope.generation !== planGeneration.current) throw new Error("Domain plan was replaced.");
       if (!plan) throw new Error("Generate the domain plan before evaluating readiness.");
       const response = await apiRequest("POST", "/api/admin/client-stack-onboarding/readiness", {
         stackId: plan.stackId,
@@ -129,17 +136,30 @@ export default function ClientStackOnboardingPage() {
       });
       return response.json() as Promise<{ status: string; pending: string[]; failed: string[] }>;
     },
-    onSuccess: setReadinessResult,
-    onError: (error: Error) =>
+    onSuccess: (result, scope) => {
+      if (
+        scope.generation === planGeneration.current &&
+        scope.revision === readinessRevision.current
+      )
+        setReadinessResult(result);
+    },
+    onError: (error: Error, scope) => {
+      if (
+        scope.generation !== planGeneration.current ||
+        scope.revision !== readinessRevision.current
+      )
+        return;
       toast({
         title: "Could not evaluate readiness",
         description: error.message,
         variant: "destructive",
-      }),
+      });
+    },
   });
 
   const dnsVerificationMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (generation: number) => {
+      if (generation !== planGeneration.current) throw new Error("Domain plan was replaced.");
       if (!plan) throw new Error("Generate the domain plan before verification.");
       const response = await apiRequest(
         "POST",
@@ -151,17 +171,22 @@ export default function ClientStackOnboardingPage() {
       );
       return response.json() as Promise<NonNullable<typeof dnsVerification>>;
     },
-    onSuccess: setDnsVerification,
-    onError: (error: Error) =>
+    onSuccess: (result, generation) => {
+      if (generation === planGeneration.current) setDnsVerification(result);
+    },
+    onError: (error: Error, generation) => {
+      if (generation !== planGeneration.current) return;
       toast({
         title: "Could not verify DNS propagation",
         description: error.message,
         variant: "destructive",
-      }),
+      });
+    },
   });
 
   const evidenceMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (generation: number) => {
+      if (generation !== planGeneration.current) throw new Error("Domain plan was replaced.");
       if (!plan) throw new Error("Generate the domain plan before loading saved evidence.");
       const response = await apiRequest(
         "GET",
@@ -169,18 +194,32 @@ export default function ClientStackOnboardingPage() {
       );
       return response.json() as Promise<typeof evidenceRecords>;
     },
-    onSuccess: setEvidenceRecords,
-    onError: (error: Error) =>
+    onSuccess: (result, generation) => {
+      if (generation === planGeneration.current) setEvidenceRecords(result);
+    },
+    onError: (error: Error, generation) => {
+      if (generation !== planGeneration.current) return;
       toast({
         title: "Could not load onboarding evidence",
         description: error.message,
         variant: "destructive",
-      }),
+      });
+    },
   });
 
   const generatePlan = (event: FormEvent) => {
     event.preventDefault();
-    planMutation.mutate();
+    planGeneration.current += 1;
+    readinessRevision.current += 1;
+    setPlan(null);
+    setReadiness(Object.fromEntries(Object.keys(readinessLabels).map((key) => [key, "pending"])));
+    setReadinessResult(null);
+    setDnsVerification(null);
+    setEvidenceRecords([]);
+    readinessMutation.reset();
+    dnsVerificationMutation.reset();
+    evidenceMutation.reset();
+    planMutation.mutate(planGeneration.current);
   };
 
   return (
@@ -312,14 +351,14 @@ export default function ClientStackOnboardingPage() {
               </div>
               <Button
                 variant="outline"
-                onClick={() => dnsVerificationMutation.mutate()}
+                onClick={() => dnsVerificationMutation.mutate(planGeneration.current)}
                 disabled={dnsVerificationMutation.isPending}
               >
                 {dnsVerificationMutation.isPending ? "Verifying DNS…" : "Verify published DNS"}
               </Button>
               <Button
                 variant="outline"
-                onClick={() => evidenceMutation.mutate()}
+                onClick={() => evidenceMutation.mutate(planGeneration.current)}
                 disabled={evidenceMutation.isPending}
               >
                 {evidenceMutation.isPending ? "Loading evidence…" : "View recorded evidence"}
@@ -381,9 +420,11 @@ export default function ClientStackOnboardingPage() {
                 <Label>{label}</Label>
                 <Select
                   value={readiness[key]}
-                  onValueChange={(value) =>
-                    setReadiness((current) => ({ ...current, [key]: value as ReadinessState }))
-                  }
+                  onValueChange={(value) => {
+                    readinessRevision.current += 1;
+                    setReadinessResult(null);
+                    setReadiness((current) => ({ ...current, [key]: value as ReadinessState }));
+                  }}
                 >
                   <SelectTrigger className="w-full sm:w-40">
                     <SelectValue />
@@ -397,7 +438,12 @@ export default function ClientStackOnboardingPage() {
               </div>
             ))}
             <Button
-              onClick={() => readinessMutation.mutate()}
+              onClick={() =>
+                readinessMutation.mutate({
+                  generation: planGeneration.current,
+                  revision: readinessRevision.current,
+                })
+              }
               disabled={readinessMutation.isPending}
             >
               {readinessMutation.isPending ? "Evaluating…" : "Evaluate release readiness"}
