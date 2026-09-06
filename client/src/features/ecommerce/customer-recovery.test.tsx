@@ -82,7 +82,11 @@ const cleanup = () => {
 const mocks = vi.hoisted(() => ({
   api: vi.fn(),
   toast: vi.fn(),
-  user: { id: "customer-a", email: "a@example.test", role: "client" },
+  user: { id: "customer-a", email: "a@example.test", role: "client" } as {
+    id: string;
+    email: string;
+    role: string;
+  } | null,
 }));
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: mocks.user, logout: { mutate: vi.fn() } }),
@@ -93,7 +97,7 @@ vi.mock("@/components/layout/page-layout", () => ({
 }));
 vi.mock("@stripe/stripe-js", () => ({ loadStripe: vi.fn().mockResolvedValue(null) }));
 vi.mock("@stripe/react-stripe-js", () => ({
-  Elements: () => null,
+  Elements: () => <div data-testid="payment-elements" />,
   PaymentElement: () => null,
   useStripe: () => null,
   useElements: () => null,
@@ -217,7 +221,7 @@ describe("checkout settings recovery", () => {
     mocks.api.mockImplementation(async (_method, path) => {
       if (path === "/api/ecommerce/account/addresses")
         return response(
-          mocks.user.id === "customer-a"
+          mocks.user?.id === "customer-a"
             ? []
             : [
                 {
@@ -263,6 +267,87 @@ describe("checkout settings recovery", () => {
         .filter(([, path]) => String(path).includes("account/addresses"))
         .every(([, path]) => path === "/api/ecommerce/account/addresses"),
     ).toBe(true);
+  });
+  it.each(["customer-b", null])(
+    "clears already autofilled private address on switch to %s",
+    async (nextIdentity) => {
+      mocks.api.mockImplementation(async (_method, path) => {
+        if (path === "/api/ecommerce/account/addresses")
+          return response([
+            {
+              id: mocks.user?.id,
+              label: "Home",
+              address: mocks.user?.id === "customer-a" ? "Private A street" : "Own B street",
+              city: "City",
+              state: "MA",
+              zipCode: "11111",
+              country: "US",
+              isDefault: true,
+            },
+          ]);
+        if (path === "/api/ecommerce/checkout/payment-intent")
+          return response({
+            orderId: "private-order-a",
+            clientSecret: "synthetic-never-sent",
+            lookupToken: "synthetic",
+            priced: {
+              subtotalAmount: 1200,
+              discountAmount: 0,
+              shippingAmount: 0,
+              taxAmount: 0,
+              totalAmount: 1200,
+            },
+          });
+        if (path === "/api/ecommerce/shipping/rates") return response([]);
+        return response(
+          path.includes("stripe") ? { publishableKey: "pk_test_synthetic" } : settings,
+        );
+      });
+      const view = mount(<CheckoutPage />);
+      await screen.findByDisplayValue("Private A street");
+      fireEvent.change(await screen.findByLabelText("Full name"), {
+        target: { value: "Private A name" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Update rates" }));
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 30));
+      });
+      act(() => {
+        host
+          .querySelector("#checkout-details-form")!
+          .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      });
+      await find(() => host.querySelector('[data-testid="payment-elements"]'));
+      mocks.user = nextIdentity
+        ? { id: nextIdentity, email: "b@example.test", role: "client" }
+        : null;
+      view.rerender(
+        <QueryClientProvider client={queryClient}>
+          <CheckoutPage />
+        </QueryClientProvider>,
+      );
+      expect(host.querySelector('[data-testid="payment-elements"]')).toBeNull();
+      expect(screen.queryByDisplayValue("Private A street")).toBeNull();
+      expect(screen.queryByDisplayValue("Private A name")).toBeNull();
+      if (nextIdentity) expect(await screen.findByDisplayValue("Own B street")).toBeTruthy();
+      else expect(((await screen.findByLabelText("Address")) as HTMLInputElement).value).toBe("");
+      expect(await screen.findByRole("button", { name: "Continue to payment" })).toBeTruthy();
+    },
+  );
+  it("preserves anonymous manual draft when logging in during checkout", async () => {
+    mocks.user = null;
+    const view = mount(<CheckoutPage />);
+    await screen.findByRole("button", { name: "Continue to payment" });
+    fireEvent.change(await screen.findByLabelText("Address"), {
+      target: { value: "My manual draft" },
+    });
+    mocks.user = { id: "customer-b", email: "b@example.test", role: "client" };
+    view.rerender(
+      <QueryClientProvider client={queryClient}>
+        <CheckoutPage />
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByDisplayValue("My manual draft")).toBeTruthy();
   });
   it("preserves entered checkout details across failed background refresh and retry", async () => {
     mount(<CheckoutPage />);

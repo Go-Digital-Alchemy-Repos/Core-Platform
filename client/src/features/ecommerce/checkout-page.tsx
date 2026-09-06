@@ -179,6 +179,20 @@ function CheckoutPaymentForm({ order, email }: { order: PaymentIntentResponse; e
 }
 
 export default function CheckoutPage() {
+  const { user } = useAuth();
+  const identity = user?.id ?? null;
+  const [previousIdentity, setPreviousIdentity] = useState(identity);
+  const [instance, setInstance] = useState(0);
+  if (previousIdentity !== identity) {
+    setPreviousIdentity(identity);
+    // Discard all account-derived address and payment state on account switch/logout.
+    // Anonymous -> login may complete checkout account creation: retain that draft/intent.
+    if (previousIdentity !== null) setInstance((current) => current + 1);
+  }
+  return <CheckoutContent key={instance} />;
+}
+
+function CheckoutContent() {
   const [items, setItems] = useState<CartItem[]>([]);
   const [form, setForm] = useState(initialForm);
   const [shippingRates, setShippingRates] = useState<ShippingRateOption[]>([]);
