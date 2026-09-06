@@ -359,3 +359,13 @@ upgrade and pilot-shutdown smoke checks and are under independent review.
 Historical 8126 receipts remain unchanged and are not retrospectively approved.
 The next production release still requires final candidate evidence and a fresh
 backup/restore rehearsal including the peer-reported sample event additions.
+
+Cleanup review disposition: do not accept the pending producer patch yet.
+Independent reproduction found that pilot direct-child exit could leave an
+owned descendant alive, and Python producers recorded process completion
+before cleanup launched further commands. The implementation owner is fixing
+process-group termination and a final post-cleanup check, with independent
+re-review required. Customer browser tests are also being rerun with direct
+persisted logs because the first worker evidence retained transcribed tool
+output rather than original stdout. Functional results and source review are
+recorded, but these are not substitutes for final durable release evidence.
