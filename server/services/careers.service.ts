@@ -1,3 +1,4 @@
+import { assertUploadMutationsAllowed } from "./upload-mutation-policy";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
@@ -111,6 +112,7 @@ export async function storeCareerResume(file: Express.Multer.File): Promise<{
   mimeType: string;
   size: number;
 }> {
+  assertUploadMutationsAllowed();
   const fileName = file.originalname;
   const safeName = safeFileName(file.originalname);
   const filename = `${Date.now()}-${crypto.randomBytes(4).toString("hex")}-${safeName}`;
