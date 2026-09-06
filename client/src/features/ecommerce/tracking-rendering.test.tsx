@@ -54,8 +54,8 @@ vi.mock("@tanstack/react-query", () => ({
           : empty,
     isError: false,
   }),
-  useMutation: (options: { onSuccess?: (data: unknown) => void }) => ({
-    mutate: () => options.onSuccess?.(order),
+  useMutation: (options: { onSuccess?: (data: unknown, variables: unknown) => void }) => ({
+    mutate: (variables: unknown) => options.onSuccess?.(order, variables),
     isPending: false,
   }),
 }));

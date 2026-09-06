@@ -1,4 +1,6 @@
-const { Pool } = require("pg");
+import { Pool } from "pg";
+import console from "node:console";
+import process from "node:process";
 const templates = [
   [
     "Provider Skills Training",

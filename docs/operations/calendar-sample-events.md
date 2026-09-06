@@ -5,13 +5,13 @@ The owner-requested seed adds 238 sample events across September 2026 through Au
 Preview without database access:
 
 ```sh
-node server/scripts/seed-calendar-2026-2028.cjs
+node server/scripts/seed-calendar-2026-2028.mjs
 ```
 
 Apply to an authorized database with `DATABASE_URL` set in the environment:
 
 ```sh
-node server/scripts/seed-calendar-2026-2028.cjs --apply
+node server/scripts/seed-calendar-2026-2028.mjs --apply
 ```
 
 The script inserts within a transaction, verifies monthly counts, and skips existing slugs without updating existing events. Seed slugs start with `calendar-demo-2026-2028-`; tags include `calendar-demo-2026-2028`. Events are published publicly, identified as samples in their descriptions, and have registration disabled. Venue and joining details remain unconfirmed.
