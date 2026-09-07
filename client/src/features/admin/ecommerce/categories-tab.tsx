@@ -63,13 +63,17 @@ export function CategoriesTab() {
 
   const collectDescendantIds = (categoryId: string): Set<string> => {
     const descendants = new Set<string>();
-    const visit = (parentId: string) => {
+    const pending = [categoryId];
+    const visited = new Set<string>([categoryId]);
+    while (pending.length) {
+      const parentId = pending.pop()!;
       for (const child of childrenByParent.get(parentId) ?? []) {
+        if (visited.has(child.id)) continue;
+        visited.add(child.id);
         descendants.add(child.id);
-        visit(child.id);
+        pending.push(child.id);
       }
-    };
-    visit(categoryId);
+    }
     return descendants;
   };
 
@@ -77,11 +81,17 @@ export function CategoriesTab() {
     const rows: Array<Category & { depth: number }> = [];
     const visited = new Set<string>();
     const visit = (items: Category[], depth: number) => {
-      for (const category of sortCategories(items)) {
+      const pending = sortCategories(items)
+        .reverse()
+        .map((category) => ({ category, depth }));
+      while (pending.length) {
+        const { category, depth } = pending.pop()!;
         if (visited.has(category.id)) continue;
         visited.add(category.id);
         rows.push({ ...category, depth });
-        visit(childrenByParent.get(category.id) ?? [], depth + 1);
+        for (const child of sortCategories(childrenByParent.get(category.id) ?? []).reverse()) {
+          if (!visited.has(child.id)) pending.push({ category: child, depth: depth + 1 });
+        }
       }
     };
     visit(childrenByParent.get("root") ?? [], 0);
@@ -89,6 +99,11 @@ export function CategoriesTab() {
       (category) => category.parentId && !categoryMap.has(category.parentId),
     );
     visit(orphaned, 0);
+    // Closed cycles have no root or orphan entry point. Keep them visible for parent repair.
+    visit(
+      categories.filter((category) => !visited.has(category.id)),
+      0,
+    );
     return rows;
   })();
 
@@ -191,8 +206,8 @@ export function CategoriesTab() {
   };
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
-      <Card>
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
+      <Card className="min-w-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FolderTree className="h-5 w-5" />
@@ -205,8 +220,9 @@ export function CategoriesTab() {
         <CardContent>
           <form onSubmit={submit} className="grid gap-4">
             <div className="space-y-2">
-              <Label>Name</Label>
+              <Label htmlFor="category-name">Name</Label>
               <Input
+                id="category-name"
                 value={form.name}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, name: event.target.value }))
@@ -216,8 +232,9 @@ export function CategoriesTab() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Slug</Label>
+              <Label htmlFor="category-slug">Slug</Label>
               <Input
+                id="category-slug"
                 value={form.slug}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, slug: event.target.value }))
@@ -226,14 +243,14 @@ export function CategoriesTab() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Parent category</Label>
+              <Label htmlFor="category-parent">Parent category</Label>
               <Select
                 value={form.parentId || "__root"}
                 onValueChange={(value) =>
                   setForm((current) => ({ ...current, parentId: value === "__root" ? "" : value }))
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger id="category-parent">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -250,8 +267,9 @@ export function CategoriesTab() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Description</Label>
+              <Label htmlFor="category-description">Description</Label>
               <Textarea
+                id="category-description"
                 value={form.description}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, description: event.target.value }))
@@ -268,8 +286,9 @@ export function CategoriesTab() {
             />
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Sort order</Label>
+                <Label htmlFor="category-sort-order">Sort order</Label>
                 <Input
+                  id="category-sort-order"
                   type="number"
                   value={form.sortOrder}
                   onChange={(event) =>
@@ -279,10 +298,11 @@ export function CategoriesTab() {
               </div>
               <div className="flex items-center gap-3 pt-7">
                 <Switch
+                  id="category-active"
                   checked={form.active}
                   onCheckedChange={(active) => setForm((current) => ({ ...current, active }))}
                 />
-                <Label>Active</Label>
+                <Label htmlFor="category-active">Active</Label>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -299,7 +319,7 @@ export function CategoriesTab() {
           </form>
         </CardContent>
       </Card>
-      <Card>
+      <Card className="min-w-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Tag className="h-5 w-5" />

@@ -1,5 +1,9 @@
+import {
+  lockEcommerceCategoryGraph,
+  validateEcommerceCategoryBatchParents,
+} from "./ecommerce-category-graph";
 import { createHash } from "node:crypto";
-import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
 import {
   ecommerceCategories,
   ecommerceProductCategories,
@@ -23,6 +27,9 @@ import {
   assertWooImportRunTransition,
   sanitizeWooImportFailureCode,
   validateBeginWooImportRun,
+  validateResumeWooImportRun,
+  validateWooImportExecutionCheckpoint,
+  WOO_IMPORT_CATEGORY_ORDERING,
   wooImportSourceRef,
   type BeginWooImportRun,
   type WooImportReconciliationSummary,
@@ -288,12 +295,22 @@ function assertRunStatus(value: string): asserts value is WooImportRunStatus {
 export class DrizzleWooImportRepository implements WooImportRepositoryV1 {
   async beginRun(request: BeginWooImportRun): Promise<WooImportRun> {
     const valid = validateBeginWooImportRun(request);
-    const [run] = await db.insert(wooImportRuns).values(valid).returning();
+    const { executionBatchSize, ...identity } = valid;
+    const [run] = await db
+      .insert(wooImportRuns)
+      .values({
+        ...identity,
+        latestCheckpoint: {
+          categoryOrdering: WOO_IMPORT_CATEGORY_ORDERING,
+          batchSize: executionBatchSize,
+        },
+      })
+      .returning();
     return run;
   }
 
   async resumeRun(runId: string, request: BeginWooImportRun): Promise<WooImportRun> {
-    const valid = validateBeginWooImportRun(request);
+    const valid = validateResumeWooImportRun(request);
     return db.transaction(async (tx) => {
       const [run] = await tx
         .select()
@@ -314,6 +331,11 @@ export class DrizzleWooImportRepository implements WooImportRepositoryV1 {
       if (!matchesIdentity) {
         throw new Error("WooCommerce resume request does not match the original run identity");
       }
+      validateWooImportExecutionCheckpoint(
+        run.contractVersion,
+        run.latestCheckpoint,
+        valid.executionBatchSize ?? 100,
+      );
       assertRunStatus(run.status);
       if (run.status !== "failed") {
         throw new Error("Only failed WooCommerce import runs may be resumed");
@@ -424,6 +446,16 @@ export class DrizzleWooImportRepository implements WooImportRepositoryV1 {
       if (run.sourceStoreId !== request.sourceStoreId) {
         throw new Error("WooCommerce import run source store does not match the batch");
       }
+      validateWooImportExecutionCheckpoint(
+        run.contractVersion,
+        run.latestCheckpoint,
+        request.nextCheckpoint.batchSize ?? 100,
+      );
+      validateWooImportExecutionCheckpoint(
+        run.contractVersion,
+        request.nextCheckpoint,
+        request.nextCheckpoint.batchSize ?? 100,
+      );
       assertRunStatus(run.status);
       if (run.status !== "applying") {
         assertWooImportRunTransition(run.status, "applying");
@@ -461,6 +493,30 @@ export class DrizzleWooImportRepository implements WooImportRepositoryV1 {
         };
       }
 
+      if (request.operations.some((operation) => operation.entityType === "category")) {
+        await lockEcommerceCategoryGraph(tx);
+        try {
+          await validateEcommerceCategoryBatchParents(
+            tx,
+            request.operations
+              .filter((operation) => operation.entityType === "category")
+              .map((operation) => ({
+                id: operation.targetId,
+                parentId: operation.targetRecord.parentId,
+              })),
+          );
+        } catch (error) {
+          if (
+            error &&
+            typeof error === "object" &&
+            "statusCode" in error &&
+            error.statusCode === 400
+          ) {
+            throw new WooImportManualReviewError("category_parent_precondition_failed");
+          }
+          throw error;
+        }
+      }
       let applied = 0;
       let matched = 0;
       for (const operation of request.operations) {
@@ -872,6 +928,20 @@ export class DrizzleWooImportRepository implements WooImportRepositoryV1 {
           throw new WooImportManualReviewError("rollback_requires_preexisting_target_restore");
         }
 
+        // The locked run prevents its ownership inventory changing underneath us.
+        // Acquire the graph lock before mapping/target row locks, as apply does.
+        const [createdCategory] = await tx
+          .select({ id: wooImportMappings.id })
+          .from(wooImportMappings)
+          .where(
+            and(
+              eq(wooImportMappings.firstRunId, run.id),
+              eq(wooImportMappings.targetType, "ecommerce_category"),
+            ),
+          )
+          .limit(1);
+        if (createdCategory) await lockEcommerceCategoryGraph(tx);
+
         const createdMappings = await tx
           .select()
           .from(wooImportMappings)
@@ -884,9 +954,6 @@ export class DrizzleWooImportRepository implements WooImportRepositoryV1 {
             .map((mapping) => mapping.targetId),
         );
         if (createdCategoryIds.size) {
-          // parent_id has no FK: row locks cannot fence new child references.
-          // Only rollback needs this category-write lock; ordinary reads continue.
-          await tx.execute(sql`LOCK TABLE ecommerce_categories IN SHARE ROW EXCLUSIVE MODE`);
           const children = await tx
             .select({ id: ecommerceCategories.id })
             .from(ecommerceCategories)
