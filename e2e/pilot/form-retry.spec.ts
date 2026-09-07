@@ -60,7 +60,8 @@ for (const kind of ["contact", "newsletter"] as const) {
         exact: true,
       });
       const originalEmail = `${kind}-pilot@example.test`;
-      await name.fill("Synthetic Pilot");
+      if (kind === "contact") await name.fill("Synthetic Pilot");
+      else await expect(name).toHaveCount(0);
       await email.fill("invalid-email");
       if (kind === "contact")
         await form.getByTestId("input-message").fill("Synthetic original inquiry");
@@ -104,7 +105,7 @@ for (const kind of ["contact", "newsletter"] as const) {
         }),
       ).toBeVisible();
       await expect(email).toHaveValue(originalEmail);
-      await expect(name).toHaveValue("Synthetic Pilot");
+      if (kind === "contact") await expect(name).toHaveValue("Synthetic Pilot");
       if (kind === "contact")
         await expect(form.getByTestId("input-message")).toHaveValue("Synthetic original inquiry");
       const retried = page.waitForResponse(
@@ -119,7 +120,9 @@ for (const kind of ["contact", "newsletter"] as const) {
       expect(afterRetry).toHaveLength(1);
       expect(afterRetry[0].id).toBe(committedId);
       await expect(email).toHaveValue("");
-      await name.fill("Synthetic Second");
+      if (kind === "newsletter")
+        await expect(page.getByText("Request received", { exact: true })).toBeVisible();
+      if (kind === "contact") await name.fill("Synthetic Second");
       await email.fill(`${kind}-second@example.test`);
       if (kind === "contact")
         await form.getByTestId("input-message").fill("Synthetic changed inquiry");
