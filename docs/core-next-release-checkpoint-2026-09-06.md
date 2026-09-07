@@ -8,7 +8,16 @@ from those tables. The detailed operations history remains in
 
 ## Candidate and production
 
-The clean, pushed candidate is `f4853306e0d4dc086f5ab06352019858453a65b1`
+The latest development candidate is **`f48834226197004f93f8e61aa786061a69b57986`**
+on `codex/ecommerce-integrity-integration`, tree
+`624bdb7183146aa5f88497aa4c110b5e0c091f2a`, in
+[Draft PR17](https://github.com/Go-Digital-Alchemy-Repos/Core-Platform/pull/17).
+It includes the reviewed category/import and CRM attribution increment plus the
+three-class responsive category fix. Exact-head validation is in progress.
+Earlier e2fda41 receipts remain bound to that prior commit.
+
+The last fully normalized, accepted local-evidence candidate remains frozen at
+`f4853306e0d4dc086f5ab06352019858453a65b1`
 on `codex/next-client-release`. It includes reviewed CRM follow-ups, checkout
 and order lookup recovery, safe tracking links, onboarding evidence scoping,
 Woo rollback/merchant preservation, and Security Center read recovery.
@@ -22,7 +31,7 @@ verified live after the original routing fix. The new candidate has not been
 deployed. Provider transaction activation remains disabled, and Better Farms
 remains a no-import pilot. Revalidate actual deployment state before a cutover.
 
-## Current evidence and outstanding gates
+## Frozen f485330 evidence and deployment gates
 
 - Exact candidate ordinary tests: 1,167 passed, 99 opt-in database tests skipped.
   Skips are not passes. Separate database evidence must account for every group.
@@ -328,3 +337,27 @@ strict cleanup gate failed for a child reported stopped=false despite exit0.
 Operations/integrity-pilot-20260907T001704Z-1a6a2a21 retains the original failure.
 Exact process/group/resource evidence is being investigated; no cleanup cause
 or final pilot gate acceptance is established yet.
+
+
+### Responsive category fix integrated
+
+Root accepted source `90cec6a19aae4902f2e0812da79c4985f9dc00a0` after reviewing
+its three class changes, measured geometry and corrected narrow screenshot.
+It is integrated as f488342. The editor now fits at390px, retains420px atdesktop,
+and the table scrolls locally with rightmost actions and keyboard editing
+verified. Before/after receipt category-responsive-cli-cff0b4ed7b/receipt.json
+SHA-256 `c5a622f85b66b0ec6ce04670cef8d1094bb76eac885f22994aa21f112d21dfc5`;
+additional interaction receipt category-responsive-cli-3a346ef10b/receipt.json
+SHA-256 `a048013269b6671bd60b16c2bbe282fb3839c2d44ea3f50a86cf3883e5317a0f`.
+Both successful fixtures cleaned up. Prior parser failure remains preserved.
+
+The e2fda41 pilot's supplemental checks establish later absence of all thirteen
+recorded groups, the exact container/volume and reusable ports, with Core/site
+identity and source unchanged. Supplement SHA-256
+`0281abafd7bccb7525af48066864148a989b8662df9d2b5263f05bfce5992d55`.
+The cause of the original stopped=false result remains unresolved; original
+failed reports are unchanged. Do not call the original strict cleanup successful.
+
+Fresh f488342 basic validation is running in
+Operations/basic-gates-f488342-f9d98df567; locked installation has completed.
+No production or release approval changes occurred.
