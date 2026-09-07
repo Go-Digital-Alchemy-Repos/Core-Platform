@@ -197,3 +197,33 @@ Browser create/reload verification remains active in the isolated CRM branch.
 Frozen f485330, PR16 and their accepted V3 bundle remain unchanged. This next
 increment needs its own complete integration evidence and reviewed successor
 opt-in suite inventory before promotion.
+
+
+### Backend integrated and draft PR17 opened
+
+The next increment is now clean/pushed `e2fda41fddc30bdde47f3b85d48d93aec28dee7f`,
+tree `b9a767f4c3fe6f8526b7d21a8a40bef95cefdddc`, with accepted backend
+`448f440d8116903fead95716988b8c316e11dbdd` integrated. Draft PR17,
+“Protect category hierarchies and show CRM note authors,” is stacked on
+`codex/next-client-release`: https://github.com/Go-Digital-Alchemy-Repos/Core-Platform/pull/17.
+
+Root combined TypeScript and full ordinary suite passed: 1,181 tests and 118
+expected opt-in skips. Independent backend review accepted live ancestry,
+versioned ordering, legacy identities and migration behavior; root matched all
+19 development source hashes and eight log hashes, including 37 passing actual
+PostgreSQL cases. Private receipt category-parent-execution-14dc3f97d2/receipt-final.json
+has SHA-256 `66299723d1261d6f0de19c797986c9f952abe18536b5821f2a3327dd3be1efba`.
+Its runner exits and container/volume cleanup are established, but process-group
+identities were not captured, so this is not full release cleanup evidence.
+
+Fresh combined PostgreSQL verification with complete process ownership is now
+authorized. The independently checked successor V4 inventory is authorized in
+a separate worktree: 30 gates, 14 opt-in suites, 143 database executions and 118
+unique ordinary skips. It adds category parent integrity (17) and CRM attribution
+(2), updates only the two reviewed Woo source pins, and preserves truth and
+cleanup requirements. Those are expected counts until the combined database
+run and successor verifier tests actually establish them. Frozen V3 is unchanged.
+
+The CRM browser harness has retained setup/teardown failures and their separate
+cleanup evidence. These are not application failures or successful browser
+acceptance; browser verification remains in progress.
