@@ -17,6 +17,15 @@ vi.mock("../../storage", () => ({
     users: { getUser: async (id: string) => state.users.get(id) },
     settings: {
       getSetting: async () => null,
+      invalidateAll: () => {},
+      invalidateCategory: () => {},
+      upsertSetting: async (key: string, value: string, category: string) => {
+        state.values.set(key, { value, category });
+        return { key, value, category, isSecret: false };
+      },
+      deleteSetting: async (key: string) => {
+        state.values.delete(key);
+      },
       getDecryptedCategory: async (category: string) =>
         category === "system_configuration"
           ? { enable_ecommerce: String(state.enabled) }
@@ -68,7 +77,27 @@ vi.mock("../../services/mailchimp.service", () => ({}));
 vi.mock("../../services/image-optimizer", () => ({}));
 vi.mock("../../services/cms-media-upload.service", () => ({}));
 
+vi.mock("../../services/ecommerce-shipping-credential-authorization.service", () => ({
+  rotateEasyPostCredentials: async (_database: unknown, value: string) => {
+    state.writes([
+      {
+        key: "ecommerce_shipping_provider_easypost__apiKey",
+        value,
+        category: "ecommerce_shipping_provider_easypost",
+        isSecret: true,
+      },
+    ]);
+    state.values.set("ecommerce_shipping_provider_easypost__apiKey", {
+      value,
+      category: "ecommerce_shipping_provider_easypost",
+    });
+    return "synthetic-generation";
+  },
+  saveEasyPostProviderConfiguration: async (_database: unknown, data: unknown) =>
+    state.activated(data),
+}));
 import adminRouter from "./index";
+import settingsRouter from "../settings.routes";
 import { generateToken } from "../../middleware/auth";
 import { errorHandler } from "../../middleware/error-handler";
 let server: Server, base: string;
@@ -98,6 +127,7 @@ describe("mounted shipping credential routes", () => {
     const app = express();
     app.use(express.json(), cookieParser());
     app.use("/api/admin", adminRouter);
+    app.use("/api/admin", settingsRouter);
     app.use(errorHandler);
     await new Promise<void>((resolve) => {
       server = app.listen(0, "127.0.0.1", resolve);
@@ -115,6 +145,57 @@ describe("mounted shipping credential routes", () => {
     state.users.clear();
     state.enabled = true;
     vi.clearAllMocks();
+  });
+  it("reserves every EasyPost authorization key in generic PUT and DELETE while retaining unrelated settings", async () => {
+    const origin = base.replace("/api/admin/ecommerce/shipping/providers", "");
+    for (const suffix of [
+      "apiKey",
+      "credentialGenerationId",
+      "approvedTestGenerationId",
+      "futureMetadata",
+    ]) {
+      const key = "ecommerce_shipping_provider_easypost__" + suffix;
+      for (const [method, path, body] of [
+        [
+          "PUT",
+          "/api/admin/settings",
+          { key, value: "browser-value", category: "another_category", isSecret: false },
+        ],
+        ["DELETE", "/api/admin/settings/" + key, undefined],
+      ] as const) {
+        const response = await fetch(origin + path, {
+          method,
+          headers: { cookie: cookie("admin"), "Content-Type": "application/json" },
+          ...(body ? { body: JSON.stringify(body) } : {}),
+        });
+        expect(response.status).toBe(400);
+      }
+    }
+    expect(state.values.size).toBe(0);
+    const response = await fetch(origin + "/api/admin/settings", {
+      method: "PUT",
+      headers: { cookie: cookie("admin"), "Content-Type": "application/json" },
+      body: JSON.stringify({
+        key: "unrelated_setting",
+        value: "retained",
+        category: "ordinary",
+        isSecret: false,
+      }),
+    });
+    expect(response.status).toBe(200);
+    expect(state.values.get("unrelated_setting")?.value).toBe("retained");
+  });
+  it("does not accept caller-supplied approval or generation through credential setup", async () => {
+    const response = await request("/easypost/credentials", "PUT", {
+      credentials: {
+        apiKey: "synthetic-key",
+        credentialGenerationId: "forged",
+        approvedTestGenerationId: "forged",
+      },
+    });
+    expect(response.status).toBe(200);
+    expect([...state.values.keys()]).toEqual(["ecommerce_shipping_provider_easypost__apiKey"]);
+    expect(JSON.stringify(await response.json())).not.toMatch(/forged|synthetic-key|Generation/);
   });
   it("preserves auth, role and module gates before reading or saving credentials", async () => {
     for (const [role, status] of [
