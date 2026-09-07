@@ -736,3 +736,26 @@ treea16642dbde7d389e45ae4528964a3a2dfd262143. Prior V4 unchanged. Remaining:
 integrate previously accepted pilot cleanup correction into next candidate, freeze
 source, run all required V5 gates against that candidate and review complete
 evidence. No provider activation, branch-policy bypass or production deployment.
+
+
+### Shipping candidate frozen and validation dispatched — 2026-09-07 UTC
+
+Accepted pilot cleanup correction32e8c5d is integrated as ece2544; root12focused
+cases passed. Frozen shipping candidate ece25447741d7f2fe622aa6cdcb66a62337f68ef,
+treec2011965f7bbb43ce80e8eda023fab786f36140d is clean/pushed. Root fresh basic
+runner passed all9gates: locked install, types,1328ordinary/174opt-in skips, lint,
+format, build, budgets and source/compiled deployment preflight. Raw receipt
+Operations/basic-gates-ece2544-40665f1b33/receipt.json SHA
+`c08056b92fbb17fc6ca1b34eb110a3ab45b67d9abda3645c6f91ca8301900895`.
+Exact application artifact SHA
+`c9c97aa7d327b4d4f113bfdceb85b3f7807e2bbfba1b18b46ad52a0e0a9d6794`.
+Root verified command log hashes and terminal passing runner with strict process
+cleanup. This is only the basic subset, not complete release acceptance.
+
+Active isolated tasks: infra199DB executions in combined-db-ece2544-8df5bc85
+handle82166; CRM full66 browser gate in frozen-ece2544-full-app-20260907T014718Z-88e2b4b7
+handle69929, followed by Better Farms22; engineering prepares repeatable exact-source
+shipping CLI browser producer in separate checkout, waiting for CRM port5201.
+Root four runtime/historical-upgrade/CRM-upgrade/recovery gates launched handle61102,
+Operations/release-rehearsals-ece2544-4735428e, bound to the artifact above. Every
+checkout has its own dependencies. Results pending; no production/provider actions.
