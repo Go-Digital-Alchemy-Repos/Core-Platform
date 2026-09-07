@@ -552,3 +552,25 @@ from9c03 with injected transaction-aware authorization until infra's generation
 service is integrated. Root retains final integration and review. Infra also guards
 reserved EasyPost keys against generic settings write/delete bypass. None of these
 unfinished service/UI changes authorizes provider activity or production deployment.
+
+
+### New quote recovery regression — 2026-09-07 UTC
+
+Root added actual application backup/restore coverage in shipping assembly511cd9d.
+One enabled PostgreSQL case passes with zero skips: pending, unknown and quoted
+rows are captured/compressed, deleted and restored; every quote column matches;
+full migration replay preserves them; restored replay/fencing rejects wrong-owner
+and terminal overwrite while allowing late original-owner completion. Object
+transport is synthetic/in-memory, not production R2 or shipping-provider evidence.
+Types and focused lint passed. Private receipt
+Operations/shipping-quote-recovery-304c55ccc4/receipt.json SHA
+`88be3bc4fb5a37786d622fafedb7da234530348f317177f3338b595e39927f38`
+binds1165sourcefiles unchanged and strict owned container/volume/18captured group
+cleanup. This extra opt-in case must join future candidate validation; frozenV4
+andf488 evidence remain untouched.
+
+Authorization review additionally requires unexpected DBread failures remain
+sanitized503 errors instead of being reported as missing configuration. Dedicated
+reserved-key guards and generation-lock code are still under implementation/tests.
+Engineering orchestration and CRM UI remain independently owned works in progress;
+no route/provider activation or production change occurred.
