@@ -48,7 +48,7 @@ export async function lockEasyPostCredentialAuthorization(tx: ShippingCredential
   await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${EASYPOST_CREDENTIAL_LOCK}))`);
 }
 
-async function uncachedState(tx: ShippingCredentialTx) {
+export async function readEasyPostCredentialState(tx: ShippingCredentialTx) {
   const rows = await tx.select().from(systemSettings).where(eq(systemSettings.category, CATEGORY));
   const [provider] = await tx
     .select()
@@ -81,7 +81,7 @@ export async function readAuthorizedEasyPostTestCredentials(
 ): Promise<AuthorizedEasyPostTestCredentials> {
   try {
     await lockEasyPostCredentialAuthorization(tx);
-    const state = await uncachedState(tx);
+    const state = await readEasyPostCredentialState(tx);
     if (!state.provider?.active)
       throw new ShippingCredentialAuthorizationError("provider_inactive");
     if (!state.provider.testMode)
@@ -118,7 +118,7 @@ export async function readEasyPostQuoteAuthorizationReadiness(
 ): Promise<EasyPostQuoteAuthorizationReadiness> {
   try {
     await lockEasyPostCredentialAuthorization(tx);
-    const state = await uncachedState(tx);
+    const state = await readEasyPostCredentialState(tx);
     const approved = uuid(state.approval) && state.approval === state.generation;
     const reasonCode = !state.provider?.active
       ? "provider_inactive"
@@ -184,6 +184,7 @@ async function invalidate() {
 export async function rotateEasyPostCredentials(
   database: Database,
   apiKey: string,
+  actorId?: string,
 ): Promise<string | null> {
   const value = apiKey.trim();
   if (!value) return null;
@@ -192,6 +193,9 @@ export async function rotateEasyPostCredentials(
       generation = randomUUID();
     await database.transaction(async (tx) => {
       await lockEasyPostCredentialAuthorization(tx);
+      const { invalidateEasyPostLabelAuthorizationForRotation } =
+        await import("./ecommerce-shipping-label-authorization.service");
+      await invalidateEasyPostLabelAuthorizationForRotation(tx, generation, actorId);
       await write(tx, [
         { key: EASYPOST_CREDENTIAL_KEYS.apiKey, value: encrypted, isSecret: true },
         { key: EASYPOST_CREDENTIAL_KEYS.generation, value: generation, isSecret: false },
@@ -214,7 +218,7 @@ export async function approveEasyPostTestGeneration(
   try {
     await database.transaction(async (tx) => {
       await lockEasyPostCredentialAuthorization(tx);
-      const state = await uncachedState(tx);
+      const state = await readEasyPostCredentialState(tx);
       if (state.generation !== expectedGeneration)
         throw new ShippingCredentialAuthorizationError("credential_generation_changed");
       if (!state.provider?.testMode)

@@ -10,6 +10,7 @@ const state = vi.hoisted(() => ({
   users: new Map<string, unknown>(),
   values: new Map<string, { value: string; category: string }>(),
   writes: vi.fn(),
+  rotationActor: vi.fn(),
   activated: vi.fn(async (data: unknown) => data),
 }));
 const quoteService = vi.hoisted(() => ({
@@ -97,7 +98,8 @@ vi.mock("../../services/image-optimizer", () => ({}));
 vi.mock("../../services/cms-media-upload.service", () => ({}));
 
 vi.mock("../../services/ecommerce-shipping-credential-authorization.service", () => ({
-  rotateEasyPostCredentials: async (_database: unknown, value: string) => {
+  rotateEasyPostCredentials: async (_database: unknown, value: string, actorId?: string) => {
+    state.rotationActor(actorId);
     state.writes([
       {
         key: "ecommerce_shipping_provider_easypost__apiKey",
@@ -214,6 +216,7 @@ describe("mounted shipping credential routes", () => {
     });
     expect(response.status).toBe(200);
     expect([...state.values.keys()]).toEqual(["ecommerce_shipping_provider_easypost__apiKey"]);
+    expect(state.rotationActor).toHaveBeenLastCalledWith("admin");
     expect(JSON.stringify(await response.json())).not.toMatch(/forged|synthetic-key|Generation/);
   });
   it("preserves auth, role and module gates before reading or saving credentials", async () => {

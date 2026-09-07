@@ -838,7 +838,15 @@ router.put(
     }
 
     const credentials = z.record(z.string(), z.string()).parse(req.body.credentials ?? {});
-    res.json(await saveShippingProviderCredentials(storage.settings, provider, credentials));
+    res.json(
+      await saveShippingProviderCredentials(
+        storage.settings,
+        provider,
+        credentials,
+        undefined,
+        req.user!.id,
+      ),
+    );
   }),
 );
 

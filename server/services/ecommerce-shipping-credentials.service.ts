@@ -52,6 +52,7 @@ export async function saveShippingProviderCredentials(
   provider: string,
   credentials: Record<string, string>,
   authorizationDatabase?: typeof db,
+  actorId?: string,
 ) {
   const definition = definitionFor(provider);
   const category = getShippingProviderCredentialCategory(provider);
@@ -74,7 +75,7 @@ export async function saveShippingProviderCredentials(
         const { rotateEasyPostCredentials } =
           await import("./ecommerce-shipping-credential-authorization.service");
         const database = authorizationDatabase ?? (await import("../db")).db;
-        await rotateEasyPostCredentials(database, credentials.apiKey.trim());
+        await rotateEasyPostCredentials(database, credentials.apiKey.trim(), actorId);
         settings.invalidateAll?.();
       } else await settings.upsertSettings(entries);
     } catch {
