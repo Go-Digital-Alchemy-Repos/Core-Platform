@@ -48,10 +48,13 @@ import { replayEcommerceStripeWebhook } from "../../webhooks/ecommerce-stripe.ha
 import {
   ECOMMERCE_SHIPPING_PROVIDER_REGISTRY,
   getMissingShippingProviderCredentialLabels,
-  getShippingProviderCredentialCategory,
   getShippingProviderDefinition,
   mergeShippingProviderStatuses,
 } from "../../services/ecommerce-shipping-provider.service";
+import {
+  readShippingProviderCredentials,
+  saveShippingProviderCredentials,
+} from "../../services/ecommerce-shipping-credentials.service";
 import { inferCarrierTrackingUrl } from "../../services/ecommerce-shipping-carrier.service";
 import {
   ecommerceTaxSettingsSchema,
@@ -717,8 +720,9 @@ router.get(
     const credentialStatus: Record<string, Record<string, boolean>> = {};
     await Promise.all(
       ECOMMERCE_SHIPPING_PROVIDER_REGISTRY.map(async (definition) => {
-        const settings = await storage.settings.getDecryptedCategory(
-          getShippingProviderCredentialCategory(definition.provider),
+        const settings = await readShippingProviderCredentials(
+          storage.settings,
+          definition.provider,
         );
         credentialStatus[definition.provider] = Object.fromEntries(
           definition.setupFields.map((field) => [field.key, Boolean(settings[field.key])]),
@@ -745,7 +749,7 @@ router.get(
     }
 
     const [settings, configuredProviders] = await Promise.all([
-      storage.settings.getDecryptedCategory(getShippingProviderCredentialCategory(provider)),
+      readShippingProviderCredentials(storage.settings, provider),
       storage.ecommerce.getShippingProviders(),
     ]);
     const credentialStatus = {
@@ -780,9 +784,7 @@ router.put(
       .parse({ ...req.body, provider });
 
     if (data.active) {
-      const settings = await storage.settings.getDecryptedCategory(
-        getShippingProviderCredentialCategory(provider),
-      );
+      const settings = await readShippingProviderCredentials(storage.settings, provider);
       const missingCredentialLabels = getMissingShippingProviderCredentialLabels(
         definition,
         settings,
@@ -822,29 +824,7 @@ router.put(
     }
 
     const credentials = z.record(z.string(), z.string()).parse(req.body.credentials ?? {});
-    const category = getShippingProviderCredentialCategory(provider);
-    const writes = definition.setupFields
-      .map((field) => ({ field, value: credentials[field.key]?.trim() }))
-      .filter((entry): entry is { field: (typeof definition.setupFields)[number]; value: string } =>
-        Boolean(entry.value),
-      )
-      .map(({ field, value }) =>
-        storage.settings.upsertSetting(field.key, value, category, field.secret ?? true),
-      );
-
-    await Promise.all(writes);
-    storage.settings.invalidateCategory(category);
-
-    const settings = await storage.settings.getDecryptedCategory(category);
-    res.json({
-      provider,
-      setupFields: definition.setupFields.map((field) => ({
-        key: field.key,
-        label: field.label,
-        secret: field.secret ?? true,
-        hasValue: Boolean(settings[field.key]),
-      })),
-    });
+    res.json(await saveShippingProviderCredentials(storage.settings, provider, credentials));
   }),
 );
 
