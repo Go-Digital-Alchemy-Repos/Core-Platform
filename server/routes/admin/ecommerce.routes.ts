@@ -55,6 +55,8 @@ import {
   readShippingProviderCredentials,
   saveShippingProviderCredentials,
 } from "../../services/ecommerce-shipping-credentials.service";
+import { db } from "../../db";
+import { saveEasyPostProviderConfiguration } from "../../services/ecommerce-shipping-credential-authorization.service";
 import { inferCarrierTrackingUrl } from "../../services/ecommerce-shipping-carrier.service";
 import {
   ecommerceTaxSettingsSchema,
@@ -798,17 +800,20 @@ router.put(
       }
     }
 
+    const configuration = {
+      provider,
+      displayName: data.displayName,
+      type: data.type,
+      capabilities: data.capabilities ?? [],
+      settings: data.settings ?? {},
+      testMode: data.testMode ?? true,
+      active: data.active ?? false,
+      connectedAt: data.active ? (data.connectedAt ?? new Date()) : (data.connectedAt ?? null),
+    };
     res.json(
-      await storage.ecommerce.upsertShippingProvider({
-        provider,
-        displayName: data.displayName,
-        type: data.type,
-        capabilities: data.capabilities ?? [],
-        settings: data.settings ?? {},
-        testMode: data.testMode ?? true,
-        active: data.active ?? false,
-        connectedAt: data.active ? (data.connectedAt ?? new Date()) : (data.connectedAt ?? null),
-      }),
+      provider === "easypost"
+        ? await saveEasyPostProviderConfiguration(db, configuration)
+        : await storage.ecommerce.upsertShippingProvider(configuration),
     );
   }),
 );

@@ -11,7 +11,7 @@ function getKey(): Buffer {
   return crypto.createHash("sha256").update(SECRET).digest();
 }
 
-function encrypt(text: string): string {
+export function encryptSettingValue(text: string): string {
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(ALGORITHM, getKey(), iv);
   let encrypted = cipher.update(text, "utf8", "hex");
@@ -19,15 +19,28 @@ function encrypt(text: string): string {
   return iv.toString("hex") + ":" + encrypted;
 }
 
+function decryptCiphertext(ivHex: string, encrypted: string): string {
+  const decipher = crypto.createDecipheriv(ALGORITHM, getKey(), Buffer.from(ivHex, "hex"));
+  return decipher.update(encrypted, "hex", "utf8") + decipher.final("utf8");
+}
+
+/** Authorization callers must never treat malformed encrypted values as plaintext keys. */
+export function decryptSettingValueStrict(text: string): string {
+  if (!/^[a-fA-F0-9]{32}:(?:[a-fA-F0-9]{32})+$/.test(text))
+    throw new Error("Encrypted setting is invalid");
+  const [ivHex, encrypted] = text.split(":");
+  try {
+    return decryptCiphertext(ivHex, encrypted);
+  } catch {
+    throw new Error("Encrypted setting is invalid");
+  }
+}
+
 function decrypt(text: string, settingKey?: string): string {
   const [ivHex, encrypted] = text.split(":");
   if (!ivHex || !encrypted) return text;
   try {
-    const iv = Buffer.from(ivHex, "hex");
-    const decipher = crypto.createDecipheriv(ALGORITHM, getKey(), iv);
-    let decrypted = decipher.update(encrypted, "hex", "utf8");
-    decrypted += decipher.final("utf8");
-    return decrypted;
+    return decryptCiphertext(ivHex, encrypted);
   } catch {
     logger.db.warn("Decryption failed, returning raw value", {
       settingKey: settingKey ?? "unknown",
@@ -140,7 +153,7 @@ export class SettingsStorage {
     const values = entries
       .map((entry) => ({
         ...entry,
-        value: entry.isSecret ? encrypt(entry.value) : entry.value,
+        value: entry.isSecret ? encryptSettingValue(entry.value) : entry.value,
         updatedAt: new Date(),
       }))
       .sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
