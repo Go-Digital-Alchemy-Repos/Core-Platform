@@ -1,3 +1,7 @@
+import {
+  clearQuoteSessions,
+  setQuoteSessionOwner,
+} from "@/features/admin/ecommerce/shipping-quote-session";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, getQueryFn, queryClient, STALE_TIMES } from "@/lib/queryClient";
 import type { User } from "@shared/schema";
@@ -41,6 +45,7 @@ export function useAuth() {
       return (await res.json()) as User;
     },
     onSuccess: (data) => {
+      setQuoteSessionOwner(data.id);
       queryClient.setQueryData(["/api/auth/me"], data);
     },
   });
@@ -58,6 +63,7 @@ export function useAuth() {
       return (await res.json()) as User;
     },
     onSuccess: (data) => {
+      setQuoteSessionOwner(data.id);
       queryClient.setQueryData(["/api/auth/me"], data);
     },
   });
@@ -67,6 +73,7 @@ export function useAuth() {
       await apiRequest("POST", "/api/auth/logout");
     },
     onSuccess: () => {
+      clearQuoteSessions();
       queryClient.setQueryData(["/api/auth/me"], null);
     },
   });

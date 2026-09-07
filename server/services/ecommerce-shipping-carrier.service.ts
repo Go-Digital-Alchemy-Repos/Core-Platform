@@ -1,3 +1,8 @@
+import {
+  normalizeEasyPostParcel,
+  type ShippingProviderParcel,
+} from "@shared/ecommerce-shipping-parcel";
+export { normalizeEasyPostParcel } from "@shared/ecommerce-shipping-parcel";
 import { getSafeEcommerceTrackingUrl } from "@shared/ecommerce-tracking-url";
 import {
   getShippingProviderDefinition,
@@ -17,14 +22,7 @@ export interface ShippingProviderAddress {
   email?: string;
 }
 
-export interface ShippingProviderParcel {
-  length?: number | null;
-  width?: number | null;
-  height?: number | null;
-  distanceUnit?: string | null;
-  weight: number;
-  weightUnit: string;
-}
+export type { ShippingProviderParcel } from "@shared/ecommerce-shipping-parcel";
 
 export interface ShippingRateQuoteRequest {
   provider: string;
@@ -120,12 +118,14 @@ export class EasyPostShippingProviderClient extends UnsupportedShippingProviderC
 
   buildRateQuotePayload(request: ShippingRateQuoteRequest) {
     this.assertConfigured();
+    if (!Array.isArray(request.parcels) || request.parcels.length !== 1)
+      throw new Error("Exactly one parcel is required for EasyPost shipping rates");
     return {
       shipment: {
         to_address: toEasyPostAddress(request.toAddress),
         from_address: toEasyPostAddress(request.fromAddress),
-        parcel: toEasyPostParcel(request.parcels[0]),
-        options: request.orderId ? { reference: request.orderId } : undefined,
+        parcel: normalizeEasyPostParcel(request.parcels[0]),
+        reference: request.orderId || undefined,
       },
     };
   }
@@ -210,17 +210,5 @@ function toEasyPostAddress(address: ShippingProviderAddress) {
     country: address.country,
     phone: address.phone,
     email: address.email,
-  };
-}
-
-function toEasyPostParcel(parcel: ShippingProviderParcel | undefined) {
-  if (!parcel) throw new Error("At least one parcel is required for live shipping rates");
-  return {
-    length: parcel.length ?? undefined,
-    width: parcel.width ?? undefined,
-    height: parcel.height ?? undefined,
-    distance_unit: parcel.distanceUnit ?? "in",
-    weight: parcel.weight,
-    mass_unit: parcel.weightUnit,
   };
 }

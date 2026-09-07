@@ -98,6 +98,8 @@ router.put(
   requireSettingWritePermission,
   asyncHandler(async (req, res) => {
     const data = upsertSettingSchema.parse(req.body);
+    if (data.key.startsWith("ecommerce_shipping_provider_easypost__"))
+      return res.status(400).json({ message: "Use the dedicated EasyPost credential workflow" });
     if (data.key === CRM_PIPELINE_SETTING_KEY)
       return res
         .status(400)
@@ -187,6 +189,8 @@ router.delete(
   "/settings/:key",
   requireRole("admin"),
   asyncHandler(async (req, res) => {
+    if (paramString(req.params.key).startsWith("ecommerce_shipping_provider_easypost__"))
+      return res.status(400).json({ message: "Use the dedicated EasyPost credential workflow" });
     if (paramString(req.params.key) === CRM_PIPELINE_SETTING_KEY)
       return res
         .status(400)

@@ -35,7 +35,11 @@ vi.mock("drizzle-orm", () => ({
   sql: vi.fn(),
 }));
 
-import { SettingsStorage } from "../storage/settings.storage";
+import {
+  encryptSettingValue,
+  decryptSettingValueStrict,
+  SettingsStorage,
+} from "../storage/settings.storage";
 
 function setupMockDb() {
   const returning = vi.fn();
@@ -59,6 +63,18 @@ describe("SettingsStorage caching", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     storage = new SettingsStorage(100);
+  });
+
+  it("strict secret reads share encryption while generic legacy reads retain their fallback", async () => {
+    const encrypted = encryptSettingValue("synthetic-roundtrip");
+    expect(decryptSettingValueStrict(encrypted)).toBe("synthetic-roundtrip");
+    for (const malformed of ["", "legacy-raw", "bad:hex", "00:11", "0".repeat(32) + ":00"])
+      expect(() => decryptSettingValueStrict(malformed)).toThrow("Encrypted setting is invalid");
+    const { where } = setupMockDb();
+    where.mockResolvedValue([
+      { key: "legacy", value: "legacy-raw", isSecret: true, category: "legacy" },
+    ]);
+    expect(await storage.getSetting("legacy")).toBe("legacy-raw");
   });
 
   it("finishes encryption before any transaction begins", async () => {

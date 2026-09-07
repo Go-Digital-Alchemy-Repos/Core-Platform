@@ -1,4 +1,5 @@
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
+import { ChildProcess } from "node:child_process";
 import {
   captureOwnedContainer,
   removeOwnedContainer,
@@ -90,5 +91,138 @@ it("stops the owned group after its parent exits leaving an unref descendant", a
     expect(() => process.kill(pid, 0)).toThrow();
   } finally {
     await stopOwnedChild(parent, 50, 2000);
+  }
+});
+
+function groupAbsent(pid: number) {
+  try {
+    process.kill(-pid, 0);
+    return false;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ESRCH") return true;
+    throw error;
+  }
+}
+
+async function deferredExitPublication(delayMs: number) {
+  const child = spawnOwnedChild(process.execPath, ["-e", "process.exit(0)"], { stdio: "ignore" });
+  // Controlled ordering, not a claim about a prior incident: libuv reaps the
+  // real child before this internal callback publishes exitCode in JavaScript.
+  const handle = (
+    child as unknown as {
+      _handle: { onexit: (code: number, signal: string) => void };
+    }
+  )._handle;
+  const original = handle.onexit;
+  const observed = new Promise<void>((resolve) => {
+    handle.onexit = function (code, signal) {
+      setTimeout(() => original.call(this, code, signal), delayMs);
+      resolve();
+    };
+  });
+  await observed;
+  return child;
+}
+
+it("waits for delayed leader exit publication after the real group disappears", async () => {
+  const child = await deferredExitPublication(60);
+  try {
+    expect(groupAbsent(child.pid!)).toBe(true);
+    expect(child.exitCode).toBeNull();
+    expect(child.signalCode).toBeNull();
+    expect(await stopOwnedChild(child, 1000, 1000)).toBe(true);
+    expect(child.exitCode).toBe(0);
+    expect(groupAbsent(child.pid!)).toBe(true);
+  } finally {
+    // Reap even if the old implementation returns its premature false result.
+    if (child.exitCode === null && child.signalCode === null)
+      await new Promise<void>((resolve) => child.once("exit", () => resolve()));
+    expect(await stopOwnedChild(child, 100, 1000)).toBe(true);
+  }
+});
+
+it("does not succeed when leader exit publication exceeds both deadlines", async () => {
+  const child = await deferredExitPublication(200);
+  try {
+    expect(await stopOwnedChild(child, 10, 10)).toBe(false);
+    expect(child.exitCode).toBeNull();
+  } finally {
+    if (child.exitCode === null && child.signalCode === null)
+      await new Promise<void>((resolve) => child.once("exit", () => resolve()));
+    expect(await stopOwnedChild(child, 100, 1000)).toBe(true);
+  }
+});
+
+it("waits for an ordinary owned leader to exit gracefully", async () => {
+  const child = spawnOwnedChild(
+    process.execPath,
+    [
+      "-e",
+      'process.on("SIGTERM",()=>process.exit(0));console.log("ready");setInterval(()=>{},1000)',
+    ],
+    { stdio: ["ignore", "pipe", "ignore"] },
+  );
+  await new Promise<void>((resolve) => child.stdout!.once("data", () => resolve()));
+  try {
+    expect(await stopOwnedChild(child, 1000, 1000)).toBe(true);
+    expect(child.exitCode).toBe(0);
+    expect(groupAbsent(child.pid!)).toBe(true);
+  } finally {
+    await stopOwnedChild(child, 100, 1000);
+  }
+});
+
+it("never signals an unregistered child", async () => {
+  const child = new ChildProcess();
+  const kill = vi.spyOn(child, "kill");
+  const groupKill = vi.spyOn(process, "kill");
+  try {
+    expect(await stopOwnedChild(child, 10, 10)).toBe(false);
+    expect(kill).not.toHaveBeenCalled();
+    expect(groupKill).not.toHaveBeenCalled();
+  } finally {
+    kill.mockRestore();
+    groupKill.mockRestore();
+  }
+});
+
+it.each(["EPERM", "EIO"])("fails closed on %s from a group observation", async (code) => {
+  const child = spawnOwnedChild(
+    process.execPath,
+    ["-e", 'console.log("ready");setInterval(()=>{},1000)'],
+    {
+      stdio: ["ignore", "pipe", "ignore"],
+    },
+  );
+  await new Promise<void>((resolve) => child.stdout!.once("data", () => resolve()));
+  const original = process.kill.bind(process);
+  const probe = vi.spyOn(process, "kill").mockImplementation((pid, signal) => {
+    if (pid === -child.pid!)
+      throw Object.assign(new Error("Synthetic observation error"), { code });
+    return original(pid, signal);
+  });
+  try {
+    expect(await stopOwnedChild(child, 20, 20)).toBe(false);
+  } finally {
+    probe.mockRestore();
+    if (child.exitCode === null && child.signalCode === null)
+      await new Promise<void>((resolve) => child.once("exit", () => resolve()));
+    expect(await stopOwnedChild(child, 100, 1000)).toBe(true);
+  }
+});
+
+it("does not succeed while the owned group is still reported present", async () => {
+  const child = spawnOwnedChild(process.execPath, ["-e", "process.exit(0)"], { stdio: "ignore" });
+  await new Promise<void>((resolve) => child.once("exit", () => resolve()));
+  const original = process.kill.bind(process);
+  const probe = vi.spyOn(process, "kill").mockImplementation((pid, signal) => {
+    if (pid === -child.pid! && signal === 0) return true;
+    return original(pid, signal);
+  });
+  try {
+    expect(await stopOwnedChild(child, 20, 20)).toBe(false);
+  } finally {
+    probe.mockRestore();
+    expect(await stopOwnedChild(child, 100, 1000)).toBe(true);
   }
 });

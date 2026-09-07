@@ -203,7 +203,13 @@ export interface Order {
   shippingState?: string | null;
   shippingZip?: string | null;
   shippingCountry?: string | null;
-  items: Array<{ id: string; productName: string; quantity: number; lineTotal: number }>;
+  items: Array<{
+    id: string;
+    productName: string;
+    quantity: number;
+    lineTotal: number;
+    requiresShipping?: boolean;
+  }>;
   shipments?: Array<{
     id: string;
     carrier?: string | null;
