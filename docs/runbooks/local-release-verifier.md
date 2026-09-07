@@ -1,4 +1,4 @@
-# Offline local release receipt verifier, version 4
+# Offline local release receipt verifier, version 5
 
 This is preparation for a separately approved source-bound release verifier. It does not publish a status, handle a signing key, change protection, use Actions, or authorize deployment. Run a reviewed, pinned copy of `script/verify-local-release-receipt.py`; never automatically trust the validator shipped by an unreviewed candidate.
 
@@ -16,9 +16,11 @@ The caller supplies expected identities independently of the manifest. All three
 
 ## Policy upgrade and historical receipts
 
-V4 targets the category-integrity and CRM note-attribution runtime generation at `e2fda41fddc30bdde47f3b85d48d93aec28dee7f` (tree `b9a767f4c3fe6f8526b7d21a8a40bef95cefdddc`). It adds two mandatory gates and two suite pins, and updates only the two reviewed WooCommerce suite hashes for execution-version fixtures. The other ten V3 suite pins and counts remain unchanged. A changed candidate still requires its own complete execution evidence; the source generation pin is a reviewed coverage policy, not permission to reuse historical passes.
+V5 adds five source-pinned shipping database gates and explicit actual-browser journey evidence to the unchanged V4 obligations. Its shipping suite pins match assembly `a67383c0d425769dbaec286ef32e3cee14889bbd`; all fourteen V4 suite pins remain unchanged. The trusted V4 artifact `9075d22b31911ce9b437ee7a4b2883fc0f9f668e` and frozen f488 receipts remain immutable and retain their original policy. This separate implementation accepts only version5. It neither reinterprets nor accepts old receipts retroactively.
 
-The trusted V3 artifact at `737919d6ca415fe1b95996d2d2265764c657e081` and all f485330 receipts remain unchanged. Earlier candidates use their original V3/V2/V1 verifier. Never relabel old evidence or regenerate its acceptance. This separate script accepts only V4 and requires a fresh independently reviewed bundle. In particular, the conservative CRM storage trigger below deliberately requires attribution coverage on this runtime generation even when presentation files are removed.
+Historical context: V4 targets the category-integrity and CRM note-attribution runtime generation at `e2fda41fddc30bdde47f3b85d48d93aec28dee7f` (tree `b9a767f4c3fe6f8526b7d21a8a40bef95cefdddc`). It adds two mandatory gates and two suite pins, and updates only the two reviewed WooCommerce suite hashes for execution-version fixtures. The other ten V3 suite pins and counts remain unchanged. A changed candidate still requires its own complete execution evidence; the source generation pin is a reviewed coverage policy, not permission to reuse historical passes.
+
+The trusted V3 artifact at `737919d6ca415fe1b95996d2d2265764c657e081` and all f485330 receipts remain unchanged. Earlier candidates use their original V3/V2/V1 verifier. Never relabel old evidence or regenerate its acceptance. The historical script accepts only V4 and requires a fresh independently reviewed bundle. In particular, the conservative CRM storage trigger below deliberately requires attribution coverage on this runtime generation even when presentation files are removed.
 
 ## Strict manifest contract
 
@@ -26,7 +28,7 @@ The root object contains exactly these fields; unknown fields and duplicate JSON
 
 | Field | Contract |
 | --- | --- |
-| `version` | Integer `4`; V1/V2/V3, booleans and unknown versions fail. |
+| `version` | Integer `5`; V1/V2/V3/V4, booleans and unknown versions fail. |
 | `profile` | `core` or `crm`. CRM is mandatory when the checked candidate tracks `shared/schema/crm-custom-fields.ts` or `migrations/0062_crm_custom_fields.sql`. A core profile on that candidate fails. New layouts or profiles require a reviewed validator update. |
 | `candidate`, `tree`, `base` | Match the independently supplied expected SHAs. |
 | `operator` | Bounded identifier, not a credential. |
@@ -57,7 +59,7 @@ Core requires all 19 gates:
 
 CRM additionally requires `crm-persistence`, `crm-mapping`, `crm-profile-migration`, `crm-populated-upgrade`, and `crm-capture-restore` (24 total). Gate IDs remain separate even when one actual command executes several suites; its receipt may be referenced by each applicable gate.
 
-V4 retains these additional obligations derived these obligations from the **tracked candidate tree**, not manifest claims or test-file names:
+V5 retains these additional obligations derived from the **tracked candidate tree**, not manifest claims or test-file names:
 
 | Tracked migration | Required database gate | Actual suite to execute |
 | --- | --- | --- |
@@ -116,6 +118,26 @@ Synthetic tests substitute explicit synthetic suite pins into a temporary verifi
 
 These pins come from the reviewed local validation runbook at the initial verifier baseline. Changing the approved pilot or historical baselines requires a reviewed verifier policy update. Target-production environment preflight, production reconciliation, operational barriers and deployment authorization remain separate; they cannot be inferred from this offline local gate.
 
+## Shipping V5 obligations
+
+Presence of any shipping suite, migration0065, quote storage/orchestration/runtime/router, or credential isolation/authorization service requires **all five** shipping gates, regardless of core/CRM profile. Missing fixtures are an error, not a way to remove obligations. The explicit `SHIPPING_TRIGGERS` inventory is reviewed policy; unfamiliar source layouts still need independent review. Deleting a feature marker cannot hide a known fixture.
+
+| Gate | Suite under `server/` | Enabled passes / ordinary skips | Fixture environment |
+| --- | --- | ---: | --- |
+| `shipping-credential-isolation` | `services/ecommerce-shipping-credentials.database.test.ts` | 6 / 6 | `SHIPPING_CREDENTIAL_TEST_DATABASE_URL` |
+| `shipping-test-authorization` | `services/ecommerce-shipping-credential-authorization.database.test.ts` | 13 / 13 | `SHIPPING_AUTHORIZATION_TEST_DATABASE_URL` |
+| `shipping-quote-persistence` | `storage/ecommerce-shipping-quotes.database.test.ts` | 18 / 18 | `SHIPPING_QUOTES_TEST_DATABASE_URL` |
+| `shipping-quote-orchestration` | `services/ecommerce-shipping-quote-orchestration.database.test.ts` | 18 / 18 | `SHIPPING_QUOTE_SERVICE_TEST_DATABASE_URL` |
+| `shipping-quote-recovery` | `services/shipping-quote-recovery.database.test.ts` | 1 / 1 | `SHIPPING_QUOTE_RECOVERY_TEST_DATABASE_URL` |
+
+For the full shipping assembly the required inventory is35 gates,19 opt-in suites,174 unique ordinary exclusions and199 enabled database test executions. The latter includes19 existing timezone cases executed twice. CRM persistence executes24 under its gate but skips18 ordinarily; do not double-count its six pure tests. Each new gate requires exact suite hash/count, zero skips, matching aggregate and owned container/volume/process cleanup. These policy expectations are not execution evidence.
+
+When shipping is present, `application-browser.inputs` is exactly `{shippingJourneys: {...}}`. The journey map contains exactly `authorization-and-feature-gates`, `draft-recovery`, `quote-submit-replay-unknown-reload`, and `stale-comparison`. Every entry is exactly `{kind: 'actual-browser', producerEvidence: 'relative-path', logEvidence: 'relative-path'}`. Producer and direct-log references must be distinct retained files in both the hash inventory and this candidate-bound browser gate's evidence list. A single producer/log pair can document multiple journeys. Missing references, booleans, component-test labels or references attached only to another gate fail. CLI-controlled actual browser evidence is allowed; no nonexistent Playwright filename is required.
+
+The independently reviewed producer must bind the same exact candidate/tree and actual browser actions, with direct logs supporting each claimed journey. This verifier checks references, hashes and gate identities; it does not parse arbitrary producer schemas or authenticate browser activity. Labeling component or HTTP output as actual browser evidence is false even if the structural checks pass. The reviewer must inspect the original source-bound producer/logs. Source presence, aggregate counts and component tests alone never establish these journeys.
+
+All existing fresh-migration, populated historical/CRM upgrade, CRM backup recovery, exact compiled runtime/TLS/readiness/drain, pinned Better Farms and full application-browser gates remain required. Shipping recovery adds actual backup/restore of pending/unknown/quoted identity; it does not replace full recovery or establish live credential recovery. Maintenance and readiness must make no provider calls. Source/compiled deployment preflight stays separate from actual production environment readiness. No provider approval, live quote, deployment, GitHub status, Actions dispatch or protection change is authorized by V5.
+
 ## Evidence and review integrity
 
 Files are opened relative to the evidence-directory descriptor with `O_NOFOLLOW`, including every intermediate directory. Absolute paths, traversal, symlinks, hard links, devices, directories and FIFOs are rejected. Manifest size is capped at 256 KiB; evidence is capped at 32 MiB per file and 256 MiB total. Size and timestamp observations detect changes during reads. The validator reports no file contents or supplied secret values. Evidence must remain stable and retained after verification; no filesystem hash can prevent subsequent deletion or replacement.
@@ -124,7 +146,7 @@ Compute the review binding over the manifest without its `review` key using Pyth
 
 This verifies structure, declared identities, bounded files and hash consistency. It **does not prove** that commands ran, outputs are genuine, evidence contains no secret, counts are accurate, cleanup occurred, or the stated reviewer really accepted the bundle. The `sanitized` fields are required attestations, not a secret scanner. Preparing sanitized evidence and authenticating operator/reviewer approval remain responsibilities of the trusted process. Identity strings and a digest are not signatures or independent GitHub principals. Success deliberately reports `attestationTruth: "not-established"` and `releaseApproved: false`.
 
-Existing private receipts use different schemas. A separately reviewed normalizer is still needed to inventory copied, sanitized evidence and express this contract without modifying the originals. This V4 implementation does not retroactively normalize or accept a production receipt. Historical V1 evidence remains bound to its pinned verifier and original policy.
+Existing private receipts use different schemas. A separately reviewed normalizer is still needed to inventory copied, sanitized evidence and express this contract without modifying the originals. This V5 implementation does not retroactively normalize or accept a production receipt. Historical V1 evidence remains bound to its pinned verifier and original policy.
 
 ## Validation
 

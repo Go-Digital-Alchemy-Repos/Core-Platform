@@ -72,7 +72,7 @@ class ReceiptTests(unittest.TestCase):
             with self.subTest(change=change), self.assertRaises(v.InvalidReceipt):self.check(m)
 
     def test_versions_profiles_unknown_fields_and_truthy_values(self):
-        for key,value in [('version',1),('version',5),('version',True),('profile','unknown'),('profile','crm'),('secret','not-accepted')]:
+        for key,value in [('version',1),('version',6),('version',True),('profile','unknown'),('profile','crm'),('secret','not-accepted')]:
             m=copy.deepcopy(self.manifest);m[key]=value
             with self.subTest(key=key,value=value),self.assertRaises(v.InvalidReceipt):self.check(m)
         m=copy.deepcopy(self.manifest);m['observations']['cleanBefore']='true'
@@ -236,7 +236,7 @@ class ReceiptTests(unittest.TestCase):
         manifest = self.make_manifest('crm')
         for name in sorted(policy[1]): self.add_gate(manifest, name)
         ordinary = next(g for g in manifest['gates'] if g['id'] == 'ordinary-tests')
-        ordinary.update(testsSkipped=118, optInGateExclusions=sorted(v.DB_GATES))
+        ordinary.update(testsSkipped=118, optInGateExclusions=sorted(v.DB_GATES & v.required_gates(policy)))
         self.sign(manifest)
         self.assertEqual(v.verify(manifest, self.evidence, self.expected, policy)['gatesVerified'], 30)
         (self.evidence/'manifest.json').write_text(json.dumps(manifest))
@@ -354,6 +354,94 @@ class ReceiptTests(unittest.TestCase):
         policy=self.feature_candidate(['migrations/0062_crm_custom_fields.sql',*v.MIGRATION_GATES])
         with self.assertRaisesRegex(v.InvalidReceipt,'invalid-profile'):
             v.verify(self.make_manifest('core'),self.evidence,self.expected,policy)
+
+    def shipping_manifest(self, all_features=False):
+        paths = list(v.SHIPPING_TRIGGERS)
+        if all_features: paths += ['migrations/0062_crm_custom_fields.sql', *v.MIGRATION_GATES, *v.DATABASE_FILE_GATES, *v.RUNTIME_GATES]
+        policy = self.feature_candidate(paths)
+        manifest = self.make_manifest(policy[0])
+        for name in sorted(v.required_gates(policy) - {g['id'] for g in manifest['gates']}): self.add_gate(manifest, name)
+        for name in ('browser-producer.json','browser-direct.log'):
+            data = b'{"synthetic_browser_fixture":true}'; (self.evidence/name).write_bytes(data)
+            manifest['evidence'].append({'path':name,'sha256':hashlib.sha256(data).hexdigest(),'sanitized':True})
+        browser = next(g for g in manifest['gates'] if g['id']=='application-browser')
+        browser['evidence'] += ['browser-producer.json','browser-direct.log']
+        browser['inputs'] = {'shippingJourneys': {name:{'kind':'actual-browser','producerEvidence':'browser-producer.json','logEvidence':'browser-direct.log'} for name in sorted(v.SHIPPING_JOURNEYS)}}
+        self.sign(manifest)
+        return policy,manifest
+
+    def test_v5_full_policy_counts_and_optimized_cli(self):
+        policy,manifest=self.shipping_manifest(True)
+        suites=v.suite_inventory(v.required_gates(policy))
+        self.assertEqual(len(suites),19)
+        self.assertEqual(sum(x['ordinarySkipped'] for x in suites.values()),174)
+        self.assertEqual(sum(sum(x['testsPassed'] for x in v.gate_suites(g)) for g in v.DB_GATES & v.required_gates(policy)),199)
+        self.assertEqual(v.verify(manifest,self.evidence,self.expected,policy)['gatesVerified'],35)
+        (self.evidence/'manifest.json').write_text(json.dumps(manifest))
+        command=['python3','-O',str(self.script),'--evidence-dir',str(self.evidence),'--manifest','manifest.json','--checkout',str(self.checkout)]
+        for key,value in self.expected.items():command.extend(['--expected-'+key,value])
+        result=subprocess.run(command,capture_output=True,text=True)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        manifest['version']=4;(self.evidence/'manifest.json').write_text(json.dumps(manifest))
+        result=subprocess.run(command,capture_output=True,text=True)
+        self.assertEqual(result.returncode,1)
+        self.assertIn('unsupported-version',result.stdout+result.stderr)
+
+    def test_v5_shipping_each_source_trigger_requires_all_five_gates(self):
+        for path in v.SHIPPING_TRIGGERS:
+            for crm in (False,True):
+                policy=v.checkout_policy([path]+(['migrations/0062_crm_custom_fields.sql'] if crm else []))
+                self.assertTrue(v.SHIPPING_GATES <= v.required_gates(policy))
+        policy,manifest=self.shipping_manifest()
+        for path in v.SHIPPING_SUITES:
+            file=self.checkout/path;original=file.read_bytes();file.unlink()
+            self.git('add','.');self.git('commit','-qm','missing shipping fixture')
+            self.expected.update(candidate=self.git('rev-parse','HEAD'),tree=self.git('rev-parse','HEAD^{tree}'))
+            with self.subTest(path=path),self.assertRaisesRegex(v.InvalidReceipt,'missing-required-suite-source'):v.checkout_identity(self.checkout,self.expected)
+            file.write_bytes(original)
+
+    def test_v5_shipping_gate_tampering(self):
+        policy,manifest=self.shipping_manifest()
+        for name in v.SHIPPING_GATES:
+            for change in ('missing','count','pin','total','skip','cleanup','exclusion'):
+                bad=copy.deepcopy(manifest);gate=next(g for g in bad['gates'] if g['id']==name)
+                if change=='missing':bad['gates'].remove(gate)
+                elif change=='count':gate['testSuites'][0]['testsPassed']-=1;gate['testsPassed']-=1
+                elif change=='pin':gate['testSuites'][0]['sourceSha256']='0'*64
+                elif change=='total':gate['testsPassed']+=1
+                elif change=='skip':gate['testsSkipped']=1
+                elif change=='cleanup':gate['cleanup']['processesStopped']=False
+                else:next(g for g in bad['gates'] if g['id']=='ordinary-tests')['optInGateExclusions'].remove(name)
+                self.sign(bad)
+                with self.subTest(gate=name,change=change),self.assertRaises(v.InvalidReceipt):v.verify(bad,self.evidence,self.expected,policy)
+        bad=copy.deepcopy(manifest);next(g for g in bad['gates'] if g['id']=='ordinary-tests')['testsSkipped']+=1;self.sign(bad)
+        with self.assertRaisesRegex(v.InvalidReceipt,'ordinary-skip-total-mismatch'):v.verify(bad,self.evidence,self.expected,policy)
+
+    def test_v5_browser_requires_bound_producer_and_direct_logs(self):
+        policy,manifest=self.shipping_manifest()
+        for change in ('missing','boolean','component','unknown-ref','same-file','outside-gate','missing-journey'):
+            bad=copy.deepcopy(manifest);gate=next(g for g in bad['gates'] if g['id']=='application-browser')
+            journey=next(iter(gate['inputs']['shippingJourneys'].values()))
+            if change=='missing':gate['inputs']={}
+            elif change=='boolean':gate['inputs']['shippingJourneys']=True
+            elif change=='component':journey['kind']='component-test'
+            elif change=='unknown-ref':journey['producerEvidence']='absent.json'
+            elif change=='same-file':journey['logEvidence']=journey['producerEvidence']
+            elif change=='outside-gate':gate['evidence'].remove(journey['producerEvidence'])
+            else:gate['inputs']['shippingJourneys'].pop(next(iter(v.SHIPPING_JOURNEYS)))
+            self.sign(bad)
+            with self.subTest(change=change),self.assertRaises(v.InvalidReceipt):v.verify(bad,self.evidence,self.expected,policy)
+
+    def test_v5_changed_shipping_source_and_unknown_suite(self):
+        policy,manifest=self.shipping_manifest()
+        path=self.checkout/next(iter(v.SHIPPING_SUITES));original=path.read_bytes();path.write_text('changed')
+        self.git('add','.');self.git('commit','-qm','changed shipping source')
+        self.expected.update(candidate=self.git('rev-parse','HEAD'),tree=self.git('rev-parse','HEAD^{tree}'))
+        with self.assertRaisesRegex(v.InvalidReceipt,'changed-suite-source'):v.checkout_identity(self.checkout,self.expected)
+        path.write_bytes(original);unknown=self.checkout/'server/new-shipping.database.test.ts';unknown.write_text('new suite')
+        self.git('add','.');self.git('commit','-qm','unknown shipping suite')
+        self.expected.update(candidate=self.git('rev-parse','HEAD'),tree=self.git('rev-parse','HEAD^{tree}'))
+        with self.assertRaisesRegex(v.InvalidReceipt,'unknown-opt-in-suite'):v.checkout_identity(self.checkout,self.expected)
 
     def test_cli_actual_clean_checkout_and_safe_failure(self):
         (self.evidence/'manifest.json').write_text(json.dumps(self.manifest))

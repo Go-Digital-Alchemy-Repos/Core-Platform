@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Offline V4 local release receipt consistency verifier. No publishing or credential handling."""
+"""Offline V5 local release receipt consistency verifier. No publishing or credential handling."""
 import argparse
 import hashlib
 import json
@@ -9,7 +9,7 @@ import re
 import stat
 import subprocess
 
-VERSION = 4
+VERSION = 5
 CORE_GATES = frozenset({
     'locked-dependencies', 'types', 'lint', 'format', 'ordinary-tests',
     'deployment-config-source', 'deployment-config-compiled',
@@ -207,11 +207,29 @@ def checkout_identity(checkout, expected):
         require(not suspicious or path in DB_SUITES, 'unknown-opt-in-suite')
     return policy
 
+SHIPPING_SUITES = {'server/services/ecommerce-shipping-credentials.database.test.ts': {'sha256': '4b818dc639175b45ce85eef86e6581a14a03e85b60da71519b4b40d011955059', 'passed': 6, 'ordinarySkipped': 6, 'gates': ['shipping-credential-isolation']}, 'server/services/ecommerce-shipping-credential-authorization.database.test.ts': {'sha256': '603ff3ac87c70404b1041d8c4f04c91d1fe49a31d1bac38ef33c0b4b76e01499', 'passed': 13, 'ordinarySkipped': 13, 'gates': ['shipping-test-authorization']}, 'server/storage/ecommerce-shipping-quotes.database.test.ts': {'sha256': 'c4a3aeaa355d62637caed39838818b90842d5b21face7e11a0c64dd6a5872019', 'passed': 18, 'ordinarySkipped': 18, 'gates': ['shipping-quote-persistence']}, 'server/services/ecommerce-shipping-quote-orchestration.database.test.ts': {'sha256': 'a30556901bed2072736c63626e4201d61320a57414e99b7d0d21f56cdeeb7cc0', 'passed': 18, 'ordinarySkipped': 18, 'gates': ['shipping-quote-orchestration']}, 'server/services/shipping-quote-recovery.database.test.ts': {'sha256': '0d7ca357671c9c7a1e6897b26f650fcd5016b7bb24c6d33c2bfe3503edb269e8', 'passed': 1, 'ordinarySkipped': 1, 'gates': ['shipping-quote-recovery']}}
+DB_SUITES.update(SHIPPING_SUITES)
+SHIPPING_GATES = frozenset(g for suite in SHIPPING_SUITES.values() for g in suite['gates'])
+DB_GATES |= SHIPPING_GATES
+FIXTURE_GATES |= SHIPPING_GATES
+SHIPPING_TRIGGERS = frozenset(SHIPPING_SUITES) | frozenset({
+ 'migrations/0065_shipping_quote_attempts.sql',
+ 'server/storage/ecommerce-shipping-quotes.storage.ts',
+ 'server/services/ecommerce-shipping-quote-orchestration.ts',
+ 'server/services/ecommerce-shipping-quote-runtime.service.ts',
+ 'server/services/ecommerce-shipping-credentials.service.ts',
+ 'server/services/ecommerce-shipping-credential-authorization.service.ts',
+ 'server/routes/admin/ecommerce-shipping-quotes.routes.ts',
+})
+SHIPPING_JOURNEYS = frozenset({'authorization-and-feature-gates','draft-recovery','quote-submit-replay-unknown-reload','stale-comparison'})
+
 def checkout_policy(tracked):
     # Source presence creates obligations; receipt profile/gate declarations cannot remove them.
     tracked = frozenset(tracked)
     profile = 'crm' if {'shared/schema/crm-custom-fields.ts', 'migrations/0062_crm_custom_fields.sql'} & tracked else 'core'
     source_gates = frozenset(gate for path, gate in {**MIGRATION_GATES, **DATABASE_FILE_GATES, **RUNTIME_GATES}.items() if path in tracked)
+    if SHIPPING_TRIGGERS & tracked:
+        source_gates |= SHIPPING_GATES
     return (profile, source_gates)
 
 def required_gates(policy):
@@ -262,7 +280,18 @@ def verify(manifest, root, expected, detected_policy):
         name = gate['id']
         require(type(name) is str and name in required and name not in seen, 'duplicate-or-unknown-gate')
         seen.add(name)
-        require(gate['inputs'] == PINNED_INPUTS.get(name, {}), 'invalid-pinned-input')
+        if name == 'application-browser' and SHIPPING_GATES & required:
+            keys(gate['inputs'], {'shippingJourneys'})
+            journeys = gate['inputs']['shippingJourneys']
+            keys(journeys, SHIPPING_JOURNEYS)
+            for journey in journeys.values():
+                keys(journey, {'kind', 'producerEvidence', 'logEvidence'})
+                require(journey['kind'] == 'actual-browser', 'invalid-browser-journey-kind')
+                producer, log = journey['producerEvidence'], journey['logEvidence']
+                require(type(producer) is str and type(log) is str and producer != log and producer in hashes and log in hashes, 'missing-browser-journey-evidence')
+                require(type(gate['evidence']) is list and producer in gate['evidence'] and log in gate['evidence'], 'unbound-browser-journey-evidence')
+        else:
+            require(gate['inputs'] == PINNED_INPUTS.get(name, {}), 'invalid-pinned-input')
         require(all(gate[key] == expected[key] for key in ('candidate', 'tree', 'base')), 'gate-identity-mismatch')
         require(gate['status'] == 'passed' and type(gate['exitCode']) is int and gate['exitCode'] == 0, 'gate-not-passed')
         require(all(type(gate[key]) is int and 0 <= gate[key] <= 1000000 for key in ('testsPassed', 'testsSkipped')), 'invalid-test-count')
