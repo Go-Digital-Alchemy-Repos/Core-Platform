@@ -100,17 +100,22 @@ export function prepareShippingQuoteInputs(params: {
     country: order.shippingCountry ?? "",
   });
   const { dimensions, ...weight } = request.parcel;
-  const parcel = normalizeEasyPostParcel({
-    ...weight,
-    ...(dimensions
-      ? {
-          length: dimensions.length,
-          width: dimensions.width,
-          height: dimensions.height,
-          distanceUnit: dimensions.unit,
-        }
-      : {}),
-  });
+  let parcel: ReturnType<typeof normalizeEasyPostParcel>;
+  try {
+    parcel = normalizeEasyPostParcel({
+      ...weight,
+      ...(dimensions
+        ? {
+            length: dimensions.length,
+            width: dimensions.width,
+            height: dimensions.height,
+            distanceUnit: dimensions.unit,
+          }
+        : {}),
+    });
+  } catch {
+    throw fulfillmentError("Parcel measurements cannot be represented for shipping quotes");
+  }
   return {
     version: request.version,
     orderId: order.id,
