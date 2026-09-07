@@ -1,3 +1,8 @@
+import { requireRole } from "../../middleware/auth";
+import {
+  getCrmPipelineSettings,
+  saveCrmPipelineSettings,
+} from "../../services/crm-pipeline-settings.service";
 import { Router } from "express";
 import { z } from "zod";
 import {
@@ -8,11 +13,25 @@ import {
 } from "@shared/schema";
 import { asyncHandler } from "../../middleware/error-handler";
 import { storage } from "../../storage";
-import { createOrUpdateCrmLead, ensureClientForWonLead } from "../../services/crm.service";
+import { createOrUpdateCrmLead, updateCrmLead } from "../../services/crm.service";
 import { paramString } from "../../utils/params";
 import type { CrmClientStatus, CrmLeadStage } from "@shared/schema";
 
 const router = Router();
+
+router.get(
+  "/settings/pipeline",
+  asyncHandler(async (_req, res) => {
+    res.json(await getCrmPipelineSettings());
+  }),
+);
+router.put(
+  "/settings/pipeline",
+  requireRole("admin"),
+  asyncHandler(async (req, res) => {
+    res.json(await saveCrmPipelineSettings(req.body, req.user!.id));
+  }),
+);
 
 const leadUpdateSchema = crmLeadInputSchema.partial();
 const noteSchema = z.object({ body: z.string().trim().min(1, "Note is required") });
@@ -144,11 +163,8 @@ router.patch(
   "/:id",
   asyncHandler(async (req, res) => {
     const parsed = leadUpdateSchema.parse(req.body);
-    const lead = await storage.crm.updateLead(paramString(req.params.id), parsed);
+    const lead = await updateCrmLead(paramString(req.params.id), parsed, req.user?.id);
     if (!lead) return res.status(404).json({ message: "Lead not found" });
-    if (parsed.stage === "won") {
-      await ensureClientForWonLead(lead, req.user?.id);
-    }
     res.json(lead);
   }),
 );

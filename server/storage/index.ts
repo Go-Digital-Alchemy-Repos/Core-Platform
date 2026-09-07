@@ -37,6 +37,8 @@ import { CareerStorage } from "./career.storage";
 import { PortfolioStorage } from "./portfolio.storage";
 import { MembershipStorage } from "./membership.storage";
 import { TeamStorage } from "./team.storage";
+import { ClientSiteContentStorage } from "./client-site-content.storage";
+import { ClientStackOnboardingStorage } from "./client-stack-onboarding.storage";
 export const storage = {
   team: new TeamStorage(),
   users: new UserStorage(),
@@ -78,6 +80,8 @@ export const storage = {
   membership: new MembershipStorage(),
   careers: new CareerStorage(),
   portfolio: new PortfolioStorage(),
+  clientSiteContent: new ClientSiteContentStorage(),
+  clientStackOnboarding: new ClientStackOnboardingStorage(),
 };
 
 export type {

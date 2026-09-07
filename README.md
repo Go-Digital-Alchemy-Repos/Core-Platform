@@ -59,7 +59,8 @@ npm run budget
 ## Useful Docs
 
 - `docs/runbooks/deployment.md` for deployment and environment setup.
-- `docs/core-project-plan.md` for the strategic roadmap across themes, Neon, tenancy, Next.js, and agent-assisted admin.
+- `docs/core-project-plan.md` for the Railway-based single-client migration program, site integration,
+  ecommerce correctness, and release gates.
 - `docs/operations.md` for health checks, logging, metrics, and troubleshooting.
 - `docs/quality-gates.md` for local and CI verification.
 - `docs/qa-status-2026-06.md` for current release state and known follow-ups.

@@ -4,6 +4,17 @@ import { logger } from "../utils/logger";
 
 export type MembershipStripeMode = "test" | "live";
 
+export interface MembershipStripeSettingsInput {
+  mode?: MembershipStripeMode;
+  publishableKey?: string;
+  secretKey?: string;
+  webhookSecret?: string;
+  customerPortalEnabled?: boolean;
+  clearPublishableKey?: boolean;
+  clearSecretKey?: boolean;
+  clearWebhookSecret?: boolean;
+}
+
 const SETTINGS_CATEGORY = "membership_stripe";
 
 function maskSecret(value: string | undefined): string | null {
@@ -23,55 +34,113 @@ export async function getMembershipStripeSettings() {
   };
 }
 
-export async function saveMembershipStripeSettings(input: {
-  mode?: MembershipStripeMode;
-  publishableKey?: string;
-  secretKey?: string;
-  webhookSecret?: string;
-  customerPortalEnabled?: boolean;
-}) {
+function credentialUpdate(value: string | undefined, clear: boolean | undefined, label: string) {
+  const normalized = value?.trim();
+  if (clear && normalized) {
+    throw Object.assign(new Error(`${label} cannot be set and cleared in the same request`), {
+      statusCode: 400,
+    });
+  }
+  if (clear) return "";
+  return normalized || undefined;
+}
+
+export function assertMembershipReturnUrl(
+  value: string,
+  label: string,
+  env: NodeJS.ProcessEnv = process.env,
+) {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw Object.assign(new Error(`${label} must be a valid absolute URL`), { statusCode: 400 });
+  }
+  if (!(["http:", "https:"] as string[]).includes(url.protocol) || url.username || url.password) {
+    throw Object.assign(new Error(`${label} must be a safe HTTP URL`), { statusCode: 400 });
+  }
+
+  const trustedOrigins = new Set<string>();
+  for (const raw of [env.APP_URL, ...(env.TRUSTED_ORIGINS || "").split(",")]) {
+    if (!raw?.trim()) continue;
+    try {
+      trustedOrigins.add(new URL(raw.trim()).origin);
+    } catch {
+      // Environment validation reports malformed configured origins during deployment preflight.
+    }
+  }
+
+  const localDevelopmentUrl =
+    env.NODE_ENV !== "production" && (url.hostname === "localhost" || url.hostname === "127.0.0.1");
+  if (!trustedOrigins.has(url.origin) && !localDevelopmentUrl) {
+    throw Object.assign(new Error(`${label} must use a trusted application origin`), {
+      statusCode: 400,
+    });
+  }
+}
+
+export function normalizeMembershipStripeSettingsInput(input: MembershipStripeSettingsInput) {
+  return {
+    mode: input.mode,
+    publishableKey: credentialUpdate(
+      input.publishableKey,
+      input.clearPublishableKey,
+      "Publishable key",
+    ),
+    secretKey: credentialUpdate(input.secretKey, input.clearSecretKey, "Secret key"),
+    webhookSecret: credentialUpdate(
+      input.webhookSecret,
+      input.clearWebhookSecret,
+      "Webhook secret",
+    ),
+    customerPortalEnabled: input.customerPortalEnabled,
+  };
+}
+
+export async function saveMembershipStripeSettings(input: MembershipStripeSettingsInput) {
+  const normalized = normalizeMembershipStripeSettingsInput(input);
   const writes = [];
-  if (input.mode)
+  if (normalized.mode)
     writes.push(
       storage.settings.upsertSetting(
         "membership_stripe_mode",
-        input.mode,
+        normalized.mode,
         SETTINGS_CATEGORY,
         false,
       ),
     );
-  if (input.publishableKey !== undefined)
+  if (normalized.publishableKey !== undefined)
     writes.push(
       storage.settings.upsertSetting(
         "membership_stripe_publishable_key",
-        input.publishableKey,
+        normalized.publishableKey,
         SETTINGS_CATEGORY,
         false,
       ),
     );
-  if (input.secretKey !== undefined)
+  if (normalized.secretKey !== undefined)
     writes.push(
       storage.settings.upsertSetting(
         "membership_stripe_secret_key",
-        input.secretKey,
+        normalized.secretKey,
         SETTINGS_CATEGORY,
         true,
       ),
     );
-  if (input.webhookSecret !== undefined)
+  if (normalized.webhookSecret !== undefined)
     writes.push(
       storage.settings.upsertSetting(
         "membership_stripe_webhook_secret",
-        input.webhookSecret,
+        normalized.webhookSecret,
         SETTINGS_CATEGORY,
         true,
       ),
     );
-  if (input.customerPortalEnabled !== undefined) {
+  if (normalized.customerPortalEnabled !== undefined) {
     writes.push(
       storage.settings.upsertSetting(
         "membership_stripe_customer_portal_enabled",
-        String(input.customerPortalEnabled),
+        String(normalized.customerPortalEnabled),
         SETTINGS_CATEGORY,
         false,
       ),
@@ -125,6 +194,8 @@ export async function createMembershipCheckoutSession(params: {
   successUrl: string;
   cancelUrl: string;
 }) {
+  assertMembershipReturnUrl(params.successUrl, "Success URL");
+  assertMembershipReturnUrl(params.cancelUrl, "Cancel URL");
   const [plan, price] = await Promise.all([
     storage.membership.getPlan(params.planId),
     storage.membership.getPrice(params.priceId),
@@ -135,18 +206,19 @@ export async function createMembershipCheckoutSession(params: {
     throw Object.assign(new Error("Membership price is not available"), { statusCode: 400 });
 
   if (plan.isFree || price.amount === 0) {
-    const subscription = await storage.membership.upsertSubscriptionForUser(params.userId, {
-      planId: plan.id,
-      priceId: price.id,
-      status: "active",
-      source: "free",
-      currentPeriodStart: new Date(),
-    });
-    await storage.membership.createAuditEvent({
+    const subscription = await storage.membership.upsertSubscriptionForUserWithAudit({
       userId: params.userId,
-      subscriptionId: subscription.id,
-      action: "free_membership_started",
-      metadata: { planId: plan.id, priceId: price.id },
+      data: {
+        planId: plan.id,
+        priceId: price.id,
+        status: "active",
+        source: "free",
+        currentPeriodStart: new Date(),
+      },
+      audit: {
+        action: "free_membership_started",
+        metadata: { planId: plan.id, priceId: price.id },
+      },
     });
     return { free: true, subscription, url: params.successUrl };
   }
@@ -194,6 +266,7 @@ export async function createMembershipCheckoutSession(params: {
 }
 
 export async function createMembershipPortalSession(params: { userId: string; returnUrl: string }) {
+  assertMembershipReturnUrl(params.returnUrl, "Portal return URL");
   const settings = await getMembershipStripeSettings();
   if (!settings.customerPortalEnabled)
     throw Object.assign(new Error("Membership customer portal is disabled"), { statusCode: 400 });

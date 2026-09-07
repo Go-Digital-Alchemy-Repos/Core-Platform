@@ -12,6 +12,7 @@ const viewports = [
 
 export default defineConfig({
   testDir: "./e2e",
+  testIgnore: "**/app/**",
   outputDir: "./test-results/playwright",
   reporter: "line",
   workers: 4,

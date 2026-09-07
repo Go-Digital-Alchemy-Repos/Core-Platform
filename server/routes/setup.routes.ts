@@ -5,6 +5,7 @@ import { hashPassword } from "../middleware/auth";
 import { validateBody } from "../middleware/validation";
 import { asyncHandler } from "../middleware/error-handler";
 import { logger } from "../utils/logger";
+import { constantTimeSecretEquals } from "../utils/constant-time-secret";
 import { db } from "../db";
 import { sql } from "drizzle-orm";
 
@@ -83,8 +84,8 @@ router.post(
   asyncHandler(async (req, res) => {
     const expectedToken = process.env.SETUP_TOKEN;
     if (expectedToken) {
-      const providedToken = req.body.setupToken || req.headers["x-setup-token"];
-      if (providedToken !== expectedToken) {
+      const providedToken = req.body.setupToken || req.get("x-setup-token");
+      if (!constantTimeSecretEquals(providedToken, expectedToken)) {
         res.status(403).json({ message: "Invalid setup token" });
         return;
       }

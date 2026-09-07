@@ -56,6 +56,7 @@ const AdminTherapistsPage = lazy(() => import("@/features/admin/therapists-page"
 const AdminUsersPage = lazy(() => import("@/features/admin/users-page"));
 const AdminDirectorySettingsPage = lazy(() => import("@/features/admin/directory-settings-page"));
 const AdminFormsPage = lazy(() => import("@/features/admin/forms-page"));
+const AdminCrmSettingsPage = lazy(() => import("@/features/admin/crm-settings-page"));
 const AdminCrmPage = lazy(() => import("@/features/admin/crm-page"));
 const AdminCrmClientsPage = lazy(() => import("@/features/admin/crm-clients-page"));
 const AdminEventsPage = lazy(() => import("@/features/admin/events-page"));
@@ -76,6 +77,9 @@ const AdminApplicationDetailPage = lazy(() => import("@/features/admin/applicati
 const CmsOverviewPage = lazy(() => import("@/features/admin/cms/cms-overview-page"));
 const CmsPagesPage = lazy(() => import("@/features/admin/cms/cms-pages-page"));
 const CmsPageEditorPage = lazy(() => import("@/features/admin/cms/cms-page-editor-page"));
+const ClientSiteContentEditorPage = lazy(
+  () => import("@/features/admin/cms/client-site-content-editor-page"),
+);
 const CmsGalleriesPage = lazy(() => import("@/features/admin/cms/cms-galleries-page"));
 const CmsGalleryEditorPage = lazy(() => import("@/features/admin/cms/cms-gallery-editor-page"));
 const CmsMediaPage = lazy(() => import("@/features/admin/cms/cms-media-page"));
@@ -86,6 +90,9 @@ const CmsSectionEditorPage = lazy(() => import("@/features/admin/cms/cms-section
 const CmsMenusPage = lazy(() => import("@/features/admin/cms/cms-menus-page"));
 const CmsSidebarsPage = lazy(() => import("@/features/admin/cms/cms-sidebars-page"));
 const SystemBackupsPage = lazy(() => import("@/features/admin/system-backups-page"));
+const ClientStackOnboardingPage = lazy(
+  () => import("@/features/admin/client-stack-onboarding-page"),
+);
 
 const InsightsPage = lazy(() => import("@/features/public/insights-page"));
 const InsightsPostPage = lazy(() => import("@/features/public/insights-post-page"));
@@ -605,6 +612,11 @@ function Router() {
             <AdminFormsPage />
           </ProtectedRoute>
         </Route>
+        <Route path="/admin/crm/settings">
+          <ProtectedRoute roles={["admin"]}>
+            {siteFeatures.crmEnabled ? <AdminCrmSettingsPage /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
         <Route path="/admin/crm/clients">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["crm"]}>
             {siteFeatures.crmEnabled ? <AdminCrmClientsPage /> : <NotFound />}
@@ -694,6 +706,11 @@ function Router() {
             <SystemBackupsPage />
           </ProtectedRoute>
         </Route>
+        <Route path="/admin/client-stack-onboarding">
+          <ProtectedRoute roles={["admin"]}>
+            <ClientStackOnboardingPage />
+          </ProtectedRoute>
+        </Route>
         <Route path="/admin/applications/:id">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["directory"]}>
             {siteFeatures.directoryEnabled ? <AdminApplicationDetailPage /> : <NotFound />}
@@ -702,6 +719,11 @@ function Router() {
         <Route path="/admin/applications">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["directory"]}>
             {siteFeatures.directoryEnabled ? <AdminApplicationsPage /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/cms/client-sites/better-farms/fund-a-farm">
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
+            {siteFeatures.cmsEnabled ? <ClientSiteContentEditorPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms">

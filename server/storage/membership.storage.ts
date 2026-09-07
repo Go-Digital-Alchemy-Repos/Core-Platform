@@ -1,4 +1,5 @@
-import { and, desc, eq, ilike, or } from "drizzle-orm";
+import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
 import { db } from "../db";
 import {
   membershipAccessRules,
@@ -270,6 +271,150 @@ export class MembershipStorage {
     } as InsertMembershipSubscription);
   }
 
+  async upsertSubscriptionForUserWithAudit(params: {
+    userId: string;
+    data: Partial<InsertMembershipSubscription>;
+    audit: Omit<InsertMembershipAuditEvent, "userId" | "subscriptionId">;
+  }): Promise<MembershipSubscription> {
+    return db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT id FROM users WHERE id = ${params.userId} FOR UPDATE`);
+      const [existing] = await tx
+        .select()
+        .from(membershipSubscriptions)
+        .where(eq(membershipSubscriptions.userId, params.userId))
+        .orderBy(desc(membershipSubscriptions.updatedAt))
+        .limit(1);
+      const [subscription] = existing
+        ? await tx
+            .update(membershipSubscriptions)
+            .set({ ...params.data, updatedAt: new Date() })
+            .where(eq(membershipSubscriptions.id, existing.id))
+            .returning()
+        : await tx
+            .insert(membershipSubscriptions)
+            .values({
+              userId: params.userId,
+              status: "manual",
+              source: "manual",
+              ...params.data,
+            } as typeof membershipSubscriptions.$inferInsert)
+            .returning();
+      await tx.insert(membershipAuditEvents).values({
+        ...params.audit,
+        userId: subscription.userId,
+        subscriptionId: subscription.id,
+      });
+      return subscription;
+    });
+  }
+
+  async updateSubscriptionWithAudit(params: {
+    subscriptionId: string;
+    data: Partial<InsertMembershipSubscription>;
+    audit: Omit<InsertMembershipAuditEvent, "userId" | "subscriptionId">;
+  }): Promise<MembershipSubscription | undefined> {
+    return db.transaction(async (tx) => {
+      const locked = await tx.execute<{ id: string }>(
+        sql`SELECT id FROM membership_subscriptions WHERE id = ${params.subscriptionId} FOR UPDATE`,
+      );
+      const subscriptionId = locked.rows[0]?.id;
+      if (!subscriptionId) return undefined;
+      const [subscription] = await tx
+        .update(membershipSubscriptions)
+        .set({ ...params.data, updatedAt: new Date() })
+        .where(eq(membershipSubscriptions.id, subscriptionId))
+        .returning();
+      await tx.insert(membershipAuditEvents).values({
+        ...params.audit,
+        userId: subscription.userId,
+        subscriptionId: subscription.id,
+      });
+      return subscription;
+    });
+  }
+
+  async upsertStripeWebhookSubscriptionWithAudit(params: {
+    userId: string;
+    data: Partial<InsertMembershipSubscription>;
+    action: string;
+    metadata: Record<string, unknown>;
+  }): Promise<MembershipSubscription> {
+    return db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT id FROM users WHERE id = ${params.userId} FOR UPDATE`);
+      const providerSubscriptionId = params.data.providerSubscriptionId;
+      const [byProviderSubscription] = providerSubscriptionId
+        ? await tx
+            .select()
+            .from(membershipSubscriptions)
+            .where(eq(membershipSubscriptions.providerSubscriptionId, providerSubscriptionId))
+            .limit(1)
+        : [];
+      const [latestForUser] = byProviderSubscription
+        ? []
+        : await tx
+            .select()
+            .from(membershipSubscriptions)
+            .where(eq(membershipSubscriptions.userId, params.userId))
+            .orderBy(desc(membershipSubscriptions.updatedAt))
+            .limit(1);
+      const existing = byProviderSubscription ?? latestForUser;
+      const [subscription] = existing
+        ? await tx
+            .update(membershipSubscriptions)
+            .set({ ...params.data, updatedAt: new Date() })
+            .where(eq(membershipSubscriptions.id, existing.id))
+            .returning()
+        : await tx
+            .insert(membershipSubscriptions)
+            .values({
+              userId: params.userId,
+              status: "incomplete",
+              source: "stripe",
+              ...params.data,
+            } as typeof membershipSubscriptions.$inferInsert)
+            .returning();
+      await tx.insert(membershipAuditEvents).values({
+        userId: subscription.userId,
+        subscriptionId: subscription.id,
+        action: params.action,
+        metadata: params.metadata,
+      });
+      return subscription;
+    });
+  }
+
+  async updateStripeWebhookSubscriptionStatusWithAudit(params: {
+    providerSubscriptionId: string;
+    status: string;
+    lastPaymentFailedAt: Date | null;
+    action: string;
+    metadata: Record<string, unknown>;
+  }): Promise<MembershipSubscription | undefined> {
+    return db.transaction(async (tx) => {
+      const locked = await tx.execute<{ id: string }>(
+        sql`SELECT id FROM membership_subscriptions WHERE provider_subscription_id = ${params.providerSubscriptionId} FOR UPDATE`,
+      );
+      const subscriptionId = locked.rows[0]?.id;
+      if (!subscriptionId) return undefined;
+      const [subscription] = await tx
+        .update(membershipSubscriptions)
+        .set({
+          status: params.status,
+          lastPaymentFailedAt: params.lastPaymentFailedAt,
+          updatedAt: new Date(),
+        })
+        .where(eq(membershipSubscriptions.id, subscriptionId))
+        .returning();
+      await tx.insert(membershipAuditEvents).values({
+        userId: subscription.userId,
+        subscriptionId: subscription.id,
+        action: params.action,
+        metadata: params.metadata,
+      });
+      return subscription;
+    });
+  }
+
   async getAccessRule(
     resourceType: string,
     resourceId: string,
@@ -317,28 +462,96 @@ export class MembershipStorage {
     await db.delete(membershipAccessRules).where(eq(membershipAccessRules.id, id));
   }
 
-  async hasProcessedWebhook(provider: string, eventId: string): Promise<boolean> {
-    const [event] = await db
-      .select()
-      .from(membershipProcessedWebhookEvents)
+  async claimWebhookProcessing(
+    provider: string,
+    eventId: string,
+    eventType: string,
+  ): Promise<string | null> {
+    const processingToken = randomUUID();
+    const result = await db.execute(sql<{ processing_token: string }>`
+      INSERT INTO membership_processed_webhook_events (
+        provider,
+        event_id,
+        event_type,
+        status,
+        attempt_count,
+        processing_token,
+        started_at,
+        completed_at,
+        last_error,
+        processed_at
+      )
+      VALUES (
+        ${provider}, ${eventId}, ${eventType}, 'processing', 1, ${processingToken}, now(), NULL, NULL, NULL
+      )
+      ON CONFLICT (provider, event_id) DO UPDATE
+      SET
+        event_type = EXCLUDED.event_type,
+        status = 'processing',
+        attempt_count = membership_processed_webhook_events.attempt_count + 1,
+        processing_token = ${processingToken},
+        started_at = now(),
+        completed_at = NULL,
+        last_error = NULL,
+        processed_at = NULL
+      WHERE
+        membership_processed_webhook_events.status = 'failed'
+        OR (
+          membership_processed_webhook_events.status = 'processing'
+          AND membership_processed_webhook_events.started_at < now() - interval '5 minutes'
+        )
+      RETURNING processing_token
+    `);
+    return (result.rows[0] as { processing_token?: string } | undefined)?.processing_token ?? null;
+  }
+
+  async completeWebhookProcessing(
+    provider: string,
+    eventId: string,
+    processingToken: string,
+  ): Promise<void> {
+    await db
+      .update(membershipProcessedWebhookEvents)
+      .set({
+        status: "processed",
+        processingToken: null,
+        completedAt: new Date(),
+        processedAt: new Date(),
+        lastError: null,
+      })
       .where(
         and(
           eq(membershipProcessedWebhookEvents.provider, provider),
           eq(membershipProcessedWebhookEvents.eventId, eventId),
+          eq(membershipProcessedWebhookEvents.status, "processing"),
+          eq(membershipProcessedWebhookEvents.processingToken, processingToken),
         ),
       );
-    return !!event;
   }
 
-  async markWebhookProcessed(
+  async failWebhookProcessing(
     provider: string,
     eventId: string,
-    eventType: string,
-  ): Promise<boolean> {
-    const existing = await this.hasProcessedWebhook(provider, eventId);
-    if (existing) return false;
-    await db.insert(membershipProcessedWebhookEvents).values({ provider, eventId, eventType });
-    return true;
+    processingToken: string,
+    lastError: string,
+  ): Promise<void> {
+    await db
+      .update(membershipProcessedWebhookEvents)
+      .set({
+        status: "failed",
+        processingToken: null,
+        completedAt: null,
+        processedAt: null,
+        lastError,
+      })
+      .where(
+        and(
+          eq(membershipProcessedWebhookEvents.provider, provider),
+          eq(membershipProcessedWebhookEvents.eventId, eventId),
+          eq(membershipProcessedWebhookEvents.status, "processing"),
+          eq(membershipProcessedWebhookEvents.processingToken, processingToken),
+        ),
+      );
   }
 
   async createAuditEvent(data: InsertMembershipAuditEvent): Promise<MembershipAuditEvent> {

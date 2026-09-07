@@ -47,4 +47,5 @@ export async function setupVite(server: Server, app: Express) {
       next(e);
     }
   });
+  return { stop: () => vite.close() };
 }

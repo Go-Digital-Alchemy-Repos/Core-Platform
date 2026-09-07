@@ -88,6 +88,16 @@ export const insertTherapistProfileSchema = createInsertSchema(therapistProfiles
   updatedAt: true,
 });
 
+export const updateOwnTherapistProfileSchema = insertTherapistProfileSchema.partial().omit({
+  userId: true,
+  directoryMode: true,
+  isFeatured: true,
+  featuredUntil: true,
+  isApproved: true,
+  isActive: true,
+  rejectionReason: true,
+});
+
 export const directoryProfileMedia = pgTable(
   "directory_profile_media",
   {

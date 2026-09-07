@@ -25,6 +25,8 @@ import {
   type InsertCrmLeadTask,
 } from "@shared/schema";
 
+type CrmDbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 export interface CrmLeadListFilters {
   query?: string;
   stage?: CrmLeadStage | "all";
@@ -98,6 +100,64 @@ export class CrmStorage {
     return { ...lead, notes, tasks, client };
   }
 
+  async createOrUpdateInboundLead(
+    data: InsertCrmLead,
+    createdById?: string | null,
+    transaction?: CrmDbTransaction,
+  ): Promise<{ lead: CrmLead; duplicate: boolean }> {
+    const email = typeof data.email === "string" ? data.email.trim().toLowerCase() : "";
+    const phone = typeof data.phone === "string" ? data.phone.trim() : "";
+    const lockKey = email
+      ? `crm-inbound:email:${email}`
+      : phone
+        ? `crm-inbound:phone:${phone}`
+        : null;
+
+    const apply = async (tx: CrmDbTransaction) => {
+      if (lockKey) {
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`);
+      }
+
+      let duplicate: CrmLead | undefined;
+      if (email) {
+        [duplicate] = await tx
+          .select()
+          .from(crmLeads)
+          .where(sql`lower(${crmLeads.email}) = ${email}`)
+          .limit(1);
+      }
+      if (!duplicate && phone) {
+        [duplicate] = await tx.select().from(crmLeads).where(eq(crmLeads.phone, phone)).limit(1);
+      }
+
+      if (duplicate) {
+        const [updated] = await tx
+          .update(crmLeads)
+          .set({
+            metadata: { ...(duplicate.metadata ?? {}), ...(data.metadata ?? {}) },
+            formData: { ...(duplicate.formData ?? {}), ...(data.formData ?? {}) },
+            message: data.message ?? duplicate.message,
+            source: data.source ?? duplicate.source,
+            externalId: data.externalId ?? duplicate.externalId,
+            formSubmissionId: data.formSubmissionId ?? duplicate.formSubmissionId,
+            updatedAt: new Date(),
+          })
+          .where(eq(crmLeads.id, duplicate.id))
+          .returning();
+        await tx.insert(crmLeadNotes).values({
+          leadId: duplicate.id,
+          createdById: createdById ?? null,
+          body: `Duplicate lead received from ${data.source}. Existing lead was updated.`,
+        });
+        return { lead: updated ?? duplicate, duplicate: true };
+      }
+
+      const [lead] = await tx.insert(crmLeads).values(data).returning();
+      return { lead, duplicate: false };
+    };
+    return transaction ? apply(transaction) : db.transaction(apply);
+  }
+
   async findDuplicateLead(
     data: Pick<InsertCrmLead, "email" | "phone">,
   ): Promise<CrmLead | undefined> {
@@ -130,6 +190,43 @@ export class CrmStorage {
       .where(eq(crmLeads.id, id))
       .returning();
     return lead;
+  }
+
+  async updateLeadAndCreateWonClient(
+    id: string,
+    data: Partial<InsertCrmLead>,
+    buildClient: (lead: CrmLead) => InsertCrmClient,
+    createdById?: string | null,
+  ): Promise<{ lead: CrmLead; client: CrmClient | undefined } | undefined> {
+    return db.transaction(async (tx: CrmDbTransaction) => {
+      await tx.execute(sql`SELECT id FROM crm_leads WHERE id = ${id} FOR UPDATE`);
+      const [lead] = await tx
+        .update(crmLeads)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(crmLeads.id, id))
+        .returning();
+      if (!lead) return undefined;
+
+      const [existingClient] = await tx
+        .select()
+        .from(crmClients)
+        .where(eq(crmClients.sourceLeadId, lead.id))
+        .limit(1);
+      if (existingClient) return { lead, client: existingClient };
+
+      const [client] = await tx.insert(crmClients).values(buildClient(lead)).returning();
+      await tx.insert(crmLeadNotes).values({
+        leadId: lead.id,
+        createdById: createdById ?? null,
+        body: "Lead converted to client after moving to Won.",
+      });
+      await tx.insert(crmClientNotes).values({
+        clientId: client.id,
+        createdById: createdById ?? null,
+        body: "Client created from won lead.",
+      });
+      return { lead, client };
+    });
   }
 
   async listNotes(leadId: string): Promise<CrmLeadNote[]> {

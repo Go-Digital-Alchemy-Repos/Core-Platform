@@ -15,7 +15,8 @@ import { sendEmail } from "./email.service";
 import { logger } from "../utils/logger";
 
 const CAREER_SETTINGS_CATEGORY = "career_center";
-const LOCAL_RESUME_DIR = path.resolve(process.cwd(), "uploads", "career-resumes");
+const LOCAL_RESUME_DIR = path.resolve(process.cwd(), "private-uploads", "career-resumes");
+const LEGACY_LOCAL_RESUME_DIR = path.resolve(process.cwd(), "uploads", "career-resumes");
 
 export const DEFAULT_CAREER_SETTINGS: CareerSettings = careerSettingsSchema.parse({});
 
@@ -149,9 +150,13 @@ export async function loadCareerResume(storageKey: string): Promise<{
   }
   if (storageKey.startsWith("local:")) {
     const file = storageKey.slice(6);
-    const safePath = path.resolve(LOCAL_RESUME_DIR, file);
-    if (!safePath.startsWith(LOCAL_RESUME_DIR) || !fs.existsSync(safePath)) return null;
-    return { buffer: fs.readFileSync(safePath), contentType: null };
+    for (const directory of [LOCAL_RESUME_DIR, LEGACY_LOCAL_RESUME_DIR]) {
+      const safePath = path.resolve(directory, file);
+      if (safePath.startsWith(directory) && fs.existsSync(safePath)) {
+        return { buffer: fs.readFileSync(safePath), contentType: null };
+      }
+    }
+    return null;
   }
   return null;
 }

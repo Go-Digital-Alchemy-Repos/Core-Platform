@@ -99,6 +99,7 @@ import { CategoriesTab } from "@/features/admin/ecommerce/categories-tab";
 import { CouponsTab } from "@/features/admin/ecommerce/coupons-tab";
 import { RefundsTab } from "@/features/admin/ecommerce/refunds-tab";
 import { IntegrationsTab } from "@/features/admin/ecommerce/integrations-tab";
+import { WebhookDeliveriesTab } from "@/features/admin/ecommerce/webhook-deliveries-tab";
 import {
   SettingsTab,
   type EcommerceSettingsSection,
@@ -138,6 +139,7 @@ type View =
   | "shipping"
   | "refunds"
   | "integrations"
+  | "operations"
   | "settings";
 
 function getOrderDisplayNumber(orderId: string) {
@@ -256,6 +258,7 @@ const nav: Array<{ view: View; label: string; icon: ElementType; iconColor: stri
   { view: "shipping", label: "Shipping", icon: CalendarDays, iconColor: "text-sky-600" },
   { view: "refunds", label: "Refunds", icon: Undo2, iconColor: "text-rose-600" },
   { view: "integrations", label: "Integrations", icon: Plug, iconColor: "text-blue-600" },
+  { view: "operations", label: "Operations", icon: ShieldAlert, iconColor: "text-amber-600" },
   { view: "settings", label: "Settings", icon: Settings, iconColor: "text-slate-500" },
 ];
 
@@ -4181,6 +4184,7 @@ export default function AdminEcommercePage() {
         {activeView === "shipping" ? <ShippingTab /> : null}
         {activeView === "refunds" ? <RefundsTab /> : null}
         {activeView === "integrations" ? <IntegrationsTab /> : null}
+        {activeView === "operations" ? <WebhookDeliveriesTab /> : null}
         {activeView === "settings" ? <SettingsTab section={activeSettingsSection} /> : null}
       </div>
     </AdminSidebar>

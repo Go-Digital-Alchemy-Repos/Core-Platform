@@ -18,7 +18,7 @@ assert.ok(
   ["localhost", "127.0.0.1"].includes(new URL(process.env.DATABASE_URL!).hostname),
   "Use a disposable local database",
 );
-const migrationSql = await readFile("migrations/0045_team_members.sql", "utf8");
+const migrationSql = await readFile("migrations/0062_team_members.sql", "utf8");
 const migrationClient = await pool.connect();
 try {
   await migrationClient.query("BEGIN");

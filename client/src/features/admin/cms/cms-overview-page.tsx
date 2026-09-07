@@ -41,6 +41,15 @@ export default function CmsOverviewPage() {
 
   const quickLinks = [
     {
+      title: "Better Farms",
+      description: "Edit and publish the Fund a Farm client-site content",
+      icon: Globe,
+      href: "/admin/cms/client-sites/better-farms/fund-a-farm",
+      color: "text-green-600",
+      bg: "bg-green-50 dark:bg-green-950/30",
+      available: true,
+    },
+    {
       title: "Pages",
       description: "Create and manage public website pages with SEO settings",
       icon: FileCode,

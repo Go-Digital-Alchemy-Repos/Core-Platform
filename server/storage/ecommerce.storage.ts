@@ -1,9 +1,13 @@
-import { and, desc, eq, gte, ilike, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, isNull, or, sql } from "drizzle-orm";
+import { createHash, randomUUID } from "node:crypto";
 import { db } from "../db";
 import { requiresAtomicInventoryStockGuard } from "../services/ecommerce-inventory.service";
 import { isEcommerceOrderLookupAuthorized } from "../services/ecommerce-order-lookup.service";
 import {
   ecommerceCategories,
+  ecommerceCheckoutRequests,
+  ecommerceInventoryReservations,
+  ecommerceNotificationJobs,
   ecommerceCouponRedemptions,
   ecommerceCoupons,
   ecommerceCustomerAddresses,
@@ -30,6 +34,7 @@ import {
   ecommerceShippingZones,
   users,
   type EcommerceCategory,
+  type EcommerceCheckoutRequest,
   type EcommerceCoupon,
   type EcommerceCustomerAddress,
   type EcommerceCustomer,
@@ -39,9 +44,11 @@ import {
   type EcommerceFraudBlock,
   type EcommerceFraudEvent,
   type EcommerceOrder,
+  type EcommerceNotificationJob,
   type EcommerceOrderItem,
   type EcommerceOrderNote,
   type EcommercePaymentRequest,
+  type EcommerceProcessedWebhookEvent,
   type EcommerceProduct,
   type EcommerceProductMedia,
   type EcommerceProductVariant,
@@ -73,6 +80,8 @@ import {
   type InsertEcommerceShippingZone,
 } from "@shared/schema";
 
+type EcommerceDbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 export interface EcommerceProductWithCategories extends EcommerceProduct {
   categories: EcommerceCategory[];
   variants: EcommerceProductVariant[];
@@ -86,6 +95,10 @@ export interface EcommerceOrderWithDetails extends EcommerceOrder {
   shipments: EcommerceShipment[];
   fulfillments: EcommerceFulfillment[];
   internalNotes: EcommerceOrderNoteWithAuthor[];
+}
+
+export interface EcommerceOrderReservationOptions {
+  reservationExpiresAt?: Date;
 }
 
 export interface EcommercePaymentRequestWithCustomer extends EcommercePaymentRequest {
@@ -120,7 +133,75 @@ export interface EcommerceCouponReport {
   }>;
 }
 
+const ECOMMERCE_NOTIFICATION_JOB_MAX_ATTEMPTS = 5;
+const ECOMMERCE_NOTIFICATION_JOB_CLAIM_TIMEOUT_MS = 10 * 60_000;
+
+function notificationJobErrorCode(error: unknown) {
+  const value = error instanceof Error ? error.message : String(error);
+  return `notification_delivery_${createHash("sha256").update(value).digest("hex").slice(0, 16)}`;
+}
+
 export class EcommerceStorage {
+  async getCheckoutRequest(requestKey: string): Promise<EcommerceCheckoutRequest | undefined> {
+    const [request] = await db
+      .select()
+      .from(ecommerceCheckoutRequests)
+      .where(eq(ecommerceCheckoutRequests.requestKey, requestKey));
+    return request;
+  }
+
+  async claimCheckoutRequest(params: {
+    requestKey: string;
+    customerEmail: string;
+  }): Promise<{ created: boolean; request: EcommerceCheckoutRequest }> {
+    return db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(ecommerceCheckoutRequests)
+        .values({
+          requestKey: params.requestKey,
+          customerEmail: params.customerEmail,
+          status: "processing",
+        })
+        .onConflictDoNothing({ target: ecommerceCheckoutRequests.requestKey })
+        .returning();
+      if (created) return { created: true, request: created };
+
+      const [existing] = await tx
+        .select()
+        .from(ecommerceCheckoutRequests)
+        .where(eq(ecommerceCheckoutRequests.requestKey, params.requestKey));
+      if (!existing) throw new Error("Checkout request claim could not be loaded");
+      return { created: false, request: existing };
+    });
+  }
+
+  async attachCheckoutRequestOrder(requestKey: string, orderId: string) {
+    const [request] = await db
+      .update(ecommerceCheckoutRequests)
+      .set({ orderId, updatedAt: new Date() })
+      .where(eq(ecommerceCheckoutRequests.requestKey, requestKey))
+      .returning();
+    return request;
+  }
+
+  async completeCheckoutRequest(requestKey: string, orderId: string) {
+    const [request] = await db
+      .update(ecommerceCheckoutRequests)
+      .set({ status: "ready", orderId, completedAt: new Date(), updatedAt: new Date() })
+      .where(eq(ecommerceCheckoutRequests.requestKey, requestKey))
+      .returning();
+    return request;
+  }
+
+  async failCheckoutRequest(requestKey: string, failureCode: string) {
+    const [request] = await db
+      .update(ecommerceCheckoutRequests)
+      .set({ status: "failed", failureCode, failedAt: new Date(), updatedAt: new Date() })
+      .where(eq(ecommerceCheckoutRequests.requestKey, requestKey))
+      .returning();
+    return request;
+  }
+
   async getProducts(
     options: { publicOnly?: boolean; search?: string; includeArchived?: boolean } = {},
   ): Promise<EcommerceProduct[]> {
@@ -841,6 +922,7 @@ export class EcommerceStorage {
 
   async recordCouponRedemptionForOrder(orderId: string): Promise<void> {
     await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT id FROM ecommerce_orders WHERE id = ${orderId} FOR UPDATE`);
       const [order] = await tx
         .select()
         .from(ecommerceOrders)
@@ -882,6 +964,7 @@ export class EcommerceStorage {
   async createOrder(
     data: InsertEcommerceOrder,
     items: InsertEcommerceOrderItem[],
+    options: EcommerceOrderReservationOptions = {},
   ): Promise<EcommerceOrderWithDetails> {
     return db.transaction(async (tx) => {
       const [order] = await tx
@@ -896,6 +979,14 @@ export class EcommerceStorage {
               typeof ecommerceOrderItems.$inferInsert
             >,
           );
+      }
+      if (options.reservationExpiresAt) {
+        await this.reserveInventoryForCheckoutOrder(
+          tx,
+          order.id,
+          items,
+          options.reservationExpiresAt,
+        );
       }
       const orderItems = await tx
         .select()
@@ -915,6 +1006,59 @@ export class EcommerceStorage {
         internalNotes: [],
       };
     });
+  }
+
+  private async reserveInventoryForCheckoutOrder(
+    tx: EcommerceDbTransaction,
+    orderId: string,
+    items: InsertEcommerceOrderItem[],
+    expiresAt: Date,
+  ): Promise<void> {
+    const now = new Date();
+    if (expiresAt <= now) {
+      throw new Error("Inventory reservation expiry must be in the future");
+    }
+
+    const itemsByVariant = new Map<string, InsertEcommerceOrderItem>();
+    for (const item of items) {
+      if (!item.variantId) continue;
+      const prior = itemsByVariant.get(item.variantId);
+      itemsByVariant.set(item.variantId, {
+        ...item,
+        quantity: (prior?.quantity ?? 0) + item.quantity,
+      });
+    }
+
+    for (const [variantId, item] of [...itemsByVariant.entries()].sort(([a], [b]) =>
+      a.localeCompare(b),
+    )) {
+      await tx.execute(
+        sql`SELECT id FROM ecommerce_product_variants WHERE id = ${variantId} FOR UPDATE`,
+      );
+      const [variant] = await tx
+        .select()
+        .from(ecommerceProductVariants)
+        .where(eq(ecommerceProductVariants.id, variantId))
+        .limit(1);
+      if (!variant || !requiresAtomicInventoryStockGuard(variant)) continue;
+
+      const reserved = await tx.execute<{ quantity: number | string }>(sql`
+        SELECT COALESCE(SUM(quantity), 0)::int AS quantity
+        FROM ecommerce_inventory_reservations
+        WHERE variant_id = ${variant.id}
+          AND released_at IS NULL
+      `);
+      const reservedQuantity = Number(reserved.rows[0]?.quantity ?? 0);
+      if (variant.inventoryQuantity - reservedQuantity < item.quantity) {
+        throw new Error(`Insufficient reservable inventory for variant ${variant.id}`);
+      }
+      await tx.insert(ecommerceInventoryReservations).values({
+        orderId,
+        variantId: variant.id,
+        quantity: item.quantity,
+        expiresAt,
+      });
+    }
   }
 
   async getOrders(): Promise<EcommerceOrderWithDetails[]> {
@@ -1168,12 +1312,25 @@ export class EcommerceStorage {
     id: string,
     data: Partial<InsertEcommerceOrder>,
   ): Promise<EcommerceOrder | undefined> {
-    const [order] = await db
-      .update(ecommerceOrders)
-      .set({ ...data, updatedAt: new Date() } as Partial<typeof ecommerceOrders.$inferInsert>)
-      .where(eq(ecommerceOrders.id, id))
-      .returning();
-    return order;
+    return db.transaction(async (tx) => {
+      const [order] = await tx
+        .update(ecommerceOrders)
+        .set({ ...data, updatedAt: new Date() } as Partial<typeof ecommerceOrders.$inferInsert>)
+        .where(eq(ecommerceOrders.id, id))
+        .returning();
+      if (order && data.status === "cancelled") {
+        await tx
+          .update(ecommerceInventoryReservations)
+          .set({ releasedAt: new Date(), releaseReason: "cancelled", updatedAt: new Date() })
+          .where(
+            and(
+              eq(ecommerceInventoryReservations.orderId, id),
+              isNull(ecommerceInventoryReservations.releasedAt),
+            ),
+          );
+      }
+      return order;
+    });
   }
 
   async updateOrderByPaymentIntent(
@@ -1188,30 +1345,375 @@ export class EcommerceStorage {
     return order;
   }
 
-  async markOrderPaidIfUnpaid(
+  async updateOrderWithStatusNotification(
     id: string,
-    paymentIntentId: string,
+    data: Partial<InsertEcommerceOrder>,
   ): Promise<EcommerceOrder | undefined> {
-    const [order] = await db
-      .update(ecommerceOrders)
+    return db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT id FROM ecommerce_orders WHERE id = ${id} FOR UPDATE`);
+      const [previous] = await tx.select().from(ecommerceOrders).where(eq(ecommerceOrders.id, id));
+      if (!previous) return undefined;
+      const [order] = await tx
+        .update(ecommerceOrders)
+        .set({ ...data, updatedAt: new Date() } as Partial<typeof ecommerceOrders.$inferInsert>)
+        .where(eq(ecommerceOrders.id, id))
+        .returning();
+      if (data.status && data.status !== previous.status) {
+        await tx
+          .insert(ecommerceNotificationJobs)
+          .values({
+            type: "order_status",
+            status: "queued",
+            orderId: order.id,
+            statusValue: data.status,
+            deduplicationKey: `order_status:${order.id}:${data.status}:${order.updatedAt.getTime()}`,
+          })
+          .onConflictDoNothing({ target: ecommerceNotificationJobs.deduplicationKey });
+      }
+      return order;
+    });
+  }
+
+  async getExpiredEcommerceInventoryReservationOrderIds(
+    now = new Date(),
+    limit = 25,
+  ): Promise<string[]> {
+    // Match Drizzle's UTC encoding for timestamp-without-timezone inserts;
+    // passing Date directly to raw SQL lets pg serialize the host's local time.
+    const expiresBefore = now.toISOString();
+    const result = await db.execute<{ order_id: string }>(sql`
+      SELECT DISTINCT reservation.order_id
+      FROM ecommerce_inventory_reservations AS reservation
+      INNER JOIN ecommerce_orders AS ecommerce_order ON ecommerce_order.id = reservation.order_id
+      WHERE reservation.released_at IS NULL
+        AND reservation.expires_at <= ${expiresBefore}
+        AND ecommerce_order.status = 'pending'
+        AND ecommerce_order.payment_status = 'unpaid'
+      ORDER BY reservation.order_id ASC
+      LIMIT ${limit}
+    `);
+    return result.rows.map((row) => row.order_id);
+  }
+
+  private async settlePaidOrderInTransaction(
+    tx: EcommerceDbTransaction,
+    orderId: string,
+    paymentIntentId: string | null,
+    manualPayment?: {
+      method: string;
+      reference?: string | null;
+      markedBy?: string | null;
+      markedAt?: Date;
+    },
+  ): Promise<{ order: EcommerceOrder | undefined; transitioned: boolean }> {
+    await tx.execute(sql`SELECT id FROM ecommerce_orders WHERE id = ${orderId} FOR UPDATE`);
+    const [existing] = await tx
+      .select()
+      .from(ecommerceOrders)
+      .where(eq(ecommerceOrders.id, orderId));
+    if (!existing) return { order: undefined, transitioned: false };
+    if (
+      paymentIntentId &&
+      existing.stripePaymentIntentId &&
+      existing.stripePaymentIntentId !== paymentIntentId
+    ) {
+      throw new Error("PaymentIntent does not match this order");
+    }
+
+    const transitioned = existing.status !== "paid" || existing.paymentStatus !== "paid";
+    let order = existing;
+    if (transitioned || manualPayment) {
+      const [updated] = await tx
+        .update(ecommerceOrders)
+        .set({
+          status: "paid",
+          paymentStatus: "paid",
+          ...(paymentIntentId ? { stripePaymentIntentId: paymentIntentId } : {}),
+          ...(manualPayment
+            ? {
+                manualPaymentMethod: manualPayment.method,
+                manualPaymentReference: manualPayment.reference ?? null,
+                manualPaymentMarkedBy: manualPayment.markedBy ?? null,
+                manualPaymentMarkedAt: manualPayment.markedAt ?? new Date(),
+              }
+            : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(ecommerceOrders.id, orderId))
+        .returning();
+      order = updated;
+    }
+
+    if (order.couponCode && order.discountAmount > 0) {
+      const [existingRedemption] = await tx
+        .select()
+        .from(ecommerceCouponRedemptions)
+        .where(eq(ecommerceCouponRedemptions.orderId, orderId))
+        .limit(1);
+      if (!existingRedemption) {
+        const [coupon] = await tx
+          .select()
+          .from(ecommerceCoupons)
+          .where(eq(ecommerceCoupons.code, order.couponCode));
+        if (coupon) {
+          const [customer] = await tx
+            .select()
+            .from(ecommerceCustomers)
+            .where(eq(ecommerceCustomers.id, order.customerId));
+          await tx
+            .update(ecommerceCoupons)
+            .set({ timesUsed: sql`${ecommerceCoupons.timesUsed} + 1`, updatedAt: new Date() })
+            .where(eq(ecommerceCoupons.id, coupon.id));
+          await tx.insert(ecommerceCouponRedemptions).values({
+            couponId: coupon.id,
+            orderId: order.id,
+            customerId: order.customerId,
+            couponCode: coupon.code,
+            customerEmail: customer?.email.trim().toLowerCase(),
+            discountAmount: order.discountAmount,
+          });
+        }
+      }
+    }
+
+    const items = await tx
+      .select()
+      .from(ecommerceOrderItems)
+      .where(eq(ecommerceOrderItems.orderId, orderId));
+    for (const item of items) {
+      if (!item.variantId) continue;
+      const [existingAdjustment] = await tx
+        .select()
+        .from(ecommerceInventoryAdjustments)
+        .where(
+          and(
+            eq(ecommerceInventoryAdjustments.orderId, orderId),
+            eq(ecommerceInventoryAdjustments.variantId, item.variantId),
+            eq(ecommerceInventoryAdjustments.reason, "order_paid"),
+          ),
+        )
+        .limit(1);
+      if (existingAdjustment) continue;
+
+      const [variant] = await tx
+        .select()
+        .from(ecommerceProductVariants)
+        .where(eq(ecommerceProductVariants.id, item.variantId))
+        .limit(1);
+      if (!variant?.trackInventory) continue;
+      const whereClause = requiresAtomicInventoryStockGuard(variant)
+        ? and(
+            eq(ecommerceProductVariants.id, variant.id),
+            gte(ecommerceProductVariants.inventoryQuantity, item.quantity),
+          )
+        : eq(ecommerceProductVariants.id, variant.id);
+      const [updatedVariant] = await tx
+        .update(ecommerceProductVariants)
+        .set({
+          inventoryQuantity: sql`${ecommerceProductVariants.inventoryQuantity} - ${item.quantity}`,
+          updatedAt: new Date(),
+        })
+        .where(whereClause)
+        .returning({ inventoryQuantity: ecommerceProductVariants.inventoryQuantity });
+      if (!updatedVariant) {
+        throw new Error(`Insufficient inventory for variant ${variant.id}`);
+      }
+      await tx.insert(ecommerceInventoryAdjustments).values({
+        productId: item.productId,
+        variantId: variant.id,
+        orderId,
+        delta: -item.quantity,
+        quantityAfter: updatedVariant.inventoryQuantity,
+        reason: "order_paid",
+        note: `Order ${orderId}`,
+      });
+    }
+
+    if (transitioned) {
+      await tx
+        .insert(ecommerceNotificationJobs)
+        .values({
+          type: "order_confirmation",
+          status: "queued",
+          orderId: order.id,
+          deduplicationKey: `order_confirmation:${order.id}`,
+        })
+        .onConflictDoNothing({ target: ecommerceNotificationJobs.deduplicationKey });
+    }
+
+    await tx
+      .update(ecommerceInventoryReservations)
+      .set({ releasedAt: new Date(), releaseReason: "paid", updatedAt: new Date() })
+      .where(
+        and(
+          eq(ecommerceInventoryReservations.orderId, orderId),
+          isNull(ecommerceInventoryReservations.releasedAt),
+        ),
+      );
+
+    return { order, transitioned };
+  }
+
+  async claimNextEcommerceNotificationJob(
+    now = new Date(),
+  ): Promise<EcommerceNotificationJob | undefined> {
+    const token = randomUUID();
+    const staleBefore = new Date(now.getTime() - ECOMMERCE_NOTIFICATION_JOB_CLAIM_TIMEOUT_MS);
+    return db.transaction(async (tx) => {
+      const result = await tx.execute(sql<EcommerceNotificationJob>`
+        WITH candidate AS (
+          SELECT id
+          FROM ecommerce_notification_jobs
+          WHERE (
+            status = 'queued' AND next_attempt_at <= ${now}
+          ) OR (
+            status = 'processing' AND claimed_at < ${staleBefore}
+          )
+          ORDER BY next_attempt_at ASC, created_at ASC
+          FOR UPDATE SKIP LOCKED
+          LIMIT 1
+        )
+        UPDATE ecommerce_notification_jobs
+        SET
+          status = 'processing',
+          processing_token = ${token},
+          claimed_at = ${now},
+          attempt_count = attempt_count + 1,
+          updated_at = ${now}
+        WHERE id IN (SELECT id FROM candidate)
+        RETURNING
+          id,
+          type,
+          status,
+          order_id AS "orderId",
+          refund_id AS "refundId",
+          shipment_id AS "shipmentId",
+          status_value AS "statusValue",
+          deduplication_key AS "deduplicationKey",
+          attempt_count AS "attemptCount",
+          processing_token AS "processingToken",
+          claimed_at AS "claimedAt",
+          next_attempt_at AS "nextAttemptAt",
+          sent_at AS "sentAt",
+          failed_at AS "failedAt",
+          last_error_code AS "lastErrorCode",
+          created_at AS "createdAt",
+          updated_at AS "updatedAt"
+      `);
+      return result.rows[0] as EcommerceNotificationJob | undefined;
+    });
+  }
+
+  async completeEcommerceNotificationJob(jobId: string, processingToken: string, now = new Date()) {
+    const [job] = await db
+      .update(ecommerceNotificationJobs)
       .set({
-        status: "paid",
-        paymentStatus: "paid",
-        stripePaymentIntentId: paymentIntentId,
-        updatedAt: new Date(),
+        status: "sent",
+        processingToken: null,
+        sentAt: now,
+        failedAt: null,
+        lastErrorCode: null,
+        updatedAt: now,
       })
       .where(
         and(
-          eq(ecommerceOrders.id, id),
-          or(
-            isNull(ecommerceOrders.stripePaymentIntentId),
-            eq(ecommerceOrders.stripePaymentIntentId, paymentIntentId),
-          ),
-          or(ne(ecommerceOrders.status, "paid"), ne(ecommerceOrders.paymentStatus, "paid")),
+          eq(ecommerceNotificationJobs.id, jobId),
+          eq(ecommerceNotificationJobs.status, "processing"),
+          eq(ecommerceNotificationJobs.processingToken, processingToken),
         ),
       )
       .returning();
-    return order;
+    return job;
+  }
+
+  async retryEcommerceNotificationJob(
+    job: Pick<EcommerceNotificationJob, "id" | "attemptCount"> & { processingToken: string },
+    nextAttemptAt: Date,
+    error: unknown,
+    now = new Date(),
+  ) {
+    const failed = job.attemptCount >= ECOMMERCE_NOTIFICATION_JOB_MAX_ATTEMPTS;
+    const [updated] = await db
+      .update(ecommerceNotificationJobs)
+      .set({
+        status: failed ? "failed" : "queued",
+        processingToken: null,
+        nextAttemptAt: failed ? now : nextAttemptAt,
+        failedAt: failed ? now : null,
+        lastErrorCode: notificationJobErrorCode(error),
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(ecommerceNotificationJobs.id, job.id),
+          eq(ecommerceNotificationJobs.status, "processing"),
+          eq(ecommerceNotificationJobs.processingToken, job.processingToken),
+        ),
+      )
+      .returning();
+    return updated;
+  }
+
+  /**
+   * Returns a terminal job to the queue after an administrator has reviewed the
+   * mail configuration and order history. The lifetime attempt count is kept so
+   * the next failed delivery remains terminal instead of silently restarting a
+   * new automatic retry cycle.
+   */
+  async requeueFailedEcommerceNotificationJob(
+    jobId: string,
+    retryingUserId: string | null,
+    now = new Date(),
+  ) {
+    const [job] = await db
+      .update(ecommerceNotificationJobs)
+      .set({
+        status: "queued",
+        processingToken: null,
+        claimedAt: null,
+        nextAttemptAt: now,
+        failedAt: null,
+        lastErrorCode: null,
+        manualRetryCount: sql`${ecommerceNotificationJobs.manualRetryCount} + 1`,
+        lastManualRetryAt: now,
+        lastManualRetryBy: retryingUserId,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(ecommerceNotificationJobs.id, jobId),
+          eq(ecommerceNotificationJobs.status, "failed"),
+        ),
+      )
+      .returning();
+    return job;
+  }
+
+  async getEcommerceNotificationJobs(options: { status?: "failed"; limit?: number } = {}) {
+    const limit = Math.min(Math.max(options.limit ?? 50, 1), 200);
+    const query = db
+      .select()
+      .from(ecommerceNotificationJobs)
+      .orderBy(desc(ecommerceNotificationJobs.createdAt))
+      .limit(limit);
+    return options.status
+      ? query.where(eq(ecommerceNotificationJobs.status, options.status))
+      : query;
+  }
+
+  async settlePaidOrder(
+    orderId: string,
+    paymentIntentId: string | null,
+    manualPayment?: {
+      method: string;
+      reference?: string | null;
+      markedBy?: string | null;
+      markedAt?: Date;
+    },
+  ): Promise<{ order: EcommerceOrder | undefined; transitioned: boolean }> {
+    return db.transaction((tx) =>
+      this.settlePaidOrderInTransaction(tx, orderId, paymentIntentId, manualPayment),
+    );
   }
 
   async createPaymentRequest(
@@ -1270,6 +1772,61 @@ export class EcommerceStorage {
     return request;
   }
 
+  async settlePaymentRequestOrderBySession(
+    sessionId: string,
+    paymentIntentId?: string | null,
+  ): Promise<{
+    request: EcommercePaymentRequest | undefined;
+    order: EcommerceOrder | undefined;
+    transitioned: boolean;
+  }> {
+    return db.transaction(async (tx) => {
+      await tx.execute(
+        sql`SELECT id FROM ecommerce_payment_requests WHERE stripe_session_id = ${sessionId} FOR UPDATE`,
+      );
+      const [existingRequest] = await tx
+        .select()
+        .from(ecommercePaymentRequests)
+        .where(eq(ecommercePaymentRequests.stripeSessionId, sessionId));
+      if (!existingRequest) {
+        return { request: undefined, order: undefined, transitioned: false };
+      }
+      if (
+        paymentIntentId &&
+        existingRequest.stripePaymentIntentId &&
+        existingRequest.stripePaymentIntentId !== paymentIntentId
+      ) {
+        throw new Error("PaymentIntent does not match this payment request");
+      }
+      if (existingRequest.orderId && !paymentIntentId) {
+        throw new Error("A linked payment request requires a PaymentIntent");
+      }
+
+      const settlement = existingRequest.orderId
+        ? await this.settlePaidOrderInTransaction(
+            tx,
+            existingRequest.orderId,
+            paymentIntentId ?? null,
+          )
+        : { order: undefined, transitioned: false };
+      if (existingRequest.orderId && !settlement.order) {
+        throw new Error("Payment request references an unknown order");
+      }
+
+      const [request] = await tx
+        .update(ecommercePaymentRequests)
+        .set({
+          status: "paid",
+          ...(paymentIntentId ? { stripePaymentIntentId: paymentIntentId } : {}),
+          paidAt: existingRequest.paidAt ?? new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(ecommercePaymentRequests.id, existingRequest.id))
+        .returning();
+      return { request, ...settlement };
+    });
+  }
+
   async getProductsByIds(ids: string[]): Promise<EcommerceProduct[]> {
     if (ids.length === 0) return [];
     return db.select().from(ecommerceProducts).where(inArray(ecommerceProducts.id, ids));
@@ -1277,6 +1834,7 @@ export class EcommerceStorage {
 
   async deductInventoryForPaidOrder(orderId: string): Promise<void> {
     await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT id FROM ecommerce_orders WHERE id = ${orderId} FOR UPDATE`);
       const items = await tx
         .select()
         .from(ecommerceOrderItems)
@@ -1334,20 +1892,105 @@ export class EcommerceStorage {
   }
 
   async createRefund(data: InsertEcommerceRefund): Promise<EcommerceRefund> {
-    const [refund] = await db.insert(ecommerceRefunds).values(data).returning();
-    return refund;
+    return db.transaction(async (tx) => {
+      const [refund] = await tx.insert(ecommerceRefunds).values(data).returning();
+      await this.enqueueRefundNotification(tx, refund);
+      return refund;
+    });
+  }
+
+  async reserveRefund(data: InsertEcommerceRefund): Promise<EcommerceRefund> {
+    return db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT id FROM ecommerce_orders WHERE id = ${data.orderId} FOR UPDATE`);
+      const [order] = await tx
+        .select()
+        .from(ecommerceOrders)
+        .where(eq(ecommerceOrders.id, data.orderId));
+      if (!order) throw Object.assign(new Error("Order not found"), { statusCode: 404 });
+      if (order.status === "cancelled") {
+        throw Object.assign(new Error("Cancelled orders cannot be refunded from ecommerce"), {
+          statusCode: 400,
+        });
+      }
+      if (
+        !["paid", "partially_refunded", "refund_pending", "refund_failed"].includes(
+          order.paymentStatus,
+        )
+      ) {
+        throw Object.assign(
+          new Error("Order payment has not been captured and cannot be refunded"),
+          { statusCode: 400 },
+        );
+      }
+      const refunds = await tx
+        .select()
+        .from(ecommerceRefunds)
+        .where(eq(ecommerceRefunds.orderId, data.orderId));
+      if (refunds.some((refund) => refund.status === "pending")) {
+        throw Object.assign(
+          new Error("Resolve the pending refund before creating another refund"),
+          { statusCode: 409 },
+        );
+      }
+      const alreadyRefunded = refunds
+        .filter((refund) => refund.status === "processed")
+        .reduce((sum, refund) => sum + refund.amount, 0);
+      if (data.amount <= 0) {
+        throw Object.assign(new Error("Refund amount must be greater than zero"), {
+          statusCode: 400,
+        });
+      }
+      if (data.amount > order.totalAmount - alreadyRefunded) {
+        throw Object.assign(new Error("Refund amount exceeds refundable balance"), {
+          statusCode: 400,
+        });
+      }
+      const [refund] = await tx.insert(ecommerceRefunds).values(data).returning();
+      await this.enqueueRefundNotification(tx, refund);
+      const paymentStatus =
+        data.status === "pending"
+          ? "refund_pending"
+          : alreadyRefunded + data.amount >= order.totalAmount
+            ? "refunded"
+            : "partially_refunded";
+      await tx
+        .update(ecommerceOrders)
+        .set({ paymentStatus, updatedAt: new Date() })
+        .where(eq(ecommerceOrders.id, order.id));
+      return refund;
+    });
   }
 
   async updateRefund(
     id: string,
     data: Partial<InsertEcommerceRefund>,
   ): Promise<EcommerceRefund | undefined> {
-    const [refund] = await db
-      .update(ecommerceRefunds)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(ecommerceRefunds.id, id))
-      .returning();
-    return refund;
+    return db.transaction(async (tx) => {
+      const [refund] = await tx
+        .update(ecommerceRefunds)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(ecommerceRefunds.id, id))
+        .returning();
+      if (refund) await this.enqueueRefundNotification(tx, refund);
+      return refund;
+    });
+  }
+
+  private async enqueueRefundNotification(
+    tx: EcommerceDbTransaction,
+    refund: EcommerceRefund,
+  ): Promise<void> {
+    if (refund.status !== "processed") return;
+    await tx
+      .insert(ecommerceNotificationJobs)
+      .values({
+        type: "refund_confirmation",
+        status: "queued",
+        orderId: refund.orderId,
+        refundId: refund.id,
+        deduplicationKey: `refund_confirmation:${refund.id}`,
+      })
+      .onConflictDoNothing({ target: ecommerceNotificationJobs.deduplicationKey });
   }
 
   async getRefundByStripeRefundId(stripeRefundId: string): Promise<EcommerceRefund | undefined> {
@@ -1355,6 +1998,11 @@ export class EcommerceStorage {
       .select()
       .from(ecommerceRefunds)
       .where(eq(ecommerceRefunds.stripeRefundId, stripeRefundId));
+    return refund;
+  }
+
+  async getRefund(id: string): Promise<EcommerceRefund | undefined> {
+    const [refund] = await db.select().from(ecommerceRefunds).where(eq(ecommerceRefunds.id, id));
     return refund;
   }
 
@@ -1423,6 +2071,40 @@ export class EcommerceStorage {
 
   async createShipment(data: InsertEcommerceShipment): Promise<EcommerceShipment> {
     const [shipment] = await db.insert(ecommerceShipments).values(data).returning();
+    return shipment;
+  }
+
+  async createShipmentAndMarkOrderShipped(
+    data: InsertEcommerceShipment,
+  ): Promise<EcommerceShipment> {
+    return db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT id FROM ecommerce_orders WHERE id = ${data.orderId} FOR UPDATE`);
+      const [order] = await tx
+        .update(ecommerceOrders)
+        .set({ status: "shipped", updatedAt: new Date() })
+        .where(eq(ecommerceOrders.id, data.orderId))
+        .returning();
+      if (!order) throw new Error("Order not found");
+      const [shipment] = await tx.insert(ecommerceShipments).values(data).returning();
+      await tx
+        .insert(ecommerceNotificationJobs)
+        .values({
+          type: "shipment_confirmation",
+          status: "queued",
+          orderId: order.id,
+          shipmentId: shipment.id,
+          deduplicationKey: `shipment_confirmation:${shipment.id}`,
+        })
+        .onConflictDoNothing({ target: ecommerceNotificationJobs.deduplicationKey });
+      return shipment;
+    });
+  }
+
+  async getShipment(id: string): Promise<EcommerceShipment | undefined> {
+    const [shipment] = await db
+      .select()
+      .from(ecommerceShipments)
+      .where(eq(ecommerceShipments.id, id));
     return shipment;
   }
 
@@ -1525,30 +2207,132 @@ export class EcommerceStorage {
     );
   }
 
-  async hasProcessedWebhook(provider: string, eventId: string): Promise<boolean> {
+  async claimWebhookProcessing(
+    provider: string,
+    eventId: string,
+    eventType: string,
+  ): Promise<string | null> {
+    const processingToken = randomUUID();
+    const result = await db.execute(sql<{ processing_token: string }>`
+      INSERT INTO ecommerce_processed_webhook_events (
+        provider,
+        event_id,
+        event_type,
+        status,
+        attempt_count,
+        processing_token,
+        started_at,
+        completed_at,
+        last_error,
+        processed_at
+      )
+      VALUES (
+        ${provider}, ${eventId}, ${eventType}, 'processing', 1, ${processingToken}, now(), NULL, NULL, NULL
+      )
+      ON CONFLICT (provider, event_id) DO UPDATE
+      SET
+        event_type = EXCLUDED.event_type,
+        status = 'processing',
+        attempt_count = ecommerce_processed_webhook_events.attempt_count + 1,
+        processing_token = ${processingToken},
+        started_at = now(),
+        completed_at = NULL,
+        last_error = NULL,
+        processed_at = NULL
+      WHERE
+        ecommerce_processed_webhook_events.status = 'failed'
+        OR (
+          ecommerce_processed_webhook_events.status = 'processing'
+          AND ecommerce_processed_webhook_events.started_at < now() - interval '5 minutes'
+        )
+      RETURNING processing_token
+    `);
+    return (result.rows[0] as { processing_token?: string } | undefined)?.processing_token ?? null;
+  }
+
+  async getWebhookProcessing(
+    provider: string,
+    eventId: string,
+  ): Promise<EcommerceProcessedWebhookEvent | undefined> {
     const [event] = await db
-      .select({ id: ecommerceProcessedWebhookEvents.id })
+      .select()
       .from(ecommerceProcessedWebhookEvents)
       .where(
         and(
           eq(ecommerceProcessedWebhookEvents.provider, provider),
           eq(ecommerceProcessedWebhookEvents.eventId, eventId),
         ),
-      )
-      .limit(1);
-    return Boolean(event);
+      );
+    return event;
   }
 
-  async markWebhookProcessed(
+  async listWebhookProcessing(params: {
+    provider: string;
+    status?: "processing" | "processed" | "failed";
+    limit?: number;
+  }): Promise<EcommerceProcessedWebhookEvent[]> {
+    const limit = Math.min(Math.max(params.limit ?? 50, 1), 100);
+    return db
+      .select()
+      .from(ecommerceProcessedWebhookEvents)
+      .where(
+        params.status
+          ? and(
+              eq(ecommerceProcessedWebhookEvents.provider, params.provider),
+              eq(ecommerceProcessedWebhookEvents.status, params.status),
+            )
+          : eq(ecommerceProcessedWebhookEvents.provider, params.provider),
+      )
+      .orderBy(desc(ecommerceProcessedWebhookEvents.startedAt))
+      .limit(limit);
+  }
+
+  async completeWebhookProcessing(
     provider: string,
     eventId: string,
-    eventType: string,
-  ): Promise<boolean> {
-    const inserted = await db
-      .insert(ecommerceProcessedWebhookEvents)
-      .values({ provider, eventId, eventType })
-      .onConflictDoNothing()
-      .returning();
-    return inserted.length > 0;
+    processingToken: string,
+  ): Promise<void> {
+    await db
+      .update(ecommerceProcessedWebhookEvents)
+      .set({
+        status: "processed",
+        processingToken: null,
+        completedAt: new Date(),
+        processedAt: new Date(),
+        lastError: null,
+      })
+      .where(
+        and(
+          eq(ecommerceProcessedWebhookEvents.provider, provider),
+          eq(ecommerceProcessedWebhookEvents.eventId, eventId),
+          eq(ecommerceProcessedWebhookEvents.status, "processing"),
+          eq(ecommerceProcessedWebhookEvents.processingToken, processingToken),
+        ),
+      );
+  }
+
+  async failWebhookProcessing(
+    provider: string,
+    eventId: string,
+    processingToken: string,
+    lastError: string,
+  ): Promise<void> {
+    await db
+      .update(ecommerceProcessedWebhookEvents)
+      .set({
+        status: "failed",
+        processingToken: null,
+        completedAt: null,
+        processedAt: null,
+        lastError,
+      })
+      .where(
+        and(
+          eq(ecommerceProcessedWebhookEvents.provider, provider),
+          eq(ecommerceProcessedWebhookEvents.eventId, eventId),
+          eq(ecommerceProcessedWebhookEvents.status, "processing"),
+          eq(ecommerceProcessedWebhookEvents.processingToken, processingToken),
+        ),
+      );
   }
 }

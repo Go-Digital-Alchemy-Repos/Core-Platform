@@ -264,6 +264,7 @@ router.post(
     const result = await createEcommercePaymentIntent(req.body, {
       ip: req.ip,
       user: req.user ?? null,
+      checkoutRequestKey: req.get("Idempotency-Key"),
     });
     if (result.accountUser) {
       setTokenCookie(res, generateToken(result.accountUser));

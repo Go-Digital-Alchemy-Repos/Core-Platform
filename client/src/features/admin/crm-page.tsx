@@ -1,4 +1,8 @@
-import { useMemo, useState } from "react";
+import { Link } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+import { useCrmPipelineSettings, pipelinePresentation } from "@/hooks/use-crm-pipeline-settings";
+import { DEFAULT_CRM_PIPELINE_CONFIG } from "@shared/crm-pipeline-settings";
+import { createContext, useContext, useMemo, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -13,7 +17,6 @@ import {
 } from "@dnd-kit/core";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
-  CRM_LEAD_STAGE_LABELS,
   CRM_LEAD_STAGES,
   type CrmLead,
   type CrmClient,
@@ -63,14 +66,7 @@ import {
 
 type LeadDetail = CrmLead & { notes: CrmLeadNote[]; tasks: CrmLeadTask[]; client?: CrmClient };
 
-const STAGE_COLORS: Record<CrmLeadStage, string> = {
-  new: "border-blue-200 bg-blue-50 text-blue-800",
-  contacted: "border-cyan-200 bg-cyan-50 text-cyan-800",
-  qualified: "border-emerald-200 bg-emerald-50 text-emerald-800",
-  proposal: "border-amber-200 bg-amber-50 text-amber-800",
-  won: "border-green-200 bg-green-50 text-green-800",
-  lost: "border-slate-200 bg-slate-50 text-slate-700",
-};
+const PipelinePresentation = createContext(pipelinePresentation(DEFAULT_CRM_PIPELINE_CONFIG));
 
 function formatDate(value: string | Date | null | undefined) {
   if (!value) return "No date";
@@ -92,6 +88,7 @@ function LeadCard({
   onMove?: (leadId: string, stage: CrmLeadStage) => void;
   dragState?: ReturnType<typeof useDraggable>;
 }) {
+  const presentation = useContext(PipelinePresentation);
   const transform = dragState?.transform;
   return (
     <div
@@ -155,9 +152,9 @@ function LeadCard({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {CRM_LEAD_STAGES.map((stage) => (
+              {presentation.stages.map((stage) => (
                 <SelectItem key={stage} value={stage}>
-                  {CRM_LEAD_STAGE_LABELS[stage]}
+                  {presentation.labels[stage]}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -198,6 +195,7 @@ function PipelineColumn({
   onOpen: (id: string) => void;
   onMove: (leadId: string, stage: CrmLeadStage) => void;
 }) {
+  const presentation = useContext(PipelinePresentation);
   const { isOver, setNodeRef } = useDroppable({
     id: stage,
     data: { type: "stage", stage },
@@ -212,8 +210,8 @@ function PipelineColumn({
     >
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between text-sm">
-          <span className={cn("rounded-full border px-2 py-1", STAGE_COLORS[stage])}>
-            {CRM_LEAD_STAGE_LABELS[stage]}
+          <span className={cn("rounded-full border px-2 py-1", presentation.colors[stage])}>
+            {presentation.labels[stage]}
           </span>
           <Badge variant="secondary">{leads.length}</Badge>
         </CardTitle>
@@ -319,6 +317,7 @@ function CreateLeadSheet({
 }
 
 function LeadDetailSheet({ leadId, onClose }: { leadId: string | null; onClose: () => void }) {
+  const presentation = useContext(PipelinePresentation);
   const { toast } = useToast();
   const [note, setNote] = useState("");
   const [taskTitle, setTaskTitle] = useState("");
@@ -390,9 +389,9 @@ function LeadDetailSheet({ leadId, onClose }: { leadId: string | null; onClose: 
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {CRM_LEAD_STAGES.map((stage) => (
+                      {presentation.stages.map((stage) => (
                         <SelectItem key={stage} value={stage}>
-                          {CRM_LEAD_STAGE_LABELS[stage]}
+                          {presentation.labels[stage]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -526,6 +525,9 @@ function LeadDetailSheet({ leadId, onClose }: { leadId: string | null; onClose: 
 }
 
 function CrmContent() {
+  const { user } = useAuth();
+  const pipeline = useCrmPipelineSettings();
+  const presentation = pipeline.presentation;
   const [query, setQuery] = useState("");
   const [stage, setStage] = useState<CrmLeadStage | "all">("all");
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
@@ -582,109 +584,117 @@ function CrmContent() {
   };
 
   return (
-    <div className="flex min-h-dvh min-w-0 flex-col gap-5 p-4 sm:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-heading font-bold" data-testid="text-crm-title">
-            CRM Pipeline
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Track inbound leads from forms, social sources, and manual outreach.
-          </p>
+    <PipelinePresentation.Provider value={presentation}>
+      <div className="flex min-h-dvh min-w-0 flex-col gap-5 p-4 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            {user?.role === "admin" && <Link href="/admin/crm/settings">Pipeline settings</Link>}
+            {(pipeline.isError || pipeline.data?.issue) && (
+              <p role="status">
+                Pipeline settings unavailable or invalid; default presentation is in use.
+              </p>
+            )}
+            <h1 className="text-2xl font-heading font-bold" data-testid="text-crm-title">
+              CRM Pipeline
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Track inbound leads from forms, social sources, and manual outreach.
+            </p>
+          </div>
+          <Button onClick={() => setCreateOpen(true)} data-testid="button-create-crm-lead">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Lead
+          </Button>
         </div>
-        <Button onClick={() => setCreateOpen(true)} data-testid="button-create-crm-lead">
-          <Plus className="mr-2 h-4 w-4" />
-          Add Lead
-        </Button>
-      </div>
 
-      <div className="flex flex-wrap gap-3">
-        <div className="relative min-w-0 flex-1 basis-64">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="pl-9"
-            placeholder="Search leads..."
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </div>
-        <Select value={stage} onValueChange={(value) => setStage(value as CrmLeadStage | "all")}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Stages</SelectItem>
-            {CRM_LEAD_STAGES.map((item) => (
-              <SelectItem key={item} value={item}>
-                {CRM_LEAD_STAGE_LABELS[item]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <DndContext
-        sensors={sensors}
-        onDragStart={handleDragStart}
-        onDragCancel={() => setActiveLead(null)}
-        onDragEnd={handleDragEnd}
-      >
-        <div className="grid min-h-[520px] snap-x snap-mandatory auto-cols-[minmax(280px,85vw)] grid-flow-col gap-4 overflow-x-auto pb-2 xl:grid-flow-row xl:grid-cols-6 xl:overflow-visible">
-          {CRM_LEAD_STAGES.map((item) => (
-            <PipelineColumn
-              key={item}
-              stage={item}
-              leads={leadsByStage[item] ?? []}
-              isLoading={isLoading}
-              onOpen={setSelectedLeadId}
-              onMove={(leadId, nextStage) => moveLeadMutation.mutate({ leadId, nextStage })}
+        <div className="flex flex-wrap gap-3">
+          <div className="relative min-w-0 flex-1 basis-64">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              placeholder="Search leads..."
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
             />
+          </div>
+          <Select value={stage} onValueChange={(value) => setStage(value as CrmLeadStage | "all")}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Stages</SelectItem>
+              {presentation.stages.map((item) => (
+                <SelectItem key={item} value={item}>
+                  {presentation.labels[item]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <DndContext
+          sensors={sensors}
+          onDragStart={handleDragStart}
+          onDragCancel={() => setActiveLead(null)}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="grid min-h-[520px] snap-x snap-mandatory auto-cols-[minmax(280px,85vw)] grid-flow-col gap-4 overflow-x-auto pb-2 xl:grid-flow-row xl:grid-cols-6 xl:overflow-visible">
+            {presentation.stages.map((item) => (
+              <PipelineColumn
+                key={item}
+                stage={item}
+                leads={leadsByStage[item] ?? []}
+                isLoading={isLoading}
+                onOpen={setSelectedLeadId}
+                onMove={(leadId, nextStage) => moveLeadMutation.mutate({ leadId, nextStage })}
+              />
+            ))}
+          </div>
+          <DragOverlay>
+            {activeLead ? <LeadCard lead={activeLead} onOpen={() => undefined} /> : null}
+          </DragOverlay>
+        </DndContext>
+
+        <div className="overflow-x-auto rounded-lg border">
+          <div className="grid min-w-[640px] grid-cols-[1fr_140px_140px_120px] gap-3 border-b px-4 py-3 text-xs font-medium text-muted-foreground">
+            <span>
+              <UserRound className="mr-1 inline h-3 w-3" />
+              Lead
+            </span>
+            <span>
+              <Handshake className="mr-1 inline h-3 w-3" />
+              Stage
+            </span>
+            <span>
+              <ClipboardList className="mr-1 inline h-3 w-3" />
+              Source
+            </span>
+            <span>Created</span>
+          </div>
+          {leads.map((lead) => (
+            <button
+              key={lead.id}
+              type="button"
+              onClick={() => setSelectedLeadId(lead.id)}
+              className="grid min-w-[640px] w-full grid-cols-[1fr_140px_140px_120px] gap-3 px-4 py-3 text-left text-sm hover:bg-muted/40"
+            >
+              <span className="min-w-0">
+                <span className="block truncate font-medium">{lead.name}</span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {lead.email || lead.phone || "No contact info"}
+                </span>
+              </span>
+              <span>{presentation.labels[lead.stage]}</span>
+              <span className="truncate">{lead.source}</span>
+              <span>{formatDate(lead.createdAt)}</span>
+            </button>
           ))}
         </div>
-        <DragOverlay>
-          {activeLead ? <LeadCard lead={activeLead} onOpen={() => undefined} /> : null}
-        </DragOverlay>
-      </DndContext>
 
-      <div className="overflow-x-auto rounded-lg border">
-        <div className="grid min-w-[640px] grid-cols-[1fr_140px_140px_120px] gap-3 border-b px-4 py-3 text-xs font-medium text-muted-foreground">
-          <span>
-            <UserRound className="mr-1 inline h-3 w-3" />
-            Lead
-          </span>
-          <span>
-            <Handshake className="mr-1 inline h-3 w-3" />
-            Stage
-          </span>
-          <span>
-            <ClipboardList className="mr-1 inline h-3 w-3" />
-            Source
-          </span>
-          <span>Created</span>
-        </div>
-        {leads.map((lead) => (
-          <button
-            key={lead.id}
-            type="button"
-            onClick={() => setSelectedLeadId(lead.id)}
-            className="grid min-w-[640px] w-full grid-cols-[1fr_140px_140px_120px] gap-3 px-4 py-3 text-left text-sm hover:bg-muted/40"
-          >
-            <span className="min-w-0">
-              <span className="block truncate font-medium">{lead.name}</span>
-              <span className="block truncate text-xs text-muted-foreground">
-                {lead.email || lead.phone || "No contact info"}
-              </span>
-            </span>
-            <span>{CRM_LEAD_STAGE_LABELS[lead.stage]}</span>
-            <span className="truncate">{lead.source}</span>
-            <span>{formatDate(lead.createdAt)}</span>
-          </button>
-        ))}
+        <CreateLeadSheet open={createOpen} onOpenChange={setCreateOpen} />
+        <LeadDetailSheet leadId={selectedLeadId} onClose={() => setSelectedLeadId(null)} />
       </div>
-
-      <CreateLeadSheet open={createOpen} onOpenChange={setCreateOpen} />
-      <LeadDetailSheet leadId={selectedLeadId} onClose={() => setSelectedLeadId(null)} />
-    </div>
+    </PipelinePresentation.Provider>
   );
 }
 

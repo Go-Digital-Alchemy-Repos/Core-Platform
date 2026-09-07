@@ -80,6 +80,13 @@ export const ECOMMERCE_COUPON_STATUSES = [
 ] as const;
 export const ECOMMERCE_REFUND_STATUSES = ["pending", "processed", "rejected", "failed"] as const;
 export const ECOMMERCE_REFUND_TYPES = ["full", "partial"] as const;
+export const ECOMMERCE_NOTIFICATION_JOB_TYPES = ["order_confirmation"] as const;
+export const ECOMMERCE_NOTIFICATION_JOB_STATUSES = [
+  "queued",
+  "processing",
+  "sent",
+  "failed",
+] as const;
 export const ECOMMERCE_SHIPPING_PROVIDER_TYPES = [
   "direct_carrier",
   "aggregator",
@@ -376,6 +383,9 @@ export const ecommerceInventoryAdjustments = pgTable(
       table.variantId,
       table.reason,
     ),
+    uniqueIndex("idx_ecommerce_inventory_adjustments_paid_order_effect")
+      .on(table.orderId, table.variantId)
+      .where(sql`${table.orderId} IS NOT NULL AND ${table.reason} = 'order_paid'`),
   ],
 );
 
@@ -565,6 +575,116 @@ export const ecommerceOrders = pgTable(
     index("idx_ecommerce_orders_fraud_level").on(table.fraudRiskLevel, table.createdAt),
     uniqueIndex("idx_ecommerce_orders_lookup_token").on(table.lookupToken),
     uniqueIndex("idx_ecommerce_orders_payment_intent").on(table.stripePaymentIntentId),
+  ],
+);
+
+export const ecommerceCheckoutRequests = pgTable(
+  "ecommerce_checkout_requests",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    requestKey: varchar("request_key", { length: 128 }).notNull(),
+    customerEmail: text("customer_email").notNull(),
+    status: text("status").notNull().default("processing"),
+    orderId: varchar("order_id").references(() => ecommerceOrders.id, { onDelete: "set null" }),
+    failureCode: text("failure_code"),
+    completedAt: timestamp("completed_at"),
+    failedAt: timestamp("failed_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_ecommerce_checkout_requests_key").on(table.requestKey),
+    uniqueIndex("idx_ecommerce_checkout_requests_order").on(table.orderId),
+  ],
+);
+
+/**
+ * Short-lived stock holds for checkout payment intents. A reservation is
+ * released by paid/cancelled settlement. Expiry schedules payment cancellation;
+ * capacity remains protected until that cancellation is confirmed.
+ */
+export const ecommerceInventoryReservations = pgTable(
+  "ecommerce_inventory_reservations",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    orderId: varchar("order_id")
+      .notNull()
+      .references(() => ecommerceOrders.id, { onDelete: "cascade" }),
+    variantId: varchar("variant_id")
+      .notNull()
+      .references(() => ecommerceProductVariants.id, { onDelete: "cascade" }),
+    quantity: integer("quantity").notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    releasedAt: timestamp("released_at"),
+    releaseReason: varchar("release_reason", { length: 40 }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_ecommerce_inventory_reservations_order_variant").on(
+      table.orderId,
+      table.variantId,
+    ),
+    index("idx_ecommerce_inventory_reservations_variant_expiry").on(
+      table.variantId,
+      table.expiresAt,
+    ),
+    index("idx_ecommerce_inventory_reservations_order").on(table.orderId),
+  ],
+);
+
+/**
+ * Transactional outbox for payment-adjacent notifications. Payloads carry only
+ * stable internal identifiers; a worker reloads current order details at send time.
+ */
+export const ecommerceNotificationJobs = pgTable(
+  "ecommerce_notification_jobs",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    type: text("type").notNull(),
+    status: text("status").notNull().default("queued"),
+    orderId: varchar("order_id")
+      .notNull()
+      .references(() => ecommerceOrders.id, { onDelete: "cascade" }),
+    refundId: varchar("refund_id").references(() => ecommerceRefunds.id, {
+      onDelete: "cascade",
+    }),
+    shipmentId: varchar("shipment_id").references(() => ecommerceShipments.id, {
+      onDelete: "cascade",
+    }),
+    statusValue: text("status_value"),
+    deduplicationKey: varchar("deduplication_key", { length: 200 }).notNull(),
+    attemptCount: integer("attempt_count").notNull().default(0),
+    processingToken: varchar("processing_token"),
+    claimedAt: timestamp("claimed_at", { withTimezone: true }),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    failedAt: timestamp("failed_at", { withTimezone: true }),
+    lastErrorCode: varchar("last_error_code", { length: 120 }),
+    manualRetryCount: integer("manual_retry_count").notNull().default(0),
+    lastManualRetryAt: timestamp("last_manual_retry_at", { withTimezone: true }),
+    lastManualRetryBy: varchar("last_manual_retry_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_ecommerce_notification_jobs_deduplication").on(table.deduplicationKey),
+    index("idx_ecommerce_notification_jobs_ready").on(
+      table.status,
+      table.nextAttemptAt,
+      table.createdAt,
+    ),
+    index("idx_ecommerce_notification_jobs_order").on(table.orderId),
+    index("idx_ecommerce_notification_jobs_refund").on(table.refundId),
+    index("idx_ecommerce_notification_jobs_shipment").on(table.shipmentId),
   ],
 );
 
@@ -1058,11 +1178,18 @@ export const ecommerceProcessedWebhookEvents = pgTable(
     provider: text("provider").notNull().default("stripe"),
     eventId: text("event_id").notNull(),
     eventType: text("event_type").notNull(),
-    processedAt: timestamp("processed_at").notNull().defaultNow(),
+    status: text("status").notNull().default("processing"),
+    attemptCount: integer("attempt_count").notNull().default(1),
+    processingToken: varchar("processing_token"),
+    startedAt: timestamp("started_at").notNull().defaultNow(),
+    completedAt: timestamp("completed_at"),
+    lastError: text("last_error"),
+    processedAt: timestamp("processed_at"),
   },
   (table) => [
     uniqueIndex("idx_ecommerce_webhook_events_provider_event").on(table.provider, table.eventId),
     index("idx_ecommerce_webhook_events_processed_at").on(table.processedAt),
+    index("idx_ecommerce_webhook_status_started").on(table.status, table.startedAt),
   ],
 );
 
@@ -1290,6 +1417,10 @@ export type EcommerceCustomerAddress = typeof ecommerceCustomerAddresses.$inferS
 export type InsertEcommerceCustomerAddress = z.infer<typeof insertEcommerceCustomerAddressSchema>;
 export type EcommerceOrder = typeof ecommerceOrders.$inferSelect;
 export type InsertEcommerceOrder = z.infer<typeof insertEcommerceOrderSchema>;
+export type EcommerceCheckoutRequest = typeof ecommerceCheckoutRequests.$inferSelect;
+export type EcommerceInventoryReservation = typeof ecommerceInventoryReservations.$inferSelect;
+export type EcommerceNotificationJob = typeof ecommerceNotificationJobs.$inferSelect;
+export type EcommerceProcessedWebhookEvent = typeof ecommerceProcessedWebhookEvents.$inferSelect;
 export type EcommerceOrderItem = typeof ecommerceOrderItems.$inferSelect;
 export type InsertEcommerceOrderItem = z.infer<typeof insertEcommerceOrderItemSchema>;
 export type EcommerceOrderNote = typeof ecommerceOrderNotes.$inferSelect;

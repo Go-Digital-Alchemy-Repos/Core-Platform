@@ -5,6 +5,7 @@ import { storage } from "../storage";
 import * as r2Service from "./r2.service";
 import { CMS_OPTIONS, isImageMime, optimizeImage, type OptimizedImage } from "./image-optimizer";
 import type { CmsMediaAsset } from "@shared/schema";
+import { AppError } from "../middleware/error-handler";
 
 type MediaUploadOptions = {
   buffer: Buffer;
@@ -100,6 +101,9 @@ export async function createCmsMediaAssetFromUpload({
   }
 
   if (!publicUrl) {
+    if (process.env.NODE_ENV === "production") {
+      throw new AppError("Durable upload storage is unavailable", 503);
+    }
     const localPath = path.join(LOCAL_CMS_ROOT, mediaDirectory, filename);
     ensureParentDir(localPath);
     fs.writeFileSync(localPath, fileBuffer);
@@ -113,7 +117,7 @@ export async function createCmsMediaAssetFromUpload({
     url: publicUrl,
     mimeType: fileMimeType,
     fileSize: storedFileSize,
-    r2Key: r2Configured ? r2Key : null,
+    r2Key: publicUrl.startsWith("/uploads/") ? null : r2Key,
     alt: alt ?? "",
     uploadedBy: uploadedBy ?? null,
   });

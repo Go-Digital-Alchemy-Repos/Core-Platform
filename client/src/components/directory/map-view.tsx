@@ -18,7 +18,9 @@ interface MapViewProps {
   height?: string;
   minHeight?: string;
   interactive?: boolean;
+  collapseAttribution?: boolean;
   zoom?: number;
+  fitToPins?: boolean;
   center?: [number, number];
   highlightedId?: string | null;
 }
@@ -28,7 +30,9 @@ export function MapView({
   height = "500px",
   minHeight,
   interactive = true,
+  collapseAttribution = false,
   zoom: zoomProp,
+  fitToPins = false,
   center: centerProp,
   highlightedId,
 }: MapViewProps) {
@@ -50,6 +54,16 @@ export function MapView({
 
   const zoom = zoomProp ?? (markered.length === 0 ? 2 : markered.length === 1 ? 6 : 3);
 
+  const bounds = useMemo<[[number, number], [number, number]] | undefined>(() => {
+    if (!fitToPins || markered.length === 0) return undefined;
+    const latitudes = markered.map((t) => Number(t.profile.latitude));
+    const longitudes = markered.map((t) => Number(t.profile.longitude));
+    return [
+      [Math.min(...longitudes), Math.min(...latitudes)],
+      [Math.max(...longitudes), Math.max(...latitudes)],
+    ];
+  }, [fitToPins, markered]);
+
   const hasPercentHeight = typeof height === "string" && height.includes("%");
 
   return (
@@ -58,7 +72,13 @@ export function MapView({
       className="h-full w-full overflow-hidden border isolate"
       data-testid="map-container"
     >
-      <BaseMap center={center} zoom={zoom} interactive={interactive}>
+      <BaseMap
+        center={center}
+        zoom={zoom}
+        bounds={bounds}
+        interactive={interactive}
+        collapseAttribution={collapseAttribution}
+      >
         {markered.map((t) => {
           const fullName =
             [t.user.firstName, t.user.lastName].filter(Boolean).join(" ") || "Verified Provider";

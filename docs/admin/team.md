@@ -23,7 +23,7 @@ Events and Careers are now grouped under Content. Existing create/settings links
 
 ## Data and rollout
 
-Migration `0045_team_members.sql` adds `team_members` with a publishing-status index and nullable author references to users. It is additive and idempotent, registered in the Drizzle journal and legacy startup reconciliation. Apply it before serving the new application version; development databases provisioned with `db:push` also need this schema update. No existing content is converted or deleted, and no dependency is added.
+Migration `0062_team_members.sql` adds `team_members` with a publishing-status index and nullable author references to users. It is additive and idempotent, registered in the Drizzle journal and legacy startup reconciliation. Apply it before serving the new application version; development databases provisioned with `db:push` also need this schema update. No existing content is converted or deleted, and no dependency is added.
 
 For an application rollback, retain the new table and Team data. Older application versions cannot render the new block type: remove Team blocks from published pages or restore their earlier page revisions before rolling back. Do not drop the table as part of a routine rollback. Backups continue to use the platform's database backup process. Team records are retained until explicitly removed by a future approved data-retention operation; the UI offers reversible archiving.
 

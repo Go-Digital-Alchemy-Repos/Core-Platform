@@ -1,6 +1,9 @@
+import { startStoppableWorker, type StoppableWorker } from "../utils/runtime-lifecycle";
 import { gzipSync, gunzipSync } from "zlib";
+import type { PoolClient } from "pg";
 import { pool } from "../db";
 import { logger } from "../utils/logger";
+import { recordDomainOutcome } from "../utils/metrics";
 import {
   deleteBackupObject,
   downloadBackupObject,
@@ -9,6 +12,7 @@ import {
   listBackupObjects,
   uploadBackupObject,
 } from "./backup-storage.service";
+import { assertBackupRestoreIdentity } from "./backup-restore-identity";
 
 declare const __APP_VERSION__: string;
 
@@ -28,6 +32,7 @@ interface BackupSequenceSnapshot {
 
 interface BackupManifest {
   schemaVersion: 1;
+  clientStackId?: string | null;
   createdAt: string;
   key: string;
   reason: BackupRunReason;
@@ -52,6 +57,10 @@ interface DatabaseBackupSnapshot {
   tables: BackupTableSnapshot[];
 }
 
+interface RestoreBackupSnapshotOptions {
+  allowLegacyBackup?: boolean;
+}
+
 interface BackupStatus {
   enabled: boolean;
   configured: boolean;
@@ -68,10 +77,19 @@ const MANIFEST_LATEST_KEY = "manifests/latest.json";
 const SNAPSHOT_PREFIX = "db";
 const ADVISORY_LOCK_ID = 880_120_441;
 const DEFAULT_EXCLUDED_TABLES = new Set(["session", "__drizzle_migrations"]);
-let backupTimer: NodeJS.Timeout | null = null;
+let backupWorker: StoppableWorker | undefined;
 
 function quoteIdent(identifier: string) {
   return `"${identifier.replace(/"/g, '""')}"`;
+}
+
+export function serializeRestoreValue(
+  value: unknown,
+  jsonColumns: ReadonlySet<string>,
+  column: string,
+) {
+  if (value === null || value === undefined || !jsonColumns.has(column)) return value ?? null;
+  return JSON.stringify(value);
 }
 
 function parsePositiveInt(value: string | undefined, fallback: number): number {
@@ -115,9 +133,9 @@ function buildSnapshotKey(createdAt: Date, reason: BackupRunReason) {
   return `${SNAPSHOT_PREFIX}/${isoStamp}-${reason}.json.gz`;
 }
 
-async function queryAllTableNames() {
+async function queryAllTableNames(client: PoolClient) {
   const excludedTables = getExcludedTables();
-  const result = await pool.query<{ table_name: string }>(`
+  const result = await client.query<{ table_name: string }>(`
     SELECT tablename AS table_name
     FROM pg_tables
     WHERE schemaname = 'public'
@@ -129,8 +147,8 @@ async function queryAllTableNames() {
     .filter((tableName) => !excludedTables.has(tableName));
 }
 
-async function queryForeignKeyGraph() {
-  const result = await pool.query<{ child_table: string; parent_table: string }>(`
+async function queryForeignKeyGraph(client: PoolClient) {
+  const result = await client.query<{ child_table: string; parent_table: string }>(`
     SELECT
       tc.table_name AS child_table,
       ccu.table_name AS parent_table
@@ -197,8 +215,8 @@ function topologicallySortTables(
   return order;
 }
 
-async function querySequenceColumns() {
-  const result = await pool.query<BackupSequenceSnapshot>(`
+async function querySequenceColumns(client: PoolClient) {
+  const result = await client.query<BackupSequenceSnapshot>(`
     SELECT
       cols.table_name AS "tableName",
       cols.column_name AS "columnName",
@@ -211,8 +229,8 @@ async function querySequenceColumns() {
   return result.rows.filter((row) => Boolean(row.sequenceName));
 }
 
-async function captureTable(tableName: string): Promise<BackupTableSnapshot> {
-  const result = await pool.query<Record<string, unknown>>(
+async function captureTable(client: PoolClient, tableName: string): Promise<BackupTableSnapshot> {
+  const result = await client.query<Record<string, unknown>>(
     `SELECT * FROM public.${quoteIdent(tableName)}`,
   );
 
@@ -245,16 +263,64 @@ async function pruneExpiredBackups(retentionDays: number, maxSnapshots: number) 
   }
 }
 
-async function acquireBackupLock() {
-  const result = await pool.query<{ acquired: boolean }>(
-    "SELECT pg_try_advisory_lock($1) AS acquired",
-    [ADVISORY_LOCK_ID],
-  );
-  return Boolean(result.rows[0]?.acquired);
+// Session advisory locks must stay on a checked-out connection until the entire
+// operation finishes, including object upload/download and retention work.
+async function withBackupLock<T>(operation: (client: PoolClient) => Promise<T>): Promise<T> {
+  const client = await pool.connect();
+  let acquired = false;
+  let acquisitionCompleted = false;
+  let discardConnection = false;
+  let outcome: { ok: true; value: T } | { ok: false; error: unknown };
+  try {
+    const result = await client.query<{ acquired: boolean }>(
+      "SELECT pg_try_advisory_lock($1) AS acquired",
+      [ADVISORY_LOCK_ID],
+    );
+    acquisitionCompleted = true;
+    acquired = Boolean(result.rows[0]?.acquired);
+    if (!acquired) throw new Error("Another backup or restore is already running");
+    outcome = { ok: true, value: await operation(client) };
+  } catch (error) {
+    // An acquisition query may have reached the server even if its reply failed.
+    discardConnection = !acquisitionCompleted;
+    outcome = { ok: false, error };
+  }
+
+  try {
+    if (acquired) {
+      const result = await client.query<{ released: boolean }>(
+        "SELECT pg_advisory_unlock($1) AS released",
+        [ADVISORY_LOCK_ID],
+      );
+      if (!result.rows[0]?.released) throw new Error("Backup lock release failed");
+    }
+  } catch (error) {
+    discardConnection = true;
+    logger.backup.error("Backup lock cleanup failed; discarding connection", error);
+    if (outcome.ok) outcome = { ok: false, error };
+  } finally {
+    client.release(discardConnection);
+  }
+  if (!outcome.ok) throw outcome.error;
+  return outcome.value;
 }
 
-async function releaseBackupLock() {
-  await pool.query("SELECT pg_advisory_unlock($1)", [ADVISORY_LOCK_ID]).catch(() => undefined);
+async function withBackupTransaction<T>(
+  client: PoolClient,
+  begin: string,
+  operation: () => Promise<T>,
+): Promise<T> {
+  await client.query(begin);
+  try {
+    const result = await operation();
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    // Preserve the original failure. An unusable session will be discarded by
+    // withBackupLock when its unlock query fails.
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  }
 }
 
 export async function runSystemBackup(reason: BackupRunReason = "manual") {
@@ -267,82 +333,88 @@ export async function runSystemBackup(reason: BackupRunReason = "manual") {
     throw new Error("Backup storage is not available");
   }
 
-  const lockAcquired = await acquireBackupLock();
-  if (!lockAcquired) {
-    throw new Error("Another backup is already running");
-  }
+  return withBackupLock(async (client) => {
+    try {
+      const createdAt = new Date();
+      const { restoreOrder, sequences, tableSnapshots } = await withBackupTransaction(
+        client,
+        "BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY",
+        async () => {
+          const tables = await queryAllTableNames(client);
+          const edges = await queryForeignKeyGraph(client);
+          const restoreOrder = topologicallySortTables(tables, edges);
+          const sequences = await querySequenceColumns(client);
+          const tableSnapshots: BackupTableSnapshot[] = [];
+          for (const tableName of tables) {
+            tableSnapshots.push(await captureTable(client, tableName));
+          }
+          return { restoreOrder, sequences, tableSnapshots };
+        },
+      );
 
-  try {
-    const createdAt = new Date();
-    const tables = await queryAllTableNames();
-    const edges = await queryForeignKeyGraph();
-    const restoreOrder = topologicallySortTables(tables, edges);
-    const sequences = await querySequenceColumns();
-    const tableSnapshots: BackupTableSnapshot[] = [];
+      const totalRowCount = tableSnapshots.reduce((sum, table) => sum + table.rowCount, 0);
+      const mediaAssetTable = tableSnapshots.find((table) => table.name === "cms_media");
+      const mediaAssetCount = mediaAssetTable?.rowCount ?? 0;
 
-    for (const tableName of tables) {
-      tableSnapshots.push(await captureTable(tableName));
+      const manifest: BackupManifest = {
+        schemaVersion: 1,
+        clientStackId: process.env.CLIENT_STACK_ID?.trim() || null,
+        createdAt: createdAt.toISOString(),
+        key: buildSnapshotKey(createdAt, reason),
+        reason,
+        appVersion: APP_VERSION,
+        gitCommitSha: process.env.RAILWAY_GIT_COMMIT_SHA || null,
+        environment: process.env.NODE_ENV || "development",
+        railwayEnvironment: process.env.RAILWAY_ENVIRONMENT_NAME || null,
+        railwayProjectId: process.env.RAILWAY_PROJECT_ID || null,
+        railwayServiceId: process.env.RAILWAY_SERVICE_ID || null,
+        storageSource: storageInfo.source,
+        bucketName: storageInfo.bucketName,
+        bucketPrefix: storageInfo.prefix,
+        tableCount: tableSnapshots.length,
+        totalRowCount,
+        mediaAssetCount,
+        restoreOrder,
+      };
+
+      const snapshot: DatabaseBackupSnapshot = {
+        manifest,
+        sequences,
+        tables: tableSnapshots,
+      };
+
+      const compressed = gzipSync(Buffer.from(JSON.stringify(snapshot), "utf8"));
+      const uploaded = await uploadBackupObject(manifest.key, compressed, "application/json", {
+        contentEncoding: "gzip",
+        metadata: {
+          createdAt: manifest.createdAt,
+          reason: manifest.reason,
+          appVersion: manifest.appVersion,
+        },
+      });
+
+      if (!uploaded) {
+        throw new Error("Backup upload failed");
+      }
+
+      manifest.key = uploaded.key;
+      await writeLatestManifest(manifest);
+      await pruneExpiredBackups(getRetentionDays(), getMaxSnapshots());
+
+      logger.backup.info("System backup completed", {
+        key: manifest.key,
+        totalRowCount,
+        tableCount: manifest.tableCount,
+        reason,
+      });
+      recordDomainOutcome("backup", "completed");
+
+      return manifest;
+    } catch (error) {
+      recordDomainOutcome("backup", "failed");
+      throw error;
     }
-
-    const totalRowCount = tableSnapshots.reduce((sum, table) => sum + table.rowCount, 0);
-    const mediaAssetTable = tableSnapshots.find((table) => table.name === "cms_media");
-    const mediaAssetCount = mediaAssetTable?.rowCount ?? 0;
-
-    const manifest: BackupManifest = {
-      schemaVersion: 1,
-      createdAt: createdAt.toISOString(),
-      key: buildSnapshotKey(createdAt, reason),
-      reason,
-      appVersion: APP_VERSION,
-      gitCommitSha: process.env.RAILWAY_GIT_COMMIT_SHA || null,
-      environment: process.env.NODE_ENV || "development",
-      railwayEnvironment: process.env.RAILWAY_ENVIRONMENT_NAME || null,
-      railwayProjectId: process.env.RAILWAY_PROJECT_ID || null,
-      railwayServiceId: process.env.RAILWAY_SERVICE_ID || null,
-      storageSource: storageInfo.source,
-      bucketName: storageInfo.bucketName,
-      bucketPrefix: storageInfo.prefix,
-      tableCount: tableSnapshots.length,
-      totalRowCount,
-      mediaAssetCount,
-      restoreOrder,
-    };
-
-    const snapshot: DatabaseBackupSnapshot = {
-      manifest,
-      sequences,
-      tables: tableSnapshots,
-    };
-
-    const compressed = gzipSync(Buffer.from(JSON.stringify(snapshot), "utf8"));
-    const uploaded = await uploadBackupObject(manifest.key, compressed, "application/json", {
-      contentEncoding: "gzip",
-      metadata: {
-        createdAt: manifest.createdAt,
-        reason: manifest.reason,
-        appVersion: manifest.appVersion,
-      },
-    });
-
-    if (!uploaded) {
-      throw new Error("Backup upload failed");
-    }
-
-    manifest.key = uploaded.key;
-    await writeLatestManifest(manifest);
-    await pruneExpiredBackups(getRetentionDays(), getMaxSnapshots());
-
-    logger.backup.info("System backup completed", {
-      key: manifest.key,
-      totalRowCount,
-      tableCount: manifest.tableCount,
-      reason,
-    });
-
-    return manifest;
-  } finally {
-    await releaseBackupLock();
-  }
+  });
 }
 
 export async function listRecentBackupManifests(limit = 10): Promise<BackupManifest[]> {
@@ -399,83 +471,112 @@ export async function loadBackupSnapshotFromKey(key: string): Promise<DatabaseBa
   return JSON.parse(gunzipSync(buffer).toString("utf8")) as DatabaseBackupSnapshot;
 }
 
-export async function restoreBackupSnapshot(snapshot: DatabaseBackupSnapshot) {
-  const client = await pool.connect();
-
+async function restoreBackupSnapshotWithClient(
+  client: PoolClient,
+  snapshot: DatabaseBackupSnapshot,
+  options: RestoreBackupSnapshotOptions = {},
+) {
+  const identity = assertBackupRestoreIdentity(snapshot.manifest, {
+    targetStackId: process.env.CLIENT_STACK_ID,
+    allowLegacyBackup: options.allowLegacyBackup,
+  });
   try {
-    await client.query("BEGIN");
-    const tableNames = snapshot.tables.map((table) => table.name);
-    if (tableNames.length > 0) {
-      await client.query(
-        `TRUNCATE TABLE ${tableNames.map((table) => `public.${quoteIdent(table)}`).join(", ")} RESTART IDENTITY CASCADE`,
-      );
-    }
-
-    const tablesByName = new Map(snapshot.tables.map((table) => [table.name, table] as const));
-    for (const tableName of snapshot.manifest.restoreOrder) {
-      const table = tablesByName.get(tableName);
-      if (!table || table.rows.length === 0) continue;
-
-      const columns = Object.keys(table.rows[0]);
-      if (columns.length === 0) continue;
-
-      const chunkSize = 100;
-      for (let offset = 0; offset < table.rows.length; offset += chunkSize) {
-        const chunk = table.rows.slice(offset, offset + chunkSize);
-        const values: unknown[] = [];
-        const placeholders = chunk.map((row, rowIndex) => {
-          const rowPlaceholders = columns.map((column, columnIndex) => {
-            values.push((row as Record<string, unknown>)[column] ?? null);
-            return `$${rowIndex * columns.length + columnIndex + 1}`;
-          });
-          return `(${rowPlaceholders.join(", ")})`;
-        });
-
+    await withBackupTransaction(client, "BEGIN", async () => {
+      const tableNames = snapshot.tables.map((table) => table.name);
+      if (tableNames.length > 0) {
         await client.query(
-          `INSERT INTO public.${quoteIdent(tableName)} (${columns.map(quoteIdent).join(", ")}) VALUES ${placeholders.join(", ")}`,
-          values,
+          `TRUNCATE TABLE ${tableNames.map((table) => `public.${quoteIdent(table)}`).join(", ")} RESTART IDENTITY CASCADE`,
         );
       }
-    }
 
-    for (const sequence of snapshot.sequences) {
-      await client.query(
-        `SELECT setval($1::regclass, COALESCE((SELECT MAX(${quoteIdent(sequence.columnName)})::bigint FROM public.${quoteIdent(sequence.tableName)}), 1), COALESCE((SELECT MAX(${quoteIdent(sequence.columnName)}) IS NOT NULL FROM public.${quoteIdent(sequence.tableName)}), false))`,
-        [sequence.sequenceName],
-      );
-    }
+      const tablesByName = new Map(snapshot.tables.map((table) => [table.name, table] as const));
+      for (const tableName of snapshot.manifest.restoreOrder) {
+        const table = tablesByName.get(tableName);
+        if (!table || table.rows.length === 0) continue;
 
-    await client.query("COMMIT");
+        const columns = Object.keys(table.rows[0]);
+        if (columns.length === 0) continue;
+        const jsonColumnResult = await client.query<{ column_name: string }>(
+          `SELECT column_name
+         FROM information_schema.columns
+         WHERE table_schema = 'public'
+           AND table_name = $1
+           AND data_type IN ('json', 'jsonb')`,
+          [tableName],
+        );
+        const jsonColumns = new Set(jsonColumnResult.rows.map((row) => row.column_name));
+
+        const chunkSize = 100;
+        for (let offset = 0; offset < table.rows.length; offset += chunkSize) {
+          const chunk = table.rows.slice(offset, offset + chunkSize);
+          const values: unknown[] = [];
+          const placeholders = chunk.map((row, rowIndex) => {
+            const rowPlaceholders = columns.map((column, columnIndex) => {
+              values.push(
+                serializeRestoreValue(
+                  (row as Record<string, unknown>)[column],
+                  jsonColumns,
+                  column,
+                ),
+              );
+              return `$${rowIndex * columns.length + columnIndex + 1}`;
+            });
+            return `(${rowPlaceholders.join(", ")})`;
+          });
+
+          await client.query(
+            `INSERT INTO public.${quoteIdent(tableName)} (${columns.map(quoteIdent).join(", ")}) VALUES ${placeholders.join(", ")}`,
+            values,
+          );
+        }
+      }
+
+      for (const sequence of snapshot.sequences) {
+        await client.query(
+          `SELECT setval($1::regclass, COALESCE((SELECT MAX(${quoteIdent(sequence.columnName)})::bigint FROM public.${quoteIdent(sequence.tableName)}), 1), COALESCE((SELECT MAX(${quoteIdent(sequence.columnName)}) IS NOT NULL FROM public.${quoteIdent(sequence.tableName)}), false))`,
+          [sequence.sequenceName],
+        );
+      }
+    });
+    // A same-process admin restore must not keep serving pre-restore settings.
+    // Invalidate only after the transaction commits; rollback retains its cache.
+    const { storage: applicationStorage } = await import("../storage/index");
+    applicationStorage.settings.invalidateAll();
     logger.backup.info("Backup restore completed", {
       key: snapshot.manifest.key,
       createdAt: snapshot.manifest.createdAt,
       tableCount: snapshot.manifest.tableCount,
+      identity: identity.kind,
     });
+    recordDomainOutcome("restore", "completed");
   } catch (error) {
-    await client.query("ROLLBACK");
+    recordDomainOutcome("restore", "failed");
     throw error;
-  } finally {
-    client.release();
   }
+}
+
+export async function restoreBackupSnapshot(
+  snapshot: DatabaseBackupSnapshot,
+  options: RestoreBackupSnapshotOptions = {},
+) {
+  // Keep identity rejection ahead of all database activity for direct/file restores.
+  assertBackupRestoreIdentity(snapshot.manifest, {
+    targetStackId: process.env.CLIENT_STACK_ID,
+    allowLegacyBackup: options.allowLegacyBackup,
+  });
+  return withBackupLock((client) => restoreBackupSnapshotWithClient(client, snapshot, options));
 }
 
 export async function restoreSystemBackupFromKey(key: string) {
-  const lockAcquired = await acquireBackupLock();
-  if (!lockAcquired) {
-    throw new Error("Another backup or restore is already running");
-  }
-
-  try {
+  return withBackupLock(async (client) => {
     const snapshot = await loadBackupSnapshotFromKey(key);
-    await restoreBackupSnapshot(snapshot);
+    await restoreBackupSnapshotWithClient(client, snapshot);
     return snapshot.manifest;
-  } finally {
-    await releaseBackupLock();
-  }
+  });
 }
 
 export function startSystemBackupService() {
-  if (backupTimer) return;
+  if (backupWorker) return backupWorker;
 
   if (!shouldEnableBackups()) {
     logger.backup.info("System backups are disabled");
@@ -484,7 +585,7 @@ export function startSystemBackupService() {
 
   const intervalMs = getBackupIntervalHours() * 60 * 60 * 1000;
 
-  const tick = async () => {
+  const tick = async (isStopping: () => boolean) => {
     try {
       const configured = await isBackupStorageConfigured();
       if (!configured) {
@@ -492,6 +593,7 @@ export function startSystemBackupService() {
         return;
       }
 
+      if (isStopping()) return;
       const latest = await listRecentBackupManifests(1).then((items) => items[0] ?? null);
       const latestAgeMs = latest
         ? Date.now() - new Date(latest.createdAt).getTime()
@@ -501,27 +603,25 @@ export function startSystemBackupService() {
         return;
       }
 
+      if (isStopping()) return;
       await runSystemBackup(latest ? "scheduled" : "startup");
     } catch (error) {
       logger.backup.error("Scheduled backup run failed", error);
     }
   };
 
-  void tick();
-  backupTimer = setInterval(
-    () => {
-      void tick();
-    },
-    Math.min(intervalMs, 60 * 60 * 1000),
-  );
-
-  if (typeof backupTimer.unref === "function") {
-    backupTimer.unref();
-  }
+  const worker = startStoppableWorker({
+    intervalMs: Math.min(intervalMs, 60 * 60 * 1000),
+    run: tick,
+    unref: true,
+    onError: (error) => logger.backup.error("Scheduled backup run failed", error),
+  });
+  backupWorker = { stop: () => worker.stop() };
 
   logger.backup.info("System backup service started", {
     intervalHours: getBackupIntervalHours(),
     retentionDays: getRetentionDays(),
     maxSnapshots: getMaxSnapshots(),
   });
+  return backupWorker;
 }

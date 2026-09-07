@@ -187,6 +187,7 @@ export default function CheckoutPage() {
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [selectedAddressId, setSelectedAddressId] = useState("custom");
   const lastShippingQuoteKey = useRef("");
+  const checkoutRequestRef = useRef<{ fingerprint: string; key: string } | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   useEffect(() => {
@@ -314,7 +315,7 @@ export default function CheckoutPage() {
       if (shippingRates.length > 0 && !form.shippingRateId) {
         throw new Error("Select a shipping method before continuing.");
       }
-      const res = await apiRequest("POST", "/api/ecommerce/checkout/payment-intent", {
+      const checkoutPayload = {
         items: items.map((item) => ({
           productId: item.productId,
           variantId: item.variantId ?? undefined,
@@ -337,7 +338,17 @@ export default function CheckoutPage() {
           country: form.country,
         },
         billingSameAsShipping: true,
-      });
+      };
+      const fingerprint = JSON.stringify(checkoutPayload);
+      if (checkoutRequestRef.current?.fingerprint !== fingerprint) {
+        checkoutRequestRef.current = { fingerprint, key: crypto.randomUUID() };
+      }
+      const res = await apiRequest(
+        "POST",
+        "/api/ecommerce/checkout/payment-intent",
+        checkoutPayload,
+        { headers: { "Idempotency-Key": checkoutRequestRef.current.key } },
+      );
       return res.json() as Promise<PaymentIntentResponse>;
     },
     onSuccess: (data) => {

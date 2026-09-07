@@ -2,23 +2,11 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "@shared/schema";
 import { recordDbQuery } from "./utils/metrics";
+import { databasePoolConfig } from "./config/database";
 
 const { Pool } = pg;
 
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Add it to .env, export it in your shell, or provision a database before starting the app.",
-  );
-}
-
-const isProduction = process.env.NODE_ENV === "production";
-
-export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ...(isProduction && !process.env.DATABASE_URL.includes("sslmode=")
-    ? { ssl: { rejectUnauthorized: false } }
-    : {}),
-});
+export const pool = new Pool(databasePoolConfig(process.env));
 
 const origPoolQuery = Pool.prototype.query;
 Pool.prototype.query = function patchedQuery(this: pg.Pool, ...args: unknown[]) {

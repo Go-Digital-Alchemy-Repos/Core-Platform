@@ -209,25 +209,21 @@ export async function saveEcommerceFraudSettings(input: unknown): Promise<Ecomme
   const parsed = ecommerceFraudSettingsSchema.parse(input);
   const { maxMindLicenseKey, ...safeSettings } = parsed;
   const writes = [
-    storage.settings.upsertSetting(
-      SETTINGS_KEY,
-      JSON.stringify(safeSettings),
-      SETTINGS_CATEGORY,
-      false,
-    ),
+    {
+      key: SETTINGS_KEY,
+      value: JSON.stringify(safeSettings),
+      category: SETTINGS_CATEGORY,
+      isSecret: false,
+    },
   ];
-  if (maxMindLicenseKey) {
-    writes.push(
-      storage.settings.upsertSetting(
-        MAXMIND_LICENSE_KEY,
-        maxMindLicenseKey,
-        SETTINGS_CATEGORY,
-        true,
-      ),
-    );
-  }
-  await Promise.all(writes);
-  storage.settings.invalidateCategory(SETTINGS_CATEGORY);
+  if (maxMindLicenseKey)
+    writes.push({
+      key: MAXMIND_LICENSE_KEY,
+      value: maxMindLicenseKey,
+      category: SETTINGS_CATEGORY,
+      isSecret: true,
+    });
+  await storage.settings.upsertSettings(writes);
   return getEcommerceFraudSettings();
 }
 

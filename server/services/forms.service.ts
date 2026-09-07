@@ -1,9 +1,6 @@
-import type { CmsForm, CmsFormField, InsertCmsFormSubmission } from "@shared/schema";
+import type { CmsForm, CmsFormField, CmsFormEffectPayload } from "@shared/schema";
 import { storage } from "../storage";
-import { logger } from "../utils/logger";
-import { sendContactFormEmail, sendManagedFormSubmissionEmail } from "./email.service";
 import { syncContactToMailchimp } from "./mailchimp.service";
-import { createCrmLeadFromFormSubmission } from "./crm.service";
 import { AppError } from "../middleware/error-handler";
 
 function normalizeFormSettings(form: CmsForm) {
@@ -305,49 +302,6 @@ async function maybeSyncFormToMailchimp(form: CmsForm, data: Record<string, unkn
   });
 }
 
-async function handleContactFormEffects(
-  form: CmsForm,
-  data: Record<string, unknown>,
-  baseUrl?: string,
-) {
-  const settings = normalizeFormSettings(form);
-  if (!settings.storeAsContactMessage) return;
-
-  const name = stringValue(data.name);
-  const email = stringValue(data.email);
-  const subject = stringValue(data.subject);
-  const message = stringValue(data.message);
-
-  if (!name || !email || !subject || !message) {
-    return;
-  }
-
-  await storage.contacts.createMessage({ name, email, subject, message });
-
-  if (!settings.notifyAdmins) return;
-
-  const assignedUsers = await storage.users.getFormNotificationUsers(form.id);
-  const recipientEmails = assignedUsers.map((user) => user.email).filter(Boolean);
-  const adminEmails =
-    recipientEmails.length > 0
-      ? recipientEmails
-      : (await storage.users.getUsersByRole("admin")).map((admin) => admin.email).filter(Boolean);
-  if (adminEmails.length === 0) return;
-
-  sendContactFormEmail(
-    adminEmails,
-    name,
-    email,
-    message,
-    `${baseUrl ?? process.env.APP_URL ?? ""}/admin`,
-  ).catch((err) => {
-    logger.email.warn("Failed to send contact form notification", {
-      formSlug: form.slug,
-      error: err instanceof Error ? err.message : String(err),
-    });
-  });
-}
-
 function formatSubmissionValue(value: unknown): string {
   if (value === null || value === undefined || value === "") return "—";
   if (Array.isArray(value)) {
@@ -381,100 +335,98 @@ function buildSubmissionSummary(form: CmsForm, data: Record<string, unknown>) {
   return lines.join("\n");
 }
 
-async function notifyAssignedUsers(form: CmsForm, data: Record<string, unknown>, baseUrl?: string) {
+type SubmissionOptions = { baseUrl?: string; source?: string; idempotencyKey?: string };
+
+async function buildFormEffects(form: CmsForm, data: Record<string, unknown>, baseUrl?: string) {
   const settings = normalizeFormSettings(form);
-  if (!settings.notifyAdmins || settings.storeAsContactMessage) return;
-
-  const recipients = await storage.users.getFormNotificationUsers(form.id);
-  const recipientEmails = recipients.map((user) => user.email).filter(Boolean);
-  if (recipientEmails.length === 0) return;
-
-  const dashboardUrl = `${baseUrl ?? process.env.APP_URL ?? ""}/admin/forms`;
-  const submissionSummary = buildSubmissionSummary(form, data);
-
-  sendManagedFormSubmissionEmail(recipientEmails, form.name, submissionSummary, dashboardUrl).catch(
-    (err) => {
-      logger.email.warn("Failed to send managed form notification", {
-        formSlug: form.slug,
-        error: err instanceof Error ? err.message : String(err),
+  const effects: CmsFormEffectPayload[] = [];
+  if (settings.createCrmLead) effects.push({ kind: "crm_intake", formName: form.name });
+  const contact = {
+    name: stringValue(data.name),
+    email: stringValue(data.email),
+    subject: stringValue(data.subject),
+    message: stringValue(data.message),
+  };
+  const hasContact = settings.storeAsContactMessage && Object.values(contact).every(Boolean);
+  if (hasContact) effects.push({ kind: "contact_message" });
+  const email = stringValue(data.email);
+  if (settings.mailchimpEnabled && settings.mailchimpTag && email) {
+    effects.push({
+      kind: "mailchimp_sync",
+      email,
+      ...extractNameParts(data),
+      tag: settings.mailchimpTag,
+    });
+  }
+  if (settings.notifyAdmins && (!settings.storeAsContactMessage || hasContact)) {
+    let users = await storage.users.getFormNotificationUsers(form.id);
+    if (hasContact && !users.some((user) => user.email)) {
+      users = await storage.users.getUsersByRole("admin");
+    }
+    const recipients = [
+      ...new Set(
+        users
+          .map((user) => user.email?.trim().toLowerCase())
+          .filter((email): email is string => Boolean(email)),
+      ),
+    ];
+    for (const recipient of recipients)
+      effects.push({
+        kind: "admin_notification",
+        recipient,
+        formName: form.name,
+        summary: buildSubmissionSummary(form, data),
+        dashboardUrl: `${baseUrl ?? process.env.APP_URL ?? ""}${hasContact ? "/admin" : "/admin/forms"}`,
+        contact: hasContact
+          ? { name: contact.name, email: contact.email, message: contact.message }
+          : null,
       });
-    },
-  );
+  }
+  return effects;
 }
 
-async function maybeCreateCrmLead(
-  form: CmsForm,
-  data: Record<string, unknown>,
-  submissionId: string,
-) {
-  const settings = normalizeFormSettings(form);
-  if (!settings.createCrmLead) return;
-  await createCrmLeadFromFormSubmission({
-    formName: form.name,
-    formSubmissionId: submissionId,
-    data,
-  });
+async function submitManagedForm(form: CmsForm, data: unknown, options: SubmissionOptions) {
+  const validated = validateSubmissionData(form, data);
+  const idempotencyKey = options.idempotencyKey?.trim();
+  if (idempotencyKey && idempotencyKey.length > 128) {
+    throw new AppError("Idempotency key must be 128 characters or fewer", 400);
+  }
+  const effects = await buildFormEffects(form, validated, options.baseUrl);
+  const result = await storage.forms.createSubmissionWithEffects(
+    {
+      formId: form.id,
+      data: validated,
+      source: options.source ?? null,
+      idempotencyKey: idempotencyKey || null,
+    },
+    effects,
+  );
+  return {
+    form,
+    submission: result.submission,
+    duplicate: !result.created,
+    successMessage: normalizeFormSettings(form).successMessage,
+  };
 }
 
 export async function submitManagedFormBySlug(
   slug: string,
   data: unknown,
-  options: { baseUrl?: string; source?: string } = {},
+  options: SubmissionOptions = {},
 ) {
   const form = await storage.forms.getPublicBySlug(slug);
-  if (!form) {
-    throw new AppError("Form not found", 404);
-  }
-
-  const validated = validateSubmissionData(form, data);
-
-  const submissionPayload: InsertCmsFormSubmission = {
-    formId: form.id,
-    data: validated,
-    source: options.source ?? null,
-  };
-
-  const submission = await storage.forms.createSubmission(submissionPayload);
-
-  await maybeSyncFormToMailchimp(form, validated);
-  await handleContactFormEffects(form, validated, options.baseUrl);
-  await maybeCreateCrmLead(form, validated, submission.id);
-  await notifyAssignedUsers(form, validated, options.baseUrl);
-
-  return {
-    form,
-    submission,
-    successMessage: normalizeFormSettings(form).successMessage,
-  };
+  if (!form) throw new AppError("Form not found", 404);
+  return submitManagedForm(form, data, options);
 }
 
 export async function submitManagedFormById(
   id: string,
   data: unknown,
-  options: { baseUrl?: string; source?: string } = {},
+  options: SubmissionOptions = {},
 ) {
   const form = await storage.forms.getPublicById(id);
-  if (!form) {
-    throw new AppError("Form not found", 404);
-  }
-
-  const validated = validateSubmissionData(form, data);
-  const submission = await storage.forms.createSubmission({
-    formId: form.id,
-    data: validated,
-    source: options.source ?? null,
-  });
-
-  await maybeSyncFormToMailchimp(form, validated);
-  await handleContactFormEffects(form, validated, options.baseUrl);
-  await maybeCreateCrmLead(form, validated, submission.id);
-  await notifyAssignedUsers(form, validated, options.baseUrl);
-
-  return {
-    form,
-    submission,
-    successMessage: normalizeFormSettings(form).successMessage,
-  };
+  if (!form) throw new AppError("Form not found", 404);
+  return submitManagedForm(form, data, options);
 }
 
 export async function syncSystemFormToMailchimp(

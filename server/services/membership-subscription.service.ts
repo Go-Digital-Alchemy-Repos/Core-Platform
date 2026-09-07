@@ -31,16 +31,17 @@ export async function assignManualMembership(actorUserId: string | undefined, pa
     source: "manual",
     ...payload,
   });
-  const subscription = await storage.membership.upsertSubscriptionForUser(parsed.userId, parsed);
-  await storage.membership.createAuditEvent({
-    userId: parsed.userId,
-    actorUserId: actorUserId ?? null,
-    subscriptionId: subscription.id,
-    action: "membership_assigned",
-    note: parsed.adminNotes ?? null,
-    metadata: { planId: parsed.planId, status: parsed.status },
+  const { userId, ...subscriptionData } = parsed;
+  return storage.membership.upsertSubscriptionForUserWithAudit({
+    userId,
+    data: subscriptionData,
+    audit: {
+      actorUserId: actorUserId ?? null,
+      action: "membership_assigned",
+      note: parsed.adminNotes ?? null,
+      metadata: { planId: parsed.planId ?? null, status: parsed.status },
+    },
   });
-  return subscription;
 }
 
 export async function updateMembershipSubscriptionStatus(
@@ -52,19 +53,17 @@ export async function updateMembershipSubscriptionStatus(
   const data: Record<string, unknown> = { status };
   if (status === "canceled") data.canceledAt = new Date();
   if (status === "suspended") data.suspendedAt = new Date();
-  const subscription = await storage.membership.updateSubscription(
+  const subscription = await storage.membership.updateSubscriptionWithAudit({
     subscriptionId,
-    data as Partial<InsertMembershipSubscription>,
-  );
+    data: data as Partial<InsertMembershipSubscription>,
+    audit: {
+      actorUserId: actorUserId ?? null,
+      action: `membership_${status}`,
+      note: note ?? null,
+      metadata: { status },
+    },
+  });
   if (!subscription)
     throw Object.assign(new Error("Membership subscription not found"), { statusCode: 404 });
-  await storage.membership.createAuditEvent({
-    userId: subscription.userId,
-    actorUserId: actorUserId ?? null,
-    subscriptionId: subscription.id,
-    action: `membership_${status}`,
-    note: note ?? null,
-    metadata: { status },
-  });
   return subscription;
 }

@@ -393,6 +393,12 @@ async function ensureEcommerceTables(migrationsFolder: string) {
   await runSqlMigrationFile(migrationsFolder, "0033_ecommerce_order_notes.sql");
   await runSqlMigrationFile(migrationsFolder, "0034_ecommerce_manual_orders_payment_requests.sql");
   await runSqlMigrationFile(migrationsFolder, "0043_ecommerce_security_center.sql");
+  await runSqlMigrationFile(migrationsFolder, "0046_ecommerce_webhook_delivery.sql");
+  await runSqlMigrationFile(migrationsFolder, "0048_ecommerce_checkout_request_idempotency.sql");
+  await runSqlMigrationFile(migrationsFolder, "0049_ecommerce_paid_inventory_effect_unique.sql");
+  await runSqlMigrationFile(migrationsFolder, "0050_ecommerce_notification_jobs.sql");
+  await runSqlMigrationFile(migrationsFolder, "0051_ecommerce_inventory_reservations.sql");
+  await runSqlMigrationFile(migrationsFolder, "0060_ecommerce_notification_reconciliation.sql");
   logger.app.info("Ecommerce schema reconciled successfully");
 }
 
@@ -444,6 +450,8 @@ async function ensureMembershipTables(migrationsFolder: string) {
     logger.app.info("Applying membership migration for database without membership tables");
     await runSqlMigrationFile(migrationsFolder, "0036_membership.sql");
   }
+  logger.app.info("Reconciling membership webhook delivery state");
+  await runSqlMigrationFile(migrationsFolder, "0045_membership_webhook_delivery.sql");
 }
 
 async function ensureEmailTemplateModules(migrationsFolder: string) {
@@ -504,6 +512,38 @@ async function ensureCareerDirectoryLocations(migrationsFolder: string) {
   }
 }
 
+async function ensureManagedFormSubmissionSchema(migrationsFolder: string) {
+  if (await tableExists("cms_form_submissions")) {
+    await runSqlMigrationFile(migrationsFolder, "0058_cms_form_submission_idempotency.sql");
+    await runSqlMigrationFile(migrationsFolder, "0059_cms_form_effect_jobs.sql");
+  }
+}
+
+async function ensureClientSiteContentTables(migrationsFolder: string) {
+  if (
+    !(await tableExists("client_site_content")) ||
+    !(await tableExists("client_site_content_revisions"))
+  ) {
+    logger.app.info("Applying client site content migration");
+    await runSqlMigrationFile(migrationsFolder, "0044_client_site_content.sql");
+  }
+}
+
+async function ensureWooImportLifecycleTables(migrationsFolder: string) {
+  if (
+    !(await tableExists("woo_import_runs")) ||
+    !(await tableExists("woo_import_mappings")) ||
+    !(await tableExists("woo_import_audit_entries")) ||
+    !(await tableExists("woo_import_quarantine_records"))
+  ) {
+    logger.app.info("Applying WooCommerce import lifecycle migration");
+    await runSqlMigrationFile(migrationsFolder, "0047_woocommerce_import_lifecycle.sql");
+  }
+  await runSqlMigrationFile(migrationsFolder, "0055_woo_import_disposition_evidence.sql");
+  await runSqlMigrationFile(migrationsFolder, "0056_client_stack_onboarding_evidence.sql");
+  await runSqlMigrationFile(migrationsFolder, "0057_ecommerce_notification_job_manual_retries.sql");
+}
+
 async function reconcileSchema(migrationsFolder: string) {
   await ensureEventSlugs();
   await ensureCrmTables();
@@ -516,9 +556,12 @@ async function reconcileSchema(migrationsFolder: string) {
   await ensureDirectoryProfileModes(migrationsFolder);
   await ensureCmsGalleryTables(migrationsFolder);
   if (!(await tableExists("team_members"))) {
-    await runSqlMigrationFile(migrationsFolder, "0045_team_members.sql");
+    await runSqlMigrationFile(migrationsFolder, "0062_team_members.sql");
   }
   await ensureCareerDirectoryLocations(migrationsFolder);
+  await ensureClientSiteContentTables(migrationsFolder);
+  await ensureManagedFormSubmissionSchema(migrationsFolder);
+  await ensureWooImportLifecycleTables(migrationsFolder);
 }
 
 export async function runMigrations() {

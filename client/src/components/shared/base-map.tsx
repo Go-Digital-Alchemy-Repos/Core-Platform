@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import Map, { NavigationControl, type MapRef } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
@@ -7,25 +7,56 @@ import { MAP_STYLE_URL, applyLightMapStyle } from "@/lib/map-style";
 export function BaseMap({
   center,
   zoom,
+  bounds,
   interactive = true,
+  collapseAttribution = false,
   children,
 }: {
   center: [number, number];
   zoom: number;
+  bounds?: [[number, number], [number, number]];
   interactive?: boolean;
+  collapseAttribution?: boolean;
   children?: ReactNode;
 }) {
   const ref = useRef<MapRef>(null);
   const container = useRef<HTMLDivElement>(null);
+  const west = bounds?.[0][0];
+  const south = bounds?.[0][1];
+  const east = bounds?.[1][0];
+  const north = bounds?.[1][1];
+  const latitude = center[0];
+  const longitude = center[1];
+  const updateCamera = useCallback(() => {
+    const map = ref.current;
+    if (!map) return;
+    if (west !== undefined && south !== undefined && east !== undefined && north !== undefined) {
+      map.fitBounds(
+        [
+          [west, south],
+          [east, north],
+        ],
+        {
+          // Leave room for the full pin above its coordinate and the map controls.
+          padding: { top: 64, bottom: 40, left: 40, right: 40 },
+          maxZoom: 16,
+          duration: 0,
+        },
+      );
+    } else {
+      map.jumpTo({ center: [longitude, latitude], zoom });
+    }
+  }, [west, south, east, north, latitude, longitude, zoom]);
   useEffect(() => {
     if (!container.current) return;
-    const observer = new ResizeObserver(() => ref.current?.resize());
+    const observer = new ResizeObserver(() => {
+      ref.current?.resize();
+      if (west !== undefined) updateCamera();
+    });
     observer.observe(container.current);
     return () => observer.disconnect();
-  }, []);
-  useEffect(() => {
-    ref.current?.jumpTo({ center: [center[1], center[0]], zoom });
-  }, [center[0], center[1], zoom]);
+  }, [west, updateCamera]);
+  useEffect(updateCamera, [updateCamera]);
   return (
     <div ref={container} className="h-full w-full">
       <Map
@@ -33,7 +64,20 @@ export function BaseMap({
         workerUrl={workerUrl}
         initialViewState={{ latitude: center[0], longitude: center[1], zoom }}
         mapStyle={MAP_STYLE_URL}
+        attributionControl={collapseAttribution ? { compact: true } : undefined}
         onLoad={({ target }) => {
+          updateCamera();
+          if (collapseAttribution) {
+            // MapLibre opens compact attribution on initialization. Collapse only once;
+            // subsequent clicks and keyboard activation retain the native control behavior.
+            const attribution = target
+              .getContainer()
+              .querySelector<HTMLDetailsElement>("details.maplibregl-ctrl-attrib");
+            if (attribution) {
+              attribution.open = false;
+              attribution.classList.remove("maplibregl-compact-show");
+            }
+          }
           const original = target.getStyle();
           const styled = applyLightMapStyle(undefined, original);
           styled.layers.forEach((layer, index) => {

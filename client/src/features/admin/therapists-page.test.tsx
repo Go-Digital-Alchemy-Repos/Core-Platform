@@ -114,3 +114,24 @@ it("creates a standalone location without account fields", async () => {
   expect(submit.mock.calls[0][0]).not.toHaveProperty("email");
   expect(submit.mock.calls[0][0]).not.toHaveProperty("password");
 });
+
+it("shows current validation errors instead of an earlier server failure", async () => {
+  await act(async () =>
+    root.render(
+      <AddTherapistSheet
+        open
+        onOpenChange={vi.fn()}
+        onSubmit={vi.fn()}
+        isPending={false}
+        serverError="Email already registered"
+        labels={labels}
+      />,
+    ),
+  );
+  await act(async () =>
+    document.querySelector<HTMLButtonElement>('[data-testid="button-add-submit"]')!.click(),
+  );
+  const message = document.querySelector('[data-testid="add-profile-error"]')?.textContent;
+  expect(message).toContain("First name required");
+  expect(message).not.toContain("Email already registered");
+});
