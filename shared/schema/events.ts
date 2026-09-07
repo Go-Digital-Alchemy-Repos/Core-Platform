@@ -110,10 +110,11 @@ export const EVENT_REGISTRATION_APPROVAL_MODE_LABELS: Record<
 
 export const EVENT_STATUSES = ["draft", "published", "canceled", "completed", "archived"] as const;
 
-export type EventType = (typeof EVENT_TYPES)[number];
-export type EventCategory = (typeof EVENT_CATEGORIES)[number];
-export type EventAudience = (typeof EVENT_AUDIENCES)[number];
-export type EventFormat = (typeof EVENT_FORMATS)[number];
+// Configurable option IDs are strings; the constant lists above provide seed defaults.
+export type EventType = string;
+export type EventCategory = string;
+export type EventAudience = string;
+export type EventFormat = string;
 export type EventDeliveryMode = (typeof EVENT_DELIVERY_MODES)[number];
 export type EventRegistrationApprovalMode = (typeof EVENT_REGISTRATION_APPROVAL_MODES)[number];
 export type EventStatus = (typeof EVENT_STATUSES)[number];
@@ -285,6 +286,7 @@ export const events = pgTable(
     audience: text("audience").$type<EventAudience>(),
     format: text("format").$type<EventFormat>(),
     deliveryMode: text("delivery_mode").$type<EventDeliveryMode>(),
+    deliveryOptionId: text("delivery_option_id"),
     tags: jsonb("tags")
       .$type<string[]>()
       .default(sql`'[]'::jsonb`),

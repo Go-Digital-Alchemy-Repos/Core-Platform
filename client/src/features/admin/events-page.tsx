@@ -1,3 +1,8 @@
+import {
+  EventAttachmentsEditor,
+  type EventAttachmentMetadata,
+} from "./events/event-attachments-editor";
+import { useEventConfiguration } from "@/hooks/use-event-configuration";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -103,25 +108,13 @@ import {
   toDateTimeLocalValue,
 } from "@/lib/event-datetime";
 import {
-  EVENT_AUDIENCE_LABELS,
-  EVENT_AUDIENCES,
-  EVENT_CATEGORY_LABELS,
-  EVENT_CATEGORIES,
-  EVENT_DELIVERY_MODE_LABELS,
-  EVENT_DELIVERY_MODES,
-  EVENT_FORMAT_LABELS,
-  EVENT_FORMATS,
-  EVENT_PRESET_DEFAULTS,
   EVENT_REGISTRATION_APPROVAL_MODE_LABELS,
   EVENT_REGISTRATION_APPROVAL_MODES,
   EVENT_STATUSES,
-  EVENT_TYPE_LABELS,
-  EVENT_TYPES,
   type CmsForm,
   type Event,
   type EventOrganizer,
   type EventRegistration,
-  type EventType,
   type EventVenue,
   type InsertEventVenue,
 } from "@shared/schema";
@@ -187,6 +180,23 @@ function normalizeEventEditorTab(tab: string | null): EventEditorTab {
 }
 
 function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
+  const {
+    configuration,
+    ids,
+    labels,
+    isLoading: configurationLoading,
+    isError: configurationError,
+    retry: retryConfiguration,
+  } = useEventConfiguration(true);
+  const EVENT_TYPES = configuration.types.map((o) => o.id);
+  const EVENT_CATEGORIES = configuration.categories.map((o) => o.id);
+  const EVENT_DELIVERY_MODES = configuration.delivery.map((o) => o.id);
+  const EVENT_DELIVERY_MODE_LABELS = labels("delivery");
+  const EVENT_TYPE_LABELS = labels("types");
+  const EVENT_CATEGORY_LABELS = labels("categories");
+  const EVENT_AUDIENCE_LABELS = labels("audiences");
+  const EVENT_FORMAT_LABELS = labels("formats");
+
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
@@ -256,7 +266,9 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
         }
         if (
           deliveryModeFilter !== "all" &&
-          (event.deliveryMode ?? (event.isVirtual ? "virtual" : "in_person")) !== deliveryModeFilter
+          (event.deliveryOptionId ??
+            event.deliveryMode ??
+            (event.isVirtual ? "virtual" : "in_person")) !== deliveryModeFilter
         ) {
           return false;
         }
@@ -494,6 +506,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
 
     return {
       ...data,
+      attachments: data.attachments?.map(({ id, displayName }) => ({ id, displayName })),
       slug: data.slug?.trim() ?? "",
       tags,
       registrationFormId:
@@ -539,6 +552,18 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
     setEditingEvent(null);
     form.reset({
       ...defaultFormValues,
+      ...configuration.presets[configuration.defaultType],
+      eventType: configuration.defaultType,
+      tags: configuration.presets[configuration.defaultType].tags.join(", "),
+      deliveryOptionId: configuration.presets[configuration.defaultType].deliveryOptionId,
+      deliveryMode:
+        configuration.delivery.find(
+          (o) => o.id === configuration.presets[configuration.defaultType].deliveryOptionId,
+        )?.behavior ?? "in_person",
+      isVirtual:
+        configuration.delivery.find(
+          (o) => o.id === configuration.presets[configuration.defaultType].deliveryOptionId,
+        )?.behavior !== "in_person",
       timezone: getDefaultEventTimeZone(),
     });
     saveFeedbackRef.current.clearFeedback();
@@ -546,8 +571,32 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
     setDialogOpen(true);
   }
 
-  function applyPreset(eventType: EventType) {
-    const defaults = EVENT_PRESET_DEFAULTS[eventType];
+  function applyPreset(eventType: string) {
+    if (configurationLoading || configurationError) return;
+    const controlled = [
+      "category",
+      "audience",
+      "format",
+      "deliveryMode",
+      "tags",
+      "registrationEnabled",
+      "registrationApprovalMode",
+    ] as const;
+    if (
+      controlled.some((key) => form.getFieldState(key).isDirty) &&
+      !window.confirm("Replace edited preset fields with this preset's defaults?")
+    )
+      return;
+    const preset = configuration.presets[eventType];
+    if (!preset) return;
+    const defaults = {
+      ...preset,
+      deliveryMode:
+        configuration.delivery.find((o) => o.id === preset.deliveryOptionId)?.behavior ??
+        "in_person",
+    };
+    form.setValue("deliveryOptionId", preset.deliveryOptionId, { shouldDirty: true });
+    form.setValue("tags", preset.tags.join(", "), { shouldDirty: true });
     form.setValue("eventType", eventType, { shouldDirty: true });
     form.setValue("category", defaults.category, { shouldDirty: true });
     form.setValue("audience", defaults.audience, { shouldDirty: true });
@@ -576,8 +625,18 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
     form.setValue("isVirtual", Boolean(venue.isVirtual), { shouldDirty: true });
     if (venue.isVirtual) {
       form.setValue("deliveryMode", "virtual", { shouldDirty: true });
+      form.setValue(
+        "deliveryOptionId",
+        configuration.delivery.find((o) => !o.archived && o.behavior === "virtual")?.id ?? "",
+        { shouldDirty: true },
+      );
     } else if (form.getValues("deliveryMode") === "virtual") {
       form.setValue("deliveryMode", "in_person", { shouldDirty: true });
+      form.setValue(
+        "deliveryOptionId",
+        configuration.delivery.find((o) => !o.archived && o.behavior === "in_person")?.id ?? "",
+        { shouldDirty: true },
+      );
     }
   }
 
@@ -609,6 +668,14 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
   }
 
   function applyOrganizer(organizerId: string) {
+    if (
+      organizerId !== "none" &&
+      (["speakerName", "speakerBio", "speakerImageUrl"] as const).some(
+        (key) => form.getFieldState(key).isDirty,
+      ) &&
+      !window.confirm("Replace edited speaker details with the saved speaker?")
+    )
+      return;
     form.setValue("organizerId", organizerId, { shouldDirty: true });
     if (organizerId === "none") return;
 
@@ -621,10 +688,16 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
   }
 
   useEffect(() => {
-    if (!initialCreate || initialCreateOpenedRef.current) return;
+    if (
+      !initialCreate ||
+      initialCreateOpenedRef.current ||
+      configurationLoading ||
+      configurationError
+    )
+      return;
     initialCreateOpenedRef.current = true;
     openCreate();
-  }, [initialCreate]);
+  }, [initialCreate, configurationLoading, configurationError]);
 
   function openEdit(event: Event) {
     setEditingEvent(event);
@@ -649,6 +722,8 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
       audience: event.audience ?? "",
       format: event.format ?? "",
       deliveryMode: event.deliveryMode ?? (event.isVirtual ? "virtual" : "in_person"),
+      deliveryOptionId:
+        event.deliveryOptionId ?? event.deliveryMode ?? (event.isVirtual ? "virtual" : "in_person"),
       tags: Array.isArray(event.tags) ? event.tags.join(", ") : "",
       registrationFormId: event.registrationFormId ?? "none",
       timezone: eventTimeZone,
@@ -673,6 +748,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
       showInArchives: event.showInArchives ?? false,
       recordingAccess: event.recordingAccess ?? "free",
       recordingPrice: event.recordingPrice ?? undefined,
+      attachments: (event as Event & { attachments?: EventAttachmentMetadata[] }).attachments ?? [],
       speakerName: event.speakerName ?? "",
       speakerBio: event.speakerBio ?? "",
       speakerImageUrl: event.speakerImageUrl ?? "",
@@ -722,6 +798,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
   };
 
   function onSubmit(values: EventFormValues) {
+    if (configurationLoading || configurationError) return;
     if (editingEvent) {
       updateMutation.mutate({ id: editingEvent.id, data: values });
     } else {
@@ -743,7 +820,19 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
         <h1 className="text-2xl font-heading font-semibold" data-testid="text-admin-events-title">
           Events
         </h1>
-        <Button onClick={openCreate} data-testid="button-create-event">
+        {configurationError && (
+          <p role="alert">
+            Unable to load event settings.{" "}
+            <Button variant="outline" onClick={() => void retryConfiguration()}>
+              Retry
+            </Button>
+          </p>
+        )}
+        <Button
+          disabled={configurationLoading || configurationError}
+          onClick={openCreate}
+          data-testid="button-create-event"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Event
         </Button>
@@ -1088,6 +1177,18 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
             >
               <Form {...form}>
                 <form id="event-form" onSubmit={form.handleSubmit(onSubmit)}>
+                  {configurationError && (
+                    <p role="alert">
+                      Event settings could not be loaded. Your draft is preserved.{" "}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => void retryConfiguration()}
+                      >
+                        Retry settings
+                      </Button>
+                    </p>
+                  )}
                   <Tabs value={activeTab} onValueChange={handleEditorTabChange}>
                     <TabsList
                       className="w-full grid grid-cols-4 mb-6"
@@ -1198,6 +1299,19 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                               />
                               <FormField
                                 control={form.control}
+                                name="attachments"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <EventAttachmentsEditor
+                                      value={field.value ?? []}
+                                      onChange={field.onChange}
+                                    />
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
                                 name="imageUrl"
                                 render={({ field }) => (
                                   <FormItem>
@@ -1238,7 +1352,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                       <FormItem>
                                         <FormLabel>Event Type</FormLabel>
                                         <Select
-                                          onValueChange={(value: EventType) => applyPreset(value)}
+                                          onValueChange={(value) => applyPreset(value)}
                                           value={field.value || ""}
                                         >
                                           <FormControl>
@@ -1247,7 +1361,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                             </SelectTrigger>
                                           </FormControl>
                                           <SelectContent>
-                                            {EVENT_TYPES.map((eventType) => (
+                                            {ids("types", field.value).map((eventType) => (
                                               <SelectItem key={eventType} value={eventType}>
                                                 {EVENT_TYPE_LABELS[eventType]}
                                               </SelectItem>
@@ -1266,12 +1380,20 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                         <FormLabel>Delivery Mode</FormLabel>
                                         <Select
                                           onValueChange={(value) => {
-                                            field.onChange(value);
-                                            form.setValue("isVirtual", value !== "in_person", {
+                                            const behavior =
+                                              configuration.delivery.find((o) => o.id === value)
+                                                ?.behavior ?? "in_person";
+                                            form.setValue("deliveryOptionId", value, {
+                                              shouldDirty: true,
+                                            });
+                                            field.onChange(behavior);
+                                            form.setValue("isVirtual", behavior !== "in_person", {
                                               shouldDirty: true,
                                             });
                                           }}
-                                          value={field.value || ""}
+                                          value={
+                                            form.watch("deliveryOptionId") || field.value || ""
+                                          }
                                         >
                                           <FormControl>
                                             <SelectTrigger data-testid="select-event-delivery-mode">
@@ -1279,9 +1401,12 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                             </SelectTrigger>
                                           </FormControl>
                                           <SelectContent>
-                                            {EVENT_DELIVERY_MODES.map((mode) => (
+                                            {ids(
+                                              "delivery",
+                                              form.watch("deliveryOptionId") || field.value,
+                                            ).map((mode) => (
                                               <SelectItem key={mode} value={mode}>
-                                                {EVENT_DELIVERY_MODE_LABELS[mode]}
+                                                {labels("delivery")[mode]}
                                               </SelectItem>
                                             ))}
                                           </SelectContent>
@@ -1306,7 +1431,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                             </SelectTrigger>
                                           </FormControl>
                                           <SelectContent>
-                                            {EVENT_CATEGORIES.map((category) => (
+                                            {ids("categories", field.value).map((category) => (
                                               <SelectItem key={category} value={category}>
                                                 {EVENT_CATEGORY_LABELS[category]}
                                               </SelectItem>
@@ -1333,7 +1458,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                             </SelectTrigger>
                                           </FormControl>
                                           <SelectContent>
-                                            {EVENT_AUDIENCES.map((audience) => (
+                                            {ids("audiences", field.value).map((audience) => (
                                               <SelectItem key={audience} value={audience}>
                                                 {EVENT_AUDIENCE_LABELS[audience]}
                                               </SelectItem>
@@ -1360,7 +1485,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                             </SelectTrigger>
                                           </FormControl>
                                           <SelectContent>
-                                            {EVENT_FORMATS.map((format) => (
+                                            {ids("formats", field.value).map((format) => (
                                               <SelectItem key={format} value={format}>
                                                 {EVENT_FORMAT_LABELS[format]}
                                               </SelectItem>
@@ -1381,11 +1506,19 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                           <Input
                                             {...field}
                                             placeholder="leadership, CE, onboarding"
+                                            list="event-tag-suggestions"
                                             data-testid="input-event-tags"
                                           />
                                         </FormControl>
                                         <p className="text-xs text-muted-foreground">
                                           Separate tags with commas.
+                                          <datalist id="event-tag-suggestions">
+                                            {configuration.tags
+                                              .filter((o) => !o.archived)
+                                              .map((o) => (
+                                                <option key={o.id} value={o.label} />
+                                              ))}
+                                          </datalist>
                                         </p>
                                         <FormMessage />
                                       </FormItem>
@@ -1608,7 +1741,20 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                     <FormControl>
                                       <Switch
                                         checked={field.value}
-                                        onCheckedChange={field.onChange}
+                                        onCheckedChange={(checked) => {
+                                          field.onChange(checked);
+                                          const mode = checked ? "virtual" : "in_person";
+                                          form.setValue("deliveryMode", mode, {
+                                            shouldDirty: true,
+                                          });
+                                          form.setValue(
+                                            "deliveryOptionId",
+                                            configuration.delivery.find(
+                                              (o) => !o.archived && o.behavior === mode,
+                                            )?.id ?? "",
+                                            { shouldDirty: true },
+                                          );
+                                        }}
                                         data-testid="switch-event-virtual"
                                       />
                                     </FormControl>
@@ -1756,7 +1902,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                 name="organizerId"
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>Saved Organizer</FormLabel>
+                                    <FormLabel>Saved Speaker</FormLabel>
                                     <Select
                                       onValueChange={applyOrganizer}
                                       value={field.value || "none"}
@@ -1767,7 +1913,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                         </SelectTrigger>
                                       </FormControl>
                                       <SelectContent>
-                                        <SelectItem value="none">No saved organizer</SelectItem>
+                                        <SelectItem value="none">No saved speaker</SelectItem>
                                         {organizers.map((organizer) => (
                                           <SelectItem key={organizer.id} value={organizer.id}>
                                             {organizer.name}
@@ -2765,7 +2911,9 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
               state={saveState.state}
               form="event-form"
               primaryLabel={editingEvent ? "Save Event" : "Create Event"}
-              disabled={isSaving || editorLock.isReadOnly}
+              disabled={
+                isSaving || editorLock.isReadOnly || configurationLoading || configurationError
+              }
               buttonTestId="button-submit-event"
             />
           </SheetFooter>

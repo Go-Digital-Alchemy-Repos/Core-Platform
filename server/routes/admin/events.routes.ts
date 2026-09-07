@@ -1,3 +1,19 @@
+import { validateConfiguredEventChoices } from "@shared/event-configuration";
+import multer from "multer";
+import {
+  EVENT_ATTACHMENT_MAX_BYTES,
+  type EventAttachmentMetadata,
+} from "@shared/event-attachments";
+import { AppError } from "../../middleware/error-handler";
+import {
+  stageEventAttachment,
+  listEventAttachments,
+  listEventAttachmentsForEvents,
+  saveEventWithAttachments,
+} from "../../services/event-attachments.service";
+import { eventSpeakerInputSchema } from "@shared/event-speaker";
+import configurationRoutes from "./event-configuration.routes";
+import { readEventConfiguration } from "../../services/event-configuration.service";
 import { Router } from "express";
 import { storage } from "../../storage/index";
 import { asyncHandler } from "../../middleware/error-handler";
@@ -11,19 +27,41 @@ import {
 } from "../../services/email.service";
 import * as r2Service from "../../services/r2.service";
 import {
-  EVENT_AUDIENCES,
-  EVENT_CATEGORIES,
   EVENT_DELIVERY_MODES,
-  EVENT_FORMATS,
   EVENT_REGISTRATION_APPROVAL_MODES,
   EVENT_STATUSES,
-  EVENT_TYPES,
   type InsertEvent,
   type InsertEventOrganizer,
   type InsertEventVenue,
 } from "@shared/schema";
 
 const router = Router();
+const attachmentUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: EVENT_ATTACHMENT_MAX_BYTES, files: 1, fields: 0, parts: 1 },
+});
+router.post(
+  "/attachments",
+  (req, res, next) => {
+    attachmentUpload.single("file")(req, res, (error) =>
+      next(
+        error
+          ? new AppError(
+              error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE"
+                ? "Attachments must be 25 MB or smaller"
+                : "Invalid attachment upload",
+              400,
+            )
+          : undefined,
+      ),
+    );
+  },
+  asyncHandler(async (req, res) => {
+    if (!req.file) throw new AppError("Choose a file to upload", 400);
+    res.status(201).json(await stageEventAttachment(req.user!.id, req.file));
+  }),
+);
+router.use("/configuration", configurationRoutes);
 
 const VALID_STATUSES = EVENT_STATUSES;
 const VALID_VISIBILITIES = ["public", "members_only", "counselors_only", "admins_only"] as const;
@@ -115,10 +153,14 @@ async function buildUniqueOrganizerSlug(
   return `${base}-${Date.now().toString(36)}`;
 }
 
-async function normalizeEventImage<T extends { imageUrl?: string | null }>(event: T): Promise<T> {
+async function normalizeEventImage<T extends { id: string; imageUrl?: string | null }>(
+  event: T,
+  attachments?: EventAttachmentMetadata[],
+): Promise<T> {
   return {
     ...event,
     imageUrl: (await r2Service.normalizePublicUrl(event.imageUrl)) ?? null,
+    attachments: attachments ?? (await listEventAttachments(event.id)),
   };
 }
 
@@ -166,7 +208,12 @@ function dateField(data: EventRequestData, field: string): string | number | Dat
   return undefined;
 }
 
-function validateEventData(data: EventRequestData): string | null {
+async function validateEventData(
+  data: EventRequestData,
+  existingId?: string,
+): Promise<string | null> {
+  const configuration = await readEventConfiguration();
+  const existing = existingId ? await storage.events.getEvent(existingId) : undefined;
   const status = textField(data, "status");
   const visibility = textField(data, "visibility");
   const registrationType = textField(data, "registrationType");
@@ -200,21 +247,19 @@ function validateEventData(data: EventRequestData): string | null {
     return `Invalid registration type. Must be one of: ${VALID_REGISTRATION_TYPES.join(", ")}`;
   }
 
-  if (eventType && !EVENT_TYPES.includes(eventType as (typeof EVENT_TYPES)[number])) {
-    return `Invalid event type. Must be one of: ${EVENT_TYPES.join(", ")}`;
-  }
-
-  if (category && !EVENT_CATEGORIES.includes(category as (typeof EVENT_CATEGORIES)[number])) {
-    return `Invalid event category. Must be one of: ${EVENT_CATEGORIES.join(", ")}`;
-  }
-
-  if (audience && !EVENT_AUDIENCES.includes(audience as (typeof EVENT_AUDIENCES)[number])) {
-    return `Invalid event audience. Must be one of: ${EVENT_AUDIENCES.join(", ")}`;
-  }
-
-  if (format && !EVENT_FORMATS.includes(format as (typeof EVENT_FORMATS)[number])) {
-    return `Invalid event format. Must be one of: ${EVENT_FORMATS.join(", ")}`;
-  }
+  const choiceError = validateConfiguredEventChoices(
+    configuration,
+    {
+      eventType,
+      category,
+      audience,
+      format,
+      deliveryMode,
+      deliveryOptionId: textField(data, "deliveryOptionId"),
+    },
+    existing,
+  );
+  if (choiceError) return choiceError;
 
   if (
     deliveryMode &&
@@ -321,14 +366,22 @@ router.get(
   "/",
   asyncHandler(async (_req, res) => {
     const eventsList = await storage.events.getAllEvents();
-    res.json(await Promise.all(eventsList.map(normalizeEventImage)));
+    const attachments = await listEventAttachmentsForEvents(eventsList.map((event) => event.id));
+    res.json(
+      await Promise.all(
+        eventsList.map((event) => normalizeEventImage(event, attachments.get(event.id) ?? [])),
+      ),
+    );
   }),
 );
 
 router.post(
   "/",
   asyncHandler(async (req, res) => {
-    const error = validateEventData(req.body);
+    const error = await validateEventData(
+      req.body,
+      req.params.id ? paramString(req.params.id) : undefined,
+    );
     if (error) {
       return res.status(400).json({ message: error });
     }
@@ -341,7 +394,13 @@ router.post(
       payload.tags = payload.tags.map((tag: string) => tag.trim()).filter(Boolean);
     }
     payload.slug = await buildUniqueEventSlug(payload.title ?? "Event", payload.slug);
-    const event = await storage.events.createEvent(payload as InsertEvent);
+    const { attachments, ...eventData } = payload as EventRequestData & { attachments?: unknown };
+    const event = await saveEventWithAttachments(
+      req.user!.id,
+      undefined,
+      eventData as InsertEvent,
+      attachments,
+    );
     res.status(201).json(await normalizeEventImage(event));
   }),
 );
@@ -437,6 +496,9 @@ router.get(
 router.post(
   "/organizers",
   asyncHandler(async (req, res) => {
+    const parsed = eventSpeakerInputSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ message: parsed.error.issues[0].message });
+    req.body = parsed.data;
     const name = textField(req.body, "name");
     if (!name) {
       return res.status(400).json({ message: "Organizer name is required" });
@@ -462,6 +524,9 @@ router.post(
 router.put(
   "/organizers/:organizerId",
   asyncHandler(async (req, res) => {
+    const parsed = eventSpeakerInputSchema.partial().safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ message: parsed.error.issues[0].message });
+    req.body = parsed.data;
     const id = paramString(req.params.organizerId);
     const organizer = await storage.eventOrganizers.getOrganizer(id);
     if (!organizer) {
@@ -515,7 +580,10 @@ router.delete(
 router.put(
   "/:id",
   asyncHandler(async (req, res) => {
-    const error = validateEventData(req.body);
+    const error = await validateEventData(
+      req.body,
+      req.params.id ? paramString(req.params.id) : undefined,
+    );
     if (error) {
       return res.status(400).json({ message: error });
     }
@@ -538,7 +606,13 @@ router.put(
       payload.slug = await buildUniqueEventSlug(payload.title || oldEvent.title, requestedSlug, id);
     }
 
-    const event = await storage.events.updateEvent(id, payload as Partial<InsertEvent>);
+    const { attachments, ...eventData } = payload as EventRequestData & { attachments?: unknown };
+    const event = await saveEventWithAttachments(
+      req.user!.id,
+      id,
+      eventData as Partial<InsertEvent>,
+      attachments,
+    );
     if (!event) {
       notFound(res, "Event");
       return;
