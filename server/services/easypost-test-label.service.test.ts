@@ -405,6 +405,84 @@ describe("EasyPost test label transport: no provider calls", () => {
       }).success,
     ).toBe(false);
   });
+  it("accepts approved carrier text and printable fee types without extra restrictions", async () => {
+    const result = await run({
+      ...shipment(),
+      selected_rate: { ...rate, carrier: "É".repeat(200), service: "Service: ™" },
+      fees: [{ ...shipment().fees[0], type: "! fee: [test]" }],
+    }).promise;
+    expect(result.kind).toBe("purchase_observed");
+    if (result.kind !== "purchase_observed") throw Error("missing evidence");
+    expect(result.purchase.finances.selectedPostage?.carrier).toHaveLength(200);
+    expect(result.purchase.finances.fees?.[0].type).toBe("! fee: [test]");
+    for (const carrier of ["x".repeat(201), "bad\u0085carrier"]) {
+      const invalid = await run({ ...shipment(), selected_rate: { ...rate, carrier } }).promise;
+      expect(invalid).toMatchObject({
+        kind: "purchase_observed",
+        purchase: { finances: { selectedPostage: null } },
+      });
+    }
+  });
+  it("requires exactly the evidence-derived review flags and rejects contradictions", async () => {
+    const complete = await run(shipment()).promise;
+    if (complete.kind !== "purchase_observed") throw Error("missing evidence");
+    const check = (purchase: unknown) =>
+      shippingLabelBuyObservationSchema.safeParse({ kind: "purchase_observed", purchase }).success;
+    for (const flag of [
+      "fees_unverifiable",
+      "tracking_unavailable",
+      "label_metadata_unavailable",
+      "selection_mismatch",
+      "input_mismatch",
+      "input_unverifiable",
+      "price_mismatch",
+      "selected_rate_missing",
+      "selected_rate_invalid",
+    ]) {
+      expect(check({ ...complete.purchase, reviewCodes: [flag] })).toBe(false);
+    }
+    const partial = await run({
+      ...shipment(),
+      selected_rate: null,
+      fees: null,
+      tracking_code: null,
+      from_address: null,
+    }).promise;
+    if (partial.kind !== "purchase_observed") throw Error("missing evidence");
+    expect(check(partial.purchase)).toBe(true);
+    for (const flag of partial.purchase.reviewCodes) {
+      expect(
+        check({
+          ...partial.purchase,
+          reviewCodes: partial.purchase.reviewCodes.filter((code) => code !== flag),
+        }),
+      ).toBe(false);
+    }
+    expect(
+      check({
+        ...partial.purchase,
+        reviewCodes: [...partial.purchase.reviewCodes, "selected_rate_invalid"],
+      }),
+    ).toBe(false);
+    const mismatch = await run({
+      ...shipment(),
+      selected_rate: { ...rate, id: "rate_other", rate: "9.00" },
+      from_address: { ...address, city: "Other" },
+    }).promise;
+    if (mismatch.kind !== "purchase_observed") throw Error("missing evidence");
+    for (const flag of mismatch.purchase.reviewCodes) {
+      expect(
+        check({
+          ...mismatch.purchase,
+          reviewCodes: mismatch.purchase.reviewCodes.filter((code) => code !== flag),
+        }),
+      ).toBe(false);
+    }
+    const noLabel = await run({ ...shipment(), postage_label: null }).promise;
+    if (noLabel.kind !== "purchase_observed") throw Error("missing evidence");
+    expect(check({ ...noLabel.purchase, reviewCodes: [] })).toBe(false);
+    expect(check({ ...complete.purchase, selection: "unverifiable" })).toBe(false);
+  });
   it("normalizes fee decimals exactly without cents rounding or total inference", () => {
     for (const [value, expected] of [
       ["8.20000", "8.2"],

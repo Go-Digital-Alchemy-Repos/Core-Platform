@@ -1,7 +1,23 @@
 import { z } from "zod";
 
 const id = (prefix: string) => z.string().regex(new RegExp(`^${prefix}_[A-Za-z0-9]{1,100}$`));
-const label = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9 ._()/+-]{0,99}$/);
+const carrierText = z
+  .string()
+  .min(1)
+  .max(200)
+  .refine(
+    (value) =>
+      !Array.from(value).some(
+        (c) => c.charCodeAt(0) < 32 || (c.charCodeAt(0) >= 127 && c.charCodeAt(0) <= 159),
+      ),
+  );
+const feeType = z
+  .string()
+  .min(1)
+  .max(100)
+  .refine((value) =>
+    Array.from(value).every((c) => c.charCodeAt(0) >= 32 && c.charCodeAt(0) <= 126),
+  );
 export function normalizeShippingLabelFeeDecimal(value: unknown): string {
   if (typeof value !== "string" || !/^-?(0|[1-9][0-9]{0,9})(\.[0-9]{1,12})?$/.test(value))
     throw new Error("Invalid shipping fee decimal");
@@ -16,8 +32,8 @@ export const shippingLabelVerifiedRateSchema = z
     providerShipmentId: id("shp"),
     carrierAccountId: id("ca"),
     mode: z.literal("test"),
-    carrier: label,
-    service: label,
+    carrier: carrierText,
+    service: carrierText,
     amount: z.number().int().min(0).max(2147483647),
     currency: z.literal("USD"),
   })
@@ -25,7 +41,7 @@ export const shippingLabelVerifiedRateSchema = z
 export type ShippingLabelVerifiedRate = z.infer<typeof shippingLabelVerifiedRateSchema>;
 export const shippingLabelExactFeeSchema = z
   .object({
-    type: label,
+    type: feeType,
     usdDecimal: z.string().refine((value) => {
       try {
         return normalizeShippingLabelFeeDecimal(value) === value;
@@ -95,7 +111,22 @@ export const shippingLabelPurchaseEvidenceSchema = z
   .superRefine((value, context) => {
     const hasLabel = value.postageLabelId !== null,
       hasRate = value.finances.selectedPostage !== null;
+    const flags = new Set(value.reviewCodes);
+    const rateFlags =
+      Number(flags.has("selected_rate_missing")) + Number(flags.has("selected_rate_invalid"));
+    const exactFlags = [
+      ["fees_unverifiable", value.finances.fees === null],
+      ["tracking_unavailable", value.trackingCode === null],
+      ["label_metadata_unavailable", !hasLabel],
+      ["selection_mismatch", value.selection === "mismatch"],
+      ["input_mismatch", value.inputs === "mismatch"],
+      ["input_unverifiable", value.inputs === "unverifiable"],
+      ["price_mismatch", value.price === "mismatch"],
+    ] as const;
     if (
+      exactFlags.some(([flag, required]) => flags.has(flag) !== required) ||
+      rateFlags !== (hasRate ? 0 : 1) ||
+      (hasRate && (value.selection === "unverifiable" || value.price === "unverifiable")) ||
       (!hasLabel && !hasRate) ||
       value.evidence !== (hasLabel ? (hasRate ? "both" : "postage_label") : "selected_rate") ||
       value.asset !== (hasLabel ? "disabled_pending_origin_policy" : "missing") ||
