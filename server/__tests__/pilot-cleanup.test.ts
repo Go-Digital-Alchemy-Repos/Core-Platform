@@ -226,3 +226,30 @@ it("does not succeed while the owned group is still reported present", async () 
     expect(await stopOwnedChild(child, 100, 1000)).toBe(true);
   }
 });
+
+it("requires a real absence observation after a transient group probe failure", async () => {
+  const child = spawnOwnedChild(process.execPath, ["-e", "process.exit(0)"], { stdio: "ignore" });
+  await new Promise<void>((resolve) => child.once("exit", () => resolve()));
+  const original = process.kill.bind(process);
+  let failedProbes = 0;
+  let absenceObserved = false;
+  const probe = vi.spyOn(process, "kill").mockImplementation((pid, signal) => {
+    if (pid === -child.pid! && signal === 0 && failedProbes++ < 2)
+      throw Object.assign(new Error("Synthetic transient observation error"), { code: "EPERM" });
+    try {
+      return original(pid, signal);
+    } catch (error) {
+      if (pid === -child.pid! && signal === 0 && (error as NodeJS.ErrnoException).code === "ESRCH")
+        absenceObserved = true;
+      throw error;
+    }
+  });
+  try {
+    expect(await stopOwnedChild(child, 1000, 1000)).toBe(true);
+    expect(failedProbes).toBeGreaterThanOrEqual(3);
+    expect(absenceObserved).toBe(true);
+  } finally {
+    probe.mockRestore();
+    expect(await stopOwnedChild(child, 100, 1000)).toBe(true);
+  }
+});

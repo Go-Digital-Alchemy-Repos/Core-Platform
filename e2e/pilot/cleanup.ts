@@ -84,7 +84,16 @@ export async function stopOwnedChild(child: ChildProcess, graceMs = 15_000, kill
     const deadline = Date.now() + milliseconds;
     // OS group disappearance can precede Node publishing the leader's exit.
     // Keep yielding until both observations agree or this wait expires.
-    const stopped = () => !alive() && (child.exitCode !== null || child.signalCode !== null);
+    const stopped = () => {
+      try {
+        return !alive() && (child.exitCode !== null || child.signalCode !== null);
+      } catch {
+        // An observation error is unknown, never evidence of absence. Keep the
+        // bounded wait alive so a transient failure can be followed by a real
+        // ESRCH observation; persistent failures still exhaust the deadline.
+        return false;
+      }
+    };
     while (!stopped() && Date.now() < deadline)
       await new Promise((resolve) => setTimeout(resolve, 20));
     return stopped();
