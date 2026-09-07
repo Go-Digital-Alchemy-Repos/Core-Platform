@@ -988,3 +988,38 @@ No public self-approval endpoint. Recovery binding remains a separate reviewed
 capability; disabled-module recovery stays denied. Implementation is in progress.
 Carrier tests found a stalled-reader timeout/cancellation race and are correcting
 it before acceptance. No route or provider activation has occurred.
+
+
+### Label transport and global authorization accepted locally — 2026-09-07 UTC
+
+Transport commits5e2317feec24f17533b43ebf1a9428730c2104fa and
+d40a28082d552ca16a4ea0f649e8df27a21dae04 implement bounded fixed-endpoint GET/buy
+functions and strict shared observations, without runtime wiring. Root requested
+credential-reflection sanitization preserve independent postage evidence, exact
+carrier/service/fee string bounds and mandatory consistent review flags. Synthetic
+reader cancellation exposed a timeout-classification race, corrected before final
+acceptance. Root reviewed corrected source and independently passed46 focused
+cases (36 transport/observation,10 lifecycle). No actual provider calls occurred.
+
+Global authorization commitb7947b3a5eeeb4307aba759fd866c5830f162cfe adds internal
+operator CAS, atomic activity audit and label approval invalidation on rotation.
+Root caught and corrected an old-ciphertext dependency: authorized replacement
+must read prior generation metadata without decrypting the broken old key. Buying
+remains source-gated not_implemented; no public approval endpoint is mounted.
+Worker34PG/29focused/types/lint/format passed. Root independently reran34PG under
+python-O, verified seven source hashes/three logs and owned resource absence.
+Rootreceipt SHA `7bdd6e67ac05ae1c4a00ea75b77206f80e8b8bc008f4c283254474c9d46f4537`.
+Label branch throughb7947b3 pushed. These are bounded foundations, not activation.
+
+### Durable preflight race correction approved — 2026-09-07 UTC
+
+Storage API review found expiry could release held units while a preflight GET
+still returned existing-purchase evidence. Root approved explicit preflight
+operation ownership, one operation per purchase across all states, and a null-safe
+status/result matrix. Claimed/unknown preflight blocks cancellation and release;
+only never-started claims or completed matched-negative preflight may cancel.
+Late positive same-fence evidence remains recordable. Unknown preflight does not
+grant retries or release; separate operator recovery remains required work.
+Exact0067 additive DDL and three audit actions reviewed and authorized;0066 stays
+unchanged. Schema/tests/canonical contract implementation is now in progress.
+No production deployment, provider transaction, or hosted workflow occurred.
