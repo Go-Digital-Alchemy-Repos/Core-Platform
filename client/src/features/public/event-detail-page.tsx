@@ -1,7 +1,8 @@
+import { EventAttachments } from "./event-attachments";
+import { useEventConfiguration } from "@/hooks/use-event-configuration";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useParams, useLocation } from "wouter";
 import type { Event } from "@shared/schema/events";
-import { EVENT_CATEGORY_LABELS, EVENT_TYPE_LABELS } from "@shared/schema/events";
 import { getEventPath, getEventUrlSegment } from "@shared/event-url";
 import type { EventRegistration } from "@shared/schema/event-registrations";
 import type { CmsForm, SeoSettings } from "@shared/schema";
@@ -954,6 +955,8 @@ function EventOverviewCard({
             </div>
           )}
 
+          <EventAttachments event={event} />
+
           {event.speakerName && (
             <div className="border-t pt-5" data-testid="section-speaker">
               <h2 className="font-heading text-lg font-semibold mb-4">Speaker / Host</h2>
@@ -1275,6 +1278,10 @@ function EventSeo({ event, globalSeo }: { event: Event; globalSeo?: SeoSettings 
 }
 
 export default function EventDetailPage() {
+  const { labels } = useEventConfiguration();
+  const EVENT_TYPE_LABELS = labels("types");
+  const EVENT_CATEGORY_LABELS = labels("categories");
+
   const params = useParams<{ id: string }>();
   const eventId = params.id;
   const { user } = useAuth();
@@ -1428,17 +1435,17 @@ export default function EventDetailPage() {
               {isHybrid ? (
                 <Badge variant="secondary" data-testid="badge-event-hybrid">
                   <Wifi className="mr-1 h-3 w-3" />
-                  Hybrid
+                  {labels("delivery")[event.deliveryOptionId ?? "hybrid"] ?? "Hybrid"}
                 </Badge>
               ) : event.isVirtual ? (
                 <Badge variant="secondary" data-testid="badge-event-virtual">
                   <Monitor className="mr-1 h-3 w-3" />
-                  Virtual
+                  {labels("delivery")[event.deliveryOptionId ?? "virtual"] ?? "Virtual"}
                 </Badge>
               ) : (
                 <Badge variant="secondary" data-testid="badge-event-in-person">
                   <Building2 className="mr-1 h-3 w-3" />
-                  In-Person
+                  {labels("delivery")[event.deliveryOptionId ?? "in_person"] ?? "In-Person"}
                 </Badge>
               )}
               {event.memberOnly && (

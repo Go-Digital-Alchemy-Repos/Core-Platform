@@ -8,6 +8,18 @@ export const eventFormSchema = z
     title: z.string().min(1, "Title is required"),
     slug: z.string().optional(),
     description: z.string().optional(),
+    attachments: z
+      .array(
+        z.object({
+          id: z.string(),
+          displayName: z.string().trim().min(1).max(200),
+          originalName: z.string(),
+          mimeType: z.string(),
+          size: z.number(),
+        }),
+      )
+      .max(20)
+      .optional(),
     date: z.string().min(1, "Date is required"),
     endDate: z.string().optional(),
     location: z.string().optional(),
@@ -24,6 +36,7 @@ export const eventFormSchema = z
     audience: z.string().optional(),
     format: z.string().optional(),
     deliveryMode: z.string().optional(),
+    deliveryOptionId: z.string().optional(),
     tags: z.string().optional(),
     registrationFormId: z.string().optional(),
     timezone: z.string().optional(),
@@ -116,6 +129,7 @@ export const defaultFormValues: EventFormValues = {
   title: "",
   slug: "",
   description: "",
+  attachments: [],
   date: "",
   endDate: "",
   location: "",

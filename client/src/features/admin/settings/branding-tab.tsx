@@ -35,6 +35,8 @@ import {
   type SocialIconStyle,
 } from "@shared/social-media";
 
+import { SCREEN_COLOR_GUIDANCE, useScreenColor } from "./use-screen-color";
+
 import type { SettingsData } from "../settings-page";
 
 type BrandingSettingKey = "frontend_logo_url" | "favicon_url";
@@ -590,6 +592,10 @@ export function BrandingTab({
     setColorValues((current) => ({ ...current, [key]: value }));
   };
 
+  const screenColor = useScreenColor((key, value) =>
+    updateColorValue(key as BrandingColorSettingKey, value),
+  );
+
   const renderFontOptionCard = (
     option: BrandingFontOption,
     selectedValue: string,
@@ -652,7 +658,11 @@ export function BrandingTab({
         </div>
       )}
 
-      <Tabs defaultValue={initialSubtab} className="space-y-6">
+      <Tabs
+        onValueChange={() => screenColor.cancel()}
+        defaultValue={initialSubtab}
+        className="space-y-6"
+      >
         <TabsList className="grid w-full max-w-2xl grid-cols-4" data-testid="tabs-branding-subtabs">
           <TabsTrigger value="branding" data-testid="tab-branding-subtab-branding">
             <ImageIcon className="mr-1.5 h-4 w-4 text-teal-600" />
@@ -886,6 +896,23 @@ export function BrandingTab({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
+              <p className="text-sm text-muted-foreground">
+                {screenColor.supported
+                  ? "Sample a color anywhere on your screen. Press Escape to cancel. Sampling updates this draft; choose Save Color Palette to apply it."
+                  : SCREEN_COLOR_GUIDANCE}
+              </p>
+              {screenColor.error && (
+                <p role="alert" className="text-sm text-destructive">
+                  {screenColor.error}
+                </p>
+              )}
+              <p role="status" className="text-sm text-muted-foreground">
+                {screenColor.activeField
+                  ? "Select a screen color, or press Escape to cancel."
+                  : screenColor.sampledField
+                    ? "Color sampled. Choose Save Color Palette to apply your changes."
+                    : ""}
+              </p>
               {[
                 {
                   title: "Core Colors",
@@ -915,11 +942,12 @@ export function BrandingTab({
                     {group.fields.map((field) => (
                       <div key={field.key} className="space-y-1.5 rounded-xl border p-4">
                         <div>
-                          <Label>{field.label}</Label>
+                          <Label htmlFor={`branding-hex-${field.key}`}>{field.label}</Label>
                           <p className="mt-1 text-xs text-muted-foreground">{field.description}</p>
                         </div>
                         <div className="flex items-center gap-3">
                           <input
+                            aria-label={`${field.label} color picker`}
                             type="color"
                             value={normalizeHexColor(colorValues[field.key]) || "#000000"}
                             onChange={(event) =>
@@ -929,12 +957,29 @@ export function BrandingTab({
                             data-testid={`input-color-${field.key}`}
                           />
                           <Input
+                            id={`branding-hex-${field.key}`}
                             value={colorValues[field.key]}
                             onChange={(event) => updateColorValue(field.key, event.target.value)}
                             placeholder="#000000"
                             data-testid={`input-hex-${field.key}`}
                           />
                         </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          aria-label={`Sample screen color for ${field.label}`}
+                          disabled={
+                            !screenColor.supported ||
+                            screenColor.activeField !== null ||
+                            saveColorsMutation.isPending
+                          }
+                          onClick={(event) => screenColor.sample(field.key, event.currentTarget)}
+                        >
+                          {screenColor.activeField === field.key
+                            ? "Sampling…"
+                            : "Sample screen color"}
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -1096,7 +1141,11 @@ export function BrandingTab({
                 <Button
                   type="button"
                   onClick={() => saveColorsMutation.mutate()}
-                  disabled={!hasColorChanges || saveColorsMutation.isPending}
+                  disabled={
+                    !hasColorChanges ||
+                    saveColorsMutation.isPending ||
+                    screenColor.activeField !== null
+                  }
                   data-testid="button-save-branding-colors"
                 >
                   {saveColorsMutation.isPending ? (

@@ -1,3 +1,5 @@
+import { SpeakersSettings } from "./events/speakers-settings";
+import { EventOptionsSettings } from "./events/event-options-settings";
 import React, { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -232,22 +234,25 @@ export default function AdminEventSettingsPage() {
                 Event Settings
               </h1>
               <p className="mt-2 max-w-2xl text-sm text-slate-600">
-                Manage reusable event configuration. Saved Venues are available when creating or
-                editing events.
+                Manage reusable venues, speakers, event choices, presets, and suggested tags.
               </p>
             </div>
-            <Button onClick={openCreateVenue} data-testid="button-create-saved-venue">
-              <Plus className="mr-2 h-4 w-4" />
-              Create Venue
-            </Button>
           </div>
 
           <Tabs defaultValue="venues" className="space-y-4">
-            <TabsList>
+            <TabsList className="h-auto flex flex-wrap justify-start gap-1">
               <TabsTrigger value="venues" data-testid="tab-saved-venues">
                 Saved Venues
               </TabsTrigger>
+              <TabsTrigger value="speakers">Speakers</TabsTrigger>
+              <TabsTrigger value="options">Options, presets & tags</TabsTrigger>
             </TabsList>
+            <TabsContent value="speakers">
+              <SpeakersSettings />
+            </TabsContent>
+            <TabsContent value="options">
+              <EventOptionsSettings />
+            </TabsContent>
             <TabsContent value="venues">
               <Card className="rounded-lg">
                 <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -257,7 +262,11 @@ export default function AdminEventSettingsPage() {
                       Create and maintain venue records available when building events.
                     </CardDescription>
                   </div>
-                  <Button variant="outline" onClick={openCreateVenue}>
+                  <Button
+                    variant="outline"
+                    onClick={openCreateVenue}
+                    data-testid="button-create-saved-venue"
+                  >
                     <Plus className="mr-2 h-4 w-4" />
                     Add Venue
                   </Button>

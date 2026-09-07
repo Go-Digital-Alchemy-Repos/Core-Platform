@@ -1,18 +1,8 @@
+import { useEventConfiguration } from "@/hooks/use-event-configuration";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import {
-  EVENT_AUDIENCE_LABELS,
-  EVENT_AUDIENCES,
-  EVENT_CATEGORY_LABELS,
-  EVENT_CATEGORIES,
-  EVENT_DELIVERY_MODE_LABELS,
-  EVENT_DELIVERY_MODES,
-  EVENT_TYPE_LABELS,
-  EVENT_TYPES,
-  type Event,
-  type EventDeliveryMode,
-} from "@shared/schema/events";
+import { type Event, type EventDeliveryMode } from "@shared/schema/events";
 import { getEventPath } from "@shared/event-url";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -97,6 +87,9 @@ function getDeliveryMode(event: Event): EventDeliveryMode {
 }
 
 function EventCard({ event }: { event: Event }) {
+  const { labels } = useEventConfiguration();
+  const EVENT_TYPE_LABELS = labels("types");
+
   const [, navigate] = useLocation();
   const eventDate = new Date(event.date);
   const isPast = eventDate < new Date();
@@ -155,17 +148,17 @@ function EventCard({ event }: { event: Event }) {
                 {isHybrid ? (
                   <Badge variant="secondary" data-testid={`badge-hybrid-${event.id}`}>
                     <Monitor className="mr-1 h-3 w-3" />
-                    Hybrid
+                    {labels("delivery")[event.deliveryOptionId ?? "hybrid"] ?? "Hybrid"}
                   </Badge>
                 ) : deliveryMode === "virtual" ? (
                   <Badge variant="secondary" data-testid={`badge-virtual-${event.id}`}>
                     <Monitor className="mr-1 h-3 w-3" />
-                    Virtual
+                    {labels("delivery")[event.deliveryOptionId ?? "virtual"] ?? "Virtual"}
                   </Badge>
                 ) : (
                   <Badge variant="secondary" data-testid={`badge-in-person-${event.id}`}>
                     <Building className="mr-1 h-3 w-3" />
-                    In-Person
+                    {labels("delivery")[event.deliveryOptionId ?? "in_person"] ?? "In-Person"}
                   </Badge>
                 )}
                 {event.eventType && (
@@ -434,6 +427,16 @@ function CalendarView({ events }: { events: Event[] }) {
 }
 
 export function EventsArchiveSection({ props = {} }: { props?: Record<string, unknown> }) {
+  const { labels, configuration } = useEventConfiguration();
+  const EVENT_TYPE_LABELS = labels("types");
+  const EVENT_CATEGORY_LABELS = labels("categories");
+  const EVENT_DELIVERY_MODES = configuration.delivery.map((o) => o.id);
+  const EVENT_DELIVERY_MODE_LABELS = labels("delivery");
+  const EVENT_AUDIENCE_LABELS = labels("audiences");
+  const EVENT_TYPES = configuration.types.map((o) => o.id);
+  const EVENT_CATEGORIES = configuration.categories.map((o) => o.id);
+  const EVENT_AUDIENCES = configuration.audiences.map((o) => o.id);
+
   const [location] = useLocation();
   const initialView =
     getInitialSearchParam("view", str(props.defaultView) === "calendar" ? "calendar" : "list") ===
@@ -518,7 +521,8 @@ export function EventsArchiveSection({ props = {} }: { props?: Record<string, un
       if (typeFilter !== "all" && event.eventType !== typeFilter) return false;
       if (categoryFilter !== "all" && event.category !== categoryFilter) return false;
       if (audienceFilter !== "all" && event.audience !== audienceFilter) return false;
-      if (deliveryFilter !== "all" && deliveryMode !== deliveryFilter) return false;
+      if (deliveryFilter !== "all" && (event.deliveryOptionId ?? deliveryMode) !== deliveryFilter)
+        return false;
       if (timeFilter === "upcoming" && isPast) return false;
       if (timeFilter === "past" && !isPast) return false;
       if (costFilter === "free" && isPaid) return false;
