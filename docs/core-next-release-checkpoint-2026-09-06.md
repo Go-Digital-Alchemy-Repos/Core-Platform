@@ -13,10 +13,12 @@ on `codex/ecommerce-integrity-integration`, tree
 `624bdb7183146aa5f88497aa4c110b5e0c091f2a`, in
 [Draft PR17](https://github.com/Go-Digital-Alchemy-Repos/Core-Platform/pull/17).
 It includes the reviewed category/import and CRM attribution increment plus the
-three-class responsive category fix. Exact-head validation is in progress.
+three-class responsive category fix. All 30 local gates now have independently
+accepted V4 evidence; this is not production release approval.
 Earlier e2fda41 receipts remain bound to that prior commit.
 
-The last fully normalized, accepted local-evidence candidate remains frozen at
+The latest accepted local-evidence candidate is `f488342` (V4 details below).
+The earlier accepted candidate remains frozen at
 `f4853306e0d4dc086f5ab06352019858453a65b1`
 on `codex/next-client-release`. It includes reviewed CRM follow-ups, checkout
 and order lookup recovery, safe tracking links, onboarding evidence scoping,
@@ -398,3 +400,37 @@ pilot cleanup: group absence can precede Node's published leader exit. This is
 not proof of the earlier incident's cause. A narrow fix with regression coverage
 is authorized on a separate future tooling branch, preserving fail-closed errors
 and ownership. Frozen f488342 and its passing evidence remain unchanged.
+
+
+## Final f488 local evidence accepted — 2026-09-07 UTC
+
+Root independently reviewed the normalizer and gate mapping, verified 53 evidence
+files, 126 provenance entries, all 108 losslessly packed original logs, gate input
+hashes and retained failure-history hashes. Trusted V4 returned exit 0:
+30 gates verified, structuralVerification passed, releaseApproved false.
+Bundle: private Operations/normalized-v4-f488342-c2ed7f156c.
+Binding: `7268ba0a1aae6102867f37118f96465512bc25edf9b2c1290d044e19818bcc87`.
+Separate manifest.reviewed.json and orchestrator-review.json preserve the original
+pending manifest. Counts: 1181 ordinary passes/118 opt-in skips; 143 enabled DB
+executions; 66 application and 22 pilot cases. Final pilot raw inner and outer
+cleanup passed directly. Historical failures remain unchanged. Production a99,
+provider restrictions, Better Farms no-import and required release gates remain.
+
+The separate cleanup-helper patch was independently reviewed and its 12 focused
+cases passed at root. It waits for both group absence and published leader exit;
+permission/unknown errors still fail closed. It remains a future tooling change,
+not part of frozen f488. Controlled reproduction does not establish the cause of
+any earlier failed cleanup report.
+
+Shipping assessment at Operations/shipping-completion-assessment-f488342/proposal.md
+identifies absent EasyPost rate/label transport, dropped additional parcels,
+unit-conversion errors and missing durable provider shipment identity. Next scope:
+admin-only persisted single-parcel quote comparison with strict units/currency,
+operation-specific readiness, permissions and sanitized failure handling; durable
+label purchase and unknown-outcome reconciliation follow separately. Account and
+live-provider acceptance remain distinct from synthetic development. No shipping
+provider was activated and no provider request was made for the assessment.
+
+Cleanup follow-up committed and pushed separately: `32e8c5d02c3a995f0df240e7e8f86456aeec5113`,
+tree `16f68fe1fc4b4cdc8f00f31c49fc186c3c16f239`, clean
+`codex/pilot-cleanup-exit-race`. No integration into PR17 or deployment.

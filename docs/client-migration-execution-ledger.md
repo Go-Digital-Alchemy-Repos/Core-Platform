@@ -2182,3 +2182,15 @@ draft hydration and identity isolation. Full combined checks and independent
 database/browser acceptance passed as recorded in the operations checkpoint.
 These follow-up fixes are not yet deployed. Broader ecommerce acceptance and
 release gates remain active; this is not a claim that every possible bug is fixed.
+
+
+### Ecommerce completion continuation — 2026-09-07 UTC
+
+The user's ecommerce Settings/bug-fix/completion request remains part of the
+active goal. Original five Settings routes are fixed and verified live. Final
+f488 category, Woo import and CRM attribution evidence is independently accepted
+at 30 local gates, without production approval (see current release checkpoint).
+Track the newly evidenced EasyPost transport, parcel units, durable quote identity,
+and label purchase/reconciliation gaps as unfinished ecommerce work. Do not label
+scaffold capabilities operational. Separate cleanup-helper correction is reviewed
+and tested without changing the frozen application candidate.
