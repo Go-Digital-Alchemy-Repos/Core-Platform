@@ -120,12 +120,14 @@ export class EasyPostShippingProviderClient extends UnsupportedShippingProviderC
 
   buildRateQuotePayload(request: ShippingRateQuoteRequest) {
     this.assertConfigured();
+    if (!Array.isArray(request.parcels) || request.parcels.length !== 1)
+      throw new Error("Exactly one parcel is required for EasyPost shipping rates");
     return {
       shipment: {
         to_address: toEasyPostAddress(request.toAddress),
         from_address: toEasyPostAddress(request.fromAddress),
         parcel: toEasyPostParcel(request.parcels[0]),
-        options: request.orderId ? { reference: request.orderId } : undefined,
+        reference: request.orderId || undefined,
       },
     };
   }
@@ -213,14 +215,50 @@ function toEasyPostAddress(address: ShippingProviderAddress) {
   };
 }
 
+// Conversion factors use the international inch and avoirdupois ounce.
+const WEIGHT_TO_OUNCES: Readonly<Record<string, number>> = {
+  oz: 1,
+  lb: 16,
+  g: 1 / 28.349523125,
+  kg: 1000 / 28.349523125,
+};
+const DISTANCE_TO_INCHES: Readonly<Record<string, number>> = {
+  in: 1,
+  cm: 1 / 2.54,
+  mm: 1 / 25.4,
+};
+
+function normalizeParcelMeasurement(value: number, factor: number): number {
+  if (!Number.isFinite(value) || value <= 0)
+    throw new Error("Parcel measurements must be finite positive numbers");
+  const tenths = value * factor * 10;
+  // Keep the rounded integer exact before returning provider precision.
+  if (!Number.isFinite(tenths) || !Number.isSafeInteger(Math.round(tenths)))
+    throw new Error("Parcel measurement exceeds supported precision");
+  const normalized = Math.round(tenths) / 10;
+  if (normalized <= 0) throw new Error("Parcel measurement rounds to zero");
+  return normalized;
+}
+
 function toEasyPostParcel(parcel: ShippingProviderParcel | undefined) {
-  if (!parcel) throw new Error("At least one parcel is required for live shipping rates");
+  if (!parcel) throw new Error("Exactly one parcel is required for EasyPost shipping rates");
+  if (!Object.hasOwn(WEIGHT_TO_OUNCES, parcel.weightUnit))
+    throw new Error("Unsupported parcel weight unit");
+  const distanceUnit = parcel.distanceUnit ?? "in";
+  if (!Object.hasOwn(DISTANCE_TO_INCHES, distanceUnit))
+    throw new Error("Unsupported parcel distance unit");
+  const dimensions = [parcel.length, parcel.width, parcel.height];
+  const supplied = dimensions.filter((value) => value != null).length;
+  if (supplied !== 0 && supplied !== 3)
+    throw new Error("Parcel dimensions must include length, width and height");
   return {
-    length: parcel.length ?? undefined,
-    width: parcel.width ?? undefined,
-    height: parcel.height ?? undefined,
-    distance_unit: parcel.distanceUnit ?? "in",
-    weight: parcel.weight,
-    mass_unit: parcel.weightUnit,
+    ...(supplied === 3
+      ? {
+          length: normalizeParcelMeasurement(parcel.length!, DISTANCE_TO_INCHES[distanceUnit]),
+          width: normalizeParcelMeasurement(parcel.width!, DISTANCE_TO_INCHES[distanceUnit]),
+          height: normalizeParcelMeasurement(parcel.height!, DISTANCE_TO_INCHES[distanceUnit]),
+        }
+      : {}),
+    weight: normalizeParcelMeasurement(parcel.weight, WEIGHT_TO_OUNCES[parcel.weightUnit]),
   };
 }

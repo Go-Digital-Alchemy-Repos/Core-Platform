@@ -132,8 +132,8 @@ describe("ecommerce shipping provider registry", () => {
       }),
     ).toMatchObject({
       shipment: {
-        options: { reference: "order-1" },
-        parcel: { mass_unit: "oz", distance_unit: "in", weight: 16 },
+        reference: "order-1",
+        parcel: { length: 10, width: 6, height: 2, weight: 16 },
       },
     });
   });
