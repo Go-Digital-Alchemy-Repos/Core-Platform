@@ -856,3 +856,27 @@ local acceptance; main still requires strict VerifyApp15368 while Actions remain
 disabled. Pending approved release-control setup must resolve before promotion;
 no bypass, provider activation or deployment occurred. Remaining ecommerce label
 purchase/reconciliation contract proposal continues separately from frozen source.
+
+
+### Next development slices — 2026-09-07 UTC
+
+Frozen ece2544 and its accepted V5 package remain unchanged. A separate
+codex/shipping-label-foundation branch starts at ece2544. Orchestrator approved
+shipping-labels-v1 direction in 52626d0, with concrete request identity/money bounds
+clarified in aab13df. First implementation covers strict request validation and
+pure lifecycle policy. Durable purchase/allocation tables and every fulfillment
+writer require a concrete transaction/constraint review before persistence code.
+Test label purchases need distinct default-off activation and generation approval;
+quote approval grants no purchase permission. Explicit dispatch is separate from
+purchase and must reuse atomic fulfillment/outbox behavior. No provider calls or
+production changes are authorized by this development milestone.
+
+Better Farms read-only remaining acceptance audit is retained privately at
+Operations/better-farms-remaining-acceptance.md. Current seven-route and 22-case
+pilot evidence remains valid. Approved people, testimonials, imagery and policy
+copy remain publication inputs. A separate codex/pilot-accessibility-newsletter
+branch at site7fd1298 implements keyboard skip navigation, decorative arrow
+semantics, and email-only newsletter UX matching the existing contract. Receipt
+wording must not claim verified mailing-list enrollment or external delivery.
+No live checkout, import, domain change or invented client content is included.
+Both new slices remain in progress; implementation reports require root review.
