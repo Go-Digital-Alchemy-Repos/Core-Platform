@@ -126,7 +126,7 @@ export class EasyPostShippingProviderClient extends UnsupportedShippingProviderC
       shipment: {
         to_address: toEasyPostAddress(request.toAddress),
         from_address: toEasyPostAddress(request.fromAddress),
-        parcel: toEasyPostParcel(request.parcels[0]),
+        parcel: normalizeEasyPostParcel(request.parcels[0]),
         reference: request.orderId || undefined,
       },
     };
@@ -240,7 +240,7 @@ function normalizeParcelMeasurement(value: number, factor: number): number {
   return normalized;
 }
 
-function toEasyPostParcel(parcel: ShippingProviderParcel | undefined) {
+export function normalizeEasyPostParcel(parcel: ShippingProviderParcel | undefined) {
   if (!parcel) throw new Error("Exactly one parcel is required for EasyPost shipping rates");
   if (!Object.hasOwn(WEIGHT_TO_OUNCES, parcel.weightUnit))
     throw new Error("Unsupported parcel weight unit");
