@@ -622,3 +622,26 @@ HTTP cases passing; independent infra review and final evidence are pending.
 The real admin routes are not mounted yet. Maintenance scheduling, actual browser
 acceptance and subsequent release gates remain required. No provider request,
 production deployment or change to the frozen f488 acceptance occurred.
+
+
+### Orchestration acceptance and maintenance — 2026-09-07 UTC
+
+Independent review found internal persisted-snapshot Zod errors could escape as
+client 400 errors and expose private values to logging. Engineering changed internal
+decoding to safeParse with sanitized 503; a real PostgreSQL corruption test through
+the mounted error handler checks response and logs for the private marker. Root
+reviewed the correction and independently verified final source/log hashes and
+absence of exact owned container, volume and every tracked process group. Receipt
+Operations/shipping-orchestration-20260907/final-b2ca3bfc13/receipt.json SHA
+`c86c4148d2970250f8902f42d1e0b6321fcd10f7cab96dc80933c74c14803fc4`
+covers 69 passing tests (18 PostgreSQL service, 3 HTTP, 38 transport, 7 request,
+3 projection), types, lint and formatting. The six-file slice is accepted for
+commit/integration; actual admin mounting and runtime/browser validation remain.
+
+Root implemented maintenance wrapper d86266b in shipping assembly using the
+existing stoppable worker: immediate run, then 30 seconds after settlement, batch
+100 per maintenance category, aggregate-only success logging and no raw errors.
+Two tests pass for non-overlap, stop drainage and sanitized retry. Types and lint
+pass; independent infra review found no blocker. The returned worker still needs
+registration with runtime shutdown; its outer timeout bounds stalled database
+drainage. No provider activity, scheduler startup or production change occurred.
