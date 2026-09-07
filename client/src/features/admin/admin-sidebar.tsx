@@ -78,6 +78,7 @@ export interface NavItem {
   icon: React.ElementType;
   iconColor: string;
   children?: NavItem[];
+  collapsibleChildren?: boolean;
   show?: boolean;
 }
 
@@ -312,6 +313,7 @@ export function buildNavGroups(
                 ? [
                     {
                       title: "Events",
+                      collapsibleChildren: true,
                       href: "/admin/events",
                       icon: CalendarDays,
                       iconColor: "text-purple-600",
@@ -336,6 +338,7 @@ export function buildNavGroups(
                 ? [
                     {
                       title: "Careers",
+                      collapsibleChildren: true,
                       href: "/admin/careers",
                       icon: BriefcaseBusiness,
                       iconColor: "text-cyan-600",
@@ -527,6 +530,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
   const branding = useBranding();
   const adminLogo = branding.faviconUrl || logoIcon;
   const { data: siteFeaturesData } = useQuery<SiteFeatures>({
@@ -597,8 +601,11 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
     const isActive = isRouteActive(item.href);
     const childIsActive = Boolean(item.children?.some(isChildRouteActive));
     const parentIsActive = isActive || childIsActive;
+    const itemKey = item.href ?? item.title;
+    const childrenOpen = !item.collapsibleChildren || Boolean(openItems[itemKey]);
+    const childrenId = `admin-subnav-${item.title.toLowerCase()}${testIdSuffix}`;
     const linkContent = (
-      <Link key={item.href ?? item.title} href={item.href ?? "#"}>
+      <Link key={item.href ?? item.title} href={item.href ?? "#"} className="min-w-0 flex-1">
         <span
           className={cn(
             "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium cursor-pointer hover-elevate whitespace-nowrap overflow-hidden",
@@ -619,7 +626,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
           >
             {item.title}
           </span>
-          {item.children && !navigationCollapsed && (
+          {item.children && !item.collapsibleChildren && !navigationCollapsed && (
             <ChevronDown
               className={cn("h-4 w-4 transition-transform", childIsActive ? "rotate-180" : "")}
             />
@@ -642,8 +649,35 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
     if (item.children && !navigationCollapsed) {
       return (
         <div key={item.href ?? item.title} className="space-y-0.5">
-          {linkContent}
-          <div className="ml-5 border-l border-border/60 pl-2 space-y-0.5">
+          <div
+            className={cn(
+              "flex items-center rounded-md",
+              parentIsActive && "bg-primary text-primary-foreground",
+            )}
+          >
+            {linkContent}
+            {item.collapsibleChildren && (
+              <button
+                type="button"
+                aria-label={`${childrenOpen ? "Collapse" : "Expand"} ${item.title}`}
+                aria-expanded={childrenOpen}
+                aria-controls={childrenId}
+                onClick={() =>
+                  setOpenItems((current) => ({ ...current, [itemKey]: !current[itemKey] }))
+                }
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md hover:bg-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <ChevronDown
+                  className={cn("h-4 w-4 transition-transform", childrenOpen && "rotate-180")}
+                />
+              </button>
+            )}
+          </div>
+          <div
+            id={childrenId}
+            hidden={!childrenOpen}
+            className="ml-5 border-l border-border/60 pl-2 space-y-0.5"
+          >
             {item.children.map((child) => {
               const childActive = isChildRouteActive(child);
               return (
