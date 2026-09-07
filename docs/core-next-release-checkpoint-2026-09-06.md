@@ -880,3 +880,19 @@ semantics, and email-only newsletter UX matching the existing contract. Receipt
 wording must not claim verified mailing-list enrollment or external delivery.
 No live checkout, import, domain change or invented client content is included.
 Both new slices remain in progress; implementation reports require root review.
+
+
+### Label request/lifecycle foundation reviewed — 2026-09-07 UTC
+
+Separate label branch is clean/pushed at
+`3e30e09f3598be790b474ba14fcaae2c5b369c19`, tree
+`594280b4ef686984850f538a36477c2549e7df3e`.
+Root inspected both new shared files and independently ran label + existing quote
+unit suites: 15 tests passed (8 label, 7 quote); full TypeScript check exited 0.
+Worker also passed scoped lint/format. Strict request preserves opaque quote IDs,
+requires explicit matching USD integer cents, and rejects extra authority fields.
+Pure transition policy disallows rebuy from unknown, terminal reopening, stale
+fences and cancellation after dispatch intent. This is not a database CAS or proof
+of external exactly-once delivery. No persistence, endpoint, purchase UI or carrier
+transport has been connected by this slice. Root accepts this bounded foundation;
+remaining database/allocation and transport interfaces are under read-only review.
