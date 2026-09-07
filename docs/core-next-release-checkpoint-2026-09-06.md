@@ -227,3 +227,41 @@ run and successor verifier tests actually establish them. Frozen V3 is unchanged
 The CRM browser harness has retained setup/teardown failures and their separate
 cleanup evidence. These are not application failures or successful browser
 acceptance; browser verification remains in progress.
+
+
+### Accepted validation progress on e2fda41
+
+Root reviewed and accepted the combined database subset: 143 actual executions,
+zero skips, migrations twice, all 539 source hashes unchanged, all command log
+hashes/counts matched, and strict owned process/container/volume cleanup. Receipt
+Operations/combined-db-e2fda41-65872029/receipt.json SHA-256
+`00e8610d2c072c8d4a589d87ffd95a34f9c4fd2b26ada8575dd983647c52fde6`.
+The earlier 240ad263 attempt remains failed: a harness restriction incorrectly
+blocked the existing standalone test's temporary loopback API. The corrected
+run allowed only the required literal-loopback ephemeral fixture, recorded its
+matching open/close lifecycle, and continued blocking external requests.
+
+Root's six-command build recorder passed lint, formatting, build, budgets and
+source/compiled configuration preflights with clean identity, unchanged sources
+and owned group cleanup. Receipt Operations/build-gates-e2fda41-7307f49874/receipt.json
+SHA-256 `d0805a7dff336734a64f275d5b866caa9aef4303e89db932616369a50456f26f`.
+New compiled application SHA-256 is
+`3308d782c744ee1b8d8dc1acaafa6a0ddb21d06b96e18b97ec2005b6854221f1`;
+upload operation artifacts and deployment configuration remain byte-identical
+to their retained prior versions. Configuration acceptance is not runtime proof.
+
+V4 `9075d22b31911ce9b437ee7a4b2883fc0f9f668e` is accepted as the successor
+verifier implementation after root source review, 24 independent optimized-mode
+tests, and exact combined checkout inventory validation (30 gates/14 suites).
+Frozen V3 remains unchanged. This does not accept a new release bundle.
+
+CRM source browser acceptance passed on 289f015: four real create/reload journeys
+for lead/client at desktop and 390px widths, editor access, denied customer API
+access, and persisted authenticated author IDs. Root matched every source/log/
+artifact hash and visually reviewed the narrow client screenshot. Receipt
+Operations/crm-note-cli-796f46a208/receipt.json SHA-256
+`9a9d39b66cd9795d2a8c94bc4b0946fc33b42ad19390f1e6919b16065aa1e6df`.
+The six previous harness attempts and their cleanup limitations remain indexed
+separately; none was relabeled. This is desktop Chromium resized for narrow
+coverage, not mobile OS emulation. Combined category browser, complete app/pilot
+gates and runtime/upgrade/recovery evidence are still pending.
