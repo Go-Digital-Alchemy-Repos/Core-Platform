@@ -297,3 +297,34 @@ A separate scoped layout fix from e2fda41 is authorized with real browser
 geometry/screenshots, preserving the desktop editor and table-local scrolling.
 The current full app/pilot runs continue on unchanged e2fda41; do not silently
 relabel their evidence for a later layout commit.
+
+
+### Remaining gate review progress
+
+Root accepted the separately recorded dependency/type/ordinary subset on the
+exact e2fda41 tree after comparing all source and command log hashes. Receipt
+Operations/dependency-unit-e2fda41-provenance/receipt.json SHA-256
+`d19f8b2bcce50d16eaf63af5491c188985d6aca291d40352da76067fd4ff7855`:
+Node22.22.2/npm10.9.7, locked install, TypeScript, 1,181 passed/118 opt-in skips,
+clean identity and owned group cleanup. Its detached checkout and dependencies
+are retained independently of concurrent app fixtures.
+
+The detached upload argument-rejection gates are accepted within that narrow
+scope. Root verified all rejection logs and exact artifact hashes. Receipts
+Operations/detached-artifacts-e2fda41-a1d3cafd/verify/receipt.json
+(`da394f6b87d5132dc307c14201f32244adf545a8924a2f71b30b6d40acb2df16`)
+and apply/receipt.json
+(`d6031835840399b50b54aa68d36a4f437acf45180baf86c71d7cf4a67bf53d05`)
+cover canonical/renamed entrypoints, source-free temp directories with dependency
+symlinks, and cleanup. This is not filesystem sandboxing or provider acceptance.
+
+The existing full application browser suite passed 66/66 on e2fda41; root matched
+all source/log hashes. Receipt Operations/integrity-full-app-20260907T001304Z-1de47463/receipt.json
+SHA-256 `80f249014ce044737e87a419fae9f16e113b49ae15ce843ffcbf7039b8eb0551`.
+The known narrow category overflow remains a separate visual defect.
+
+Pilot22 functional checks passed on e2fda41 with site7fd1298, but the original
+strict cleanup gate failed for a child reported stopped=false despite exit0.
+Operations/integrity-pilot-20260907T001704Z-1a6a2a21 retains the original failure.
+Exact process/group/resource evidence is being investigated; no cleanup cause
+or final pilot gate acceptance is established yet.
