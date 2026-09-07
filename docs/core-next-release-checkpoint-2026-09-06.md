@@ -706,3 +706,33 @@ journey labels with hashed producer/log references. Accepted for commit; truth o
 those browser artifacts still requires independent review. Engineering is preparing
 a separate private synthetic transport fixture with real authorization/storage
 for remaining browser journeys; no production credentials or provider I/O.
+
+
+### Integrated synthetic shipping browser journeys — 2026-09-07 UTC
+
+Root reviewed the private launcher and exercised actual app a67383c with real
+authorization/preparation/storage/projection and an explicit synthetic transport.
+The UI showed Ground825 cents and Express1599 cents with delivery metadata.
+A browser-authenticated same-key POST returned200 with the original attempt ID
+and only one transport call. An owned local address edit caused GET/UI staleness.
+A deliberate new quote returned unknown; refresh, reload/reopening and prior
+quote review preserved both attempts with exactly two total synthetic calls.
+At390px document width remained390; root visually inspected mobile unknown view.
+Browser-origin API requests confirmed all3 endpoints deny disabled ecommerce404,
+anonymous401 and editor403. Ecommerce was restored before logout.
+
+Final database: one quoted, one unknown, zero fulfillments/notification jobs.
+Private evidence Operations/shipping-browser-synthetic-a67383c includes immutable
+producer, call log, browser snapshots/screenshots and gate/replay logs. Root
+independently verified1183source hashes, logs, unchanged producer hashes and exact
+container/volume/process cleanup. Receipt SHA
+`600fe08dbef01ae7c69328f45617f0f1fd4651eca927983b4f6b97878bb24c71`;
+call log SHA `17e069bb5dcc92b3c77e22a56faa41cb71cab432546d27162cf900d528fee6da`.
+CLI browser closed. Synthetic transport has no network operation by reviewed
+source; this is not packet-capture or actual EasyPost account acceptance.
+
+Accepted verifier V5 is committed/pushed3f42ece66bb28fb45114b6483facc2d2d651b0a4,
+treea16642dbde7d389e45ae4528964a3a2dfd262143. Prior V4 unchanged. Remaining:
+integrate previously accepted pilot cleanup correction into next candidate, freeze
+source, run all required V5 gates against that candidate and review complete
+evidence. No provider activation, branch-policy bypass or production deployment.
