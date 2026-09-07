@@ -28,6 +28,8 @@ import { startSystemBackupService } from "./services/system-backup.service";
 import { startDirectoryMembershipLifecycleService } from "./services/directory-membership-lifecycle.service";
 import { startEcommerceNotificationJobService } from "./services/ecommerce-notification-jobs.service";
 import { startEcommerceInventoryReservationService } from "./services/ecommerce-inventory-reservations.service";
+import { startShippingQuoteMaintenance } from "./services/ecommerce-shipping-quote-maintenance.service";
+import { shippingQuoteService } from "./services/ecommerce-shipping-quote-runtime.service";
 
 declare const __APP_VERSION__: string;
 const pkgVersion = typeof __APP_VERSION__ === "string" ? __APP_VERSION__ : "unknown";
@@ -327,6 +329,7 @@ const startup = (async () => {
   runtime.register(startEcommerceNotificationJobService());
   runtime.register(startFormEffectJobService());
   runtime.register(startEcommerceInventoryReservationService());
+  runtime.register(startShippingQuoteMaintenance(shippingQuoteService));
 
   const port = parseInt(process.env.PORT || "5000", 10);
   if (runtime.isStopping()) return;

@@ -12,6 +12,25 @@ const state = vi.hoisted(() => ({
   writes: vi.fn(),
   activated: vi.fn(async (data: unknown) => data),
 }));
+const quoteService = vi.hoisted(() => ({
+  create: vi.fn(async () => ({
+    statusCode: 201,
+    quote: { id: "synthetic-attempt", status: "quoted" },
+  })),
+  read: vi.fn(async () => ({ id: "synthetic-attempt", status: "quoted" })),
+  readiness: vi.fn(async () => ({
+    implemented: true,
+    configured: false,
+    approvedTestCredentials: false,
+    enabled: false,
+    mode: "test",
+    reasonCode: "not_configured",
+  })),
+  maintain: vi.fn(),
+}));
+vi.mock("../../services/ecommerce-shipping-quote-runtime.service", () => ({
+  shippingQuoteService: quoteService,
+}));
 vi.mock("../../storage", () => ({
   storage: {
     users: { getUser: async (id: string) => state.users.get(id) },
@@ -303,4 +322,77 @@ describe("mounted shipping credential routes", () => {
     ]);
     expect(await res.text()).not.toMatch(/retained|rotated/);
   });
+  const quoteEndpoints = [
+    ["POST", "/orders/synthetic-order/shipping-quotes", "create"],
+    ["GET", "/orders/synthetic-order/shipping-quotes/synthetic-attempt", "read"],
+    ["GET", "/shipping/providers/easypost/quote-readiness", "readiness"],
+  ] as const;
+  function quoteRequest(method: string, path: string, role: string | null) {
+    const origin = base.replace("/api/admin/ecommerce/shipping/providers", "");
+    return fetch(origin + "/api/admin/ecommerce" + path, {
+      method,
+      headers: {
+        ...(role ? { cookie: cookie(role) } : {}),
+        "Content-Type": "application/json",
+        "Idempotency-Key": "2a85e348-23d7-49a4-882f-fd6bf537874c",
+      },
+      ...(method === "POST"
+        ? {
+            body: JSON.stringify({
+              version: "1.0.0",
+              locationId: "synthetic-location",
+              items: [{ orderItemId: "item", quantity: 1 }],
+              parcel: { weight: 16, weightUnit: "oz" },
+            }),
+          }
+        : {}),
+    });
+  }
+  it.each(quoteEndpoints)(
+    "quote endpoint %s %s denies anonymous/non-admin before service",
+    async (method, path) => {
+      for (const [role, status] of [
+        [null, 401],
+        ["editor", 403],
+        ["client", 403],
+      ] as const) {
+        const response = await quoteRequest(method, path, role);
+        expect(response.status).toBe(status);
+      }
+      for (const handler of Object.values(quoteService)) expect(handler).not.toHaveBeenCalled();
+    },
+  );
+  it.each(quoteEndpoints)(
+    "quote endpoint %s %s retains ecommerce disabled gate",
+    async (method, path) => {
+      state.enabled = false;
+      expect((await quoteRequest(method, path, "admin")).status).toBe(404);
+      for (const handler of Object.values(quoteService)) expect(handler).not.toHaveBeenCalled();
+    },
+  );
+  it.each(quoteEndpoints)(
+    "admin reaches quote endpoint %s %s with private no-store",
+    async (method, path, handler) => {
+      const response = await quoteRequest(method, path, "admin");
+      expect(response.status).toBe(method === "POST" ? 201 : 200);
+      expect(response.headers.get("cache-control")).toContain("no-store");
+      expect(response.headers.get("cache-control")).toContain("private");
+      expect(quoteService[handler]).toHaveBeenCalledTimes(1);
+      for (const name of ["create", "read", "readiness", "maintain"] as const)
+        if (name !== handler) expect(quoteService[name]).not.toHaveBeenCalled();
+      if (handler === "create")
+        expect(quoteService.create).toHaveBeenCalledWith(
+          "synthetic-order",
+          "2a85e348-23d7-49a4-882f-fd6bf537874c",
+          expect.objectContaining({ version: "1.0.0", locationId: "synthetic-location" }),
+        );
+      if (handler === "read")
+        expect(quoteService.read).toHaveBeenCalledWith("synthetic-order", "synthetic-attempt");
+      expect(await response.json()).toMatchObject(
+        handler === "readiness"
+          ? { mode: "test", reasonCode: "not_configured" }
+          : { id: "synthetic-attempt" },
+      );
+    },
+  );
 });

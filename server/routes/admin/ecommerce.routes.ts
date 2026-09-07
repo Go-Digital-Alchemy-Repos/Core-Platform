@@ -84,11 +84,20 @@ import {
 import { ecommerceStoreSettingsSchema } from "@shared/ecommerce-shipping-settings";
 import { requireEcommerceEnabled } from "../../middleware/site-features";
 import { noStorePrivateResponse } from "../../middleware/security";
+import { requireRole } from "../../middleware/auth";
+import { createShippingQuoteRouter } from "./ecommerce-shipping-quotes.routes";
+import { shippingQuoteService } from "../../services/ecommerce-shipping-quote-runtime.service";
 
 const router = Router();
 
 router.use(requireEcommerceEnabled);
 router.use(noStorePrivateResponse);
+router.use(
+  createShippingQuoteRouter(shippingQuoteService, {
+    requireAdmin: requireRole("admin"),
+    requireEcommerceEnabled,
+  }),
+);
 
 function toWebhookDeliverySummary(delivery: {
   eventId: string;
