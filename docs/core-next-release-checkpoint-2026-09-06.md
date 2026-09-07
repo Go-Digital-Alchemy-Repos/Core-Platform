@@ -574,3 +574,22 @@ sanitized503 errors instead of being reported as missing configuration. Dedicate
 reserved-key guards and generation-lock code are still under implementation/tests.
 Engineering orchestration and CRM UI remain independently owned works in progress;
 no route/provider activation or production change occurred.
+
+
+### Active shipping integration review — 2026-09-07 UTC
+
+Root reviewed in-progress UI and identified StrictMode result suppression, payment/
+fraud eligibility drift from server, logout cleanup after navigating away, and lost
+unresolved-attempt recovery when starting another quote. CRM owns fixes: reset mount
+state on effect setup; mirror existing eligibility; narrow auth-success callbacks
+for session ownership/cleanup; bounded prior-attempt history without silent eviction;
+reject invalid negative/fractional draft quantities instead of silently omitting.
+These findings are not accepted UI implementation or browser proof.
+
+Authorization source/test review confirms shared advisory lock across dedicated
+rotation/approval/provider configuration and uncached claim reads;13authorization
+plus6credential-isolation DB cases are executing under agent-owned handle8853.
+Root additionally requested correct missing-provider readiness classification;
+final stable evidence is still pending. Engineering's separate orchestration work
+remains in progress with explicit injected authorization and bounded retention.
+Frozenf488, production and provider restrictions remain unchanged.
