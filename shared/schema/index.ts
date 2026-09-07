@@ -329,3 +329,5 @@ export {
   type ProviderInterview,
   type ProviderApplicationDecision,
 } from "./provider-applications";
+
+export * from "./team-members";

@@ -10,6 +10,13 @@ import { canAccessResource } from "../services/membership-access.service";
 const router = Router();
 
 router.get(
+  "/team",
+  asyncHandler(async (_req, res) => {
+    res.json(await storage.team.published());
+  }),
+);
+
+router.get(
   "/pages/by-slug/:slug",
   optionalAuth,
   asyncHandler(async (req, res) => {

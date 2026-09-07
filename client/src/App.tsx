@@ -80,6 +80,7 @@ const CmsGalleriesPage = lazy(() => import("@/features/admin/cms/cms-galleries-p
 const CmsGalleryEditorPage = lazy(() => import("@/features/admin/cms/cms-gallery-editor-page"));
 const CmsMediaPage = lazy(() => import("@/features/admin/cms/cms-media-page"));
 const CmsSeoPage = lazy(() => import("@/features/admin/cms/cms-seo-page"));
+const CmsTeamPage = lazy(() => import("@/features/admin/cms/cms-team-page"));
 const CmsSectionsPage = lazy(() => import("@/features/admin/cms/cms-sections-page"));
 const CmsSectionEditorPage = lazy(() => import("@/features/admin/cms/cms-section-editor-page"));
 const CmsMenusPage = lazy(() => import("@/features/admin/cms/cms-menus-page"));
@@ -726,6 +727,11 @@ function Router() {
         <Route path="/admin/cms/media">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             {siteFeatures.cmsEnabled ? <CmsMediaPage /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/cms/team">
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
+            {siteFeatures.cmsEnabled ? <CmsTeamPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/galleries/new">

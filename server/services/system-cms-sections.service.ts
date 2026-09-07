@@ -160,6 +160,16 @@ export async function ensureSystemCmsSections(options?: { refreshExisting?: bool
   );
 
   let created = 0;
+  if (!existingByName.has("Team")) {
+    await storage.cmsSections.createSection({
+      name: "Team",
+      description:
+        "Select team members and choose a portrait grid, bordered cards, or horizontal profiles.",
+      category: "team",
+      blocks: [createBlock("team")],
+    });
+    created += 1;
+  }
   let updated = 0;
   let deleted = 0;
 
@@ -209,6 +219,6 @@ export async function ensureSystemCmsSections(options?: { refreshExisting?: bool
     created,
     updated,
     deleted,
-    total: STARTER_LIBRARY_BLOCKS.length,
+    total: STARTER_LIBRARY_BLOCKS.length + 1,
   };
 }

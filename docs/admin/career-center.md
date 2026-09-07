@@ -1,5 +1,6 @@
 # Career Center
 
+Open this area under **Content** in the admin navigation.
 The Career Center manages public job listings, applications, resume intake, job-board integrations, and internal hiring workflow. It is feature-gated so sites can disable careers without removing stored jobs or applications.
 
 ## Primary Surfaces

@@ -226,6 +226,7 @@ export async function buildCmsMediaLibraryAssets(
     categories,
     directoryGalleryMedia,
     galleries,
+    teamMembers,
   ] = await Promise.all([
     storage.cmsPages.getAllPages(),
     storage.blog.getAllPosts(),
@@ -242,6 +243,7 @@ export async function buildCmsMediaLibraryAssets(
         cmsGalleries?: { getAll: () => Promise<CmsGalleryWithItems[]> };
       }
     ).cmsGalleries?.getAll?.() ?? Promise.resolve([]),
+    storage.team?.list?.() ?? Promise.resolve([]),
   ]);
 
   const usageMap = new Map<string, CmsMediaUsageReference[]>();
@@ -274,6 +276,22 @@ export async function buildCmsMediaLibraryAssets(
       page.content,
       isLive,
       pageStatusLabel(page),
+    );
+  }
+
+  for (const member of teamMembers) {
+    addDirectFieldUsage(
+      assets,
+      usageMap,
+      dedupe,
+      member,
+      "team_member",
+      member.name,
+      "/admin/cms/team",
+      "photoUrl",
+      member.photoUrl,
+      member.status === "published",
+      `${member.status} team member`,
     );
   }
 

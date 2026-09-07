@@ -1,3 +1,4 @@
+import { TeamSection } from "@/components/shared/team-section";
 import { lazy, Suspense, useState, useMemo, type ReactElement } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -1006,10 +1007,13 @@ export function BlockRenderer({
       isAdminPreview &&
       block.type !== "directory-browser" &&
       block.type !== "career-listings" &&
-      block.type !== "portfolio-grid"
+      block.type !== "portfolio-grid" &&
+      block.type !== "team"
     ) {
       renderedBlock = <DynamicPlaceholderAdmin block={block} />;
     }
+    if (!renderedBlock && block.type === "team")
+      renderedBlock = <TeamSection props={block.props} />;
     if (!renderedBlock && block.type === "therapist-map")
       renderedBlock = <TherapistMapBlock props={block.props} />;
     if (!renderedBlock && block.type === "contact-form") renderedBlock = <ContactFormBlock />;
