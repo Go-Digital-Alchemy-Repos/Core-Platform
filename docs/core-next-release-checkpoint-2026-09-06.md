@@ -532,3 +532,23 @@ infra generation-aware test credential authorization (including minimal strict
 crypto helpers), engineering projectionreview, CRM order-drawer integrationplan.
 Quote orchestration, adminroutes/UI, retention scheduling and fullnewtable recovery
 remain unfinished. No quote capability/provider activation or deployment occurred.
+
+
+### Admin result boundary and UI handoff — 2026-09-07 UTC
+
+Independent review accepted root public projection62948fe after strengthening
+observed/rate test-mode and shipment identity checks, duplicate IDs and status/error
+consistency. Three tests, lint and typecheck passed. The private storage fields are
+never spread into API responses. Exact parcel conversion/type was moved to a
+browser-safe dependency-free shared module in9c03b4c, independently compared to the
+previous implementation;46parcel/preparation tests andtypes/lintpassed.
+Development assembly is clean/pushed9c03b4c1c75589cabd311ef196ad25b9b42b9ec1.
+
+Approved UI implementation now owned by CRM agent in an isolated branch from9c03:
+separate order drawer quote panel, per-user/order minimal session draft/request-key
+recovery, explicit readiness, GET-only refresh for known unknown attempts, no label
+purchase/fulfillment side effects. Engineering owns new orchestration/router files
+from9c03 with injected transaction-aware authorization until infra's generation
+service is integrated. Root retains final integration and review. Infra also guards
+reserved EasyPost keys against generic settings write/delete bypass. None of these
+unfinished service/UI changes authorizes provider activity or production deployment.
