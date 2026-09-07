@@ -103,8 +103,19 @@ it("rejects foreign items, digital items and quantities already committed to ful
 it("rejects substituted browser address and rejects normalized zero measurements", () => {
   expect(() => prepare({ input: { ...input, toAddress: { street1: "Injected" } } })).toThrow();
   expect(() => prepare({ input: { ...input, parcel: { weight: 0.1, weightUnit: "g" } } })).toThrow(
-    "rounds to zero",
+    "Parcel measurements cannot be represented",
   );
+});
+it("returns a safe validation status for unrepresentable parcels", () => {
+  try {
+    prepare({ input: { ...input, parcel: { weight: 0.1, weightUnit: "g" } } });
+    throw new Error("Expected rejection");
+  } catch (error) {
+    expect(error).toMatchObject({
+      statusCode: 400,
+      message: "Parcel measurements cannot be represented for shipping quotes",
+    });
+  }
 });
 it("accepts DC but rejects territories, military addresses and non-US destinations", () => {
   const address = {
