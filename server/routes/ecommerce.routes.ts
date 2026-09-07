@@ -223,12 +223,23 @@ router.post(
   asyncHandler(async (req, res) => {
     const data = req.body;
     const priced = await priceCart({ items: data.items });
-    res.json(
-      await getShippingRateOptions({
-        subtotalAmount: priced.subtotalAmount,
-        address: data.address,
-      }),
-    );
+    if (!priced.lines.some((line) => line.requiresShipping)) {
+      res.json([]);
+      return;
+    }
+    const rates = await getShippingRateOptions({
+      subtotalAmount: priced.subtotalAmount,
+      address: data.address,
+    });
+    if (!rates.length) {
+      res
+        .status(400)
+        .json({
+          message: "Shipping is unavailable for this address. Contact the store before checkout.",
+        });
+      return;
+    }
+    res.json(rates);
   }),
 );
 

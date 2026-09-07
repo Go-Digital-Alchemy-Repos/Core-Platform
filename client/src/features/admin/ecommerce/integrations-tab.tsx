@@ -66,6 +66,7 @@ function hasSavedIntegrationSettings(config: IntegrationConfig, settings: Settin
 
 function getEcommerceIntegrationLibrary(): IntegrationConfig[] {
   return INTEGRATIONS.filter((config) => {
+    if (config.operational !== true || config.requiresAdapter) return false;
     if (ECOMMERCE_INTEGRATION_CATEGORIES.has(config.category)) return true;
     return (
       ["commerce", "shipping", "marketing"].includes(config.group) && config.category !== "crm"
@@ -114,9 +115,9 @@ export function IntegrationsTab() {
         <div className="max-w-3xl">
           <h2 className="text-xl font-semibold">Ecommerce Integrations</h2>
           <p className="text-sm text-muted-foreground">
-            Browse payment, shipping, product feed, social commerce, and marketing extensions for
-            this store. {configuredCount.length} of {ecommerceIntegrations.length} integrations have
-            saved settings.
+            Set up supported integrations for this store. Additional providers will become available
+            when their checkout and recovery workflows are ready. {configuredCount.length} of{" "}
+            {ecommerceIntegrations.length} integrations have saved settings.
           </p>
         </div>
         <div className="relative w-full xl:max-w-md">

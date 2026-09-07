@@ -1,3 +1,4 @@
+import { TeamSection } from "@/components/shared/team-section";
 import { useState, useEffect, lazy, Suspense, type ReactElement } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -1792,6 +1793,7 @@ const RENDERERS: Record<string, React.ComponentType<{ props: Record<string, unkn
   "social-proof-stats": SocialProofStatsBlock,
   "image-grid": ImageGridBlock,
   gallery: GalleryBlock,
+  team: TeamSection,
   slider: SliderBlock,
   "stats-bar": StatsBarBlock,
   "icon-grid": IconGridBlock,

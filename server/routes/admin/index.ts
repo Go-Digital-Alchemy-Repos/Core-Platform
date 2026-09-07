@@ -10,6 +10,7 @@ import registrationRoutes from "./registrations.routes";
 import cmsRoutes from "./cms.routes";
 import cmsMediaRoutes from "./cms-media.routes";
 import cmsSectionsRoutes from "./cms-sections.routes";
+import teamRoutes from "./team.routes";
 import cmsGalleriesRoutes from "./cms-galleries.routes";
 import cmsSeoRoutes from "./cms-seo.routes";
 import cmsRedirectsRoutes from "./cms-redirects.routes";
@@ -85,6 +86,7 @@ router.use(
   cmsSectionsRoutes,
 );
 router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsGalleriesRoutes);
+router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), teamRoutes);
 router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsSeoRoutes);
 router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsRedirectsRoutes);
 router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsAuditRoutes);

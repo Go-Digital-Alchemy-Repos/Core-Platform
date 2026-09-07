@@ -1,3 +1,4 @@
+import { getDirectoryExperienceMode } from "@shared/types/directory-settings";
 import { useState, useRef, useMemo, useCallback } from "react";
 import { ImageCropperSheet } from "@/components/shared/image-cropper-sheet";
 import { PhoneInput } from "@/components/shared/phone-input";
@@ -94,7 +95,7 @@ const LANGUAGE_SET = new Set<string>(LANGUAGES);
 
 interface TherapistWithUser {
   id: string;
-  userId: string;
+  userId: string | null;
   title: string | null;
   bio: string | null;
   specializations: string[] | null;
@@ -132,8 +133,9 @@ interface TherapistWithUser {
 
 type StatusFilter = "all" | "pending" | "approved" | "rejected";
 
-function getAdminDirectoryLabels(settings: PublicDirectorySettings) {
+export function getAdminDirectoryLabels(settings: PublicDirectorySettings) {
   return {
+    isLocation: getDirectoryExperienceMode(settings) === "store_locator",
     singular:
       settings.listingLabelSingular || settings.participantLabelSingular || "Directory Profile",
     plural: settings.listingLabelPlural || settings.participantLabelPlural || "Directory Profiles",
@@ -651,9 +653,13 @@ function TherapistsContent() {
 
       <AddTherapistSheet
         open={addSheetOpen}
-        onOpenChange={setAddSheetOpen}
+        onOpenChange={(open) => {
+          createMutation.reset();
+          setAddSheetOpen(open);
+        }}
         onSubmit={(data) => createMutation.mutate(data)}
         isPending={createMutation.isPending}
+        serverError={createMutation.error?.message}
         labels={labels}
       />
 
@@ -778,24 +784,32 @@ function TherapistsContent() {
   );
 }
 
-function AddTherapistSheet({
+export function AddTherapistSheet({
   open,
   onOpenChange,
   onSubmit,
   isPending,
+  serverError,
   labels,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: CreateTherapistValues) => void;
   isPending: boolean;
+  serverError?: string;
   labels: ReturnType<typeof getAdminDirectoryLabels>;
 }) {
   const { specializations: specList } = useSpecializations();
   const [otherLangOpen, setOtherLangOpen] = useState(false);
   const addCustomLangInputRef = useRef<HTMLInputElement>(null);
   const form = useForm<CreateTherapistValues>({
-    resolver: zodResolver(createTherapistSchema),
+    resolver: zodResolver(
+      labels.isLocation
+        ? createTherapistSchema
+            .omit({ email: true, password: true, firstName: true, lastName: true })
+            .extend({ title: z.string().trim().min(1, "Location name is required") })
+        : createTherapistSchema,
+    ),
     defaultValues: {
       email: "",
       password: "",
@@ -833,71 +847,80 @@ function AddTherapistSheet({
       <SheetContent side="right" size="lg" data-testid="dialog-add-therapist">
         <SheetHeader>
           <SheetTitle>Add New {labels.singular}</SheetTitle>
-          <SheetDescription>Create a new account and directory profile.</SheetDescription>
+          <SheetDescription>
+            {labels.isLocation
+              ? "Create a location listing. No user account is created."
+              : "Create a new account and directory profile. Use an email address that is not already registered."}
+          </SheetDescription>
         </SheetHeader>
         <SheetBody>
           <Form {...form}>
             <form
               id="add-therapist-form"
+              noValidate
               onSubmit={form.handleSubmit(onSubmit)}
               className="space-y-4 pb-4"
             >
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>First Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} data-testid="input-add-firstName" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Last Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} data-testid="input-add-lastName" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input type="email" {...field} data-testid="input-add-email" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" {...field} data-testid="input-add-password" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              {!labels.isLocation && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>First Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} data-testid="input-add-firstName" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Last Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} data-testid="input-add-lastName" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" {...field} data-testid="input-add-email" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" {...field} data-testid="input-add-password" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </>
+              )}
               <FormField
                 control={form.control}
                 name="title"
@@ -1290,7 +1313,21 @@ function AddTherapistSheet({
             </form>
           </Form>
         </SheetBody>
-        <SheetFooter>
+        <SheetFooter className="flex-wrap">
+          {(serverError || Object.keys(form.formState.errors).length > 0) && (
+            <div
+              role="alert"
+              className="w-full basis-full rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive mb-3"
+              data-testid="add-profile-error"
+            >
+              {Object.keys(form.formState.errors).length > 0
+                ? `Please check the form: ${Object.values(form.formState.errors)
+                    .map((error) => error.message)
+                    .filter(Boolean)
+                    .join(". ")}`
+                : serverError}
+            </div>
+          )}
           <Button
             variant="outline"
             onClick={() => {
@@ -1448,79 +1485,80 @@ function OverviewTab({
       />
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
         <div className="space-y-6">
-          <div className="flex flex-col items-center gap-3 p-4 rounded-lg border bg-muted/30">
-            <div className="relative group">
-              <Avatar className="h-24 w-24" data-testid="avatar-edit-profile">
-                {localImageUrl && <AvatarImage src={localImageUrl} />}
-                <AvatarFallback className="text-xl">{getInitials(therapist)}</AvatarFallback>
-              </Avatar>
-              <button
-                type="button"
-                className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                onClick={() => avatarInputRef.current?.click()}
-                disabled={isAvatarUploading}
-                data-testid="button-change-avatar"
-              >
-                {isAvatarUploading ? (
-                  <Loader2 className="w-5 h-5 text-white animate-spin" />
-                ) : (
-                  <Camera className="w-5 h-5 text-white" />
-                )}
-              </button>
-              <input
-                ref={avatarInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/gif"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleAvatarFile(file);
-                  e.target.value = "";
-                }}
-              />
-            </div>
-            <form onSubmit={userForm.handleSubmit(onUserSubmit)} className="w-full space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-xs text-muted-foreground">First Name</Label>
-                  <Input
-                    {...userForm.register("firstName")}
-                    className="h-8 text-sm"
-                    data-testid="input-edit-firstName"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Last Name</Label>
-                  <Input
-                    {...userForm.register("lastName")}
-                    className="h-8 text-sm"
-                    data-testid="input-edit-lastName"
-                  />
-                </div>
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Email</Label>
-                <Input
-                  {...userForm.register("email")}
-                  type="email"
-                  className="h-8 text-sm"
-                  data-testid="input-edit-email"
+          {therapist.userId && (
+            <div className="flex flex-col items-center gap-3 p-4 rounded-lg border bg-muted/30">
+              <div className="relative group">
+                <Avatar className="h-24 w-24" data-testid="avatar-edit-profile">
+                  {localImageUrl && <AvatarImage src={localImageUrl} />}
+                  <AvatarFallback className="text-xl">{getInitials(therapist)}</AvatarFallback>
+                </Avatar>
+                <button
+                  type="button"
+                  className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={isAvatarUploading}
+                  data-testid="button-change-avatar"
+                >
+                  {isAvatarUploading ? (
+                    <Loader2 className="w-5 h-5 text-white animate-spin" />
+                  ) : (
+                    <Camera className="w-5 h-5 text-white" />
+                  )}
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleAvatarFile(file);
+                    e.target.value = "";
+                  }}
                 />
               </div>
-              <Button
-                type="submit"
-                size="sm"
-                variant="outline"
-                className="w-full"
-                disabled={isUserPending}
-                data-testid="button-save-user"
-              >
-                {isUserPending && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
-                Update Account
-              </Button>
-            </form>
-          </div>
-
+              <form onSubmit={userForm.handleSubmit(onUserSubmit)} className="w-full space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">First Name</Label>
+                    <Input
+                      {...userForm.register("firstName")}
+                      className="h-8 text-sm"
+                      data-testid="input-edit-firstName"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Last Name</Label>
+                    <Input
+                      {...userForm.register("lastName")}
+                      className="h-8 text-sm"
+                      data-testid="input-edit-lastName"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Email</Label>
+                  <Input
+                    {...userForm.register("email")}
+                    type="email"
+                    className="h-8 text-sm"
+                    data-testid="input-edit-email"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                  disabled={isUserPending}
+                  data-testid="button-save-user"
+                >
+                  {isUserPending && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+                  Update Account
+                </Button>
+              </form>
+            </div>
+          )}
           <div className="p-4 rounded-lg border space-y-3">
             <Label className="text-sm font-medium">Status & Visibility</Label>
             <Form {...form}>
@@ -2115,6 +2153,7 @@ function EditTherapistSheet({
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append("avatar", file);
+      if (!therapist.userId) throw new Error("This location has no user account");
       formData.append("userId", therapist.userId);
       const res = await fetch("/api/uploads/avatar", { method: "POST", body: formData });
       if (!res.ok) throw new Error("Upload failed");

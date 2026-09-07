@@ -1,5 +1,6 @@
 # Events And Registrations
 
+Open this area under **Content** in the admin navigation.
 The events system powers upcoming event cards, event archive views, registrations, and public event detail content.
 
 ## Event Creation Checklist

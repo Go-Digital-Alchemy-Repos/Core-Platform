@@ -149,64 +149,6 @@ export function buildNavGroups(
           },
         ] satisfies NavGroup[])
       : []),
-    ...(siteFeatures.eventsEnabled && hasAdminPermission("content")
-      ? ([
-          {
-            label: "Event Management",
-            items: [
-              {
-                title: "Events",
-                href: "/admin/events",
-                icon: CalendarDays,
-                iconColor: "text-purple-600",
-                children: [
-                  {
-                    title: "Create Event",
-                    href: "/admin/events/new",
-                    icon: CalendarPlus,
-                    iconColor: "text-purple-500",
-                  },
-                  {
-                    title: "Settings",
-                    href: "/admin/events/settings",
-                    icon: Settings,
-                    iconColor: "text-purple-500",
-                  },
-                ],
-              },
-            ],
-          },
-        ] satisfies NavGroup[])
-      : []),
-    ...(siteFeatures.careersEnabled && hasAdminPermission("content")
-      ? ([
-          {
-            label: "Career Center",
-            items: [
-              {
-                title: "Careers",
-                href: "/admin/careers",
-                icon: BriefcaseBusiness,
-                iconColor: "text-cyan-600",
-                children: [
-                  {
-                    title: "Add New",
-                    href: "/admin/careers/new",
-                    icon: Plus,
-                    iconColor: "text-cyan-500",
-                  },
-                  {
-                    title: "Settings",
-                    href: "/admin/careers/settings",
-                    icon: Settings,
-                    iconColor: "text-slate-500",
-                  },
-                ],
-              },
-            ],
-          },
-        ] satisfies NavGroup[])
-      : []),
     ...(siteFeatures.portfolioEnabled && hasAdminPermission("content")
       ? ([
           {
@@ -366,6 +308,54 @@ export function buildNavGroups(
           {
             label: "Content",
             items: [
+              ...(siteFeatures.eventsEnabled
+                ? [
+                    {
+                      title: "Events",
+                      href: "/admin/events",
+                      icon: CalendarDays,
+                      iconColor: "text-purple-600",
+                      children: [
+                        {
+                          title: "Create Event",
+                          href: "/admin/events/new",
+                          icon: CalendarPlus,
+                          iconColor: "text-purple-500",
+                        },
+                        {
+                          title: "Settings",
+                          href: "/admin/events/settings",
+                          icon: Settings,
+                          iconColor: "text-purple-500",
+                        },
+                      ],
+                    },
+                  ]
+                : []),
+              ...(siteFeatures.careersEnabled
+                ? [
+                    {
+                      title: "Careers",
+                      href: "/admin/careers",
+                      icon: BriefcaseBusiness,
+                      iconColor: "text-cyan-600",
+                      children: [
+                        {
+                          title: "Add New",
+                          href: "/admin/careers/new",
+                          icon: Plus,
+                          iconColor: "text-cyan-500",
+                        },
+                        {
+                          title: "Settings",
+                          href: "/admin/careers/settings",
+                          icon: Settings,
+                          iconColor: "text-slate-500",
+                        },
+                      ],
+                    },
+                  ]
+                : []),
               ...(siteFeatures.cmsEnabled
                 ? [
                     {
@@ -373,6 +363,12 @@ export function buildNavGroups(
                       href: "/admin/cms",
                       icon: Globe,
                       iconColor: "text-violet-600",
+                    } satisfies NavItem,
+                    {
+                      title: "Team",
+                      href: "/admin/cms/team",
+                      icon: Users,
+                      iconColor: "text-teal-600",
                     } satisfies NavItem,
                     {
                       title: "Pages",

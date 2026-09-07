@@ -23,7 +23,44 @@ const directorySettings = {
 } as PublicDirectorySettings;
 
 describe("buildNavGroups", () => {
-  it("places Event Settings under Event Management after Create Event", () => {
+  it("groups website content once and preserves feature and permission gates", () => {
+    const enabled = {
+      ...DEFAULT_SITE_FEATURES,
+      cmsEnabled: true,
+      eventsEnabled: true,
+      careersEnabled: true,
+    };
+    const groups = buildNavGroups(enabled, adminUser, () => true, directorySettings);
+    const content = groups.find((group) => group.label === "Content")!;
+    expect(content.items.map((item) => item.title)).toEqual(
+      expect.arrayContaining(["Events", "Careers", "Team"]),
+    );
+    expect(
+      groups.some((group) => ["Event Management", "Career Center"].includes(group.label || "")),
+    ).toBe(false);
+    for (const title of ["Events", "Careers", "Team"]) {
+      expect(
+        groups.flatMap((group) => group.items).filter((item) => item.title === title),
+      ).toHaveLength(1);
+    }
+    expect(
+      buildNavGroups(enabled, adminUser, () => false, directorySettings).some(
+        (group) => group.label === "Content",
+      ),
+    ).toBe(false);
+    const disabled = buildNavGroups(
+      { ...enabled, cmsEnabled: false, eventsEnabled: false, careersEnabled: false },
+      adminUser,
+      () => true,
+      directorySettings,
+    );
+    expect(
+      disabled
+        .flatMap((group) => group.items)
+        .some((item) => ["Events", "Careers", "Team"].includes(item.title)),
+    ).toBe(false);
+  });
+  it("places Event Settings under Content after Create Event", () => {
     const groups = buildNavGroups(
       { ...DEFAULT_SITE_FEATURES, eventsEnabled: true },
       adminUser,
@@ -31,7 +68,7 @@ describe("buildNavGroups", () => {
       directorySettings,
     );
 
-    const eventGroup = groups.find((group) => group.label === "Event Management");
+    const eventGroup = groups.find((group) => group.label === "Content");
     const eventChildren = eventGroup?.items.find((item) => item.title === "Events")?.children ?? [];
 
     expect(eventChildren.map((item) => ({ title: item.title, href: item.href }))).toEqual([
@@ -95,7 +132,7 @@ describe("buildNavGroups", () => {
     ]);
   });
 
-  it("places Career Center Add New and Settings under Careers", () => {
+  it("places Careers Add New and Settings under Content", () => {
     const groups = buildNavGroups(
       { ...DEFAULT_SITE_FEATURES, careersEnabled: true },
       adminUser,
@@ -103,7 +140,7 @@ describe("buildNavGroups", () => {
       directorySettings,
     );
 
-    const careersGroup = groups.find((group) => group.label === "Career Center");
+    const careersGroup = groups.find((group) => group.label === "Content");
     const careersChildren =
       careersGroup?.items.find((item) => item.title === "Careers")?.children ?? [];
 

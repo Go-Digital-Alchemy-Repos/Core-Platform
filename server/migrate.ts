@@ -555,6 +555,9 @@ async function reconcileSchema(migrationsFolder: string) {
   await ensureDirectoryProfileMediaTable(migrationsFolder);
   await ensureDirectoryProfileModes(migrationsFolder);
   await ensureCmsGalleryTables(migrationsFolder);
+  if (!(await tableExists("team_members"))) {
+    await runSqlMigrationFile(migrationsFolder, "0062_team_members.sql");
+  }
   await ensureCareerDirectoryLocations(migrationsFolder);
   await ensureClientSiteContentTables(migrationsFolder);
   await ensureManagedFormSubmissionSchema(migrationsFolder);

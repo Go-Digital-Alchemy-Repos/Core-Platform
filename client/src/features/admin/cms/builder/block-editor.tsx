@@ -1,3 +1,4 @@
+import { TeamMemberPicker } from "./team-member-picker";
 import { STALE_TIMES } from "@/lib/queryClient";
 import { Component, useMemo, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -811,6 +812,8 @@ function PropField({
           data-testid={`prop-image-${propDef.key}`}
         />
       );
+    case "team-select":
+      return <TeamMemberPicker value={value} onChange={onChange} />;
     case "gallery-select":
       return (
         <Select value={strVal} onValueChange={onChange} data-testid={`prop-gallery-${propDef.key}`}>

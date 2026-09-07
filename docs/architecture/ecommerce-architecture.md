@@ -129,3 +129,7 @@ The gate currently protects:
 - Public/admin route availability through site configuration-aware navigation and frontend checks
 
 Turning the gate off hides access without deleting ecommerce data.
+
+## Commerce upgrade execution
+
+See [the approved execution plan](../ecommerce-upgrade-execution-plan.md) for scope, dependencies, findings, and validation status. Public physical checkout now requires an eligible, explicitly selected shipping rate. The shipping-rate endpoint returns an error when physical delivery is unavailable; an empty list indicates a cart that does not require shipping. Manual zero-price rates remain explicit free-shipping options. Ecommerce setup only lists integrations marked operational and not requiring an adapter; hidden definitions and saved settings are retained.

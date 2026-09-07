@@ -11,6 +11,13 @@ import { sanitizePublicCmsContent } from "../utils/sanitize-rich-html";
 const router = Router();
 
 router.get(
+  "/team",
+  asyncHandler(async (_req, res) => {
+    res.json(await storage.team.published());
+  }),
+);
+
+router.get(
   "/pages/by-slug/:slug",
   optionalAuth,
   asyncHandler(async (req, res) => {

@@ -3,6 +3,7 @@ import type { CmsMediaAsset } from "@shared/schema";
 
 const mockStorage = vi.hoisted(() => ({
   cmsPages: { getAllPages: vi.fn() },
+  team: { list: vi.fn() },
   blog: { getAllPosts: vi.fn() },
   events: { getAllEvents: vi.fn() },
   eventOrganizers: { getAllOrganizers: vi.fn() },
@@ -49,6 +50,7 @@ function asset(overrides: Partial<CmsMediaAsset> = {}): CmsMediaAsset {
 describe("cms media usage service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockStorage.team.list.mockResolvedValue([]);
     mockStorage.cmsPages.getAllPages.mockResolvedValue([]);
     mockStorage.blog.getAllPosts.mockResolvedValue([]);
     mockStorage.events.getAllEvents.mockResolvedValue([]);
@@ -60,6 +62,31 @@ describe("cms media usage service", () => {
     mockStorage.ecommerce.getProducts.mockResolvedValue([]);
     mockStorage.ecommerce.getCategories.mockResolvedValue([]);
     mockStorage.ecommerce.getProductMedia.mockResolvedValue([]);
+  });
+
+  it("tracks published and draft Team portraits", async () => {
+    const media = asset();
+    mockStorage.team.list.mockResolvedValue([
+      { id: "team-live", name: "Live member", photoUrl: media.url, status: "published" },
+      { id: "team-draft", name: "Draft member", photoUrl: media.url, status: "draft" },
+    ]);
+    const [result] = await buildCmsMediaLibraryAssets([media]);
+    expect(result.isInUse).toBe(true);
+    expect(result.usageRefs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          entityType: "team_member",
+          entityId: "team-live",
+          isLive: true,
+          path: "/admin/cms/team",
+        }),
+        expect.objectContaining({
+          entityType: "team_member",
+          entityId: "team-draft",
+          isLive: false,
+        }),
+      ]),
+    );
   });
 
   it("tracks shared media references from bolt-on apps", async () => {

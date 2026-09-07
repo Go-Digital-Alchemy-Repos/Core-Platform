@@ -1159,109 +1159,116 @@ describe("ecommerce services", () => {
     });
   });
 
-  it("requires a selected shipping rate for checkout when shippable rates match", async () => {
-    const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
-    mockProducts.push({
-      id: "p1",
-      name: "Shippable Product",
-      tagline: null,
-      description: null,
-      price: 10000,
-      primaryImage: null,
-      secondaryImages: [],
-      features: [],
-      included: [],
-      active: true,
-      status: "published",
-      sku: null,
-      tags: [],
-      salePrice: null,
-      discountType: "NONE",
-      discountValue: null,
-      saleStartAt: null,
-      saleEndAt: null,
-      metaTitle: null,
-      metaDescription: null,
-      metaKeywords: null,
-      urlSlug: "shippable-product",
-      canonicalUrl: null,
-      robotsIndex: true,
-      robotsFollow: true,
-      ogTitle: null,
-      ogDescription: null,
-      ogImage: null,
-      mediaId: null,
-      requiresShipping: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as EcommerceProduct);
-    mockVariants.push({
-      id: "v1",
-      productId: "p1",
-      title: "Default",
-      optionSignature: "default",
-      optionValues: {},
-      sku: null,
-      barcode: null,
-      price: 10000,
-      salePrice: null,
-      compareAtPrice: null,
-      costPerItem: null,
-      inventoryQuantity: 0,
-      trackInventory: false,
-      lowStockThreshold: null,
-      allowBackorder: false,
-      weight: null,
-      weightUnit: "oz",
-      image: null,
-      status: "active",
-      active: true,
-      sortOrder: 0,
-      isDefault: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-    mockShippingZones.push({
-      id: "zone-us",
-      name: "United States",
-      countries: ["US"],
-      states: [],
-      active: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-    mockShippingRates.push({
-      id: "rate-standard",
-      zoneId: "zone-us",
-      name: "Standard",
-      description: "Ground shipping",
-      amount: 995,
-      minOrderAmount: null,
-      maxOrderAmount: null,
-      active: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+  it.each([true, false])(
+    "blocks checkout without a selected shipping rate (matching rates: %s)",
+    async (hasMatchingRate) => {
+      const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
+      mockProducts.push({
+        id: "p1",
+        name: "Shippable Product",
+        tagline: null,
+        description: null,
+        price: 10000,
+        primaryImage: null,
+        secondaryImages: [],
+        features: [],
+        included: [],
+        active: true,
+        status: "published",
+        sku: null,
+        tags: [],
+        salePrice: null,
+        discountType: "NONE",
+        discountValue: null,
+        saleStartAt: null,
+        saleEndAt: null,
+        metaTitle: null,
+        metaDescription: null,
+        metaKeywords: null,
+        urlSlug: "shippable-product",
+        canonicalUrl: null,
+        robotsIndex: true,
+        robotsFollow: true,
+        ogTitle: null,
+        ogDescription: null,
+        ogImage: null,
+        mediaId: null,
+        requiresShipping: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as EcommerceProduct);
+      mockVariants.push({
+        id: "v1",
+        productId: "p1",
+        title: "Default",
+        optionSignature: "default",
+        optionValues: {},
+        sku: null,
+        barcode: null,
+        price: 10000,
+        salePrice: null,
+        compareAtPrice: null,
+        costPerItem: null,
+        inventoryQuantity: 0,
+        trackInventory: false,
+        lowStockThreshold: null,
+        allowBackorder: false,
+        weight: null,
+        weightUnit: "oz",
+        image: null,
+        status: "active",
+        active: true,
+        sortOrder: 0,
+        isDefault: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      mockShippingZones.push({
+        id: "zone-us",
+        name: "United States",
+        countries: ["US"],
+        states: [],
+        active: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      mockShippingRates.push({
+        id: "rate-standard",
+        zoneId: "zone-us",
+        name: "Standard",
+        description: "Ground shipping",
+        amount: 995,
+        minOrderAmount: null,
+        maxOrderAmount: null,
+        active: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
 
-    const checkout = createEcommercePaymentIntent({
-      items: [{ productId: "p1", quantity: 1 }],
-      customer: { email: "buyer@example.com", name: "Buyer" },
-      shippingAddress: {
-        name: "Buyer",
-        address: "123 Main St",
-        city: "Detroit",
-        state: "MI",
-        zip: "48201",
-        country: "US",
-      },
-      billingSameAsShipping: true,
-    });
-    await expect(checkout).rejects.toMatchObject({
-      message: "Select a shipping method before checkout",
-      statusCode: 400,
-    });
-    expect(mockCreateOrder).not.toHaveBeenCalled();
-  });
+      if (!hasMatchingRate) mockShippingRates.length = 0;
+
+      const checkout = createEcommercePaymentIntent({
+        items: [{ productId: "p1", quantity: 1 }],
+        customer: { email: "buyer@example.com", name: "Buyer" },
+        shippingAddress: {
+          name: "Buyer",
+          address: "123 Main St",
+          city: "Detroit",
+          state: "MI",
+          zip: "48201",
+          country: "US",
+        },
+        billingSameAsShipping: true,
+      });
+      await expect(checkout).rejects.toMatchObject({
+        message: hasMatchingRate
+          ? "Select a shipping method before checkout"
+          : "Shipping is unavailable for this address. Contact the store before checkout.",
+        statusCode: 400,
+      });
+      expect(mockCreateOrder).not.toHaveBeenCalled();
+    },
+  );
 
   it("returns a client error when checkout total is not payable", async () => {
     const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");

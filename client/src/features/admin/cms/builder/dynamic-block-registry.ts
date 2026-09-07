@@ -3,6 +3,48 @@ import { COLUMNS_OPTIONS } from "./block-registry.shared";
 
 export const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
   {
+    type: "team",
+    label: "Team",
+    iconName: "Users",
+    description: "Selected team members with portraits, bio excerpts, and full biographies",
+    isDynamic: true,
+    category: "dynamic",
+    defaultProps: {
+      title: "Meet Our Team",
+      subtitle: "",
+      memberIds: [],
+      layout: "portraits",
+      columns: "3",
+      showRole: true,
+      showExcerpt: true,
+      excerptLength: 180,
+    },
+    propDefs: [
+      { key: "title", label: "Section Title", type: "text" },
+      { key: "subtitle", label: "Introduction", type: "textarea" },
+      { key: "memberIds", label: "Team Members", type: "team-select" },
+      {
+        key: "layout",
+        label: "Template",
+        type: "select",
+        options: [
+          { label: "Portrait Grid", value: "portraits" },
+          { label: "Bordered Cards", value: "cards" },
+          { label: "Horizontal Profiles", value: "horizontal" },
+        ],
+      },
+      {
+        key: "columns",
+        label: "Grid Columns (portrait and card layouts)",
+        type: "select",
+        options: COLUMNS_OPTIONS,
+      },
+      { key: "showRole", label: "Show Role", type: "boolean" },
+      { key: "showExcerpt", label: "Show Bio Excerpt", type: "boolean" },
+      { key: "excerptLength", label: "Excerpt Length", type: "number", min: 40, max: 500 },
+    ],
+  },
+  {
     type: "therapist-map",
     label: "Global Provider Map (Live Data)",
     iconName: "Map",

@@ -341,4 +341,5 @@ export {
   type ProviderApplicationDecision,
 } from "./provider-applications";
 
+export * from "./team-members";
 export * from "./client-stack-onboarding";

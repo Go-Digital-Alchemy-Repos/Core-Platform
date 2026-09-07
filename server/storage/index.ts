@@ -36,9 +36,11 @@ import { EcommerceStorage } from "./ecommerce.storage";
 import { CareerStorage } from "./career.storage";
 import { PortfolioStorage } from "./portfolio.storage";
 import { MembershipStorage } from "./membership.storage";
+import { TeamStorage } from "./team.storage";
 import { ClientSiteContentStorage } from "./client-site-content.storage";
 import { ClientStackOnboardingStorage } from "./client-stack-onboarding.storage";
 export const storage = {
+  team: new TeamStorage(),
   users: new UserStorage(),
   therapists: new TherapistStorage(),
   tiers: new TierStorage(),

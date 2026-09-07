@@ -45,6 +45,7 @@ export type CmsMediaUsageEntityType =
   | "global_seo"
   | "directory_profile"
   | "cms_gallery"
+  | "team_member"
   | "branding"
   | "ecommerce_product"
   | "ecommerce_category"
