@@ -280,19 +280,21 @@ export async function buildCmsMediaLibraryAssets(
   }
 
   for (const member of teamMembers) {
-    addDirectFieldUsage(
-      assets,
-      usageMap,
-      dedupe,
-      member,
-      "team_member",
-      member.name,
-      "/admin/cms/team",
-      "photoUrl",
-      member.photoUrl,
-      member.status === "published",
-      `${member.status} team member`,
-    );
+    for (const field of ["photoUrl", "biography"] as const) {
+      addDirectFieldUsage(
+        assets,
+        usageMap,
+        dedupe,
+        member,
+        "team_member",
+        member.name,
+        "/admin/cms/team",
+        field,
+        member[field],
+        member.status === "published",
+        `${member.status} team member`,
+      );
+    }
   }
 
   for (const gallery of galleries) {

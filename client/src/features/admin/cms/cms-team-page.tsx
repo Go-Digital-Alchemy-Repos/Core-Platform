@@ -17,8 +17,10 @@ import {
 } from "@/components/ui/dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { teamMemberInputSchema, type TeamMemberInput } from "@shared/team";
+import { teamBiographyEditorHtml, teamMemberInputSchema, type TeamMemberInput } from "@shared/team";
 import type { TeamMember } from "@shared/schema";
+import { CmsImageUpload } from "./components/cms-image-upload";
+import { CmsRichTextEditor } from "./builder/cms-rich-text-editor";
 import { MediaPickerDialog } from "./components/media-picker-dialog";
 
 export default function CmsTeamPage() {
@@ -73,7 +75,10 @@ export default function CmsTeamPage() {
             photoAlt: "",
             status: "draft",
           }
-        : teamMemberInputSchema.parse(member),
+        : {
+            ...teamMemberInputSchema.parse(member),
+            biography: teamBiographyEditorHtml(member.biography),
+          },
     );
   };
   const filtered = members.filter(
@@ -215,25 +220,16 @@ export default function CmsTeamPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="team-photo">Photo</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="team-photo"
-                  value={form.photoUrl}
-                  placeholder="Image URL"
-                  onChange={(e) => setForm({ ...form, photoUrl: e.target.value })}
-                />
-                <Button type="button" variant="outline" onClick={() => setMediaOpen(true)}>
-                  Media Library
-                </Button>
-              </div>
-              {form.photoUrl && (
-                <img
-                  src={form.photoUrl}
-                  alt={form.photoAlt || form.name}
-                  className="h-28 w-28 rounded-md object-cover"
-                />
-              )}
+              <CmsImageUpload
+                label="Photo"
+                value={form.photoUrl}
+                onChange={(photoUrl) => setForm((current) => ({ ...current, photoUrl }))}
+                showLibraryButton={false}
+                data-testid="team-photo-upload"
+              />
+              <Button type="button" variant="outline" onClick={() => setMediaOpen(true)}>
+                Media Library
+              </Button>
             </div>
             <div className="space-y-2">
               <Label htmlFor="team-alt">Photo description</Label>
@@ -256,14 +252,12 @@ export default function CmsTeamPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="team-bio">Full biography</Label>
-              <Textarea
-                id="team-bio"
-                rows={7}
-                maxLength={30000}
+              <Label>Full biography</Label>
+              <CmsRichTextEditor
                 value={form.biography}
-                onChange={(e) => setForm({ ...form, biography: e.target.value })}
+                onChange={(biography) => setForm((current) => ({ ...current, biography }))}
                 placeholder="Shown when visitors open the member’s biography"
+                data-testid="team-biography-editor"
               />
             </div>
             <div className="space-y-2">

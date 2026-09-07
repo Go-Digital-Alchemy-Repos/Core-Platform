@@ -18,7 +18,7 @@ beforeEach(() => {
         name: "Alex",
         role: "Director",
         status: "published",
-        biography: "Full biography for Alex",
+        biography: "<p>Full biography for <strong>Alex</strong></p>",
         excerpt: "Alex excerpt",
       }),
     },
@@ -75,6 +75,7 @@ describe("Team section", () => {
     );
     const dialog = document.querySelector('[role="dialog"]')!;
     expect(dialog.textContent).toContain("Full biography for Alex");
+    expect(dialog.querySelector("strong")?.textContent).toBe("Alex");
     act(() =>
       (
         Array.from(dialog.querySelectorAll("button")).find(

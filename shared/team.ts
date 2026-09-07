@@ -35,11 +35,39 @@ export function teamBioExcerpt(
   member: Pick<TeamMemberInput, "excerpt" | "biography">,
   length = 180,
 ) {
-  const text = (member.excerpt || member.biography).replace(/\s+/g, " ").trim();
+  const source = member.excerpt || member.biography;
+  const text = source
+    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos|nbsp);/gi, (entity, code: string) => {
+      const names: Record<string, string> = {
+        amp: "&",
+        lt: "<",
+        gt: ">",
+        quot: '"',
+        apos: "'",
+        nbsp: " ",
+      };
+      if (code[0] !== "#") return names[code.toLowerCase()] ?? entity;
+      const value =
+        code[1].toLowerCase() === "x" ? parseInt(code.slice(2), 16) : parseInt(code.slice(1), 10);
+      return value > 0 && value <= 0x10ffff && !(value >= 0xd800 && value <= 0xdfff)
+        ? String.fromCodePoint(value)
+        : "";
+    })
+    .replace(/\s+/g, " ")
+    .trim();
   const limit = Number.isFinite(length) ? Math.min(500, Math.max(40, length)) : 180;
   if (text.length <= limit) return text;
   const clipped = text.slice(0, limit).trimEnd();
   if (/\s/.test(text[limit] || "") || text[limit - 1] === " ") return `${clipped}…`;
   const boundary = clipped.lastIndexOf(" ");
   return `${boundary > limit / 2 ? clipped.slice(0, boundary) : clipped}…`;
+}
+
+/** Preserve line breaks and literal characters when opening legacy plain-text biographies. */
+export function teamBiographyEditorHtml(value: string): string {
+  if (!value || /<[a-z][\s\S]*>/i.test(value)) return value;
+  const escaped = value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return `<p>${escaped.replace(/\r?\n/g, "<br>")}</p>`;
 }

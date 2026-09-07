@@ -68,6 +68,7 @@ export interface CmsImageUploadProps {
   onChange: (url: string) => void;
   onChangeMany?: (assets: CmsMediaLibraryAsset[]) => void;
   multiple?: boolean;
+  showLibraryButton?: boolean;
   label?: string;
   helpText?: string;
   className?: string;
@@ -80,6 +81,7 @@ export function CmsImageUpload({
   onChange,
   onChangeMany,
   multiple = false,
+  showLibraryButton = true,
   label,
   helpText,
   className,
@@ -266,17 +268,19 @@ export function CmsImageUpload({
               <RefreshCw className="h-3 w-3" />
               Replace
             </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              className="h-7 px-2 text-xs gap-1 shadow"
-              onClick={() => setPickerOpen(true)}
-              data-testid={testId ? `${testId}-library` : "cms-image-library"}
-            >
-              <Library className="h-3 w-3" />
-              Library
-            </Button>
+            {showLibraryButton && (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                className="h-7 px-2 text-xs gap-1 shadow"
+                onClick={() => setPickerOpen(true)}
+                data-testid={testId ? `${testId}-library` : "cms-image-library"}
+              >
+                <Library className="h-3 w-3" />
+                Library
+              </Button>
+            )}
             <Button
               type="button"
               size="sm"
@@ -297,6 +301,16 @@ export function CmsImageUpload({
               ? "border-violet-400 bg-violet-50 dark:bg-violet-950/20"
               : "border-muted-foreground/25 hover:border-violet-300 bg-muted/10 hover:bg-muted/20",
           )}
+          role="button"
+          tabIndex={isUploading ? -1 : 0}
+          aria-label={label ? `Upload ${label.toLowerCase()}` : "Upload image"}
+          onKeyDown={(event) => {
+            if (event.target !== event.currentTarget) return;
+            if (!isUploading && (event.key === "Enter" || event.key === " ")) {
+              event.preventDefault();
+              fileInputRef.current?.click();
+            }
+          }}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -330,20 +344,22 @@ export function CmsImageUpload({
                     : "PNG, JPG, WebP, GIF · Max 10 MB"}
                 </p>
               </div>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                className="mt-1 h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPickerOpen(true);
-                }}
-                data-testid={testId ? `${testId}-pick-library` : "cms-image-pick-library"}
-              >
-                <Library className="h-3.5 w-3.5" />
-                Pick from library
-              </Button>
+              {showLibraryButton && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="mt-1 h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPickerOpen(true);
+                  }}
+                  data-testid={testId ? `${testId}-pick-library` : "cms-image-pick-library"}
+                >
+                  <Library className="h-3.5 w-3.5" />
+                  Pick from library
+                </Button>
+              )}
             </div>
           )}
         </div>
