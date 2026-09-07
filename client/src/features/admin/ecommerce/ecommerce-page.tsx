@@ -1,3 +1,5 @@
+import { ShippingQuotePanel } from "./shipping-quote-panel";
+import { setQuoteSessionOwner } from "./shipping-quote-session";
 import { getSafeEcommerceTrackingUrl } from "@shared/ecommerce-tracking-url";
 import { type ElementType, FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -2213,6 +2215,12 @@ function shipmentDraftForOrder(order: Order): ShipmentDraft {
 }
 
 export function OrdersTab() {
+  const { data: quoteUser, isLoading: quoteAuthLoading } = useQuery<{ id: string } | null>({
+    queryKey: ["/api/auth/me"],
+  });
+  useEffect(() => {
+    if (!quoteAuthLoading) setQuoteSessionOwner(quoteUser?.id ?? null);
+  }, [quoteUser?.id, quoteAuthLoading]);
   const { toast } = useToast();
   const trackingNumberInputRef = useRef<HTMLInputElement>(null);
   const { data: orders = [] } = useQuery<Order[]>({ queryKey: ["/api/admin/ecommerce/orders"] });
@@ -2997,6 +3005,20 @@ export function OrdersTab() {
                         )}
                       </CardContent>
                     </Card>
+
+                    {quoteUser && (
+                      <ShippingQuotePanel
+                        key={`${quoteUser.id}:${selectedOrder.id}`}
+                        userId={quoteUser.id}
+                        order={selectedOrder}
+                        remaining={Object.fromEntries(
+                          selectedOrder.items.map((item) => [
+                            item.id,
+                            remainingShipmentQuantity(selectedOrder, item.id),
+                          ]),
+                        )}
+                      />
+                    )}
 
                     <form
                       className="grid gap-4 rounded-lg border p-4"
