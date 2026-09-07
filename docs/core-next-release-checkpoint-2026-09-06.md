@@ -265,3 +265,35 @@ The six previous harness attempts and their cleanup limitations remain indexed
 separately; none was relabeled. This is desktop Chromium resized for narrow
 coverage, not mobile OS emulation. Combined category browser, complete app/pilot
 gates and runtime/upgrade/recovery evidence are still pending.
+
+
+### Runtime/recovery passed; narrow category layout follow-up open
+
+The four exact-build rehearsals passed on e2fda41: compiled Linux runtime
+(TLS1.3, readiness, PID1 and graceful shutdown), historical populated upgrade,
+CRM populated upgrade, and CRM recovery (109 tables/20 rows). Root matched
+all 1,139 source hashes and each producer report/direct-log hash. Outer receipt
+Operations/release-rehearsals-e2fda41-2c82c5a5/receipt.json SHA-256
+`224f455a0538a50aa0eafabf07d0f0788fee622f393b6df26383560776dc3b74`.
+
+Root also restored the existing identity-bound production snapshot locally:
+105 tables/671 rows and sequence semantics verified, with all snapshot rows
+unchanged through two post-restore migration invocations. No app/workers or
+production operations ran. Strict owned fixture/group/temp-directory cleanup
+passed. Receipt Operations/recovery-verifier-e2fda41/receipt.json SHA-256
+`d52bd33a3995e458264efb043e6313dd6fd9febd0c3d28eeade3d4f372e1cd50`.
+The verifier differs from its reviewed f485 predecessor only in two checkout
+paths and candidate pin. Original capture uncertainty and prior receipts remain
+unchanged; this is supplemental restore proof, not a replacement capture.
+
+Category browser functional checks passed on e2fda41 at 1440/390 widths:
+cycle/self repairs persist after reload, normal creation/inactive reparenting
+work, invalid API parents reject, and unrelated seed rows remain unchanged.
+Root source/log hashes match receipt category-repair-cli-7272942c3e/receipt.json
+SHA-256 `ec895d4bd61b86f251d22b4cd0312b6d09bc0a4c4c8ca54e3d273123df002702`.
+However, root visual review found the narrow editor card and controls overflow
+the viewport. Functional acceptance does not imply responsive acceptance.
+A separate scoped layout fix from e2fda41 is authorized with real browser
+geometry/screenshots, preserving the desktop editor and table-local scrolling.
+The current full app/pilot runs continue on unchanged e2fda41; do not silently
+relabel their evidence for a later layout commit.
