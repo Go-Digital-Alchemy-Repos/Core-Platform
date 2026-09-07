@@ -645,3 +645,24 @@ Two tests pass for non-overlap, stop drainage and sanitized retry. Types and lin
 pass; independent infra review found no blocker. The returned worker still needs
 registration with runtime shutdown; its outer timeout bounds stalled database
 drainage. No provider activity, scheduler startup or production change occurred.
+
+
+### Admin quote runtime connected — 2026-09-07 UTC
+
+Accepted orchestration 9f07637 is integrated as 2e57c0c. Shipping assembly
+a67383c connects the real database, generation authorization and test-only
+transport through a lazy runtime adapter; imports do not initiate provider work.
+The real ecommerce router mounts quote create/read/readiness under admin and
+feature gates, and index registers the bounded maintenance worker for drainage.
+Independent infra review found no wiring blocker. Contracts describe the mount,
+maintenance scheduling and remaining acceptance boundaries.
+
+The real parent router tests now pass 16 cases, including all three quote endpoints:
+anonymous401, nonadmin403, disabled ecommerce404, no denied service calls, correct
+admin dispatch and private no-store responses. Root reviewed these tests. Root
+ordinary suite on the assembled changes passed 1321 tests with174 opt-in skips
+(178 passed test files,18 skipped), and types passed. Logs:
+Operations/shipping-runtime-ordinary.log and shipping-runtime-types.log. Earlier
+27 focused route/worker/UI cases also passed. These counts do not replace the new
+opt-in DB or actual browser acceptance gates. All code remains development-only;
+no approved real credential, provider request or deployment occurred.
