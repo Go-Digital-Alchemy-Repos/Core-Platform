@@ -19,7 +19,9 @@ function addressText(value: string | null | undefined, required: boolean): strin
   if (
     value != null &&
     Array.from(value).some(
-      (character) => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127,
+      (character) =>
+        character.charCodeAt(0) < 32 ||
+        (character.charCodeAt(0) >= 127 && character.charCodeAt(0) <= 159),
     )
   )
     throw fulfillmentError("Shipping address contains unsupported control characters");

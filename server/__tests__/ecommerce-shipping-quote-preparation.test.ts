@@ -125,6 +125,7 @@ it("rejects incomplete, malformed and control-bearing saved addresses without ec
     { shippingAddress: "" },
     { shippingZip: "bad" },
     { shippingCity: "secret\nvalue" },
+    { shippingCity: "secret\u0085value" },
     { shippingName: "", shippingCompany: "" },
     { shippingAddress: "x".repeat(201) },
   ]) {
