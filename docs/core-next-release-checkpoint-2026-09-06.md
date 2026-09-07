@@ -759,3 +759,31 @@ shipping CLI browser producer in separate checkout, waiting for CRM port5201.
 Root four runtime/historical-upgrade/CRM-upgrade/recovery gates launched handle61102,
 Operations/release-rehearsals-ece2544-4735428e, bound to the artifact above. Every
 checkout has its own dependencies. Results pending; no production/provider actions.
+
+
+### Database and rehearsal gate results — 2026-09-07 UTC
+
+Exact ece candidate DB matrix passed199executions/19suites with zero opt-in skips
+and migrations twice. Receipt combined-db-ece2544-8df5bc85/receipt.json SHA
+`c9a5fcc69ceb2b57868c7417931314c11b9293e16ff3dd2503771b60ffd06a12`.
+Four rehearsals passed: production runtime, historical populated upgrade, CRM
+populated upgrade and CRM backup recovery. Outer receipt
+release-rehearsals-ece2544-4735428e/receipt.json SHA
+`856b6497ff1991d0988e4560ed35748d3c3fdac35ca6e62077868cd1b215a574`.
+Root verified source/log/inner receipt hashes and absence of11owned resource
+identities and410processgroups across DB+rehearsals. LinuxNode22.23.2 PID1 used
+the exact basic artifact, readiness200, all7DBconnectionsTLS1.3, SIGTERM0.057s
+exit0. CRM restore preserved110tables/20synthetic rows before/after migrations.
+
+Detached argument-rejection gates passed: verify receipt SHA
+`39024a8ce750ac41a480001b2c0c42fbcab08fcd9f85694ab0f882d09fe54009`,
+apply `58715f0ceca7a3a834a08d091f4742161acb28bbdc3b66421229b8487cf734b5`
+in detached-artifacts-ece2544-7d34ddca. This is argument rejection, not provider
+copy acceptance or filesystem sandboxing.
+
+CRM reports full66 and BetterFarms22 passing with strict inner/outercleanup; root
+receipt/artifact review remains pending. Exactcandidate shipping CLI producer is
+prepared for root review, not run. Infra supplemental retained-local-backup restore
+runs55736 in recovery-verifier-ece2544-781ab81b (no recapture/download). CRM prepares
+a separate V5 normalizer with pending reviewfalse and no fabricated gate results.
+Draft shipping PR prepared against ecommerce integrity branch; release still gated.
