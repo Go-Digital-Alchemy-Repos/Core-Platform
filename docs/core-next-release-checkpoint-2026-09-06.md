@@ -896,3 +896,51 @@ fences and cancellation after dispatch intent. This is not a database CAS or pro
 of external exactly-once delivery. No persistence, endpoint, purchase UI or carrier
 transport has been connected by this slice. Root accepts this bounded foundation;
 remaining database/allocation and transport interfaces are under read-only review.
+
+
+### Pilot accessibility/newsletter accepted locally — 2026-09-07 UTC
+
+Better Farms candidate12970e7462b74abd1e12a896587f8a99f5ccc3e5 is clean/pushed
+on codex/pilot-accessibility-newsletter. All seven routes now have keyboard skip
+navigation; all five newsletter placements collect only the email the contract
+accepts, and success confirms receipt rather than enrollment. Decorative CTA
+arrows no longer contribute accessible names. Worker types/build/38 contract tests
+passed. Root verified114 final CLI evidence hashes,274 source hashes,131 built
+artifact hashes and owned process absence. Final14 keyboard checks cover seven
+routes at1440/390. Finalreceipt SHA
+`b35c2b4ab1dccf46055bc9aba9de764aea6fe0c4102fc065a8328a58919c64a1`.
+Earlier incomplete cleanup evidence remains preserved, not relabeled.
+
+Separate Core pilot acceptance branchcodex/pilot-newsletter-acceptance at
+ba1d0f6687a806a74fb598f5a0a829de4c4f2dd6 is clean/pushed. Existing real form retry
+checks now assert email-only newsletter UI and request-received wording; contact
+name requirements remain. Launcher pins the exact new site. Initial06f3bb0 run
+passed22 cases but nested process cleanup failed; outer exit0 was NOT accepted.
+A bounded cleanup observation change tolerates transient probe errors only by
+waiting for actual group absence and leader exit. Persistent errors fail closed;
+root and independent CRM reviewer passed13 cleanup tests. Exact cause of original
+failure was not retained and is not claimed proven. Fresh ba1d0f6 run passed22
+cases with cleanup true. Root verified its three groups, container and anonymous
+volume absent. Receipt SHA
+`d98698e7180a7c0699f5cc9f742d559e94d1624356430ceb399dbb92fb85dda2`,
+cleanup SHA `da369f2e2a6cf9c5b6e754da2e20ce7f386e4cc473b538f5740389e81483bad7`.
+Private evidence: Operations/pilot-email-only-ba1d0f6-12970e7. This proves local
+receipt/enqueue and pilot behavior, not external email delivery or publication
+approval. Frozen ece/V5 remains unchanged; new branches are not production.
+
+### Label preflight and persistence direction — 2026-09-07 UTC
+
+Label branchdffcc4e4ef31b4c0add3d9ede1a21ccf10c049e5 is clean/pushed. Root
+reviewed explicit preflight purchase provenance: a verified existing label can
+transition a same-fence claim to purchased without fabricating Core buy intent;
+its allocation remains held. Buy/reconciliation purchase completion requires
+actual recorded intent. Root reran17 label/quote tests successfully. Transport
+contract is approved direction but no transport/runtime is connected. Fees retain
+exact sub-cent USD decimals; missing selection/fees cannot erase positive purchase
+evidence. Assets remain disabled pending exact origin policy.
+
+Root approved four-table purchase/allocation/operation/audit layout and same-order
+FKs in principle, including legacy unaccounted shipment and coarse status guards.
+Physical remaining units must remain distinct from available-minus-held units.
+Concrete schema/DDL draft is under review before source application. No real
+provider operation or production deployment occurred. Full goal remains active.
