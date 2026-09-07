@@ -24,13 +24,15 @@ export const SHIPPING_LABEL_PURCHASE_STATES = [
   "rejected",
   "cancelled_before_dispatch",
 ] as const;
+export type ShippingLabelPurchaseObservationSource = "preflight" | "buy" | "reconciliation";
 export type ShippingLabelPurchaseState = (typeof SHIPPING_LABEL_PURCHASE_STATES)[number];
 
 /**
  * Pure permission policy, not a lock, CAS, provider-error classifier or dispatch authorization.
  * The caller must use authoritative persisted state/intent/fence and atomically enforce the
  * same predicates on its write. A successful claimed→dispatching write records intent before
- * I/O. A completion requires independently verified evidence; unknown never grants rebuy.
+ * buy I/O. Preflight may instead discover existing purchase without recording Core buy intent.
+ * A completion requires independently verified evidence; unknown never grants rebuy.
  */
 export function canTransitionShippingLabelPurchase(input: {
   state: ShippingLabelPurchaseState;
@@ -38,6 +40,7 @@ export function canTransitionShippingLabelPurchase(input: {
   currentFence: string;
   expectedFence: string;
   dispatchIntentRecorded: boolean;
+  observationSource?: ShippingLabelPurchaseObservationSource;
 }): boolean {
   if (
     !identifier.safeParse(input.currentFence).success ||
@@ -45,6 +48,18 @@ export function canTransitionShippingLabelPurchase(input: {
     input.currentFence !== input.expectedFence
   )
     return false;
+
+  if (input.nextState === "purchased") {
+    if (input.state === "claimed" && input.dispatchIntentRecorded === false)
+      return input.observationSource === "preflight";
+    return (
+      (input.state === "dispatching" || input.state === "unknown") &&
+      input.dispatchIntentRecorded === true &&
+      (input.observationSource === "buy" || input.observationSource === "reconciliation")
+    );
+  }
+  // Observation provenance is meaningful only for a positive purchase transition.
+  if (input.observationSource !== undefined) return false;
 
   if (input.state === "claimed" && input.dispatchIntentRecorded === false)
     return input.nextState === "dispatching" || input.nextState === "cancelled_before_dispatch";
@@ -54,7 +69,6 @@ export function canTransitionShippingLabelPurchase(input: {
     input.dispatchIntentRecorded === true
   )
     return (
-      input.nextState === "purchased" ||
       input.nextState === "rejected" ||
       (input.state === "dispatching" && input.nextState === "unknown")
     );

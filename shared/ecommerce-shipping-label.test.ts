@@ -4,6 +4,7 @@ import {
   shippingLabelPurchaseRequestSchema,
   SHIPPING_LABEL_PURCHASE_STATES,
   type ShippingLabelPurchaseState,
+  type ShippingLabelPurchaseObservationSource,
 } from "./ecommerce-shipping-label";
 import { shippingQuoteResultSchema } from "./ecommerce-shipping-quote-result";
 
@@ -119,10 +120,18 @@ const transition = (
   dispatchIntentRecorded,
   currentFence: "owner-a",
   expectedFence: "owner-a",
+  ...(nextState === "purchased"
+    ? {
+        observationSource: (state === "claimed"
+          ? "preflight"
+          : "buy") as ShippingLabelPurchaseObservationSource,
+      }
+    : {}),
 });
 describe("pure label lifecycle policy", () => {
   it("allows only the complete reviewed transition matrix", () => {
     const allowed = new Set([
+      "claimed:purchased",
       "claimed:dispatching",
       "claimed:cancelled_before_dispatch",
       "dispatching:purchased",
@@ -167,6 +176,48 @@ describe("pure label lifecycle policy", () => {
     );
     expect(
       canTransitionShippingLabelPurchase(transition("unknown", "cancelled_before_dispatch", true)),
+    ).toBe(false);
+  });
+  it("requires explicit source for each purchased transition, never defaulting to purchase", () => {
+    for (const state of SHIPPING_LABEL_PURCHASE_STATES)
+      for (const dispatchIntentRecorded of [false, true])
+        for (const observationSource of [
+          undefined,
+          "preflight",
+          "buy",
+          "reconciliation",
+          "invalid" as ShippingLabelPurchaseObservationSource,
+        ]) {
+          const expected =
+            (state === "claimed" && !dispatchIntentRecorded && observationSource === "preflight") ||
+            ((state === "dispatching" || state === "unknown") &&
+              dispatchIntentRecorded &&
+              (observationSource === "buy" || observationSource === "reconciliation"));
+          expect(
+            canTransitionShippingLabelPurchase({
+              ...transition(state, "purchased", dispatchIntentRecorded),
+              observationSource,
+            }),
+            `${state}/${dispatchIntentRecorded}/${observationSource}`,
+          ).toBe(expected);
+        }
+    const { observationSource: _source, ...withoutSource } = transition(
+      "claimed",
+      "purchased",
+      false,
+    );
+    expect(canTransitionShippingLabelPurchase(withoutSource)).toBe(false);
+  });
+  it("retains no-intent provenance on preflight observation and denies unfenced or terminal changes", () => {
+    const preflight = Object.freeze(transition("claimed", "purchased", false));
+    expect(canTransitionShippingLabelPurchase(preflight)).toBe(true);
+    expect(preflight.dispatchIntentRecorded).toBe(false);
+    for (const expectedFence of ["", "another-owner"])
+      expect(canTransitionShippingLabelPurchase({ ...preflight, expectedFence })).toBe(false);
+    for (const state of ["purchased", "rejected", "cancelled_before_dispatch"] as const)
+      expect(canTransitionShippingLabelPurchase({ ...preflight, state })).toBe(false);
+    expect(
+      canTransitionShippingLabelPurchase({ ...preflight, nextState: "cancelled_before_dispatch" }),
     ).toBe(false);
   });
   it("does not mutate observations or infer provider outcomes", () => {
