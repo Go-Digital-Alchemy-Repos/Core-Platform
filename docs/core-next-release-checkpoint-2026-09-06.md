@@ -434,3 +434,32 @@ provider was activated and no provider request was made for the assessment.
 Cleanup follow-up committed and pushed separately: `32e8c5d02c3a995f0df240e7e8f86456aeec5113`,
 tree `16f68fe1fc4b4cdc8f00f31c49fc186c3c16f239`, clean
 `codex/pilot-cleanup-exit-race`. No integration into PR17 or deployment.
+
+
+## Shipping implementation progress — 2026-09-07 UTC
+
+Frozen f488 remains clean and unchanged. Independently reviewed future branches:
+
+- Parcel adapter: `96da3c3e128e5e3d18adba1259f05ca1c64d6770`, tree
+  `73c39543c2c92c50f15f3d45e06bf444c91ec0d0`, codex/shipping-parcel-adapter.
+  Correct shipment reference, one parcel, explicit unit conversion to one-decimal
+  inches/ounces, invalid/incomplete/overflow/round-zero rejection. Root reviewed
+  current primary provider docs and independently ran all 46 focused tests.
+  Agent own locked install, types, lint and formatting passed. No transport enabled.
+- Quote contract: `56cfad23d2b19e16ee7670ef23cc01999aebb16e`, tree
+  `b1ab1fd03a4792f211b9b13f9f6706e9f7027ac1`, codex/shipping-quote-contract.
+  Strict shared request boundary and exact USD integer-cents conversion, seven
+  tests passed by root and independent reviewer; types/lint/format passed.
+  Focused checks reused a dependency symlink; no fresh install/build claim.
+  Approved lifecycle contract explicitly separates replay hash from server snapshot,
+  unknown outcomes from definitive rejection, and credential rotation from already
+  dispatched I/O. Persistence/transport/routes/UI remain unfinished.
+
+New verified bug: system_settings.key is globally unique but shipping credentials
+save generic setup field names. A different provider can overwrite/move apiKey.
+Infra owns isolated provider-namespaced storage mapping and atomic save correction,
+with legacy values scoped only to their recorded category. No credentials inspected.
+CRM agent owns additive quote persistence/migration tests from the contract branch;
+no overlap with credential routes. Both require independent review before acceptance.
+Production, Actions/protection policy, provider restrictions and Better Farms scope
+remain unchanged.
