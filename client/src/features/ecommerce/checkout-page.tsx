@@ -771,8 +771,7 @@ export default function CheckoutPage() {
                         </RadioGroup>
                       ) : (
                         <p className="rounded-lg border p-3 text-sm text-muted-foreground">
-                          No paid shipping rates matched this address. Checkout will continue with
-                          no shipping charge.
+                          These items do not require shipping.
                         </p>
                       )
                     ) : (

@@ -288,15 +288,12 @@ describe("Ecommerce IntegrationsTab", () => {
     document.body.innerHTML = "";
   });
 
-  it("renders a searchable categorized integration library and opens setup details", () => {
+  it("shows operational integrations and hides unavailable setup without changing saved settings", () => {
     act(() => {
       root = createRoot(container);
       root.render(React.createElement(IntegrationsTab));
     });
-
     expect(container.querySelector('[data-testid="ecommerce-integrations-library"]')).toBeTruthy();
-    expect(container.textContent).toContain("Payment Gateways");
-    expect(container.textContent).toContain("Shipping & Fulfillment");
     expect(
       container.querySelector('[data-testid="button-ecommerce-integration-stripe"]'),
     ).toBeTruthy();
@@ -304,45 +301,26 @@ describe("Ecommerce IntegrationsTab", () => {
       container.querySelector('[data-testid="badge-ecommerce-integration-status-stripe"]')
         ?.textContent,
     ).toContain("Configured");
-
-    const shippingFilter = container.querySelector(
-      '[data-testid="button-ecommerce-integration-category-shipping-fulfillment"]',
-    );
-    act(() => {
-      shippingFilter?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    });
-
+    for (const provider of [
+      "paypal",
+      "square",
+      "authorize_net",
+      "shipstation",
+      "easyship",
+      "easypost",
+    ]) {
+      expect(
+        container.querySelector(`[data-testid="button-ecommerce-integration-${provider}"]`),
+      ).toBeNull();
+    }
     expect(
-      container.querySelector('[data-testid="button-ecommerce-integration-shipstation"]'),
+      container.querySelector(
+        '[data-testid="button-ecommerce-integration-category-shipping-fulfillment"]',
+      ),
+    ).toBeNull();
+    expect(
+      container.querySelector('[data-testid="input-ecommerce-integration-search"]'),
     ).toBeTruthy();
-    expect(
-      container.querySelector('[data-testid="button-ecommerce-integration-stripe"]'),
-    ).toBeFalsy();
-
-    const searchInput = container.querySelector(
-      '[data-testid="input-ecommerce-integration-search"]',
-    ) as HTMLInputElement | null;
-    act(() => {
-      if (searchInput) {
-        searchInput.value = "international";
-        searchInput.dispatchEvent(new Event("input", { bubbles: true }));
-      }
-    });
-
-    expect(
-      container.querySelector('[data-testid="button-ecommerce-integration-easyship"]'),
-    ).toBeTruthy();
-
-    const easyshipTile = container.querySelector(
-      '[data-testid="button-ecommerce-integration-easyship"]',
-    );
-    act(() => {
-      easyshipTile?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    });
-
-    expect(document.body.textContent).toContain("Configure shipping & fulfillment settings");
-    expect(document.body.textContent).toContain("Open Easyship Account");
-    expect(document.body.textContent).toContain("Save");
   });
 });
 

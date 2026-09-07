@@ -348,7 +348,13 @@ export async function createEcommercePaymentIntent(
       subtotalAmount: priced.subtotalAmount,
       address: shippingAddress,
     });
-    if (rates.length > 0) throw httpError("Select a shipping method before checkout", 400);
+    if (!rates.length) {
+      throw httpError(
+        "Shipping is unavailable for this address. Contact the store before checkout.",
+        400,
+      );
+    }
+    throw httpError("Select a shipping method before checkout", 400);
   }
   if (priced.totalAmount <= 0) throw httpError("Order total must be greater than zero", 400);
 
