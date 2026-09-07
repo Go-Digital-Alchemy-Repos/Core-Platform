@@ -944,3 +944,21 @@ FKs in principle, including legacy unaccounted shipment and coarse status guards
 Physical remaining units must remain distinct from available-minus-held units.
 Concrete schema/DDL draft is under review before source application. No real
 provider operation or production deployment occurred. Full goal remains active.
+
+
+### Pilot draft review and label implementation dispatch — 2026-09-07 UTC
+
+Verified draft PRs now preserve the accepted pilot changes separately from frozen
+V5: Better Farms PR2 (head12970e7, basecodex/form-reliability) and Core PR19
+(headba1d0f6, basecodex/shipping-workflow-integration). Both open/draft; no merge,
+production deployment or hosted workflow dispatch occurred.
+
+Root reviewed concrete private label schema/DDL draft83d4f021 and authorized its
+additive application: four tables, supporting same-order unique indexes/FKs,
+0066 registration, reviewed preflight observation provenance, independent exact
+fee evidence and operational retention. PostgreSQL constraint/migration/rollback
+validation is required before acceptance; source edits are currently in progress.
+Carrier observation parsing and fixed GET/buy transport implementation proceeds
+on separately owned files with injected synthetic fetch only. No routes or runtime
+activation are authorized by these file changes. Label-specific activation,
+generation approval and recovery-only rebind audit design remains under review.
