@@ -67,3 +67,5 @@ Secrets are only returned when service code explicitly requests `includeSecrets`
 - `server/routes/admin/careers.routes.ts`
 - `server/services/careers.service.ts`
 - `server/storage/career.storage.ts`
+
+The Content sidebar’s Careers submenu starts collapsed. Use its arrow button to expand or collapse the child links; select the Careers name to open its main page. Expansion is independent of the other content submenus and resets on a full reload.

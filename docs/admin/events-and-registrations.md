@@ -46,3 +46,5 @@ The event editor uses the shared live lock system.
 
 - Only one admin or editor can actively edit an event at a time.
 - A second user may still review the event in read-only mode.
+
+The Content sidebar’s Events submenu starts collapsed. Use its arrow button to expand or collapse the child links; select the Events name to open its main page. Expansion is independent of the other content submenus and resets on a full reload.
