@@ -666,3 +666,16 @@ Operations/shipping-runtime-ordinary.log and shipping-runtime-types.log. Earlier
 27 focused route/worker/UI cases also passed. These counts do not replace the new
 opt-in DB or actual browser acceptance gates. All code remains development-only;
 no approved real credential, provider request or deployment occurred.
+
+
+### Shipping production artifact build — 2026-09-07 UTC
+
+Root built clean shipping assembly a67383c successfully and ran bundle budgets:
+all passed, including ecommerce-page165KiB/175KiB. Private
+Operations/shipping-runtime-build-receipt.json records 446 artifact hashes and
+raw build/budget log hashes. This is local build evidence, not deployment approval.
+Engineering owns a synthetic local PostgreSQL/application fixture for root browser
+verification; no real credentials or provider requests are authorized. Infra owns
+a read-only inventory of the 174 skipped opt-in cases and next verifier generation
+requirements. Frozen V4/f488 evidence remains immutable. Browser acceptance and
+new candidate full release validation remain unfinished.
