@@ -813,3 +813,28 @@ Read-only GitHub revalidation: PR18 open/draft at exactece, base ecommerce-integ
 main strict Verify remains bound to App15368, admins enforced, force/deletefalse,
 Actions disabled. This review does not bypass the pending approved release-control
 setup or authorize production. V5 normalized evidence review remains unfinished.
+
+
+### Final shipping journey and normalization review — 2026-09-07 UTC
+
+Exact ece shipping journey passed all four required labels underpython-O. Root
+verified1184appsource hashes, unchanged producer,137evidence files,2ownedresources
+and76process groups absent; visually reviewed mobile history screenshot. Receipt
+shipping-browser-ece2544-975b421393/journey-receipt.json SHA
+`f409e3ab2f36fddaa00e1c2781d4d940f5977482f2723330fe01ae5018ea2a65`.
+Exactly2synthetic calls/quoted+unknown attempts,0fulfillments/notifications.
+
+Normalization preserved the initial incomplete draft and a failed hash check.
+The nested ownerstdout hash precedes its final status print; root verified exact
+pre-print prefix against nested hash and complete bytes against finaljourney hash.
+Adapter records this narrow timing distinction; no original hash/receipt replaced.
+Complete pending bundle75d8f05ddd has35gates66evidencefiles257provenance links/231
+lossless packed logs, all checked by root and independent infra review. Infra
+requested explicit fullLength metadata; CRM prepares final regeneration retaining
+reviewfalse. App/pilot copied external runner source is retrospective provenance:
+original receipts did not record a run-time hash of that runner. Actual app/site
+source hashes, command results and retained artifacts are verified separately.
+
+No independent acceptance flag changed yet. Finalnormalized review remains active.
+Engineering starts a read-only label-purchase/reconciliation contract proposal for
+remaining ecommerce scope; it cannot change frozen source or activate providers.
