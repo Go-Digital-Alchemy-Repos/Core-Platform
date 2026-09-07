@@ -1,4 +1,4 @@
-# Offline local release receipt verifier, version 3
+# Offline local release receipt verifier, version 4
 
 This is preparation for a separately approved source-bound release verifier. It does not publish a status, handle a signing key, change protection, use Actions, or authorize deployment. Run a reviewed, pinned copy of `script/verify-local-release-receipt.py`; never automatically trust the validator shipped by an unreviewed candidate.
 
@@ -16,7 +16,9 @@ The caller supplies expected identities independently of the manifest. All three
 
 ## Policy upgrade and historical receipts
 
-V3 preserves the V2 migration obligations and adds source-derived CRM follow-up and WooCommerce rollback coverage, exact per-suite inventories, reviewed suite-source pins, and ordinary opt-in skip reconciliation. The trusted V2 artifact at `b665fbd433a3c0cf24c3fd1c8f99b672df84598d` and its historical bundles remain unchanged and must be evaluated with V2. V1 history remains unchanged too. Never relabel an old receipt, regenerate its acceptance, or treat this policy upgrade as a retroactive pass. This isolated script accepts only V3; prepare a fresh independently reviewed bundle.
+V4 targets the category-integrity and CRM note-attribution runtime generation at `e2fda41fddc30bdde47f3b85d48d93aec28dee7f` (tree `b9a767f4c3fe6f8526b7d21a8a40bef95cefdddc`). It adds two mandatory gates and two suite pins, and updates only the two reviewed WooCommerce suite hashes for execution-version fixtures. The other ten V3 suite pins and counts remain unchanged. A changed candidate still requires its own complete execution evidence; the source generation pin is a reviewed coverage policy, not permission to reuse historical passes.
+
+The trusted V3 artifact at `737919d6ca415fe1b95996d2d2265764c657e081` and all f485330 receipts remain unchanged. Earlier candidates use their original V3/V2/V1 verifier. Never relabel old evidence or regenerate its acceptance. This separate script accepts only V4 and requires a fresh independently reviewed bundle. In particular, the conservative CRM storage trigger below deliberately requires attribution coverage on this runtime generation even when presentation files are removed.
 
 ## Strict manifest contract
 
@@ -24,7 +26,7 @@ The root object contains exactly these fields; unknown fields and duplicate JSON
 
 | Field | Contract |
 | --- | --- |
-| `version` | Integer `3`; V1/V2, booleans and unknown versions fail. |
+| `version` | Integer `4`; V1/V2/V3, booleans and unknown versions fail. |
 | `profile` | `core` or `crm`. CRM is mandatory when the checked candidate tracks `shared/schema/crm-custom-fields.ts` or `migrations/0062_crm_custom_fields.sql`. A core profile on that candidate fails. New layouts or profiles require a reviewed validator update. |
 | `candidate`, `tree`, `base` | Match the independently supplied expected SHAs. |
 | `operator` | Bounded identifier, not a credential. |
@@ -38,7 +40,7 @@ Each gate contains exactly `{id, candidate, tree, base, status, exitCode, testsP
 
 All gates require zero skipped tests except `ordinary-tests`. Every database gate requires `testSuites` equal to its sorted reviewed inventory of `{path, sourceSha256, testsPassed, testsSkipped: 0}`. Other gates require `testSuites: []`. The gate's aggregate passed count must equal the sum of its suite counts. A combined command receipt may support several gates, but each gate records only its own suite totals. Both timezone gates separately require the full backup/form/reservation inventory.
 
-The ordinary skipped count must equal the sum of unique applicable suites' reviewed `ordinarySkipped` values; its exclusions must equal exactly the required database gate IDs. This is 99 skips and ten exclusions for the full f485330 policy, not a universal future count. The same three suites run in NY and UTC are counted only once in ordinary exclusions. CRM persistence has 24 enabled tests but only 18 ordinary skips because six execute ordinarily. A source/count change requires a reviewed policy update with actual execution evidence; the checker does not infer TypeScript parameterized test totals.
+The ordinary skipped count must equal the sum of unique applicable suites' reviewed `ordinarySkipped` values; its exclusions must equal exactly the required database gate IDs. This is 118 skips and twelve exclusions for the full e2fda41 policy, not a universal future count. The same three suites run in NY and UTC are counted only once in ordinary exclusions. CRM persistence has 24 enabled tests but only 18 ordinary skips because six execute ordinarily. A source/count change requires a reviewed policy update with actual execution evidence; the checker does not infer TypeScript parameterized test totals.
 
 Fixture-bearing gates require exactly `{containersRemoved: true, volumesRemoved: true, processesStopped: true}` in `cleanup`. Gates without fixtures require null. These assertions must be backed by their referenced cleanup evidence, including owned fixture identities; they are not independently discovered from a historical runtime by this offline program.
 
@@ -55,7 +57,7 @@ Core requires all 19 gates:
 
 CRM additionally requires `crm-persistence`, `crm-mapping`, `crm-profile-migration`, `crm-populated-upgrade`, and `crm-capture-restore` (24 total). Gate IDs remain separate even when one actual command executes several suites; its receipt may be referenced by each applicable gate.
 
-V3 retains these additional obligations derived these obligations from the **tracked candidate tree**, not manifest claims or test-file names:
+V4 retains these additional obligations derived these obligations from the **tracked candidate tree**, not manifest claims or test-file names:
 
 | Tracked migration | Required database gate | Actual suite to execute |
 | --- | --- | --- |
@@ -70,10 +72,13 @@ The `application-browser` gate means the complete candidate application suite, i
 
 - `crm-follow-ups`: required by `server/storage/crm-follow-ups.database.test.ts` or any of `server/storage/crm-follow-ups.storage.ts`, `server/services/crm-follow-ups.service.ts`, `server/routes/admin/crm-follow-ups.routes.ts`.
 - `woo-catalog-rollback`: required by either `server/services/woocommerce-import-rollback.database.test.ts` or `server/services/woocommerce-import-merchant-race.database.test.ts`, or their shared runtime repository `server/services/woocommerce-import-drizzle.repository.ts`. Both test suites are required even when only one trigger is present.
+- `category-parent-integrity`: required by `server/storage/ecommerce-category-parent.database.test.ts`, `server/services/ecommerce-category-graph.ts`, or `migrations/0064_woo_import_execution_version.sql`.
+- `crm-note-attribution`: required by `server/storage/crm-note-attribution.database.test.ts`, `server/storage/crm.storage.ts`, `shared/crm-note-presentation.ts`, or `client/src/features/admin/crm-note-list.tsx`. The storage trigger prevents removing only the tests or presentation files from suppressing coverage.
 
-Full CRM + standalone + fulfillment + these additions requires 28 gates. A receipt profile cannot suppress these source obligations. Runtime presence with missing corresponding test files fails closed.
 
-The `DB_SUITES` policy pins all twelve suite source hashes from candidate `f4853306e0d4dc086f5ab06352019858453a65b1`:
+Full CRM + standalone + fulfillment + follow-ups + Woo rollback + category integrity + note attribution requires 30 gates. A receipt profile cannot suppress these source obligations. Runtime presence with missing corresponding test files fails closed.
+
+The `DB_SUITES` policy pins all fourteen suite source hashes matching candidate `e2fda41fddc30bdde47f3b85d48d93aec28dee7f`:
 
 | Suite (under `server/`) | Enabled passes | Ordinary skips |
 | --- | ---: | ---: |
@@ -89,6 +94,15 @@ The `DB_SUITES` policy pins all twelve suite source hashes from candidate `f4853
 | `storage/crm-follow-ups.database.test.ts` | 7 | 7 |
 | `services/woocommerce-import-rollback.database.test.ts` | 4 | 4 |
 | `services/woocommerce-import-merchant-race.database.test.ts` | 16 | 16 |
+| `storage/ecommerce-category-parent.database.test.ts` | 17 | 17 |
+| `storage/crm-note-attribution.database.test.ts` | 2 | 2 |
+
+This yields 143 database executions across required gates, including 19 repeated timezone cases, and 118 unique ordinary skips. These are expected policy counts until actual candidate receipts prove the runs.
+
+The category suite uses `CATEGORY_PARENT_TEST_DATABASE_URL` and exactly loopback `/core_category_parent_test`; it covers migration0064 replay, graph races and execution compatibility. The note suite uses `CRM_NOTE_TEST_DATABASE_URL` and exactly loopback `/core_crm_note_test`, parameterized once for lead notes and once for client notes. Both require positive exact passes, zero skips, source-bound suite inventory and explicit owned container, volume and process cleanup. Fixture credentials are never manifest fields.
+
+V4 does not authorize creating Woo runs, changing production data, narrowing the version constraint on rollback, or continuing1.1 checkpoints in old binaries. Those operational and deployment decisions remain separate.
+
 
 Before and after verification, required suite bytes must match policy hashes. Unknown tracked `.database.test.ts` / `.db.test.ts` files or test/spec files containing direct `describe`, `test`, or `it` `.skipIf`, `.runIf`, or `.skip` markers are rejected. Discovery is deliberately conservative and may reject comments containing those markers. It is **not a general TypeScript parser**: novel aliases, computed properties, wrappers or extensions can evade that marker scan. Independent source review remains required to establish that all opt-in suites are represented; unknown conventions require a reviewed detector/policy extension. Known pinned sources cover their existing aliases.
 
@@ -110,7 +124,7 @@ Compute the review binding over the manifest without its `review` key using Pyth
 
 This verifies structure, declared identities, bounded files and hash consistency. It **does not prove** that commands ran, outputs are genuine, evidence contains no secret, counts are accurate, cleanup occurred, or the stated reviewer really accepted the bundle. The `sanitized` fields are required attestations, not a secret scanner. Preparing sanitized evidence and authenticating operator/reviewer approval remain responsibilities of the trusted process. Identity strings and a digest are not signatures or independent GitHub principals. Success deliberately reports `attestationTruth: "not-established"` and `releaseApproved: false`.
 
-Existing private receipts use different schemas. A separately reviewed normalizer is still needed to inventory copied, sanitized evidence and express this contract without modifying the originals. This V3 implementation does not retroactively normalize or accept a production receipt. Historical V1 evidence remains bound to its pinned verifier and original policy.
+Existing private receipts use different schemas. A separately reviewed normalizer is still needed to inventory copied, sanitized evidence and express this contract without modifying the originals. This V4 implementation does not retroactively normalize or accept a production receipt. Historical V1 evidence remains bound to its pinned verifier and original policy.
 
 ## Validation
 

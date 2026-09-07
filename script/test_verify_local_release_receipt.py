@@ -72,7 +72,7 @@ class ReceiptTests(unittest.TestCase):
             with self.subTest(change=change), self.assertRaises(v.InvalidReceipt):self.check(m)
 
     def test_versions_profiles_unknown_fields_and_truthy_values(self):
-        for key,value in [('version',1),('version',4),('version',True),('profile','unknown'),('profile','crm'),('secret','not-accepted')]:
+        for key,value in [('version',1),('version',5),('version',True),('profile','unknown'),('profile','crm'),('secret','not-accepted')]:
             m=copy.deepcopy(self.manifest);m[key]=value
             with self.subTest(key=key,value=value),self.assertRaises(v.InvalidReceipt):self.check(m)
         m=copy.deepcopy(self.manifest);m['observations']['cleanBefore']='true'
@@ -231,14 +231,14 @@ class ReceiptTests(unittest.TestCase):
             self.add_gate(manifest, gate)
             self.assertEqual(v.verify(manifest, self.evidence, self.expected, policy)['databaseFileGatesRequired'], [gate])
 
-    def test_v3_valid_28_gate_cli_bundle_and_exact_optin_exclusions(self):
+    def test_v4_valid_30_gate_cli_bundle_and_exact_optin_exclusions(self):
         policy = self.feature_candidate(['migrations/0062_crm_custom_fields.sql', *v.MIGRATION_GATES, *v.DATABASE_FILE_GATES])
         manifest = self.make_manifest('crm')
         for name in sorted(policy[1]): self.add_gate(manifest, name)
         ordinary = next(g for g in manifest['gates'] if g['id'] == 'ordinary-tests')
-        ordinary.update(testsSkipped=99, optInGateExclusions=sorted(v.DB_GATES))
+        ordinary.update(testsSkipped=118, optInGateExclusions=sorted(v.DB_GATES))
         self.sign(manifest)
-        self.assertEqual(v.verify(manifest, self.evidence, self.expected, policy)['gatesVerified'], 28)
+        self.assertEqual(v.verify(manifest, self.evidence, self.expected, policy)['gatesVerified'], 30)
         (self.evidence/'manifest.json').write_text(json.dumps(manifest))
         command = ['python3', str(self.script), '--evidence-dir', str(self.evidence), '--manifest', 'manifest.json', '--checkout', str(self.checkout)]
         for key, value in self.expected.items(): command.extend(['--expected-'+key,value])
@@ -284,6 +284,46 @@ class ReceiptTests(unittest.TestCase):
             with self.assertRaisesRegex(v.InvalidReceipt,'unknown-opt-in-suite'):
                 v.checkout_identity(self.checkout,self.expected)
             unknown.unlink()
+
+    def test_v4_runtime_triggers_require_new_suites_without_profile_override(self):
+        pairs = [('server/services/ecommerce-category-graph.ts', 'category-parent-integrity', 'server/storage/ecommerce-category-parent.database.test.ts'),
+                 ('migrations/0064_woo_import_execution_version.sql', 'category-parent-integrity', 'server/storage/ecommerce-category-parent.database.test.ts'),
+                 ('server/storage/crm.storage.ts', 'crm-note-attribution', 'server/storage/crm-note-attribution.database.test.ts'),
+                 ('shared/crm-note-presentation.ts', 'crm-note-attribution', 'server/storage/crm-note-attribution.database.test.ts'),
+                 ('client/src/features/admin/crm-note-list.tsx', 'crm-note-attribution', 'server/storage/crm-note-attribution.database.test.ts')]
+        for runtime, gate, suite in pairs:
+            self.assertIn(gate,v.checkout_policy([runtime])[1])
+        policy=self.feature_candidate([item[0] for item in pairs])
+        manifest=self.make_manifest('core')
+        for gate in policy[1]:self.add_gate(manifest,gate)
+        for runtime,gate,suite in pairs[:1]+pairs[2:3]:
+            path=self.checkout/suite
+            original=path.read_bytes();path.unlink()
+            self.git('add','.');self.git('commit','-qm','missing new suite')
+            self.expected.update(candidate=self.git('rev-parse','HEAD'),tree=self.git('rev-parse','HEAD^{tree}'))
+            with self.subTest(gate=gate),self.assertRaisesRegex(v.InvalidReceipt,'missing-required-suite-source'):
+                v.checkout_identity(self.checkout,self.expected)
+            path.write_bytes(original)
+
+    def test_v4_new_suite_pin_and_count_tampering(self):
+        policy=v.checkout_policy(['server/services/ecommerce-category-graph.ts','server/storage/crm.storage.ts'])
+        manifest=self.make_manifest('core')
+        for name in policy[1]:self.add_gate(manifest,name)
+        for name in policy[1]:
+            for change in ('pin','count','total','skip','exclusion','cleanup'):
+                bad=copy.deepcopy(manifest);gate=next(g for g in bad['gates'] if g['id']==name)
+                if change=='pin':gate['testSuites'][0]['sourceSha256']='0'*64
+                elif change=='count':gate['testSuites'][0]['testsPassed']-=1;gate['testsPassed']-=1
+                elif change=='total':gate['testsPassed']+=1
+                elif change=='skip':gate['testSuites'][0]['testsSkipped']=1
+                elif change=='exclusion':next(g for g in bad['gates'] if g['id']=='ordinary-tests')['optInGateExclusions'].remove(name)
+                else:gate['cleanup']['processesStopped']=False
+                self.sign(bad)
+                with self.subTest(gate=name,change=change),self.assertRaises(v.InvalidReceipt):
+                    v.verify(bad,self.evidence,self.expected,policy)
+        manifest['version']=3;self.sign(manifest)
+        with self.assertRaisesRegex(v.InvalidReceipt,'unsupported-version'):
+            v.verify(manifest,self.evidence,self.expected,policy)
 
     def test_known_suite_cannot_be_excluded_by_removed_feature_marker(self):
         path=self.checkout/'server/storage/crm-custom-fields.database.test.ts'

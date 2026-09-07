@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Offline V3 local release receipt consistency verifier. No publishing or credential handling."""
+"""Offline V4 local release receipt consistency verifier. No publishing or credential handling."""
 import argparse
 import hashlib
 import json
@@ -9,7 +9,7 @@ import re
 import stat
 import subprocess
 
-VERSION = 3
+VERSION = 4
 CORE_GATES = frozenset({
     'locked-dependencies', 'types', 'lint', 'format', 'ordinary-tests',
     'deployment-config-source', 'deployment-config-compiled',
@@ -25,6 +25,8 @@ MIGRATION_GATES = {
     'migrations/0063_atomic_ecommerce_fulfillment.sql': 'atomic-fulfillment',
 }
 DATABASE_FILE_GATES = {
+    'server/storage/ecommerce-category-parent.database.test.ts': 'category-parent-integrity',
+    'server/storage/crm-note-attribution.database.test.ts': 'crm-note-attribution',
     'server/storage/crm-follow-ups.database.test.ts': 'crm-follow-ups',
     'server/services/woocommerce-import-rollback.database.test.ts': 'woo-catalog-rollback',
     'server/services/woocommerce-import-merchant-race.database.test.ts': 'woo-catalog-rollback',
@@ -81,15 +83,30 @@ DB_SUITES = {'server/services/system-backup.database.test.ts': {'sha256': '8db3d
                                                     'passed': 7,
                                                     'ordinarySkipped': 7,
                                                     'gates': ['crm-follow-ups']},
- 'server/services/woocommerce-import-rollback.database.test.ts': {'sha256': 'd134971f9fd49cbfd871522ede2574647c8c484ec50df79d4ad8e297a0c1c9bc',
+ 'server/services/woocommerce-import-rollback.database.test.ts': {'sha256': '8e97a79948c33bcf03ec17bfc6f42a0f41f64e7b6613d651678a5cec63ec4ed5',
                                                                   'passed': 4,
                                                                   'ordinarySkipped': 4,
                                                                   'gates': ['woo-catalog-rollback']},
- 'server/services/woocommerce-import-merchant-race.database.test.ts': {'sha256': 'a2a5c76247fc09790a24b430c5d1fe1b6f0dfa1fccdff2e94ef8c5ba7e637dbb',
+ 'server/services/woocommerce-import-merchant-race.database.test.ts': {'sha256': 'b88c4257d7855a0d9246763b24ee5311a53d598aea0b00e64635ee76936e0f4a',
                                                                        'passed': 16,
                                                                        'ordinarySkipped': 16,
                                                                        'gates': ['woo-catalog-rollback']}}
+DB_SUITES.update({
+    'server/storage/ecommerce-category-parent.database.test.ts': {
+        'sha256': 'e305172e23104688c157220d9fd8c8a20d9bb44ba441a71bedf4d01a479e7b62',
+        'passed': 17, 'ordinarySkipped': 17, 'gates': ['category-parent-integrity'],
+    },
+    'server/storage/crm-note-attribution.database.test.ts': {
+        'sha256': '77c61c8ecb9f2d92a8108b1fbefb8480679129ecf6b0f3b18ae726a3c751a9fe',
+        'passed': 2, 'ordinarySkipped': 2, 'gates': ['crm-note-attribution'],
+    },
+})
 RUNTIME_GATES = {
+    'migrations/0064_woo_import_execution_version.sql': 'category-parent-integrity',
+    'server/services/ecommerce-category-graph.ts': 'category-parent-integrity',
+    'server/storage/crm.storage.ts': 'crm-note-attribution',
+    'shared/crm-note-presentation.ts': 'crm-note-attribution',
+    'client/src/features/admin/crm-note-list.tsx': 'crm-note-attribution',
     "server/storage/crm-follow-ups.storage.ts": "crm-follow-ups",
     "server/services/crm-follow-ups.service.ts": "crm-follow-ups",
     "server/routes/admin/crm-follow-ups.routes.ts": "crm-follow-ups",
