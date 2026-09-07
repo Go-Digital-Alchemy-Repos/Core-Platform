@@ -483,3 +483,28 @@ infra agent provider credential isolation/routes fromf488; engineering agent
 standalone bounded test quote transport from56cfad2. No overlapping source writes,
 provider calls or release-policy changes. Transport and persistence acceptance
 remain pending. Frozen f488 checkout rechecked clean at the same SHA.
+
+
+### Credential isolation accepted; shipping assembly — 2026-09-07 UTC
+
+Root accepted shipping credential isolation after source/docs review, independent
+13 mounted/registry passes, and verification of all five source hashes, runner
+and actual PostgreSQL log against receipt
+Operations/shipping-credentials-pg-0cb2bace/receipt.json
+(`8284ee81e598ebea20f814603338590a9ad14966212fa51641b1f4e0c5a8928f`).
+Six enabled PostgreSQL cases passed with exact owned fixture cleanup. Full ordinary
+suite passed1186/124opt-in skips; types/lint/format passed. Clean source commit
+`7b523b87218ec478394b4f9584a873af24b4bb99` is pushed separately.
+
+New development assembly codex/shipping-workflow-integration contains contract,
+parcel, preparation and accepted credential isolation (HEAD8823b5b). Root own
+locked install completed and57focused cases passed on that combined checkout.
+Preparation also rejects C1 controls in ab399e9; its independent review is pending.
+Frozen f488/PR17 and production remain unchanged; this assembly is not a release.
+
+Storage initial17PG cases passed; root requested additional stable identity and
+locale-independent hash corrections (included in17) and nullable delivery guarantee
+alignment with transport (pending final receipt). Transport review found incompatible
+company-only address, city bounds and rate field shapes; these are being aligned
+before acceptance. No transport or quote route is active. Next: accept final storage/
+transport revisions, generation-aware authorization, orchestration and admin UI.
