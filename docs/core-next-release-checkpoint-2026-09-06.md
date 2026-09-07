@@ -962,3 +962,29 @@ Carrier observation parsing and fixed GET/buy transport implementation proceeds
 on separately owned files with injected synthetic fetch only. No routes or runtime
 activation are authorized by these file changes. Label-specific activation,
 generation approval and recovery-only rebind audit design remains under review.
+
+
+### Label schema foundation accepted locally — 2026-09-07 UTC
+
+Commit e1a624f9eb23e1d96b64111ddd1afc79378bdaae adds four label tables,
+0066 runner registration and same-order supporting indexes. Root reviewed SQL/
+Drizzle constraints and focused tests, requested retention, cross-purchase event
+and explicit backup-table-presence coverage. Final14 PostgreSQL cases passed with
+zero skips. Earlier fixture/test-shape failures remain retained; they were not
+accepted. Workerreceipt SHA
+`4dabf7f56b2cde274bb0d7d5bd00dfdd636eca9b5710d75492ea128ce55a7d21`.
+Root verified seven source hashes and raw-log hash, then independently reran all14
+underpython-O. Rootreceipt SHA
+`4a12f44ad115cf58f713975fd2133bb2d35263cff93fa5a41b52cf07935fd435`;
+owned container/volume/groups independently absent. Tests cover migration replay,
+identity/lifecycle/null constraints, sub-cent fee completeness, retention boundary,
+event ownership and serialized backup manifest dependency order. They do not yet
+prove full restore, runtime quantity capacity, provider operations or deployment.
+
+Separate global label authorization direction approved: internal trusted operator
+only, existing activity_logs appended within the same settings/CAS transaction,
+explicit generation approval/activation, atomic rotation invalidation and audit.
+No public self-approval endpoint. Recovery binding remains a separate reviewed
+capability; disabled-module recovery stays denied. Implementation is in progress.
+Carrier tests found a stalled-reader timeout/cancellation race and are correcting
+it before acceptance. No route or provider activation has occurred.
