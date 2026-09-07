@@ -32,6 +32,8 @@ describe("buildNavGroups", () => {
     };
     const groups = buildNavGroups(enabled, adminUser, () => true, directorySettings);
     const content = groups.find((group) => group.label === "Content")!;
+    expect(content.href).toBe("/admin/cms");
+    expect(content.items[0]).toMatchObject({ title: "CMS Overview", href: "/admin/cms" });
     expect(content.items.map((item) => item.title)).toEqual(
       expect.arrayContaining(["Events", "Careers", "Team"]),
     );

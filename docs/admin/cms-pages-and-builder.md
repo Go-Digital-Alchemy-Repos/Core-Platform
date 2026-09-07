@@ -70,3 +70,5 @@ Pages now use live editor locks.
 - Avoid pasting raw third-party code unless the section explicitly supports HTML content.
 - Check CTA links carefully before publishing.
 - When sharing a preview link, remember it represents the latest saved draft. Saving again refreshes the underlying preview token so reviewers are always looking at the current version.
+
+CMS Overview is the first link in the Content sidebar and the section landing page. Selecting the Content heading opens `/admin/cms`; its separate arrow expands or collapses the section. These CMS links respect the CMS feature gate.

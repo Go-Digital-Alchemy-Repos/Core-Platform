@@ -84,6 +84,7 @@ export interface NavItem {
 
 export interface NavGroup {
   label?: string;
+  href?: string;
   items: NavItem[];
 }
 
@@ -308,7 +309,18 @@ export function buildNavGroups(
       ? ([
           {
             label: "Content",
+            href: siteFeatures.cmsEnabled ? "/admin/cms" : undefined,
             items: [
+              ...(siteFeatures.cmsEnabled
+                ? [
+                    {
+                      title: "CMS Overview",
+                      href: "/admin/cms",
+                      icon: Globe,
+                      iconColor: "text-violet-600",
+                    } satisfies NavItem,
+                  ]
+                : []),
               ...(siteFeatures.eventsEnabled
                 ? [
                     {
@@ -361,12 +373,6 @@ export function buildNavGroups(
                 : []),
               ...(siteFeatures.cmsEnabled
                 ? [
-                    {
-                      title: "CMS Overview",
-                      href: "/admin/cms",
-                      icon: Globe,
-                      iconColor: "text-violet-600",
-                    } satisfies NavItem,
                     {
                       title: "Team",
                       href: "/admin/cms/team",
@@ -791,22 +797,39 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                     className="flex flex-col gap-0.5"
                   >
                     {groupIdx > 0 && <Separator className="my-2" />}
-                    <CollapsibleTrigger asChild>
-                      <button
-                        type="button"
-                        className="admin-sidebar-group-trigger flex w-full items-center gap-2 rounded-md px-3 py-1 text-left text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 transition-colors hover:bg-muted hover:text-muted-foreground"
-                        aria-label={`${groupIsOpen ? "Collapse" : "Expand"} ${group.label}`}
-                        data-testid={`button-toggle-admin-section-${group.label.toLowerCase().replace(/\s+/g, "-")}`}
-                      >
-                        <ChevronRight
+                    <div className="flex items-center">
+                      <CollapsibleTrigger asChild>
+                        <button
+                          type="button"
                           className={cn(
-                            "h-3 w-3 flex-shrink-0 transition-transform",
-                            groupIsOpen ? "rotate-90" : "",
+                            "admin-sidebar-group-trigger flex items-center gap-2 rounded-md px-3 py-1 text-left text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 transition-colors hover:bg-muted hover:text-muted-foreground",
+                            group.href ? "shrink-0" : "w-full",
                           )}
-                        />
-                        <span className="min-w-0 flex-1 truncate">{group.label}</span>
-                      </button>
-                    </CollapsibleTrigger>
+                          aria-label={`${groupIsOpen ? "Collapse" : "Expand"} ${group.label}`}
+                          data-testid={`button-toggle-admin-section-${group.label.toLowerCase().replace(/\s+/g, "-")}`}
+                        >
+                          <ChevronRight
+                            className={cn(
+                              "h-3 w-3 flex-shrink-0 transition-transform",
+                              groupIsOpen ? "rotate-90" : "",
+                            )}
+                          />
+                          {!group.href && (
+                            <span className="min-w-0 flex-1 truncate">{group.label}</span>
+                          )}
+                        </button>
+                      </CollapsibleTrigger>
+                      {group.href && (
+                        <Link
+                          href={group.href}
+                          onClick={() => setOpenGroup(group.label!)}
+                          className="min-w-0 flex-1 rounded-md py-2 pr-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          data-testid="link-admin-section-content"
+                        >
+                          {group.label}
+                        </Link>
+                      )}
+                    </div>
                     <CollapsibleContent className="admin-sidebar-group-content flex flex-col gap-0.5 overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
                       {group.items.map((item) => renderNavItem(item))}
                     </CollapsibleContent>
@@ -1018,7 +1041,13 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                     {groupIdx > 0 && <Separator className="my-2" />}
                     {group.label && (
                       <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
-                        {group.label}
+                        {group.href ? (
+                          <Link href={group.href} onClick={() => setMobileNavOpen(false)}>
+                            {group.label}
+                          </Link>
+                        ) : (
+                          group.label
+                        )}
                       </p>
                     )}
                     {group.items.map((item) => renderNavItem(item, true))}
