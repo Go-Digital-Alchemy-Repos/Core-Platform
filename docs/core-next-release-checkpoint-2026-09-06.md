@@ -463,3 +463,23 @@ CRM agent owns additive quote persistence/migration tests from the contract bran
 no overlap with credential routes. Both require independent review before acceptance.
 Production, Actions/protection policy, provider restrictions and Better Farms scope
 remain unchanged.
+
+
+### Shipping preparation and active ownership — 2026-09-07 UTC
+
+Root implemented server-owned quote snapshot preparation on clean pushed
+`codex/shipping-quote-preparation`, `d66e97edbe545cfa38caa529ea061fecf9537604`.
+It contains the quote contract plus reviewed parcel correction. Reuses existing
+paid/fraud/remaining quantity rules, requires shipping items/order and active
+matching origin, normalizes bounded US-state/DC addresses and parcel values.
+Seven new preparation tests plus 38 parcel tests passed, types/lint/format passed.
+Initial control-regex lint failure was corrected; focused checks use existing
+locked dependency symlink. Independent engineering review remains pending.
+This pure helper requires caller-held transaction locks and is not HTTP/provider
+integration or proof of address deliverability.
+
+Active write ownership: CRM agent quote persistence/migration0065 from56cfad2;
+infra agent provider credential isolation/routes fromf488; engineering agent
+standalone bounded test quote transport from56cfad2. No overlapping source writes,
+provider calls or release-policy changes. Transport and persistence acceptance
+remain pending. Frozen f488 checkout rechecked clean at the same SHA.
