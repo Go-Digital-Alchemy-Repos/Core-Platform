@@ -82,9 +82,12 @@ export async function stopOwnedChild(child: ChildProcess, graceMs = 15_000, kill
   };
   const wait = async (milliseconds: number) => {
     const deadline = Date.now() + milliseconds;
-    while (alive() && Date.now() < deadline)
+    // OS group disappearance can precede Node publishing the leader's exit.
+    // Keep yielding until both observations agree or this wait expires.
+    const stopped = () => !alive() && (child.exitCode !== null || child.signalCode !== null);
+    while (!stopped() && Date.now() < deadline)
       await new Promise((resolve) => setTimeout(resolve, 20));
-    return !alive() && (child.exitCode !== null || child.signalCode !== null);
+    return stopped();
   };
   try {
     // Give the app leader its shutdown window before terminating its helpers.
