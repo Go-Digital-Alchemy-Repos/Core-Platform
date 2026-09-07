@@ -508,3 +508,27 @@ alignment with transport (pending final receipt). Transport review found incompa
 company-only address, city bounds and rate field shapes; these are being aligned
 before acceptance. No transport or quote route is active. Next: accept final storage/
 transport revisions, generation-aware authorization, orchestration and admin UI.
+
+
+### Storage and transport accepted — 2026-09-07 UTC
+
+Root accepted storage8b436fe03f69e81d9099fff9c495cd3f1f5c275a after source,
+schema/migration and18actualPGcase review plus final receipt5cfa8493d7c6798ae11af62de55211edafc759bcaaf66809730a9c0e4369ff74,
+all log hashes and663source hashes. Final receipt lives in private
+Operations/shipping-quote-pg-f47aab459f. Corrected deterministic sorting, immutable
+verified identity, nullable guarantee, strict account IDs and named SQL constraint
+are included. Strict owned container/volume/process cleanup passed.
+
+Transport86bddcf36aaf68a2b79315dbb5a5fe187f533bf2 accepted after full source review,
+field alignment and independent45tests. No real provider request. Preparation
+safe400delta c028e0d independently accepted with8tests. All are assembled on
+shipping-workflow-integration57205149dd85544c2706d43c338480f421b025bc;
+58combinedfocusedtests andtypespassed. Originalf488 is unchanged.
+
+Root's new explicit admin result projection (3files) has3tests/lint/typespassed
+and is under independentreview, not yetcommitted. It strips private snapshots,
+fencing/credential/account identifiers and raw provider fields. Next ownership:
+infra generation-aware test credential authorization (including minimal strict
+crypto helpers), engineering projectionreview, CRM order-drawer integrationplan.
+Quote orchestration, adminroutes/UI, retention scheduling and fullnewtable recovery
+remain unfinished. No quote capability/provider activation or deployment occurred.
