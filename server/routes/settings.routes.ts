@@ -98,6 +98,8 @@ router.put(
   requireSettingWritePermission,
   asyncHandler(async (req, res) => {
     const data = upsertSettingSchema.parse(req.body);
+    if (data.key === "events_configuration_v1")
+      return res.status(400).json({ message: "Use Events Settings to update event configuration" });
     if (data.key === CRM_PIPELINE_SETTING_KEY)
       return res
         .status(400)
@@ -187,6 +189,10 @@ router.delete(
   "/settings/:key",
   requireRole("admin"),
   asyncHandler(async (req, res) => {
+    if (paramString(req.params.key) === "events_configuration_v1")
+      return res
+        .status(400)
+        .json({ message: "Event configuration cannot be deleted; use Events Settings" });
     if (paramString(req.params.key) === CRM_PIPELINE_SETTING_KEY)
       return res
         .status(400)

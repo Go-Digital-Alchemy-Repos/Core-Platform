@@ -343,3 +343,6 @@ export {
 
 export * from "./team-members";
 export * from "./client-stack-onboarding";
+
+
+export { eventAttachments } from "./event-attachments";

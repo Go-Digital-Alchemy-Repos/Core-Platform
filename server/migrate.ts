@@ -562,6 +562,7 @@ async function reconcileSchema(migrationsFolder: string) {
   await ensureClientSiteContentTables(migrationsFolder);
   await ensureManagedFormSubmissionSchema(migrationsFolder);
   await ensureWooImportLifecycleTables(migrationsFolder);
+  await runSqlMigrationFile(migrationsFolder, "0067_event_attachments.sql");
 }
 
 export async function runMigrations() {

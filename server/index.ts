@@ -1,3 +1,4 @@
+import { startEventAttachmentCleanup } from "./services/event-attachments.service";
 import { pool } from "./db";
 import { createRuntimeLifecycle, shutdownTimeoutMs } from "./utils/runtime-lifecycle";
 import { startFormEffectJobService } from "./services/form-effect-jobs.service";
@@ -322,6 +323,7 @@ const startup = (async () => {
   if (runtime.isStopping()) return;
   runtime.register(startScheduledPublishService());
   runtime.register(startEventReminderService());
+  runtime.register(startEventAttachmentCleanup());
   runtime.register(startSystemBackupService());
   runtime.register(startDirectoryMembershipLifecycleService());
   runtime.register(startEcommerceNotificationJobService());

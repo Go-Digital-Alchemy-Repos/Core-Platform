@@ -1,3 +1,5 @@
+import { listEventAttachments, readEventAttachment } from "../services/event-attachments.service";
+import { readEventConfiguration } from "../services/event-configuration.service";
 import { Router } from "express";
 import { storage } from "../storage/index";
 import { asyncHandler } from "../middleware/error-handler";
@@ -12,6 +14,14 @@ import {
 } from "../services/public-event.service";
 
 const router = Router();
+router.get(
+  "/configuration",
+  asyncHandler(async (_req, res) => {
+    const { version, revision, types, categories, audiences, formats, delivery } =
+      await readEventConfiguration();
+    res.json({ version, revision, types, categories, audiences, formats, delivery });
+  }),
+);
 
 async function normalizeEventImage(event: Event): Promise<Event> {
   return {
@@ -125,6 +135,33 @@ router.get(
 );
 
 router.get(
+  "/:eventId/attachments/:attachmentId",
+  optionalAuth,
+  asyncHandler(async (req, res) => {
+    const event = await storage.events.getEvent(paramString(req.params.eventId));
+    if (
+      !event ||
+      event.status === "draft" ||
+      event.status === "archived" ||
+      !canAccessPublicEvent(event, req.user?.role ?? null)
+    ) {
+      return res.status(404).json({ message: "Attachment not found" });
+    }
+    const attachment = await readEventAttachment(event.id, paramString(req.params.attachmentId));
+    const fallback = attachment.originalName.replace(/[^a-zA-Z0-9._ -]/g, "_");
+    res.setHeader("Content-Type", attachment.mimeType);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${fallback}"; filename*=UTF-8''${encodeURIComponent(attachment.originalName).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16)}`)}`,
+    );
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Cache-Control", "private, no-store");
+    res.setHeader("Content-Length", attachment.size);
+    res.send(attachment.bytes);
+  }),
+);
+
+router.get(
   "/:id",
   optionalAuth,
   asyncHandler(async (req, res) => {
@@ -156,9 +193,12 @@ router.get(
       canViewRecording = canViewRecording || Boolean(purchase?.stripePaymentIntentId);
     }
 
-    res.json(
-      await normalizeEventImage(applyEventAccessEntitlements(event, { canJoin, canViewRecording })),
-    );
+    res.json({
+      ...(await normalizeEventImage(
+        applyEventAccessEntitlements(event, { canJoin, canViewRecording }),
+      )),
+      attachments: await listEventAttachments(event.id),
+    });
   }),
 );
 
