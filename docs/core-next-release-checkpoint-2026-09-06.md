@@ -593,3 +593,32 @@ Root additionally requested correct missing-provider readiness classification;
 final stable evidence is still pending. Engineering's separate orchestration work
 remains in progress with explicit injected authorization and bounded retention.
 Frozenf488, production and provider restrictions remain unchanged.
+
+
+### Shipping authorization and UI integration — 2026-09-07 UTC
+
+Accepted authorization dcc06896e8907b55e703c050c56fdb7eb96d7ae6 is integrated
+as 3e7e771 in the shipping workflow assembly. Final PostgreSQL evidence covers
+19 cases (13 authorization and 6 credential isolation), zero skips. Receipt
+Operations/shipping-authorization-pg-b01b9bd1/receipt.json SHA
+`75a8210261638e57fc70bd6074a2340d5f2986ada50072be47c72df57774af58`
+was independently checked against source, producer, logs and owned cleanup.
+The final ordinary suite passed 1191 cases with 137 opt-in skips; focused checks
+and types/lint/format passed. Unexpected authorization reads remain sanitized 503,
+while known denials remain distinguishable. No real credential was approved.
+
+Accepted UI 3c01c10a18d034e783b4ba59fc9b8a3e552d8f7c is integrated as
+89ec46c. Root found and reviewed an additional late GET race correction: sequence
+and request identity guard response/error/finally, and New quote/history changes
+invalidate previous loads. Two deferred StrictMode cases cover late success/error
+after another quote starts. Seven final source hashes matched the retained race
+review evidence. Root combined verification on 89ec46c passed 90 focused tests
+and TypeScript; logs are Operations/shipping-workflow-ui-auth-tests.log and
+Operations/shipping-workflow-ui-auth-types.log. The preceding pre-UI command's
+output was unavailable after compaction and is not counted as passing evidence.
+
+Engineering reports 17 real PostgreSQL orchestration cases and 3 mounted synthetic
+HTTP cases passing; independent infra review and final evidence are pending.
+The real admin routes are not mounted yet. Maintenance scheduling, actual browser
+acceptance and subsequent release gates remain required. No provider request,
+production deployment or change to the frozen f488 acceptance occurred.
