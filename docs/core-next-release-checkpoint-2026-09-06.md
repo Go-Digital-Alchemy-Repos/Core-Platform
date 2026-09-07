@@ -361,3 +361,40 @@ failed reports are unchanged. Do not call the original strict cleanup successful
 Fresh f488342 basic validation is running in
 Operations/basic-gates-f488342-f9d98df567; locked installation has completed.
 No production or release approval changes occurred.
+
+
+### Final f488342 evidence ready for normalization review
+
+All final-commit runs are complete. Root independently matched source/log/report
+hashes for the 143 database executions, 66 application browser cases, 22 pilot
+cases and four rehearsals. The final pilot's raw inner and outer strict cleanup
+both passed; no supplement was needed. Every earlier failed receipt is retained.
+
+- Basic nine-command receipt: Operations/basic-gates-f488342-f9d98df567/receipt.json,
+  SHA-256 `4e28fd80b97120bc05960857c5fae3796e69f15a20f005a3076c046267d7bb69`.
+- Database: combined-db-f488342-ebf41471/receipt.json,
+  `bdc740fc1fe4565f1ce4fdbda09e05f81d33e1a553137e92e2d7bb0d7487f752`.
+- Full app: final-integrity-full-app-20260907T002333Z-a813611c/receipt.json,
+  `8d2291234474f0ee93d093a59089d0a39896339bebf7d35150d9b6d41ee98a80`.
+- Pilot: final-integrity-pilot-20260907T002713Z-22099aee/receipt.json,
+  `d2c55ea7428c5913047da18afee956a9e8a15ea80293dcc2f2dd2acca597a41a`.
+- Runtime/upgrades/CRM recovery: release-rehearsals-f488342-0e113010/receipt.json,
+  `1160d70951a90ddf43b1aee6632edbd233da2bc18cc19259ad5449455bca5945`.
+- Supplemental retained-snapshot restore: recovery-verifier-f488342/receipt.json,
+  `4f3b914aa4aa79c5e18d7f3c2f9547081730c72520d24fb99c0b8647b32b67f2`;
+  all105 tables/671 rows and sequence semantics verified through migration replay.
+
+The V4 bundle remains pending independent review. Its private packaging must fit
+existing verifier limits while retaining lossless raw-log provenance; no policy
+limits or original reports may be weakened or rewritten.
+
+Read-only release-control revalidation still found strict main protection with
+Verify bound to GitHub Actions App15368, admin enforcement, and Actions disabled.
+The approved dedicated-App setup remains the release dependency; no bypass or
+production change was performed.
+
+A controlled real-child experiment reproduced a false-negative wait condition in
+pilot cleanup: group absence can precede Node's published leader exit. This is
+not proof of the earlier incident's cause. A narrow fix with regression coverage
+is authorized on a separate future tooling branch, preserving fail-closed errors
+and ownership. Frozen f488342 and its passing evidence remain unchanged.
