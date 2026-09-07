@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { WOO_IMPORT_RUN_MODES, WOO_IMPORT_RUN_STATUSES } from "@shared/schema/woocommerce-import";
 
 export const WOO_IMPORT_CONTRACT_VERSION = "1.0.0" as const;
+export const WOO_IMPORT_EXECUTION_VERSION = "1.1.0" as const;
+export const WOO_IMPORT_CATEGORY_ORDERING = "parent-first-v1" as const;
 export const WOO_IMPORT_ENABLED_APPLY_PHASES = [1] as const;
 
 export type WooImportRunStatus = (typeof WOO_IMPORT_RUN_STATUSES)[number];
@@ -9,6 +11,7 @@ export type WooImportRunMode = (typeof WOO_IMPORT_RUN_MODES)[number];
 
 export interface BeginWooImportRun {
   contractVersion: string;
+  executionBatchSize?: number;
   sourceStoreId: string;
   targetStackId: string;
   sourceFingerprint: string;
@@ -58,8 +61,25 @@ function requireSha256(value: string) {
 }
 
 export function validateBeginWooImportRun(input: BeginWooImportRun): BeginWooImportRun {
-  if (input.contractVersion !== WOO_IMPORT_CONTRACT_VERSION) {
+  return validateRun(input, false);
+}
+export function validateResumeWooImportRun(input: BeginWooImportRun): BeginWooImportRun {
+  return validateRun(input, true);
+}
+function validateRun(input: BeginWooImportRun, legacyAllowed: boolean): BeginWooImportRun {
+  if (
+    input.contractVersion !== WOO_IMPORT_EXECUTION_VERSION &&
+    !(legacyAllowed && input.contractVersion === WOO_IMPORT_CONTRACT_VERSION)
+  ) {
     throw new Error(`Unsupported WooCommerce import contract ${input.contractVersion}`);
+  }
+  if (
+    input.contractVersion === WOO_IMPORT_EXECUTION_VERSION &&
+    (!Number.isSafeInteger(input.executionBatchSize) ||
+      input.executionBatchSize! < 1 ||
+      input.executionBatchSize! > 1000)
+  ) {
+    throw new Error("Execution batch size must be an integer between 1 and 1000");
   }
   if (!(WOO_IMPORT_RUN_MODES as readonly string[]).includes(input.mode)) {
     throw new Error(`Unsupported WooCommerce import mode ${input.mode}`);
@@ -145,4 +165,47 @@ export function sanitizeWooImportFailureCode(value: string) {
   if (/^[a-z][a-z0-9_]{0,79}$/.test(normalized)) return normalized;
   const opaqueRef = createHash("sha256").update(value).digest("hex").slice(0, 12);
   return `import_failed_${opaqueRef}`;
+}
+
+/** Verify durable scheduling before a resume changes run state. */
+export function validateWooImportExecutionCheckpoint(
+  version: string,
+  checkpoint: unknown,
+  batchSize: number,
+): void {
+  if (!checkpoint || typeof checkpoint !== "object" || Array.isArray(checkpoint))
+    throw new Error("Invalid execution checkpoint");
+  const value = checkpoint as Record<string, unknown>;
+  if (["phase", "batchKey", "appliedOperationCount"].some((key) => key in value)) {
+    if (
+      value.phase !== 1 ||
+      typeof value.batchKey !== "string" ||
+      !/^phase-1-[1-9]\d*$/.test(value.batchKey) ||
+      !Number.isSafeInteger(value.appliedOperationCount) ||
+      (value.appliedOperationCount as number) < 1
+    )
+      throw new Error("Invalid execution checkpoint progress");
+  }
+  if (version === WOO_IMPORT_CONTRACT_VERSION) {
+    if (
+      Object.keys(value).some(
+        (key) => !["phase", "batchKey", "appliedOperationCount"].includes(key),
+      )
+    )
+      throw new Error("Legacy execution metadata mismatch");
+    return;
+  }
+  if (
+    version !== WOO_IMPORT_EXECUTION_VERSION ||
+    value.categoryOrdering !== WOO_IMPORT_CATEGORY_ORDERING ||
+    value.batchSize !== batchSize ||
+    Object.keys(value).some(
+      (key) =>
+        !["categoryOrdering", "batchSize", "phase", "batchKey", "appliedOperationCount"].includes(
+          key,
+        ),
+    )
+  ) {
+    throw new Error("Execution version, ordering or batch size mismatch");
+  }
 }

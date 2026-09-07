@@ -38,7 +38,7 @@ async function apply(change?: (input: typeof envelopeFixture) => void) {
   return applyWooCommercePlan(repository, {
     plan,
     run: {
-      contractVersion: plan.contractVersion,
+      contractVersion: "1.1.0",
       sourceStoreId: plan.sourceStoreId,
       targetStackId: "synthetic-rollback",
       sourceFingerprint: plan.fingerprint,

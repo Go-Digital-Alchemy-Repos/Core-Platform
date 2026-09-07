@@ -1,6 +1,10 @@
 import type { WooImportRun } from "@shared/schema/woocommerce-import";
 import {
   assertWooImportCanComplete,
+  WOO_IMPORT_CONTRACT_VERSION,
+  WOO_IMPORT_EXECUTION_VERSION,
+  WOO_IMPORT_CATEGORY_ORDERING,
+  validateWooImportExecutionCheckpoint,
   type BeginWooImportRun,
   type WooImportReconciliationSummary,
 } from "./woocommerce-import-lifecycle.service";
@@ -13,6 +17,8 @@ import {
 } from "./woocommerce-import.service";
 
 export interface WooImportCheckpoint {
+  categoryOrdering?: typeof WOO_IMPORT_CATEGORY_ORDERING;
+  batchSize?: number;
   phase: 1;
   batchKey: string;
   appliedOperationCount: number;
@@ -99,13 +105,45 @@ function batches<T>(items: T[], size: number) {
   return result;
 }
 
+function parentFirst(operations: WooImportOperation[]): WooImportOperation[] {
+  const categories = operations.filter((operation) => operation.entityType === "category");
+  const byId = new Map(categories.map((operation) => [operation.targetId, operation]));
+  const visited = new Set<string>(),
+    visiting = new Set<string>();
+  const ordered: WooImportOperation[] = [];
+  // Iterative depth-first traversal: input order breaks ties; ancestors precede descendants.
+  for (const category of categories) {
+    const stack = [{ operation: category, expanded: false }];
+    while (stack.length) {
+      const { operation, expanded } = stack.pop()!;
+      if (visited.has(operation.targetId)) continue;
+      if (expanded) {
+        visiting.delete(operation.targetId);
+        visited.add(operation.targetId);
+        ordered.push(operation);
+        continue;
+      }
+      if (visiting.has(operation.targetId))
+        throw new WooImportManualReviewError("category_parent_precondition_failed");
+      visiting.add(operation.targetId);
+      stack.push({ operation, expanded: true });
+      if (operation.targetRecord.parentId) {
+        const parent = byId.get(operation.targetRecord.parentId);
+        if (!parent) throw new WooImportManualReviewError("category_parent_precondition_failed");
+        stack.push({ operation: parent, expanded: false });
+      }
+    }
+  }
+  return [...ordered, ...operations.filter((operation) => operation.entityType === "product")];
+}
+
 function resumeProgress(evidence: WooImportRunEvidence, batchesToApply: WooImportOperation[][]) {
   const checkpoint = evidence.run.latestCheckpoint;
   if (!checkpoint || typeof checkpoint !== "object" || Array.isArray(checkpoint)) {
     throw new WooImportManualReviewError("invalid_resume_checkpoint");
   }
   const record = checkpoint as Record<string, unknown>;
-  if (Object.keys(record).length === 0) {
+  if (Object.keys(record).every((key) => key === "categoryOrdering" || key === "batchSize")) {
     if (evidence.auditCount !== 0 || evidence.appliedCount !== 0 || evidence.matchedCount !== 0) {
       throw new WooImportManualReviewError("resume_checkpoint_audit_mismatch");
     }
@@ -160,22 +198,64 @@ export async function applyWooCommercePlan(
     throw new Error("WooCommerce run source fingerprint must match the plan fingerprint");
   }
 
-  const batchSize = request.batchSize ?? 100;
-  if (!Number.isSafeInteger(batchSize) || batchSize < 1 || batchSize > 1_000) {
-    throw new Error("WooCommerce batchSize must be an integer between 1 and 1000");
+  if (
+    ![WOO_IMPORT_CONTRACT_VERSION, WOO_IMPORT_EXECUTION_VERSION].some(
+      (version) => version === request.run.contractVersion,
+    )
+  ) {
+    throw new Error("Unsupported WooCommerce execution version");
   }
-
-  const orderedOperations = [
-    ...request.plan.operations.filter((operation) => operation.entityType === "category"),
-    ...request.plan.operations.filter((operation) => operation.entityType === "product"),
-  ];
+  if (!request.resumeRunId && request.run.contractVersion !== WOO_IMPORT_EXECUTION_VERSION)
+    throw new Error("New WooCommerce runs require execution contract 1.1.0");
+  const priorEvidence = request.resumeRunId
+    ? await repository.inspectRun(request.resumeRunId)
+    : undefined;
+  if (request.resumeRunId && !priorEvidence)
+    throw new Error("WooCommerce resume run was not found");
+  const executionVersion = priorEvidence?.run.contractVersion ?? WOO_IMPORT_EXECUTION_VERSION;
+  if (
+    ![WOO_IMPORT_CONTRACT_VERSION, WOO_IMPORT_EXECUTION_VERSION].some(
+      (version) => version === executionVersion,
+    )
+  ) {
+    throw new Error("Unsupported WooCommerce execution version");
+  }
+  const storedCheckpoint = priorEvidence?.run.latestCheckpoint as
+    | Record<string, unknown>
+    | undefined;
+  const storedBatchSize =
+    executionVersion === WOO_IMPORT_EXECUTION_VERSION &&
+    typeof storedCheckpoint?.batchSize === "number"
+      ? storedCheckpoint.batchSize
+      : undefined;
+  const batchSize = request.batchSize ?? storedBatchSize ?? 100;
+  if (!Number.isSafeInteger(batchSize) || batchSize < 1 || batchSize > 1000)
+    throw new Error("WooCommerce batchSize must be an integer between 1 and 1000");
+  if (priorEvidence)
+    validateWooImportExecutionCheckpoint(
+      executionVersion,
+      priorEvidence.run.latestCheckpoint,
+      batchSize,
+    );
+  const executionRun = {
+    ...request.run,
+    contractVersion: executionVersion,
+    executionBatchSize: batchSize,
+  };
+  const orderedOperations =
+    executionVersion === WOO_IMPORT_EXECUTION_VERSION
+      ? parentFirst(request.plan.operations)
+      : [
+          ...request.plan.operations.filter((operation) => operation.entityType === "category"),
+          ...request.plan.operations.filter((operation) => operation.entityType === "product"),
+        ];
   const plannedBatches = batches(orderedOperations, batchSize);
   let run: WooImportRun | undefined;
   let applied = 0;
   let matched = 0;
   try {
     if (request.resumeRunId) {
-      run = await repository.resumeRun(request.resumeRunId, request.run);
+      run = await repository.resumeRun(request.resumeRunId, executionRun);
     }
     const target = await repository.inspect({
       sourceStoreId: request.plan.sourceStoreId,
@@ -188,7 +268,7 @@ export async function applyWooCommercePlan(
         `WooCommerce target inspection blocked by ${inspection.issues.length} conflict(s)`,
       );
     }
-    const activeRun = run ?? (await repository.beginRun(request.run));
+    const activeRun = run ?? (await repository.beginRun(executionRun));
     run = activeRun;
     let progress = { completedBatches: 0, applied: 0, matched: 0, completedOperations: 0 };
     if (request.resumeRunId) {
@@ -206,6 +286,9 @@ export async function applyWooCommercePlan(
         batchKey: `phase-1-${batchIndex + 1}`,
         operations,
         nextCheckpoint: {
+          ...(executionVersion === WOO_IMPORT_EXECUTION_VERSION
+            ? { categoryOrdering: WOO_IMPORT_CATEGORY_ORDERING, batchSize }
+            : {}),
           phase: 1,
           batchKey: `phase-1-${batchIndex + 1}`,
           appliedOperationCount:

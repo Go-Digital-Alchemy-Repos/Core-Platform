@@ -66,6 +66,7 @@ class RecordingRepository implements WooImportRepositoryV1 {
     this.resumedRunId = runId;
     return {
       id: runId,
+      contractVersion: "1.0.0",
       latestCheckpoint: { phase: 1, batchKey: "phase-1-1", appliedOperationCount: 1 },
     } as WooImportRun;
   }
@@ -103,6 +104,7 @@ class RecordingRepository implements WooImportRepositoryV1 {
     return {
       run: {
         id: runId,
+        contractVersion: "1.0.0",
         latestCheckpoint: { phase: 1, batchKey: "phase-1-1", appliedOperationCount: 1 },
       } as WooImportRun,
       auditCount: 1,
@@ -115,7 +117,7 @@ class RecordingRepository implements WooImportRepositoryV1 {
 
 function runFor(plan: ReturnType<typeof readyPlan>): BeginWooImportRun {
   return {
-    contractVersion: plan.contractVersion,
+    contractVersion: "1.1.0",
     sourceStoreId: plan.sourceStoreId,
     targetStackId: "isolated-rehearsal",
     sourceFingerprint: plan.fingerprint,
@@ -127,6 +129,43 @@ function runFor(plan: ReturnType<typeof readyPlan>): BeginWooImportRun {
 }
 
 describe("WooCommerce durable apply coordinator", () => {
+  it("rejects a new legacy execution request before creating a run", async () => {
+    const plan = readyPlan();
+    const repository = new RecordingRepository();
+    await expect(
+      applyWooCommercePlan(repository, {
+        plan,
+        run: { ...runFor(plan), contractVersion: "1.0.0" },
+      }),
+    ).rejects.toThrow("New WooCommerce runs require");
+    expect(repository.batches).toHaveLength(0);
+  });
+  it("freezes parent-first-v1 depth-first input ties without changing operation contents", async () => {
+    const plan = readyPlan();
+    const prototype = plan.operations.find((operation) => operation.entityType === "category")!;
+    const make = (id: string, parentId: string | null) => ({
+      ...structuredClone(prototype),
+      targetId: id,
+      externalId: id,
+      targetRecord: { ...prototype.targetRecord, id, parentId },
+    });
+    plan.operations = [
+      make("child-a", "parent"),
+      make("unrelated", null),
+      make("child-b", "parent"),
+      make("parent", null),
+    ];
+    const original = structuredClone(plan.operations);
+    const repository = new RecordingRepository();
+    await applyWooCommercePlan(repository, { plan, run: runFor(plan), batchSize: 1 });
+    expect(repository.batches.map((batch) => batch.operations[0].targetId)).toEqual([
+      "parent",
+      "child-a",
+      "unrelated",
+      "child-b",
+    ]);
+    expect(plan.operations).toEqual(original);
+  });
   it("applies catalog batches in dependency order and completes balanced reconciliation", async () => {
     const plan = readyPlan();
     const repository = new RecordingRepository();
@@ -218,6 +257,7 @@ describe("WooCommerce durable apply coordinator", () => {
     repository.inspectRun = async (runId) => ({
       run: {
         id: runId,
+        contractVersion: "1.0.0",
         latestCheckpoint: { phase: 1, batchKey: "phase-1-1", appliedOperationCount: 1 },
       } as WooImportRun,
       auditCount: 0,

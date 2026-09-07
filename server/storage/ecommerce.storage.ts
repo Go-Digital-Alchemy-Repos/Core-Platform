@@ -1,3 +1,7 @@
+import {
+  lockEcommerceCategoryGraph,
+  validateEcommerceCategoryParent,
+} from "../services/ecommerce-category-graph";
 import { optionalEcommerceTrackingUrlSchema } from "@shared/ecommerce-tracking-url";
 import { z } from "zod";
 import { atomicEcommerceFulfillmentSchema } from "@shared/schema";
@@ -436,24 +440,45 @@ export class EcommerceStorage {
   }
 
   async createCategory(data: InsertEcommerceCategory): Promise<EcommerceCategory> {
-    const [category] = await db.insert(ecommerceCategories).values(data).returning();
-    return category;
+    return db.transaction(async (tx) => {
+      await lockEcommerceCategoryGraph(tx);
+      const parentId = await validateEcommerceCategoryParent(tx, null, data.parentId);
+      const [category] = await tx
+        .insert(ecommerceCategories)
+        .values({ ...data, parentId })
+        .returning();
+      return category;
+    });
   }
 
   async updateCategory(
     id: string,
     data: Partial<InsertEcommerceCategory>,
   ): Promise<EcommerceCategory | undefined> {
-    const [category] = await db
-      .update(ecommerceCategories)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(ecommerceCategories.id, id))
-      .returning();
-    return category;
+    return db.transaction(async (tx) => {
+      await lockEcommerceCategoryGraph(tx);
+      const [existing] = await tx
+        .select()
+        .from(ecommerceCategories)
+        .where(eq(ecommerceCategories.id, id));
+      if (!existing) return undefined;
+      const parentId = await validateEcommerceCategoryParent(
+        tx,
+        id,
+        data.parentId === undefined ? existing.parentId : data.parentId,
+      );
+      const [category] = await tx
+        .update(ecommerceCategories)
+        .set({ ...data, parentId, updatedAt: new Date() })
+        .where(eq(ecommerceCategories.id, id))
+        .returning();
+      return category;
+    });
   }
 
   async deleteCategory(id: string): Promise<void> {
     await db.transaction(async (tx) => {
+      await lockEcommerceCategoryGraph(tx);
       await tx
         .update(ecommerceCategories)
         .set({ parentId: null, updatedAt: new Date() })
