@@ -1,10 +1,12 @@
+import type { db } from "../db";
 import type { SettingsStorage } from "../storage/settings.storage";
 import {
   getShippingProviderCredentialCategory,
   getShippingProviderDefinition,
 } from "./ecommerce-shipping-provider.service";
 
-type CredentialStorage = Pick<SettingsStorage, "getDecryptedCategory" | "upsertSettings">;
+type CredentialStorage = Pick<SettingsStorage, "getDecryptedCategory" | "upsertSettings"> &
+  Partial<Pick<SettingsStorage, "invalidateAll">>;
 
 function definitionFor(provider: string) {
   const definition = getShippingProviderDefinition(provider);
@@ -49,6 +51,7 @@ export async function saveShippingProviderCredentials(
   settings: CredentialStorage,
   provider: string,
   credentials: Record<string, string>,
+  authorizationDatabase?: typeof db,
 ) {
   const definition = definitionFor(provider);
   const category = getShippingProviderCredentialCategory(provider);
@@ -67,7 +70,13 @@ export async function saveShippingProviderCredentials(
   });
   if (entries.length) {
     try {
-      await settings.upsertSettings(entries);
+      if (provider === "easypost") {
+        const { rotateEasyPostCredentials } =
+          await import("./ecommerce-shipping-credential-authorization.service");
+        const database = authorizationDatabase ?? (await import("../db")).db;
+        await rotateEasyPostCredentials(database, credentials.apiKey.trim());
+        settings.invalidateAll?.();
+      } else await settings.upsertSettings(entries);
     } catch {
       throw new Error("Shipping credentials could not be saved");
     }

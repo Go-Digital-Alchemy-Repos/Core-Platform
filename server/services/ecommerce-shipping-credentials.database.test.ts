@@ -3,6 +3,7 @@ import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import * as schema from "@shared/schema";
 vi.mock("../db", () => ({ db: {} }));
+vi.mock("../storage/index", () => ({ storage: { settings: { invalidateAll: vi.fn() } } }));
 import { SettingsStorage } from "../storage/settings.storage";
 import {
   readShippingProviderCredentials as read,
@@ -24,6 +25,7 @@ if (url) {
 }
 let pool: pg.Pool;
 let settings: SettingsStorage;
+let database: ReturnType<typeof drizzle<typeof schema>>;
 describe.skipIf(!url)("shipping credential isolation in PostgreSQL", () => {
   beforeAll(async () => {
     pool = new pg.Pool({
@@ -36,7 +38,8 @@ describe.skipIf(!url)("shipping credential isolation in PostgreSQL", () => {
     await pool.query(
       "CREATE TABLE system_settings (id varchar PRIMARY KEY DEFAULT gen_random_uuid(), key text NOT NULL UNIQUE, value text NOT NULL, category text NOT NULL, is_secret boolean NOT NULL DEFAULT false, updated_at timestamp DEFAULT now())",
     );
-    settings = new SettingsStorage(60_000, drizzle(pool, { schema }));
+    database = drizzle(pool, { schema });
+    settings = new SettingsStorage(60_000, database);
   });
   beforeEach(async () => {
     await pool.query("TRUNCATE system_settings");
@@ -47,16 +50,18 @@ describe.skipIf(!url)("shipping credential isolation in PostgreSQL", () => {
   });
   it("keeps simultaneous providers independent and encrypted at rest", async () => {
     await Promise.all([
-      save(settings, "easypost", { apiKey: "synthetic-easy" }),
+      save(settings, "easypost", { apiKey: "synthetic-easy" }, database),
       save(settings, "shippo", { apiKey: "synthetic-shippo" }),
     ]);
     expect(await read(settings, "easypost")).toEqual({ apiKey: "synthetic-easy" });
     expect(await read(settings, "shippo")).toEqual({ apiKey: "synthetic-shippo" });
     const rows = (await pool.query("SELECT key,value,is_secret FROM system_settings")).rows;
-    expect(rows).toHaveLength(2);
-    expect(rows.every((row) => row.is_secret && /^[a-f0-9]{32}:[a-f0-9]+$/.test(row.value))).toBe(
-      true,
-    );
+    expect(rows).toHaveLength(4);
+    expect(
+      rows
+        .filter((row) => row.is_secret)
+        .every((row) => /^[a-f0-9]{32}:[a-f0-9]+$/.test(row.value)),
+    ).toBe(true);
     expect(JSON.stringify(rows)).not.toContain("synthetic-");
   });
   it("reads legacy values only in their stored category without copying or reassigning them", async () => {
