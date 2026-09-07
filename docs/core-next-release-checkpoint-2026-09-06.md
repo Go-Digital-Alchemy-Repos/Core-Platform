@@ -838,3 +838,21 @@ source hashes, command results and retained artifacts are verified separately.
 No independent acceptance flag changed yet. Finalnormalized review remains active.
 Engineering starts a read-only label-purchase/reconciliation contract proposal for
 remaining ecommerce scope; it cannot change frozen source or activate providers.
+
+
+### V5 local release checkpoint accepted — 2026-09-07 UTC
+
+Final bundle normalized-v5-ece2544-348c9a3e80 independently reviewed by root and
+infra:35gates66evidence files257original provenance bindings231lossless logs. Root
+rechecked final hashes/transformations and created separate orchestrator-review.json
+and manifest.reviewed.json; original manifest.pending.json remains false/unchanged.
+Binding digest `d68d701a81d2c2d4cf704782b1671fa0e7a7ecb848b9a9348f5484460b48d27b`.
+V5 verifier underpython-O exited0, structuralVerification=passed, gatesVerified35,
+releaseApproved=false, attestationTruth=not-established. Root's local acceptance
+is a separate evidence review, not a claim of production authorization.
+
+Frozen ece2544/treec201 remains clean/pushed. PR18 draft description updated to
+local acceptance; main still requires strict VerifyApp15368 while Actions remain
+disabled. Pending approved release-control setup must resolve before promotion;
+no bypass, provider activation or deployment occurred. Remaining ecommerce label
+purchase/reconciliation contract proposal continues separately from frozen source.
