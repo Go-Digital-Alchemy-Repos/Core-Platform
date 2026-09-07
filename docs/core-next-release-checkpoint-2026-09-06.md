@@ -787,3 +787,29 @@ prepared for root review, not run. Infra supplemental retained-local-backup rest
 runs55736 in recovery-verifier-ece2544-781ab81b (no recapture/download). CRM prepares
 a separate V5 normalizer with pending reviewfalse and no fabricated gate results.
 Draft shipping PR prepared against ecommerce integrity branch; release still gated.
+
+
+### Browser and retained recovery evidence review — 2026-09-07 UTC
+
+Root independently verified source/site hashes, retained browser artifacts and
+raw-log hashes for full66 and BetterFarms22 receipts; cleanup resources and groups
+are absent. Full app receipt SHA
+`51a6861059df7d77a2f9a60be081f6b2d15163cf44901674d232818cc95c7cd8`;
+pilot SHA `c8195a1493bb2d7303d59c415e9407bce345cbb7a9cbe9f5dbeb65bcab394c57`.
+Retained local backup restore receipt SHA
+`9a956325c782485624a21f4e51b1409519afa7b99a76233efd55292f5b000ba1`
+in recovery-verifier-ece2544-781ab81b verifies105tables/671rows, sequence semantics
+and two subsequent migration invocations. Root verified source hashes and cleanup.
+This preserves encrypted bytes; synthetic session secret does not establish live
+credential decryption or provider use. No recapture/download occurred.
+
+Root reviewed exactcandidate shipping CLI producer and requested explicit Python
+require checks surviving-O, readiness private/no-store assertion, displayed prices
+and delivery metadata, and preserved priorunknown/stale UI assertions. Corrected
+producer is running once underpython-O handle28917 in
+shipping-browser-ece2544-975b421393; final evidence still pending.
+
+Read-only GitHub revalidation: PR18 open/draft at exactece, base ecommerce-integrity;
+main strict Verify remains bound to App15368, admins enforced, force/deletefalse,
+Actions disabled. This review does not bypass the pending approved release-control
+setup or authorize production. V5 normalized evidence review remains unfinished.
