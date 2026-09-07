@@ -679,3 +679,30 @@ verification; no real credentials or provider requests are authorized. Infra own
 a read-only inventory of the 174 skipped opt-in cases and next verifier generation
 requirements. Frozen V4/f488 evidence remains immutable. Browser acceptance and
 new candidate full release validation remain unfinished.
+
+
+### First actual shipping browser acceptance — 2026-09-07 UTC
+
+Root used Playwright CLI against the actual synthetic local app on a67383c. Actual
+admin login, orders drawer and readiness API worked. No credentials were present:
+GET returned200, private/no-store, configured=false, approved=false, enabled=false,
+mode=test, reason=not_configured; the quote button was disabled. Location and16oz
+package draft survived reload/reopening the order. At390px document scrollWidth
+was390 and root visually inspected the rendered panel. No quote POST was made.
+Private screenshots/snapshot/observations are in Operations/shipping-browser-a67383c/
+root-observations. This is not proof of quote success/unknown/replay behavior.
+
+Root independently verified1183source hashes, app log hashes and exact owned
+container/volume/process-group absence after fixture shutdown. Receipt SHA
+`66f98ecde6470cede9ec1a2295b46d143481b9717d1fa2a9d8c27e885bde132f`.
+CLI browser was closed. A development-only CSP error blocks Vite's inline React
+refresh preamble; the app remained functional. This fixture did not serve the
+production build and does not establish a production CSP defect. Retain for triage.
+
+Read-only release inventory identifies19opt-in suites174unique skips and199enabled
+executions. Root reviewed V5 structural delta and independently passed29Python-O
+regressions:35gates, five required shipping suite pins, and four shipping browser
+journey labels with hashed producer/log references. Accepted for commit; truth of
+those browser artifacts still requires independent review. Engineering is preparing
+a separate private synthetic transport fixture with real authorization/storage
+for remaining browser journeys; no production credentials or provider I/O.
