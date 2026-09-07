@@ -12,16 +12,17 @@ exactly one default variant; additional merchant variants are preserved and bloc
 apply or rollback. Rollback also preserves categories assigned to unrelated
 products or referenced by merchant-created child categories.
 
-Category `parent_id` currently has no foreign key. When rollback includes created
-categories, it therefore takes a transaction-scoped `SHARE ROW EXCLUSIVE` lock on
-`ecommerce_categories` before checking child references and deleting records.
+Category `parent_id` currently has no foreign key. Category create/update/delete, Woo apply batches containing categories, and
+rollback involving created categories take a transaction-scoped
+`SHARE ROW EXCLUSIVE` lock on `ecommerce_categories` before category or mapping
+row locks. Rollback holds it while checking child references and deleting records.
 This temporarily blocks category writes; ordinary reads remain available. Parent
 row locks alone cannot fence inserts into a plain-text parent reference.
 
-This guard protects the rollback transaction. The existing category API can still
-accept an invalid parent reference after rollback commits. Validating future
-category writes or introducing a foreign key is a separate follow-up, not a
-capability provided by this rollback change.
+This guard protects the rollback transaction. Category storage validates the parent hierarchy in the same locked transaction,
+so a later API write rejects a parent removed by rollback. Direct database writes
+still have no foreign key enforcing parent integrity; this is an application
+contract, not a database constraint.
 
 These safeguards do not establish catalog reconciliation, restore readiness or
 production import approval. The frozen WooCommerce contract and release gates

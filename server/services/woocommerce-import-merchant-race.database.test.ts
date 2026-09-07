@@ -38,7 +38,7 @@ async function apply(change?: (input: typeof envelopeFixture) => void) {
   return applyWooCommercePlan(repository, {
     plan,
     run: {
-      contractVersion: plan.contractVersion,
+      contractVersion: "1.1.0",
       sourceStoreId: plan.sourceStoreId,
       targetStackId: "synthetic-rollback",
       sourceFingerprint: plan.fingerprint,
@@ -58,7 +58,7 @@ async function assertFailedFirstBatch(originalRunId: string) {
   expect(result.rows[0]).toMatchObject({
     status: "manual_review",
     failure_code: "target_edited_since_import",
-    latest_checkpoint: {},
+    latest_checkpoint: { categoryOrdering: "parent-first-v1", batchSize: 100 },
   });
   expect(
     (

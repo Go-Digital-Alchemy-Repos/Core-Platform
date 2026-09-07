@@ -4,11 +4,13 @@ import {
   assertWooImportRunTransition,
   sanitizeWooImportFailureCode,
   validateBeginWooImportRun,
+  validateWooImportExecutionCheckpoint,
   wooImportSourceRef,
 } from "./woocommerce-import-lifecycle.service";
 
 const validRun = {
-  contractVersion: "1.0.0",
+  contractVersion: "1.1.0",
+  executionBatchSize: 100,
   sourceStoreId: "better-farms-woo",
   targetStackId: "better-farms-staging",
   sourceFingerprint: "a".repeat(64),
@@ -19,6 +21,28 @@ const validRun = {
 };
 
 describe("WooCommerce import lifecycle contract", () => {
+  it("rejects unknown scheduling metadata and malformed progress for both execution versions", () => {
+    const metadata = { categoryOrdering: "parent-first-v1", batchSize: 1 };
+    expect(() => validateWooImportExecutionCheckpoint("1.1.0", metadata, 1)).not.toThrow();
+    expect(() => validateWooImportExecutionCheckpoint("1.1.0", metadata, 2)).toThrow();
+    expect(() => validateWooImportExecutionCheckpoint("1.2.0", metadata, 1)).toThrow();
+    for (const version of ["1.0.0", "1.1.0"]) {
+      const base = version === "1.1.0" ? metadata : {};
+      expect(() =>
+        validateWooImportExecutionCheckpoint(version, { ...base, future: true }, 1),
+      ).toThrow();
+      expect(() =>
+        validateWooImportExecutionCheckpoint(version, { ...base, phase: 1 }, 1),
+      ).toThrow();
+      expect(() =>
+        validateWooImportExecutionCheckpoint(
+          version,
+          { ...base, phase: 1, batchKey: "phase-1-1", appliedOperationCount: 1 },
+          1,
+        ),
+      ).not.toThrow();
+    }
+  });
   it("normalizes an authorized phase-one rehearsal", () => {
     expect(validateBeginWooImportRun(validRun)).toMatchObject({
       enabledPhases: [1],

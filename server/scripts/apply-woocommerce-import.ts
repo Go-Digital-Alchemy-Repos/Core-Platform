@@ -1,3 +1,4 @@
+import { WOO_IMPORT_EXECUTION_VERSION } from "../services/woocommerce-import-lifecycle.service";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import {
@@ -58,7 +59,7 @@ async function main() {
   const result = await applyWooCommercePlan(createDrizzleWooImportRepository(), {
     plan,
     run: {
-      contractVersion: plan.contractVersion,
+      contractVersion: WOO_IMPORT_EXECUTION_VERSION,
       sourceStoreId: plan.sourceStoreId,
       targetStackId: command.targetStackId,
       sourceFingerprint: plan.fingerprint,

@@ -133,32 +133,6 @@ const productPayloadSchema = insertEcommerceProductSchema.extend({
   categoryIds: z.array(z.string()).default([]),
 });
 
-async function validateCategoryParent(
-  categoryId: string | null,
-  parentId: string | null | undefined,
-) {
-  if (!parentId) return;
-  if (categoryId && parentId === categoryId) {
-    throw Object.assign(new Error("A category cannot be its own parent"), { statusCode: 400 });
-  }
-
-  const categories = await storage.ecommerce.getCategories(false);
-  const categoryMap = new Map(categories.map((category) => [category.id, category]));
-  if (!categoryMap.has(parentId)) {
-    throw Object.assign(new Error("Parent category not found"), { statusCode: 400 });
-  }
-
-  let cursor = categoryMap.get(parentId);
-  while (cursor?.parentId) {
-    if (categoryId && cursor.parentId === categoryId) {
-      throw Object.assign(new Error("A category cannot be moved under one of its subcategories"), {
-        statusCode: 400,
-      });
-    }
-    cursor = categoryMap.get(cursor.parentId);
-  }
-}
-
 async function validateCategorySlug(categoryId: string | null, slug: string | null | undefined) {
   if (!slug) return;
 
@@ -288,7 +262,6 @@ router.post(
   "/categories",
   asyncHandler(async (req, res) => {
     const data = insertEcommerceCategorySchema.parse(req.body);
-    await validateCategoryParent(null, data.parentId);
     await validateCategorySlug(null, data.slug);
     res.status(201).json(await storage.ecommerce.createCategory(data));
   }),
@@ -299,7 +272,6 @@ router.put(
   asyncHandler(async (req, res) => {
     const categoryId = paramString(req.params.id);
     const data = insertEcommerceCategorySchema.partial().parse(req.body);
-    await validateCategoryParent(categoryId, data.parentId);
     await validateCategorySlug(categoryId, data.slug);
     const category = await storage.ecommerce.updateCategory(categoryId, data);
     if (!category) {

@@ -117,3 +117,13 @@ describe("WooCommerce durable apply command", () => {
     );
   });
 });
+
+it("keeps an omitted resume batch size unspecified for persisted scheduling", () => {
+  const args = validArgs();
+  const index = args.indexOf("--batch-size");
+  if (index >= 0) args.splice(index, 2);
+  expect(
+    parseWooImportApplyCommand([...args, "--resume-run", "existing-run"]).batchSize,
+  ).toBeUndefined();
+  expect(parseWooImportApplyCommand(args).batchSize).toBe(100);
+});

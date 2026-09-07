@@ -48,7 +48,7 @@ export interface WooImportApplyCommand {
   targetStackId: string;
   operatorReference: string;
   confirmedFingerprint: string;
-  batchSize: number;
+  batchSize?: number;
   resumeRunId?: string;
   dispositionPath?: string;
 }
@@ -150,8 +150,13 @@ export function parseWooImportApplyCommand(args: string[]): WooImportApplyComman
     );
   }
   const rawBatchSize = valueAfter(args, "--batch-size");
-  const batchSize = rawBatchSize === undefined ? 100 : Number(rawBatchSize);
-  if (!Number.isSafeInteger(batchSize) || batchSize < 1 || batchSize > 1_000) {
+  const resumeRunId = optionalIdentifier(args, "--resume-run");
+  const batchSize =
+    rawBatchSize === undefined ? (resumeRunId ? undefined : 100) : Number(rawBatchSize);
+  if (
+    batchSize !== undefined &&
+    (!Number.isSafeInteger(batchSize) || batchSize < 1 || batchSize > 1_000)
+  ) {
     throw new WooImportCommandError(
       "invalid_batch_size",
       "--batch-size must be an integer between 1 and 1000",
@@ -163,7 +168,7 @@ export function parseWooImportApplyCommand(args: string[]): WooImportApplyComman
     operatorReference: requiredValue(args, "--operator"),
     confirmedFingerprint,
     batchSize,
-    resumeRunId: optionalIdentifier(args, "--resume-run"),
+    resumeRunId,
     dispositionPath: valueAfter(args, "--dispositions"),
   };
 }
