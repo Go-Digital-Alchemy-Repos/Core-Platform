@@ -89,6 +89,25 @@ describe("cms media usage service", () => {
     );
   });
 
+  it("tracks images embedded in Team biographies", async () => {
+    const media = asset();
+    mockStorage.team.list.mockResolvedValue([
+      {
+        id: "team-bio",
+        name: "Member",
+        photoUrl: "",
+        biography: `<p><img src="${media.url}"></p>`,
+        status: "published",
+      },
+    ]);
+    const [result] = await buildCmsMediaLibraryAssets([media]);
+    expect(result.usageRefs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ entityType: "team_member", field: "biography", isLive: true }),
+      ]),
+    );
+  });
+
   it("tracks shared media references from bolt-on apps", async () => {
     const media = asset();
     mockStorage.users.getAllUsers.mockResolvedValue([

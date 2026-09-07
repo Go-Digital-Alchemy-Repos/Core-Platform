@@ -121,9 +121,16 @@ export function TeamSection({ props }: { props: Record<string, unknown> }) {
                   className="max-h-80 w-full rounded-lg object-contain"
                 />
               )}
-              <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
-                {selected.biography || selected.excerpt || "Biography coming soon."}
-              </div>
+              {/<[a-z][\s\S]*>/i.test(selected.biography) ? (
+                <div
+                  className="prose prose-sm max-w-none break-words dark:prose-invert"
+                  dangerouslySetInnerHTML={{ __html: selected.biography }}
+                />
+              ) : (
+                <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                  {selected.biography || selected.excerpt || "Biography coming soon."}
+                </div>
+              )}
             </>
           )}
         </DialogContent>

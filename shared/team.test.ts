@@ -33,6 +33,17 @@ describe("Team content", () => {
       ),
     ).toBe("A biography that is intentionally longer…");
   });
+  it("generates readable excerpts from formatted biographies", () => {
+    expect(
+      teamBioExcerpt({
+        excerpt: "",
+        biography: "<p>Alex &amp; Blair</p><p><strong>Our team</strong> &#8212; welcome.</p>",
+      }),
+    ).toBe("Alex & Blair Our team — welcome.");
+    expect(
+      teamBioExcerpt({ excerpt: "", biography: "<script>alert(1)</script><p>Safe text</p>" }),
+    ).toBe("Safe text");
+  });
   it("validates names, publishing status, lengths, and image URL schemes", () => {
     for (const photoUrl of [
       "javascript:alert(1)",

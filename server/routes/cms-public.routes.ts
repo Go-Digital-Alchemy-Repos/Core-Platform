@@ -1,3 +1,4 @@
+import { sanitizeTeamBiography } from "../utils/team-biography";
 import { Router } from "express";
 import { asyncHandler } from "../middleware/error-handler";
 import { storage } from "../storage";
@@ -13,7 +14,13 @@ const router = Router();
 router.get(
   "/team",
   asyncHandler(async (_req, res) => {
-    res.json(await storage.team.published());
+    const members = await storage.team.published();
+    res.json(
+      members.map((member) => ({
+        ...member,
+        biography: sanitizeTeamBiography(member.biography),
+      })),
+    );
   }),
 );
 

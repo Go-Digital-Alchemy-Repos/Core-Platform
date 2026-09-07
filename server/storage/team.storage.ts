@@ -1,3 +1,4 @@
+import { sanitizeTeamBiography } from "../utils/team-biography";
 import { asc, eq } from "drizzle-orm";
 import { db } from "../db";
 import { teamMembers } from "@shared/schema";
@@ -26,14 +27,24 @@ export class TeamStorage {
   async create(data: TeamMemberInput, userId: string) {
     const [member] = await db
       .insert(teamMembers)
-      .values({ ...data, createdBy: userId, updatedBy: userId })
+      .values({
+        ...data,
+        biography: sanitizeTeamBiography(data.biography),
+        createdBy: userId,
+        updatedBy: userId,
+      })
       .returning();
     return member;
   }
   async update(id: string, data: TeamMemberInput, userId: string) {
     const [member] = await db
       .update(teamMembers)
-      .set({ ...data, updatedBy: userId, updatedAt: new Date() })
+      .set({
+        ...data,
+        biography: sanitizeTeamBiography(data.biography),
+        updatedBy: userId,
+        updatedAt: new Date(),
+      })
       .where(eq(teamMembers.id, id))
       .returning();
     return member;
