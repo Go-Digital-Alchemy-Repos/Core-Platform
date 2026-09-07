@@ -346,3 +346,5 @@ export * from "./client-stack-onboarding";
 
 export * from "./crm-custom-fields";
 export * from "./ecommerce-shipping-quotes";
+
+export * from "./ecommerce-shipping-labels";

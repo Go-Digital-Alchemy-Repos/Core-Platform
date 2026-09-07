@@ -47,6 +47,7 @@ export const ecommerceShippingQuoteAttempts = pgTable(
     redactedAt: timestamp("redacted_at", { withTimezone: true }),
   },
   (t) => [
+    uniqueIndex("shipping_label_quote_order_support").on(t.id, t.orderId),
     uniqueIndex("shipping_quote_order_request").on(t.orderId, t.requestKey),
     uniqueIndex("shipping_quote_provider_identity").on(
       t.provider,

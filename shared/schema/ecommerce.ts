@@ -724,6 +724,7 @@ export const ecommerceOrderItems = pgTable(
     lineTotal: integer("line_total").notNull(),
   },
   (table) => [
+    uniqueIndex("shipping_label_item_order_support").on(table.id, table.orderId),
     index("idx_ecommerce_order_items_order").on(table.orderId),
     index("idx_ecommerce_order_items_product").on(table.productId),
     index("idx_ecommerce_order_items_variant").on(table.variantId),
@@ -1129,6 +1130,7 @@ export const ecommerceFulfillments = pgTable(
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
   (table) => [
+    uniqueIndex("shipping_label_fulfillment_order_support").on(table.id, table.orderId),
     uniqueIndex("idx_ecommerce_fulfillments_request")
       .on(table.orderId, table.requestKey)
       .where(sql`${table.requestKey} IS NOT NULL`),

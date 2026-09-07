@@ -566,6 +566,7 @@ async function reconcileSchema(migrationsFolder: string) {
   await runSqlMigrationFile(migrationsFolder, "0063_atomic_ecommerce_fulfillment.sql");
   await runSqlMigrationFile(migrationsFolder, "0064_woo_import_execution_version.sql");
   await runSqlMigrationFile(migrationsFolder, "0065_shipping_quote_attempts.sql");
+  await runSqlMigrationFile(migrationsFolder, "0066_shipping_label_purchases.sql");
 }
 
 export async function runMigrations() {
